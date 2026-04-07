@@ -1,0 +1,1486 @@
+import 'dart:async';
+
+import 'package:flutter/foundation.dart';
+import 'package:flutter/widgets.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
+import 'package:intl/intl.dart' as intl;
+
+import 'app_localizations_de.dart';
+import 'app_localizations_en.dart';
+import 'app_localizations_es.dart';
+import 'app_localizations_fr.dart';
+
+// ignore_for_file: type=lint
+
+/// Callers can lookup localized strings with an instance of AppLocalizations
+/// returned by `AppLocalizations.of(context)`.
+///
+/// Applications need to include `AppLocalizations.delegate()` in their app's
+/// `localizationDelegates` list, and the locales they support in the app's
+/// `supportedLocales` list. For example:
+///
+/// ```dart
+/// import 'l10n/app_localizations.dart';
+///
+/// return MaterialApp(
+///   localizationsDelegates: AppLocalizations.localizationsDelegates,
+///   supportedLocales: AppLocalizations.supportedLocales,
+///   home: MyApplicationHome(),
+/// );
+/// ```
+///
+/// ## Update pubspec.yaml
+///
+/// Please make sure to update your pubspec.yaml to include the following
+/// packages:
+///
+/// ```yaml
+/// dependencies:
+///   # Internationalization support.
+///   flutter_localizations:
+///     sdk: flutter
+///   intl: any # Use the pinned version from flutter_localizations
+///
+///   # Rest of dependencies
+/// ```
+///
+/// ## iOS Applications
+///
+/// iOS applications define key application metadata, including supported
+/// locales, in an Info.plist file that is built into the application bundle.
+/// To configure the locales supported by your app, you’ll need to edit this
+/// file.
+///
+/// First, open your project’s ios/Runner.xcworkspace Xcode workspace file.
+/// Then, in the Project Navigator, open the Info.plist file under the Runner
+/// project’s Runner folder.
+///
+/// Next, select the Information Property List item, select Add Item from the
+/// Editor menu, then select Localizations from the pop-up menu.
+///
+/// Select and expand the newly-created Localizations item then, for each
+/// locale your application supports, add a new item and select the locale
+/// you wish to add from the pop-up menu in the Value field. This list should
+/// be consistent with the languages listed in the AppLocalizations.supportedLocales
+/// property.
+abstract class AppLocalizations {
+  AppLocalizations(String locale)
+    : localeName = intl.Intl.canonicalizedLocale(locale.toString());
+
+  final String localeName;
+
+  static AppLocalizations of(BuildContext context) {
+    return Localizations.of<AppLocalizations>(context, AppLocalizations)!;
+  }
+
+  static const LocalizationsDelegate<AppLocalizations> delegate =
+      _AppLocalizationsDelegate();
+
+  /// A list of this localizations delegate along with the default localizations
+  /// delegates.
+  ///
+  /// Returns a list of localizations delegates containing this delegate along with
+  /// GlobalMaterialLocalizations.delegate, GlobalCupertinoLocalizations.delegate,
+  /// and GlobalWidgetsLocalizations.delegate.
+  ///
+  /// Additional delegates can be added by appending to this list in
+  /// MaterialApp. This list does not have to be used at all if a custom list
+  /// of delegates is preferred or required.
+  static const List<LocalizationsDelegate<dynamic>> localizationsDelegates =
+      <LocalizationsDelegate<dynamic>>[
+        delegate,
+        GlobalMaterialLocalizations.delegate,
+        GlobalCupertinoLocalizations.delegate,
+        GlobalWidgetsLocalizations.delegate,
+      ];
+
+  /// A list of this localizations delegate's supported locales.
+  static const List<Locale> supportedLocales = <Locale>[
+    Locale('de'),
+    Locale('en'),
+    Locale('es'),
+    Locale('fr'),
+  ];
+
+  /// No description provided for @appName.
+  ///
+  /// In en, this message translates to:
+  /// **'My Gym Bro'**
+  String get appName;
+
+  /// No description provided for @tabHome.
+  ///
+  /// In en, this message translates to:
+  /// **'Home'**
+  String get tabHome;
+
+  /// No description provided for @tabWorkout.
+  ///
+  /// In en, this message translates to:
+  /// **'Workout'**
+  String get tabWorkout;
+
+  /// No description provided for @tabLog.
+  ///
+  /// In en, this message translates to:
+  /// **'Log'**
+  String get tabLog;
+
+  /// No description provided for @tabCommunity.
+  ///
+  /// In en, this message translates to:
+  /// **'Community'**
+  String get tabCommunity;
+
+  /// No description provided for @status.
+  ///
+  /// In en, this message translates to:
+  /// **'Status'**
+  String get status;
+
+  /// No description provided for @dailyChallenge.
+  ///
+  /// In en, this message translates to:
+  /// **'Daily Challenge'**
+  String get dailyChallenge;
+
+  /// No description provided for @competeFriends.
+  ///
+  /// In en, this message translates to:
+  /// **'Compete with your Gym Bros'**
+  String get competeFriends;
+
+  /// No description provided for @startTrial.
+  ///
+  /// In en, this message translates to:
+  /// **'Start 7-day free trial'**
+  String get startTrial;
+
+  /// No description provided for @createSchedule.
+  ///
+  /// In en, this message translates to:
+  /// **'Create Schedule'**
+  String get createSchedule;
+
+  /// No description provided for @buildYourFlow.
+  ///
+  /// In en, this message translates to:
+  /// **'Build your flow or find a pro program'**
+  String get buildYourFlow;
+
+  /// No description provided for @scheduleRemaining.
+  ///
+  /// In en, this message translates to:
+  /// **'{hours}h remaining'**
+  String scheduleRemaining(int hours);
+
+  /// No description provided for @nextSession.
+  ///
+  /// In en, this message translates to:
+  /// **'Next Session'**
+  String get nextSession;
+
+  /// No description provided for @sessionLog.
+  ///
+  /// In en, this message translates to:
+  /// **'Sessions Log'**
+  String get sessionLog;
+
+  /// No description provided for @statusLog.
+  ///
+  /// In en, this message translates to:
+  /// **'Status Log'**
+  String get statusLog;
+
+  /// No description provided for @weeklyProgress.
+  ///
+  /// In en, this message translates to:
+  /// **'Weekly Progress'**
+  String get weeklyProgress;
+
+  /// No description provided for @recovered.
+  ///
+  /// In en, this message translates to:
+  /// **'Recovered'**
+  String get recovered;
+
+  /// No description provided for @recovering.
+  ///
+  /// In en, this message translates to:
+  /// **'Recovering'**
+  String get recovering;
+
+  /// No description provided for @undertrained.
+  ///
+  /// In en, this message translates to:
+  /// **'Undertrained'**
+  String get undertrained;
+
+  /// No description provided for @healingTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Healing...'**
+  String get healingTitle;
+
+  /// No description provided for @healingSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Your body needs some rest'**
+  String get healingSubtitle;
+
+  /// No description provided for @sets.
+  ///
+  /// In en, this message translates to:
+  /// **'Sets'**
+  String get sets;
+
+  /// No description provided for @reps.
+  ///
+  /// In en, this message translates to:
+  /// **'Reps'**
+  String get reps;
+
+  /// No description provided for @weight.
+  ///
+  /// In en, this message translates to:
+  /// **'Weight'**
+  String get weight;
+
+  /// No description provided for @startWorkout.
+  ///
+  /// In en, this message translates to:
+  /// **'Start Workout'**
+  String get startWorkout;
+
+  /// No description provided for @finishWorkout.
+  ///
+  /// In en, this message translates to:
+  /// **'Finish Workout'**
+  String get finishWorkout;
+
+  /// No description provided for @restDay.
+  ///
+  /// In en, this message translates to:
+  /// **'Rest Day'**
+  String get restDay;
+
+  /// No description provided for @calBurned.
+  ///
+  /// In en, this message translates to:
+  /// **'Cal Burned'**
+  String get calBurned;
+
+  /// No description provided for @calBurnedLastWeek.
+  ///
+  /// In en, this message translates to:
+  /// **'Cal Burned last week'**
+  String get calBurnedLastWeek;
+
+  /// No description provided for @totalDuration.
+  ///
+  /// In en, this message translates to:
+  /// **'Total Duration'**
+  String get totalDuration;
+
+  /// No description provided for @avgStrength.
+  ///
+  /// In en, this message translates to:
+  /// **'Avg Strength'**
+  String get avgStrength;
+
+  /// No description provided for @records.
+  ///
+  /// In en, this message translates to:
+  /// **'Records'**
+  String get records;
+
+  /// No description provided for @volume.
+  ///
+  /// In en, this message translates to:
+  /// **'Volume'**
+  String get volume;
+
+  /// No description provided for @totalVolume.
+  ///
+  /// In en, this message translates to:
+  /// **'Total Volume'**
+  String get totalVolume;
+
+  /// No description provided for @totalTime.
+  ///
+  /// In en, this message translates to:
+  /// **'Total Time'**
+  String get totalTime;
+
+  /// No description provided for @howTo.
+  ///
+  /// In en, this message translates to:
+  /// **'How to'**
+  String get howTo;
+
+  /// No description provided for @targetMuscles.
+  ///
+  /// In en, this message translates to:
+  /// **'Target Muscles'**
+  String get targetMuscles;
+
+  /// No description provided for @secondaryMuscles.
+  ///
+  /// In en, this message translates to:
+  /// **'Secondary Muscles'**
+  String get secondaryMuscles;
+
+  /// No description provided for @equipment.
+  ///
+  /// In en, this message translates to:
+  /// **'Equipment'**
+  String get equipment;
+
+  /// No description provided for @instructions.
+  ///
+  /// In en, this message translates to:
+  /// **'Instructions'**
+  String get instructions;
+
+  /// No description provided for @searchExercises.
+  ///
+  /// In en, this message translates to:
+  /// **'Search exercises...'**
+  String get searchExercises;
+
+  /// No description provided for @noRecordsYet.
+  ///
+  /// In en, this message translates to:
+  /// **'No records yet'**
+  String get noRecordsYet;
+
+  /// No description provided for @yourRecords.
+  ///
+  /// In en, this message translates to:
+  /// **'Your Records'**
+  String get yourRecords;
+
+  /// No description provided for @bestSet.
+  ///
+  /// In en, this message translates to:
+  /// **'Best: {weight}kg × {reps} reps'**
+  String bestSet(double weight, int reps);
+
+  /// No description provided for @addSet.
+  ///
+  /// In en, this message translates to:
+  /// **'Add set'**
+  String get addSet;
+
+  /// No description provided for @addExercise.
+  ///
+  /// In en, this message translates to:
+  /// **'Add Exercise'**
+  String get addExercise;
+
+  /// No description provided for @addDay.
+  ///
+  /// In en, this message translates to:
+  /// **'Add Days'**
+  String get addDay;
+
+  /// No description provided for @scheduleName.
+  ///
+  /// In en, this message translates to:
+  /// **'Schedule Name'**
+  String get scheduleName;
+
+  /// No description provided for @todaySession.
+  ///
+  /// In en, this message translates to:
+  /// **'Today\'s Session'**
+  String get todaySession;
+
+  /// No description provided for @lastWeek.
+  ///
+  /// In en, this message translates to:
+  /// **'Last Week'**
+  String get lastWeek;
+
+  /// No description provided for @today.
+  ///
+  /// In en, this message translates to:
+  /// **'Today'**
+  String get today;
+
+  /// No description provided for @tomorrow.
+  ///
+  /// In en, this message translates to:
+  /// **'Tomorrow'**
+  String get tomorrow;
+
+  /// No description provided for @yesterday.
+  ///
+  /// In en, this message translates to:
+  /// **'Yesterday'**
+  String get yesterday;
+
+  /// No description provided for @cancelAnytime.
+  ///
+  /// In en, this message translates to:
+  /// **'Cancel anytime. No charge during 7-day trial.'**
+  String get cancelAnytime;
+
+  /// No description provided for @restoreSubscription.
+  ///
+  /// In en, this message translates to:
+  /// **'Restore purchases'**
+  String get restoreSubscription;
+
+  /// No description provided for @monthlyPlan.
+  ///
+  /// In en, this message translates to:
+  /// **'Monthly'**
+  String get monthlyPlan;
+
+  /// No description provided for @yearlyPlan.
+  ///
+  /// In en, this message translates to:
+  /// **'Yearly'**
+  String get yearlyPlan;
+
+  /// No description provided for @bestValue.
+  ///
+  /// In en, this message translates to:
+  /// **'Best Value'**
+  String get bestValue;
+
+  /// No description provided for @trialBadge.
+  ///
+  /// In en, this message translates to:
+  /// **'7-day free trial'**
+  String get trialBadge;
+
+  /// No description provided for @signIn.
+  ///
+  /// In en, this message translates to:
+  /// **'Sign In'**
+  String get signIn;
+
+  /// No description provided for @signUp.
+  ///
+  /// In en, this message translates to:
+  /// **'Create Account'**
+  String get signUp;
+
+  /// No description provided for @continueWithApple.
+  ///
+  /// In en, this message translates to:
+  /// **'Continue with Apple'**
+  String get continueWithApple;
+
+  /// No description provided for @continueWithGoogle.
+  ///
+  /// In en, this message translates to:
+  /// **'Continue with Google'**
+  String get continueWithGoogle;
+
+  /// No description provided for @emailLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Email'**
+  String get emailLabel;
+
+  /// No description provided for @passwordLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Password'**
+  String get passwordLabel;
+
+  /// No description provided for @nameLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Your name'**
+  String get nameLabel;
+
+  /// No description provided for @forgotPassword.
+  ///
+  /// In en, this message translates to:
+  /// **'Forgot password?'**
+  String get forgotPassword;
+
+  /// No description provided for @noAccount.
+  ///
+  /// In en, this message translates to:
+  /// **'Don\'t have an account?'**
+  String get noAccount;
+
+  /// No description provided for @alreadyAccount.
+  ///
+  /// In en, this message translates to:
+  /// **'I already have an account'**
+  String get alreadyAccount;
+
+  /// No description provided for @chooseLanguage.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose your language'**
+  String get chooseLanguage;
+
+  /// No description provided for @chooseGoal.
+  ///
+  /// In en, this message translates to:
+  /// **'What\'s your goal?'**
+  String get chooseGoal;
+
+  /// No description provided for @buildMuscle.
+  ///
+  /// In en, this message translates to:
+  /// **'Build Muscle'**
+  String get buildMuscle;
+
+  /// No description provided for @loseWeight.
+  ///
+  /// In en, this message translates to:
+  /// **'Lose Weight'**
+  String get loseWeight;
+
+  /// No description provided for @getStronger.
+  ///
+  /// In en, this message translates to:
+  /// **'Get Stronger'**
+  String get getStronger;
+
+  /// No description provided for @chooseExperience.
+  ///
+  /// In en, this message translates to:
+  /// **'Your experience level?'**
+  String get chooseExperience;
+
+  /// No description provided for @beginner.
+  ///
+  /// In en, this message translates to:
+  /// **'Beginner'**
+  String get beginner;
+
+  /// No description provided for @intermediate.
+  ///
+  /// In en, this message translates to:
+  /// **'Intermediate'**
+  String get intermediate;
+
+  /// No description provided for @advanced.
+  ///
+  /// In en, this message translates to:
+  /// **'Advanced'**
+  String get advanced;
+
+  /// No description provided for @letsGo.
+  ///
+  /// In en, this message translates to:
+  /// **'Let\'s Go'**
+  String get letsGo;
+
+  /// No description provided for @trialStarted.
+  ///
+  /// In en, this message translates to:
+  /// **'Your 7-day free trial starts now'**
+  String get trialStarted;
+
+  /// No description provided for @securityWarningTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Security Warning'**
+  String get securityWarningTitle;
+
+  /// No description provided for @securityWarningBody.
+  ///
+  /// In en, this message translates to:
+  /// **'This device appears compromised. My Gym Bro cannot run securely.'**
+  String get securityWarningBody;
+
+  /// No description provided for @closeApp.
+  ///
+  /// In en, this message translates to:
+  /// **'Close App'**
+  String get closeApp;
+
+  /// No description provided for @biometricPrompt.
+  ///
+  /// In en, this message translates to:
+  /// **'Unlock My Gym Bro'**
+  String get biometricPrompt;
+
+  /// No description provided for @language.
+  ///
+  /// In en, this message translates to:
+  /// **'Language'**
+  String get language;
+
+  /// No description provided for @weightUnit.
+  ///
+  /// In en, this message translates to:
+  /// **'Weight Unit'**
+  String get weightUnit;
+
+  /// No description provided for @biometricLock.
+  ///
+  /// In en, this message translates to:
+  /// **'Biometric Lock'**
+  String get biometricLock;
+
+  /// No description provided for @manageSubscription.
+  ///
+  /// In en, this message translates to:
+  /// **'Manage Subscription'**
+  String get manageSubscription;
+
+  /// No description provided for @exportData.
+  ///
+  /// In en, this message translates to:
+  /// **'Export My Data'**
+  String get exportData;
+
+  /// No description provided for @clearCache.
+  ///
+  /// In en, this message translates to:
+  /// **'Clear Community Cache'**
+  String get clearCache;
+
+  /// No description provided for @deleteAccount.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete Account'**
+  String get deleteAccount;
+
+  /// No description provided for @deleteAccountConfirm.
+  ///
+  /// In en, this message translates to:
+  /// **'This will permanently delete all your data. This cannot be undone.'**
+  String get deleteAccountConfirm;
+
+  /// No description provided for @deleteAccountButton.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete My Account'**
+  String get deleteAccountButton;
+
+  /// No description provided for @lastSynced.
+  ///
+  /// In en, this message translates to:
+  /// **'Last synced {time}'**
+  String lastSynced(String time);
+
+  /// No description provided for @syncNow.
+  ///
+  /// In en, this message translates to:
+  /// **'Sync Now'**
+  String get syncNow;
+
+  /// No description provided for @rateApp.
+  ///
+  /// In en, this message translates to:
+  /// **'Rate the App'**
+  String get rateApp;
+
+  /// No description provided for @contactSupport.
+  ///
+  /// In en, this message translates to:
+  /// **'Contact Support'**
+  String get contactSupport;
+
+  /// No description provided for @privacyPolicy.
+  ///
+  /// In en, this message translates to:
+  /// **'Privacy Policy'**
+  String get privacyPolicy;
+
+  /// No description provided for @termsOfService.
+  ///
+  /// In en, this message translates to:
+  /// **'Terms of Service'**
+  String get termsOfService;
+
+  /// No description provided for @appVersion.
+  ///
+  /// In en, this message translates to:
+  /// **'Version {version}'**
+  String appVersion(String version);
+
+  /// No description provided for @pendingSync.
+  ///
+  /// In en, this message translates to:
+  /// **'Pending sync'**
+  String get pendingSync;
+
+  /// No description provided for @synced.
+  ///
+  /// In en, this message translates to:
+  /// **'Synced'**
+  String get synced;
+
+  /// No description provided for @syncError.
+  ///
+  /// In en, this message translates to:
+  /// **'Sync error'**
+  String get syncError;
+
+  /// No description provided for @loadingExercises.
+  ///
+  /// In en, this message translates to:
+  /// **'Loading exercise library...'**
+  String get loadingExercises;
+
+  /// No description provided for @whatOnYourMind.
+  ///
+  /// In en, this message translates to:
+  /// **'What\'s on your mind?'**
+  String get whatOnYourMind;
+
+  /// No description provided for @post.
+  ///
+  /// In en, this message translates to:
+  /// **'Post'**
+  String get post;
+
+  /// No description provided for @skip.
+  ///
+  /// In en, this message translates to:
+  /// **'Skip'**
+  String get skip;
+
+  /// No description provided for @cancel.
+  ///
+  /// In en, this message translates to:
+  /// **'Cancel'**
+  String get cancel;
+
+  /// No description provided for @save.
+  ///
+  /// In en, this message translates to:
+  /// **'Save'**
+  String get save;
+
+  /// No description provided for @delete.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete'**
+  String get delete;
+
+  /// No description provided for @edit.
+  ///
+  /// In en, this message translates to:
+  /// **'Edit'**
+  String get edit;
+
+  /// No description provided for @done.
+  ///
+  /// In en, this message translates to:
+  /// **'Done'**
+  String get done;
+
+  /// No description provided for @back.
+  ///
+  /// In en, this message translates to:
+  /// **'Back'**
+  String get back;
+
+  /// No description provided for @share.
+  ///
+  /// In en, this message translates to:
+  /// **'Share'**
+  String get share;
+
+  /// No description provided for @schedule.
+  ///
+  /// In en, this message translates to:
+  /// **'Schedule'**
+  String get schedule;
+
+  /// No description provided for @noScheduleYet.
+  ///
+  /// In en, this message translates to:
+  /// **'No schedule yet'**
+  String get noScheduleYet;
+
+  /// No description provided for @activeSubscription.
+  ///
+  /// In en, this message translates to:
+  /// **'Active — renews {date}'**
+  String activeSubscription(String date);
+
+  /// No description provided for @trialDaysLeft.
+  ///
+  /// In en, this message translates to:
+  /// **'Trial — {days} days left'**
+  String trialDaysLeft(int days);
+
+  /// No description provided for @subscriptionExpired.
+  ///
+  /// In en, this message translates to:
+  /// **'Subscription expired'**
+  String get subscriptionExpired;
+
+  /// No description provided for @restComplete.
+  ///
+  /// In en, this message translates to:
+  /// **'Rest complete!'**
+  String get restComplete;
+
+  /// No description provided for @restTimer.
+  ///
+  /// In en, this message translates to:
+  /// **'Rest'**
+  String get restTimer;
+
+  /// No description provided for @defaultRestTime.
+  ///
+  /// In en, this message translates to:
+  /// **'Default rest time'**
+  String get defaultRestTime;
+
+  /// No description provided for @restTimerSound.
+  ///
+  /// In en, this message translates to:
+  /// **'Rest timer sound'**
+  String get restTimerSound;
+
+  /// No description provided for @trainingReminders.
+  ///
+  /// In en, this message translates to:
+  /// **'Training reminders'**
+  String get trainingReminders;
+
+  /// No description provided for @communityNotifications.
+  ///
+  /// In en, this message translates to:
+  /// **'Community challenges'**
+  String get communityNotifications;
+
+  /// No description provided for @darkMode.
+  ///
+  /// In en, this message translates to:
+  /// **'Dark Mode'**
+  String get darkMode;
+
+  /// No description provided for @notificationsSection.
+  ///
+  /// In en, this message translates to:
+  /// **'Notifications'**
+  String get notificationsSection;
+
+  /// No description provided for @skipRest.
+  ///
+  /// In en, this message translates to:
+  /// **'Skip'**
+  String get skipRest;
+
+  /// No description provided for @addSeconds.
+  ///
+  /// In en, this message translates to:
+  /// **'+{n}s'**
+  String addSeconds(int n);
+
+  /// No description provided for @subtractSeconds.
+  ///
+  /// In en, this message translates to:
+  /// **'-{n}s'**
+  String subtractSeconds(int n);
+
+  /// No description provided for @settings.
+  ///
+  /// In en, this message translates to:
+  /// **'Settings'**
+  String get settings;
+
+  /// No description provided for @bodyStatus.
+  ///
+  /// In en, this message translates to:
+  /// **'Body Status'**
+  String get bodyStatus;
+
+  /// No description provided for @workoutStatus.
+  ///
+  /// In en, this message translates to:
+  /// **'Workout Status'**
+  String get workoutStatus;
+
+  /// No description provided for @lastMonth.
+  ///
+  /// In en, this message translates to:
+  /// **'Last Month'**
+  String get lastMonth;
+
+  /// No description provided for @thisWeek.
+  ///
+  /// In en, this message translates to:
+  /// **'This Week'**
+  String get thisWeek;
+
+  /// No description provided for @welcomeTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Train smarter. Get stronger.'**
+  String get welcomeTitle;
+
+  /// No description provided for @continueButton.
+  ///
+  /// In en, this message translates to:
+  /// **'Continue'**
+  String get continueButton;
+
+  /// No description provided for @passwordStrengthWeak.
+  ///
+  /// In en, this message translates to:
+  /// **'Weak'**
+  String get passwordStrengthWeak;
+
+  /// No description provided for @passwordStrengthMedium.
+  ///
+  /// In en, this message translates to:
+  /// **'Medium'**
+  String get passwordStrengthMedium;
+
+  /// No description provided for @passwordStrengthStrong.
+  ///
+  /// In en, this message translates to:
+  /// **'Strong'**
+  String get passwordStrengthStrong;
+
+  /// No description provided for @emailInvalid.
+  ///
+  /// In en, this message translates to:
+  /// **'Please enter a valid email'**
+  String get emailInvalid;
+
+  /// No description provided for @nameRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'Name is required'**
+  String get nameRequired;
+
+  /// No description provided for @passwordRequirements.
+  ///
+  /// In en, this message translates to:
+  /// **'Min 8 chars, 1 uppercase, 1 number, 1 special'**
+  String get passwordRequirements;
+
+  /// No description provided for @trialFeature1.
+  ///
+  /// In en, this message translates to:
+  /// **'Unlimited workout tracking'**
+  String get trialFeature1;
+
+  /// No description provided for @trialFeature2.
+  ///
+  /// In en, this message translates to:
+  /// **'1300+ exercise library'**
+  String get trialFeature2;
+
+  /// No description provided for @trialFeature3.
+  ///
+  /// In en, this message translates to:
+  /// **'Custom training schedules'**
+  String get trialFeature3;
+
+  /// No description provided for @trialFeature4.
+  ///
+  /// In en, this message translates to:
+  /// **'Progress analytics & records'**
+  String get trialFeature4;
+
+  /// No description provided for @resetPasswordSent.
+  ///
+  /// In en, this message translates to:
+  /// **'Password reset email sent'**
+  String get resetPasswordSent;
+
+  /// No description provided for @orDivider.
+  ///
+  /// In en, this message translates to:
+  /// **'or'**
+  String get orDivider;
+
+  /// No description provided for @signUpError.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not create account. Please try again.'**
+  String get signUpError;
+
+  /// No description provided for @signInError.
+  ///
+  /// In en, this message translates to:
+  /// **'Invalid email or password.'**
+  String get signInError;
+
+  /// No description provided for @goalTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'What\'s your main goal\nfor training ?'**
+  String get goalTitle;
+
+  /// No description provided for @bulking.
+  ///
+  /// In en, this message translates to:
+  /// **'Bulking'**
+  String get bulking;
+
+  /// No description provided for @bulkingDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Focus on building muscle mass and size.'**
+  String get bulkingDesc;
+
+  /// No description provided for @strength.
+  ///
+  /// In en, this message translates to:
+  /// **'Strength'**
+  String get strength;
+
+  /// No description provided for @strengthDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'To lift heavier load and get stronger.'**
+  String get strengthDesc;
+
+  /// No description provided for @cutting.
+  ///
+  /// In en, this message translates to:
+  /// **'Cutting'**
+  String get cutting;
+
+  /// No description provided for @cuttingDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Reduce body fat while keeping muscle.'**
+  String get cuttingDesc;
+
+  /// No description provided for @maintaining.
+  ///
+  /// In en, this message translates to:
+  /// **'Maintaining'**
+  String get maintaining;
+
+  /// No description provided for @maintainingDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Keep your current muscle and fitness.'**
+  String get maintainingDesc;
+
+  /// No description provided for @dataPrivate.
+  ///
+  /// In en, this message translates to:
+  /// **'Your data is private and secure.'**
+  String get dataPrivate;
+
+  /// No description provided for @experienceTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'How much training\nexperience do you have ?'**
+  String get experienceTitle;
+
+  /// No description provided for @base.
+  ///
+  /// In en, this message translates to:
+  /// **'Base'**
+  String get base;
+
+  /// No description provided for @baseYears.
+  ///
+  /// In en, this message translates to:
+  /// **'0-1 years'**
+  String get baseYears;
+
+  /// No description provided for @mid.
+  ///
+  /// In en, this message translates to:
+  /// **'Mid'**
+  String get mid;
+
+  /// No description provided for @midYears.
+  ///
+  /// In en, this message translates to:
+  /// **'1-3 years'**
+  String get midYears;
+
+  /// No description provided for @pro.
+  ///
+  /// In en, this message translates to:
+  /// **'Pro'**
+  String get pro;
+
+  /// No description provided for @proYears.
+  ///
+  /// In en, this message translates to:
+  /// **'3+ years'**
+  String get proYears;
+
+  /// No description provided for @selectGender.
+  ///
+  /// In en, this message translates to:
+  /// **'Select Your Gender'**
+  String get selectGender;
+
+  /// No description provided for @genderSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'This helps us personalize your\ntraining plan.'**
+  String get genderSubtitle;
+
+  /// No description provided for @birthdayTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'What\'s your birthday?'**
+  String get birthdayTitle;
+
+  /// No description provided for @weightTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'What is your weight?'**
+  String get weightTitle;
+
+  /// No description provided for @heightTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'What is your height?'**
+  String get heightTitle;
+
+  /// No description provided for @targetZonesTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'What are your target\nzones?'**
+  String get targetZonesTitle;
+
+  /// No description provided for @arms.
+  ///
+  /// In en, this message translates to:
+  /// **'Arms'**
+  String get arms;
+
+  /// No description provided for @abs.
+  ///
+  /// In en, this message translates to:
+  /// **'Abs'**
+  String get abs;
+
+  /// No description provided for @pecs.
+  ///
+  /// In en, this message translates to:
+  /// **'Pecs'**
+  String get pecs;
+
+  /// No description provided for @targetBack.
+  ///
+  /// In en, this message translates to:
+  /// **'Back'**
+  String get targetBack;
+
+  /// No description provided for @legs.
+  ///
+  /// In en, this message translates to:
+  /// **'Legs'**
+  String get legs;
+
+  /// No description provided for @all.
+  ///
+  /// In en, this message translates to:
+  /// **'All'**
+  String get all;
+
+  /// No description provided for @kgs.
+  ///
+  /// In en, this message translates to:
+  /// **'kgs'**
+  String get kgs;
+
+  /// No description provided for @lbs.
+  ///
+  /// In en, this message translates to:
+  /// **'lbs'**
+  String get lbs;
+
+  /// No description provided for @cm.
+  ///
+  /// In en, this message translates to:
+  /// **'cm'**
+  String get cm;
+
+  /// No description provided for @ft.
+  ///
+  /// In en, this message translates to:
+  /// **'ft'**
+  String get ft;
+
+  /// No description provided for @freeTrial.
+  ///
+  /// In en, this message translates to:
+  /// **'Free Trial'**
+  String get freeTrial;
+
+  /// No description provided for @yearly.
+  ///
+  /// In en, this message translates to:
+  /// **'Yearly'**
+  String get yearly;
+
+  /// No description provided for @monthly.
+  ///
+  /// In en, this message translates to:
+  /// **'Monthly'**
+  String get monthly;
+
+  /// No description provided for @dmMessages.
+  ///
+  /// In en, this message translates to:
+  /// **'Messages'**
+  String get dmMessages;
+
+  /// No description provided for @dmSearch.
+  ///
+  /// In en, this message translates to:
+  /// **'Search'**
+  String get dmSearch;
+
+  /// No description provided for @dmNoMessagesYet.
+  ///
+  /// In en, this message translates to:
+  /// **'No messages yet'**
+  String get dmNoMessagesYet;
+
+  /// No description provided for @dmStartChatting.
+  ///
+  /// In en, this message translates to:
+  /// **'Start chatting with your Gym Bros!'**
+  String get dmStartChatting;
+
+  /// No description provided for @dmNewConversationUnavailable.
+  ///
+  /// In en, this message translates to:
+  /// **'New conversation not supported in v1'**
+  String get dmNewConversationUnavailable;
+
+  /// No description provided for @dmStartConversation.
+  ///
+  /// In en, this message translates to:
+  /// **'Start your conversation\nwith {name}'**
+  String dmStartConversation(String name);
+
+  /// No description provided for @dmMessageHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Message...'**
+  String get dmMessageHint;
+
+  /// No description provided for @dmSendFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Message failed to send. Please try again.'**
+  String get dmSendFailed;
+
+  /// No description provided for @dmSavedToSchedules.
+  ///
+  /// In en, this message translates to:
+  /// **'Saved to your schedules!'**
+  String get dmSavedToSchedules;
+
+  /// No description provided for @dmCamera.
+  ///
+  /// In en, this message translates to:
+  /// **'Camera'**
+  String get dmCamera;
+
+  /// No description provided for @dmGallery.
+  ///
+  /// In en, this message translates to:
+  /// **'Gallery'**
+  String get dmGallery;
+
+  /// No description provided for @dmSchedule.
+  ///
+  /// In en, this message translates to:
+  /// **'Schedule'**
+  String get dmSchedule;
+
+  /// No description provided for @dmShareSchedule.
+  ///
+  /// In en, this message translates to:
+  /// **'Share Schedule'**
+  String get dmShareSchedule;
+
+  /// No description provided for @dmNoSchedulesToShare.
+  ///
+  /// In en, this message translates to:
+  /// **'No schedules to share'**
+  String get dmNoSchedulesToShare;
+
+  /// No description provided for @dmSharedSchedule.
+  ///
+  /// In en, this message translates to:
+  /// **'Shared Schedule'**
+  String get dmSharedSchedule;
+
+  /// No description provided for @dmInvalidSchedule.
+  ///
+  /// In en, this message translates to:
+  /// **'Invalid schedule data'**
+  String get dmInvalidSchedule;
+
+  /// No description provided for @dmSaveToMySchedules.
+  ///
+  /// In en, this message translates to:
+  /// **'Save to my schedules'**
+  String get dmSaveToMySchedules;
+
+  /// No description provided for @dmUploading.
+  ///
+  /// In en, this message translates to:
+  /// **'Uploading...'**
+  String get dmUploading;
+
+  /// No description provided for @dmSentMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Sent a message'**
+  String get dmSentMessage;
+
+  /// No description provided for @dmImageTooLarge.
+  ///
+  /// In en, this message translates to:
+  /// **'Image exceeds 10 MB limit.'**
+  String get dmImageTooLarge;
+
+  /// No description provided for @dmDaysCount.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} days'**
+  String dmDaysCount(int count);
+
+  /// No description provided for @dmWorkout.
+  ///
+  /// In en, this message translates to:
+  /// **'Workout'**
+  String get dmWorkout;
+
+  /// No description provided for @addDayTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Add Day'**
+  String get addDayTitle;
+
+  /// No description provided for @oneStepCloserBro.
+  ///
+  /// In en, this message translates to:
+  /// **'One step closer bro'**
+  String get oneStepCloserBro;
+
+  /// No description provided for @newProgram.
+  ///
+  /// In en, this message translates to:
+  /// **'New Program'**
+  String get newProgram;
+
+  /// No description provided for @nextSessionAfter.
+  ///
+  /// In en, this message translates to:
+  /// **'Next session after {hours}h'**
+  String nextSessionAfter(int hours);
+
+  /// No description provided for @readyToTrain.
+  ///
+  /// In en, this message translates to:
+  /// **'Ready to train, Bro!'**
+  String get readyToTrain;
+
+  /// No description provided for @restDaysBetween.
+  ///
+  /// In en, this message translates to:
+  /// **'Rest Days Between'**
+  String get restDaysBetween;
+
+  /// No description provided for @rest.
+  ///
+  /// In en, this message translates to:
+  /// **'Rest'**
+  String get rest;
+
+  /// No description provided for @filterMuscle.
+  ///
+  /// In en, this message translates to:
+  /// **'Muscle'**
+  String get filterMuscle;
+
+  /// No description provided for @filterEquipment.
+  ///
+  /// In en, this message translates to:
+  /// **'Equipment'**
+  String get filterEquipment;
+
+  /// No description provided for @filterDifficulty.
+  ///
+  /// In en, this message translates to:
+  /// **'Difficulty'**
+  String get filterDifficulty;
+
+  /// No description provided for @readyInHoursMuscle.
+  ///
+  /// In en, this message translates to:
+  /// **'Ready in {hours}h ({muscle} recovering)'**
+  String readyInHoursMuscle(int hours, String muscle);
+
+  /// No description provided for @noExercisesFound.
+  ///
+  /// In en, this message translates to:
+  /// **'No exercises found for this combination, Bro!'**
+  String get noExercisesFound;
+
+  /// No description provided for @allMuscles.
+  ///
+  /// In en, this message translates to:
+  /// **'All Muscles'**
+  String get allMuscles;
+
+  /// No description provided for @allEquipment.
+  ///
+  /// In en, this message translates to:
+  /// **'All Equipment'**
+  String get allEquipment;
+
+  /// No description provided for @allDifficulties.
+  ///
+  /// In en, this message translates to:
+  /// **'All Levels'**
+  String get allDifficulties;
+}
+
+class _AppLocalizationsDelegate
+    extends LocalizationsDelegate<AppLocalizations> {
+  const _AppLocalizationsDelegate();
+
+  @override
+  Future<AppLocalizations> load(Locale locale) {
+    return SynchronousFuture<AppLocalizations>(lookupAppLocalizations(locale));
+  }
+
+  @override
+  bool isSupported(Locale locale) =>
+      <String>['de', 'en', 'es', 'fr'].contains(locale.languageCode);
+
+  @override
+  bool shouldReload(_AppLocalizationsDelegate old) => false;
+}
+
+AppLocalizations lookupAppLocalizations(Locale locale) {
+  // Lookup logic when only language code is specified.
+  switch (locale.languageCode) {
+    case 'de':
+      return AppLocalizationsDe();
+    case 'en':
+      return AppLocalizationsEn();
+    case 'es':
+      return AppLocalizationsEs();
+    case 'fr':
+      return AppLocalizationsFr();
+  }
+
+  throw FlutterError(
+    'AppLocalizations.delegate failed to load unsupported locale "$locale". This is likely '
+    'an issue with the localizations generation tool. Please file an issue '
+    'on GitHub with a reproducible sample app and the gen-l10n configuration '
+    'that was used.',
+  );
+}

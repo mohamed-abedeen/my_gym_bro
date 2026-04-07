@@ -1,0 +1,713 @@
+// ignore: unused_import
+import 'package:intl/intl.dart' as intl;
+import 'app_localizations.dart';
+
+// ignore_for_file: type=lint
+
+/// The translations for Spanish Castilian (`es`).
+class AppLocalizationsEs extends AppLocalizations {
+  AppLocalizationsEs([String locale = 'es']) : super(locale);
+
+  @override
+  String get appName => 'My Gym Bro';
+
+  @override
+  String get tabHome => 'Inicio';
+
+  @override
+  String get tabWorkout => 'Entrenamiento';
+
+  @override
+  String get tabLog => 'Registro';
+
+  @override
+  String get tabCommunity => 'Comunidad';
+
+  @override
+  String get status => 'Estado';
+
+  @override
+  String get dailyChallenge => 'Reto diario';
+
+  @override
+  String get competeFriends => 'Compite con tus amigos';
+
+  @override
+  String get startTrial => 'Prueba gratis 7 días';
+
+  @override
+  String get createSchedule => 'Crear programa';
+
+  @override
+  String get buildYourFlow => 'Crea tu rutina o encuentra un programa pro';
+
+  @override
+  String scheduleRemaining(int hours) {
+    return '${hours}h restantes';
+  }
+
+  @override
+  String get nextSession => 'Próxima sesión';
+
+  @override
+  String get sessionLog => 'Registro de sesiones';
+
+  @override
+  String get statusLog => 'Registro de estado';
+
+  @override
+  String get weeklyProgress => 'Progreso semanal';
+
+  @override
+  String get recovered => 'Recuperado';
+
+  @override
+  String get recovering => 'Recuperándose';
+
+  @override
+  String get undertrained => 'Sin entrenar';
+
+  @override
+  String get healingTitle => 'Recuperación...';
+
+  @override
+  String get healingSubtitle => 'Tu cuerpo necesita descanso';
+
+  @override
+  String get sets => 'Series';
+
+  @override
+  String get reps => 'Reps';
+
+  @override
+  String get weight => 'Peso';
+
+  @override
+  String get startWorkout => 'Iniciar entrenamiento';
+
+  @override
+  String get finishWorkout => 'Terminar entrenamiento';
+
+  @override
+  String get restDay => 'Día de descanso';
+
+  @override
+  String get calBurned => 'Calorías quemadas';
+
+  @override
+  String get calBurnedLastWeek => 'Calorías quemadas la semana pasada';
+
+  @override
+  String get totalDuration => 'Duración total';
+
+  @override
+  String get avgStrength => 'Fuerza promedio';
+
+  @override
+  String get records => 'Récords';
+
+  @override
+  String get volume => 'Volumen';
+
+  @override
+  String get totalVolume => 'Volumen total';
+
+  @override
+  String get totalTime => 'Tiempo total';
+
+  @override
+  String get howTo => 'Cómo hacerlo';
+
+  @override
+  String get targetMuscles => 'Músculos objetivo';
+
+  @override
+  String get secondaryMuscles => 'Músculos secundarios';
+
+  @override
+  String get equipment => 'Equipamiento';
+
+  @override
+  String get instructions => 'Instrucciones';
+
+  @override
+  String get searchExercises => 'Buscar ejercicios...';
+
+  @override
+  String get noRecordsYet => 'Sin récords todavía';
+
+  @override
+  String get yourRecords => 'Tus récords';
+
+  @override
+  String bestSet(double weight, int reps) {
+    return 'Mejor: ${weight}kg × $reps reps';
+  }
+
+  @override
+  String get addSet => 'Añadir serie';
+
+  @override
+  String get addExercise => 'Añadir ejercicio';
+
+  @override
+  String get addDay => 'Añadir días';
+
+  @override
+  String get scheduleName => 'Nombre del programa';
+
+  @override
+  String get todaySession => 'Sesión de hoy';
+
+  @override
+  String get lastWeek => 'Semana pasada';
+
+  @override
+  String get today => 'Hoy';
+
+  @override
+  String get tomorrow => 'Mañana';
+
+  @override
+  String get yesterday => 'Ayer';
+
+  @override
+  String get cancelAnytime =>
+      'Cancela cuando quieras. Sin cargos durante la prueba.';
+
+  @override
+  String get restoreSubscription => 'Restaurar compras';
+
+  @override
+  String get monthlyPlan => 'Mensual';
+
+  @override
+  String get yearlyPlan => 'Anual';
+
+  @override
+  String get bestValue => 'Mejor oferta';
+
+  @override
+  String get trialBadge => '7 días gratis';
+
+  @override
+  String get signIn => 'Iniciar sesión';
+
+  @override
+  String get signUp => 'Crear cuenta';
+
+  @override
+  String get continueWithApple => 'Continuar con Apple';
+
+  @override
+  String get continueWithGoogle => 'Continuar con Google';
+
+  @override
+  String get emailLabel => 'Correo electrónico';
+
+  @override
+  String get passwordLabel => 'Contraseña';
+
+  @override
+  String get nameLabel => 'Tu nombre';
+
+  @override
+  String get forgotPassword => '¿Olvidaste tu contraseña?';
+
+  @override
+  String get noAccount => '¿No tienes cuenta?';
+
+  @override
+  String get alreadyAccount => 'Ya tengo una cuenta';
+
+  @override
+  String get chooseLanguage => 'Elige tu idioma';
+
+  @override
+  String get chooseGoal => '¿Cuál es tu objetivo?';
+
+  @override
+  String get buildMuscle => 'Ganar músculo';
+
+  @override
+  String get loseWeight => 'Perder peso';
+
+  @override
+  String get getStronger => 'Ganar fuerza';
+
+  @override
+  String get chooseExperience => '¿Tu nivel?';
+
+  @override
+  String get beginner => 'Principiante';
+
+  @override
+  String get intermediate => 'Intermedio';
+
+  @override
+  String get advanced => 'Avanzado';
+
+  @override
+  String get letsGo => '¡Vamos!';
+
+  @override
+  String get trialStarted => 'Tu prueba gratuita de 7 días comienza ahora';
+
+  @override
+  String get securityWarningTitle => 'Advertencia de seguridad';
+
+  @override
+  String get securityWarningBody =>
+      'Este dispositivo parece comprometido. My Gym Bro no puede ejecutarse de forma segura.';
+
+  @override
+  String get closeApp => 'Cerrar aplicación';
+
+  @override
+  String get biometricPrompt => 'Desbloquear My Gym Bro';
+
+  @override
+  String get language => 'Idioma';
+
+  @override
+  String get weightUnit => 'Unidad de peso';
+
+  @override
+  String get biometricLock => 'Bloqueo biométrico';
+
+  @override
+  String get manageSubscription => 'Gestionar suscripción';
+
+  @override
+  String get exportData => 'Exportar mis datos';
+
+  @override
+  String get clearCache => 'Limpiar caché comunidad';
+
+  @override
+  String get deleteAccount => 'Eliminar cuenta';
+
+  @override
+  String get deleteAccountConfirm =>
+      'Esto eliminará permanentemente todos tus datos. No se puede deshacer.';
+
+  @override
+  String get deleteAccountButton => 'Eliminar mi cuenta';
+
+  @override
+  String lastSynced(String time) {
+    return 'Sincronizado $time';
+  }
+
+  @override
+  String get syncNow => 'Sincronizar ahora';
+
+  @override
+  String get rateApp => 'Valorar la app';
+
+  @override
+  String get contactSupport => 'Contactar soporte';
+
+  @override
+  String get privacyPolicy => 'Política de privacidad';
+
+  @override
+  String get termsOfService => 'Términos de servicio';
+
+  @override
+  String appVersion(String version) {
+    return 'Versión $version';
+  }
+
+  @override
+  String get pendingSync => 'Sync pendiente';
+
+  @override
+  String get synced => 'Sincronizado';
+
+  @override
+  String get syncError => 'Error de sync';
+
+  @override
+  String get loadingExercises => 'Cargando ejercicios...';
+
+  @override
+  String get whatOnYourMind => '¿Qué hay de nuevo?';
+
+  @override
+  String get post => 'Publicar';
+
+  @override
+  String get skip => 'Omitir';
+
+  @override
+  String get cancel => 'Cancelar';
+
+  @override
+  String get save => 'Guardar';
+
+  @override
+  String get delete => 'Eliminar';
+
+  @override
+  String get edit => 'Editar';
+
+  @override
+  String get done => 'Listo';
+
+  @override
+  String get back => 'Atrás';
+
+  @override
+  String get share => 'Compartir';
+
+  @override
+  String get schedule => 'Programa';
+
+  @override
+  String get noScheduleYet => 'Sin programa todavía';
+
+  @override
+  String activeSubscription(String date) {
+    return 'Activo — se renueva el $date';
+  }
+
+  @override
+  String trialDaysLeft(int days) {
+    return 'Prueba — $days días restantes';
+  }
+
+  @override
+  String get subscriptionExpired => 'Suscripción expirada';
+
+  @override
+  String get restComplete => '¡Descanso completado!';
+
+  @override
+  String get restTimer => 'Descanso';
+
+  @override
+  String get defaultRestTime => 'Tiempo de descanso predeterminado';
+
+  @override
+  String get restTimerSound => 'Sonido del temporizador';
+
+  @override
+  String get trainingReminders => 'Recordatorios de entrenamiento';
+
+  @override
+  String get communityNotifications => 'Retos de comunidad';
+
+  @override
+  String get darkMode => 'Modo oscuro';
+
+  @override
+  String get notificationsSection => 'Notificaciones';
+
+  @override
+  String get skipRest => 'Omitir';
+
+  @override
+  String addSeconds(int n) {
+    return '+${n}s';
+  }
+
+  @override
+  String subtractSeconds(int n) {
+    return '-${n}s';
+  }
+
+  @override
+  String get settings => 'Ajustes';
+
+  @override
+  String get bodyStatus => 'Estado corporal';
+
+  @override
+  String get workoutStatus => 'Estado entrenamiento';
+
+  @override
+  String get lastMonth => 'Mes pasado';
+
+  @override
+  String get thisWeek => 'Esta semana';
+
+  @override
+  String get welcomeTitle => 'Entrena mejor. Hazte más fuerte.';
+
+  @override
+  String get continueButton => 'Continuar';
+
+  @override
+  String get passwordStrengthWeak => 'Débil';
+
+  @override
+  String get passwordStrengthMedium => 'Media';
+
+  @override
+  String get passwordStrengthStrong => 'Fuerte';
+
+  @override
+  String get emailInvalid => 'Introduce un correo válido';
+
+  @override
+  String get nameRequired => 'El nombre es obligatorio';
+
+  @override
+  String get passwordRequirements =>
+      'Mín 8 caracteres, 1 mayúscula, 1 número, 1 especial';
+
+  @override
+  String get trialFeature1 => 'Seguimiento ilimitado de entrenamientos';
+
+  @override
+  String get trialFeature2 => 'Biblioteca de 1300+ ejercicios';
+
+  @override
+  String get trialFeature3 => 'Programas de entrenamiento personalizados';
+
+  @override
+  String get trialFeature4 => 'Analíticas de progreso y récords';
+
+  @override
+  String get resetPasswordSent => 'Correo de restablecimiento enviado';
+
+  @override
+  String get orDivider => 'o';
+
+  @override
+  String get signUpError => 'No se pudo crear la cuenta. Inténtalo de nuevo.';
+
+  @override
+  String get signInError => 'Correo o contraseña incorrectos.';
+
+  @override
+  String get goalTitle => 'What\'s your main goal\nfor training ?';
+
+  @override
+  String get bulking => 'Bulking';
+
+  @override
+  String get bulkingDesc => 'Focus on building muscle mass and size.';
+
+  @override
+  String get strength => 'Strength';
+
+  @override
+  String get strengthDesc => 'To lift heavier load and get stronger.';
+
+  @override
+  String get cutting => 'Cutting';
+
+  @override
+  String get cuttingDesc => 'Reduce body fat while keeping muscle.';
+
+  @override
+  String get maintaining => 'Maintaining';
+
+  @override
+  String get maintainingDesc => 'Keep your current muscle and fitness.';
+
+  @override
+  String get dataPrivate => 'Your data is private and secure.';
+
+  @override
+  String get experienceTitle => 'How much training\nexperience do you have ?';
+
+  @override
+  String get base => 'Base';
+
+  @override
+  String get baseYears => '0-1 years';
+
+  @override
+  String get mid => 'Mid';
+
+  @override
+  String get midYears => '1-3 years';
+
+  @override
+  String get pro => 'Pro';
+
+  @override
+  String get proYears => '3+ years';
+
+  @override
+  String get selectGender => 'Select Your Gender';
+
+  @override
+  String get genderSubtitle => 'This helps us personalize your\ntraining plan.';
+
+  @override
+  String get birthdayTitle => 'What\'s your birthday?';
+
+  @override
+  String get weightTitle => 'What is your weight?';
+
+  @override
+  String get heightTitle => 'What is your height?';
+
+  @override
+  String get targetZonesTitle => 'What are your target\nzones?';
+
+  @override
+  String get arms => 'Arms';
+
+  @override
+  String get abs => 'Abs';
+
+  @override
+  String get pecs => 'Pecs';
+
+  @override
+  String get targetBack => 'Back';
+
+  @override
+  String get legs => 'Legs';
+
+  @override
+  String get all => 'All';
+
+  @override
+  String get kgs => 'kgs';
+
+  @override
+  String get lbs => 'lbs';
+
+  @override
+  String get cm => 'cm';
+
+  @override
+  String get ft => 'ft';
+
+  @override
+  String get freeTrial => 'Free Trial';
+
+  @override
+  String get yearly => 'Yearly';
+
+  @override
+  String get monthly => 'Monthly';
+
+  @override
+  String get dmMessages => 'Mensajes';
+
+  @override
+  String get dmSearch => 'Buscar';
+
+  @override
+  String get dmNoMessagesYet => 'Aún no hay mensajes';
+
+  @override
+  String get dmStartChatting => '¡Chatea con tus Gym Bros!';
+
+  @override
+  String get dmNewConversationUnavailable =>
+      'Nueva conversación no disponible en v1';
+
+  @override
+  String dmStartConversation(String name) {
+    return 'Empieza tu conversación\ncon $name';
+  }
+
+  @override
+  String get dmMessageHint => 'Mensaje...';
+
+  @override
+  String get dmSendFailed =>
+      'No se pudo enviar el mensaje. Inténtalo de nuevo.';
+
+  @override
+  String get dmSavedToSchedules => '¡Guardado en tus programas!';
+
+  @override
+  String get dmCamera => 'Cámara';
+
+  @override
+  String get dmGallery => 'Galería';
+
+  @override
+  String get dmSchedule => 'Programa';
+
+  @override
+  String get dmShareSchedule => 'Compartir programa';
+
+  @override
+  String get dmNoSchedulesToShare => 'No hay programas para compartir';
+
+  @override
+  String get dmSharedSchedule => 'Programa compartido';
+
+  @override
+  String get dmInvalidSchedule => 'Datos de programa no válidos';
+
+  @override
+  String get dmSaveToMySchedules => 'Guardar en mis programas';
+
+  @override
+  String get dmUploading => 'Subiendo...';
+
+  @override
+  String get dmSentMessage => 'Mensaje enviado';
+
+  @override
+  String get dmImageTooLarge => 'La imagen supera el límite de 10 MB.';
+
+  @override
+  String dmDaysCount(int count) {
+    return '$count días';
+  }
+
+  @override
+  String get dmWorkout => 'Entrenamiento';
+
+  @override
+  String get addDayTitle => 'Añadir día';
+
+  @override
+  String get oneStepCloserBro => 'Un paso más cerca, bro';
+
+  @override
+  String get newProgram => 'Nuevo programa';
+
+  @override
+  String nextSessionAfter(int hours) {
+    return 'Próxima sesión en ${hours}h';
+  }
+
+  @override
+  String get readyToTrain => '¡Listo para entrenar, Bro!';
+
+  @override
+  String get restDaysBetween => 'Días de descanso entre';
+
+  @override
+  String get rest => 'Descanso';
+
+  @override
+  String get filterMuscle => 'Músculo';
+
+  @override
+  String get filterEquipment => 'Equipo';
+
+  @override
+  String get filterDifficulty => 'Dificultad';
+
+  @override
+  String readyInHoursMuscle(int hours, String muscle) {
+    return 'Listo en ${hours}h ($muscle recuperándose)';
+  }
+
+  @override
+  String get noExercisesFound =>
+      'No se encontraron ejercicios para esta combinación, Bro!';
+
+  @override
+  String get allMuscles => 'Todos los músculos';
+
+  @override
+  String get allEquipment => 'Todo el equipo';
+
+  @override
+  String get allDifficulties => 'Todos los niveles';
+}
