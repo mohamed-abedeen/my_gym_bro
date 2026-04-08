@@ -53,52 +53,47 @@ class _MyGymBroScaffoldState extends ConsumerState<MyGymBroScaffold> {
               // (fading out) and new (fading in) child. The incoming child
               // has the current key; the outgoing has the previous key.
               final isIncoming = (child.key == ValueKey(idx));
-              final slideOffset = isIncoming
-                  ? (goingForward
-                      ? const Offset(0.15, 0) // new page enters from right
-                      : const Offset(-0.15, 0)) // new page enters from left
-                  : (goingForward
-                      ? const Offset(-0.08, 0) // old page exits to left
-                      : const Offset(0.08, 0)); // old page exits to right
+              final slideOffset =
+                  isIncoming
+                      ? (goingForward
+                          ? const Offset(0.15, 0) // new page enters from right
+                          : const Offset(-0.15, 0)) // new page enters from left
+                      : (goingForward
+                          ? const Offset(-0.08, 0) // old page exits to left
+                          : const Offset(0.08, 0)); // old page exits to right
 
               return SlideTransition(
                 position: Tween<Offset>(
                   begin: slideOffset,
                   end: Offset.zero,
                 ).animate(animation),
-                child: FadeTransition(
-                  opacity: animation,
-                  child: child,
-                ),
+                child: FadeTransition(opacity: animation, child: child),
               );
             },
-            child: KeyedSubtree(
-              key: ValueKey(idx),
-              child: _pages[idx],
-            ),
+            child: KeyedSubtree(key: ValueKey(idx), child: _pages[idx]),
           ),
 
           // ── Faded lime glow at bottom ──
-          Positioned(
-            left: 0,
-            right: 0,
-            bottom: 0,
-            height: MediaQuery.of(context).padding.bottom + 1,
-            child: IgnorePointer(
-              child: Container(
-                decoration: const BoxDecoration(
-                  gradient: LinearGradient(
-                    begin: Alignment.bottomCenter,
-                    end: Alignment.topCenter,
-                    colors: [
-                      Color(0x40D2FF00), // lime at ~25% opacity
-                      Color(0x00D2FF00), // fully transparent
-                    ],
-                  ),
-                ),
-              ),
-            ),
-          ),
+          // Positioned(
+          //   left: 0,
+          //   right: 0,
+          //   bottom: 0,
+          //   height: MediaQuery.of(context).padding.bottom + 1,
+          //   child: IgnorePointer(
+          //     child: Container(
+          //       decoration: const BoxDecoration(
+          //         gradient: LinearGradient(
+          //           begin: Alignment.bottomCenter,
+          //           end: Alignment.topCenter,
+          //           colors: [
+          //             Color(0x40D2FF00), // lime at ~25% opacity
+          //             Color(0x00D2FF00), // fully transparent
+          //           ],
+          //         ),
+          //       ),
+          //     ),
+          //   ),
+          // ),
 
           // ── Floating nav pill ──
           const BottomNavPill(),

@@ -63,8 +63,14 @@ class _CommunityScreenState extends ConsumerState<CommunityScreen> {
                         description:
                             'A fundamental compound movement that builds massive lower-body power and functional strength. By mimicking a natural sitting motion, it engages multiple muscle groups simultaneously, boosting metabolism and improving overall athletic performance.',
                         topComments: const [
-                          _CommentData('Omar', 'This is insane bro, keep pushing!'),
-                          _CommentData('Ali', 'What weight are you squatting here?'),
+                          _CommentData(
+                            'Omar',
+                            'This is insane bro, keep pushing!',
+                          ),
+                          _CommentData(
+                            'Ali',
+                            'What weight are you squatting here?',
+                          ),
                           _CommentData('Nasser', 'Form looks clean 💪'),
                         ],
                       ),
@@ -78,8 +84,14 @@ class _CommunityScreenState extends ConsumerState<CommunityScreen> {
                             'Building strength one rep at a time. Consistency is key to unlocking your full potential.',
                         topComments: const [
                           _CommentData('Aziz', 'Let\'s go champ!'),
-                          _CommentData('Khaled', 'Consistency is everything 🔥'),
-                          _CommentData('Yusuf', 'Need to train with you sometime'),
+                          _CommentData(
+                            'Khaled',
+                            'Consistency is everything 🔥',
+                          ),
+                          _CommentData(
+                            'Yusuf',
+                            'Need to train with you sometime',
+                          ),
                         ],
                       ),
                       // Bottom padding for composer + nav
@@ -138,16 +150,24 @@ class _Header extends StatelessWidget {
           SizedBox(width: 14.w),
 
           // Notifications icon
-          Icon(Icons.notifications_outlined, color: colors.textPrimary, size: 24.sp),
+          Icon(
+            Icons.notifications_outlined,
+            color: colors.textPrimary,
+            size: 24.sp,
+          ),
           SizedBox(width: 14.w),
 
           // Comment icon (DMs)
           GestureDetector(
             onTap: () {
               // using GoRouter's context.push so shell hides bottom nav
-              GoRouter.of(context).push('/dm'); 
+              GoRouter.of(context).push('/dm');
             },
-            child: Icon(Icons.chat_bubble_outline, color: colors.textPrimary, size: 24.sp),
+            child: Icon(
+              Icons.chat_bubble_outline,
+              color: colors.textPrimary,
+              size: 24.sp,
+            ),
           ),
           SizedBox(width: 16.w),
 
@@ -164,8 +184,7 @@ class _Header extends StatelessWidget {
                 color: Colors.grey[700],
                 borderRadius: BorderRadius.circular(33.r),
               ),
-              child: Icon(Icons.person,
-                  color: colors.textPrimary, size: 24.sp),
+              child: Icon(Icons.person, color: colors.textPrimary, size: 24.sp),
             ),
           ),
         ],
@@ -222,8 +241,7 @@ class _OwnStoryAvatar extends StatelessWidget {
               color: Colors.grey[800],
               borderRadius: BorderRadius.circular(42.5.r),
             ),
-            child: Icon(Icons.person,
-                color: colors.textSecondary, size: 40.sp),
+            child: Icon(Icons.person, color: colors.textSecondary, size: 40.sp),
           ),
           // Green + button
           Positioned(
@@ -294,8 +312,11 @@ class _FriendStory extends StatelessWidget {
                     color: _avatarColors[index % _avatarColors.length],
                     shape: BoxShape.circle,
                   ),
-                  child: Icon(Icons.person,
-                      color: colors.textSecondary, size: 36.sp),
+                  child: Icon(
+                    Icons.person,
+                    color: colors.textSecondary,
+                    size: 36.sp,
+                  ),
                 ),
               ),
             ),
@@ -345,8 +366,11 @@ class _PostCard extends StatelessWidget {
                   color: Colors.grey[700],
                   borderRadius: BorderRadius.circular(42.5.r),
                 ),
-                child: Icon(Icons.person,
-                    color: colors.textSecondary, size: 18.sp),
+                child: Icon(
+                  Icons.person,
+                  color: colors.textSecondary,
+                  size: 18.sp,
+                ),
               ),
               SizedBox(width: 6.w),
               // Name
@@ -360,8 +384,7 @@ class _PostCard extends StatelessWidget {
               ),
               const Spacer(),
               // Menu icon (list)
-              Icon(Icons.menu_rounded,
-                  color: colors.textPrimary, size: 18.sp),
+              Icon(Icons.menu_rounded, color: colors.textPrimary, size: 18.sp),
             ],
           ),
         ),
@@ -388,8 +411,11 @@ class _PostCard extends StatelessWidget {
                   ),
                 ),
                 child: Center(
-                  child: Icon(Icons.fitness_center,
-                      color: colors.textSecondary, size: 48.sp),
+                  child: Icon(
+                    Icons.fitness_center,
+                    color: colors.textSecondary,
+                    size: 48.sp,
+                  ),
                 ),
               ),
             ],
@@ -416,29 +442,44 @@ class _PostCard extends StatelessWidget {
                       height: 20.h,
                     ),
                     SizedBox(width: 4.w),
-                    Text(likes,
-                        style: TextStyle(
-                            fontSize: 10.sp,
-                            fontWeight: FontWeight.w700,
-                            color: colors.textPrimary)),
+                    Text(
+                      likes,
+                      style: TextStyle(
+                        fontSize: 10.sp,
+                        fontWeight: FontWeight.w700,
+                        color: colors.textPrimary,
+                      ),
+                    ),
                     SizedBox(width: 14.w),
-                    Icon(Icons.chat_bubble_outline_rounded,
-                        color: colors.textPrimary, size: 14.sp),
+                    Icon(
+                      Icons.chat_bubble_outline_rounded,
+                      color: colors.textPrimary,
+                      size: 14.sp,
+                    ),
                     SizedBox(width: 4.w),
-                    Text(comments,
-                        style: TextStyle(
-                            fontSize: 10.sp,
-                            fontWeight: FontWeight.w700,
-                            color: colors.textPrimary)),
+                    Text(
+                      comments,
+                      style: TextStyle(
+                        fontSize: 10.sp,
+                        fontWeight: FontWeight.w700,
+                        color: colors.textPrimary,
+                      ),
+                    ),
                     SizedBox(width: 14.w),
-                    Icon(Icons.bookmark_border_rounded,
-                        color: colors.textPrimary, size: 14.sp),
+                    Icon(
+                      Icons.bookmark_border_rounded,
+                      color: colors.textPrimary,
+                      size: 14.sp,
+                    ),
                     SizedBox(width: 4.w),
-                    Text(bookmarks,
-                        style: TextStyle(
-                            fontSize: 10.sp,
-                            fontWeight: FontWeight.w700,
-                            color: colors.textPrimary)),
+                    Text(
+                      bookmarks,
+                      style: TextStyle(
+                        fontSize: 10.sp,
+                        fontWeight: FontWeight.w700,
+                        color: colors.textPrimary,
+                      ),
+                    ),
                   ],
                 ),
               ),
@@ -447,8 +488,11 @@ class _PostCard extends StatelessWidget {
               _GlassPill(
                 width: 30.w,
                 height: 29.h,
-                child: Icon(Icons.send_rounded,
-                    color: colors.textPrimary, size: 14.sp),
+                child: Icon(
+                  Icons.send_rounded,
+                  color: colors.textPrimary,
+                  size: 14.sp,
+                ),
               ),
             ],
           ),
@@ -479,52 +523,60 @@ class _PostCard extends StatelessWidget {
             padding: EdgeInsets.symmetric(horizontal: 24.w),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
-              children: topComments.map((c) => Padding(
-                padding: EdgeInsets.only(bottom: 6.h),
-                child: Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    // Commenter avatar
-                    Container(
-                      width: 22.w,
-                      height: 22.h,
-                      decoration: BoxDecoration(
-                        color: Colors.grey[700],
-                        shape: BoxShape.circle,
-                      ),
-                      child: Icon(Icons.person,
-                          color: colors.textSecondary, size: 12.sp),
-                    ),
-                    SizedBox(width: 6.w),
-                    Expanded(
-                      child: RichText(
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
-                        text: TextSpan(
-                          children: [
-                            TextSpan(
-                              text: '${c.name}  ',
-                              style: TextStyle(
-                                fontSize: 10.sp,
-                                fontWeight: FontWeight.w700,
-                                color: colors.textPrimary,
+              children:
+                  topComments
+                      .map(
+                        (c) => Padding(
+                          padding: EdgeInsets.only(bottom: 6.h),
+                          child: Row(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              // Commenter avatar
+                              Container(
+                                width: 22.w,
+                                height: 22.h,
+                                decoration: BoxDecoration(
+                                  color: Colors.grey[700],
+                                  shape: BoxShape.circle,
+                                ),
+                                child: Icon(
+                                  Icons.person,
+                                  color: colors.textSecondary,
+                                  size: 12.sp,
+                                ),
                               ),
-                            ),
-                            TextSpan(
-                              text: c.text,
-                              style: TextStyle(
-                                fontSize: 10.sp,
-                                fontWeight: FontWeight.w400,
-                                color: colors.subtitleText,
+                              SizedBox(width: 6.w),
+                              Expanded(
+                                child: RichText(
+                                  maxLines: 2,
+                                  overflow: TextOverflow.ellipsis,
+                                  text: TextSpan(
+                                    children: [
+                                      TextSpan(
+                                        text: '${c.name}  ',
+                                        style: TextStyle(
+                                          fontSize: 10.sp,
+                                          fontWeight: FontWeight.w700,
+                                          color: colors.textPrimary,
+                                        ),
+                                      ),
+                                      TextSpan(
+                                        text: c.text,
+                                        style: TextStyle(
+                                          fontSize: 10.sp,
+                                          fontWeight: FontWeight.w400,
+                                          color: colors.subtitleText,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
                               ),
-                            ),
-                          ],
+                            ],
+                          ),
                         ),
-                      ),
-                    ),
-                  ],
-                ),
-              )).toList(),
+                      )
+                      .toList(),
             ),
           ),
         ],
@@ -577,8 +629,11 @@ class _ComposerBar extends StatelessWidget {
                   color: Colors.grey[700],
                   borderRadius: BorderRadius.circular(42.5.r),
                 ),
-                child: Icon(Icons.person,
-                    color: colors.textSecondary, size: 18.sp),
+                child: Icon(
+                  Icons.person,
+                  color: colors.textSecondary,
+                  size: 18.sp,
+                ),
               ),
               SizedBox(width: 5.w),
               // Text
@@ -590,12 +645,15 @@ class _ComposerBar extends StatelessWidget {
                   color: colors.textPrimary,
                 ),
               ),
-            const Spacer(),
-            // Image icon
-            Icon(Icons.image_outlined,
-                color: colors.textPrimary, size: 16.sp),
-          ],
-        ),
+              const Spacer(),
+              // Image icon
+              Icon(
+                Icons.image_outlined,
+                color: colors.textPrimary,
+                size: 16.sp,
+              ),
+            ],
+          ),
         ),
       ),
     );

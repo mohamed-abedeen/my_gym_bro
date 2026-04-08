@@ -43,9 +43,10 @@ class WorkoutScreen extends ConsumerWidget {
               gradient: LinearGradient(
                 begin: Alignment.topCenter,
                 end: Alignment.bottomCenter,
-                colors: isDark
-                    ? const [Color(0xFF1A1A1A), Colors.black]
-                    : [colors.panelBackground, colors.background],
+                colors:
+                    isDark
+                        ? const [Color(0xFF1A1A1A), Colors.black]
+                        : [colors.panelBackground, colors.background],
               ),
             ),
           ),
@@ -78,28 +79,6 @@ class WorkoutScreen extends ConsumerWidget {
 
             SizedBox(height: 16.h),
           ],
-        ),
-
-        // ── Faded lime glow at bottom ──
-        Positioned(
-          left: 0,
-          right: 0,
-          bottom: 0,
-          height: MediaQuery.of(context).padding.bottom + 5.h,
-          child: IgnorePointer(
-            child: Container(
-              decoration: const BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.bottomCenter,
-                  end: Alignment.topCenter,
-                  colors: [
-                    Color(0x40D2FF00), // lime at ~25% opacity
-                    Color(0x00D2FF00), // fully transparent
-                  ],
-                ),
-              ),
-            ),
-          ),
         ),
       ],
     );
@@ -137,11 +116,7 @@ class _Header extends StatelessWidget {
           SizedBox(width: 8.w),
 
           // Fire streak icon + count
-          Icon(
-            Icons.local_fire_department,
-            color: colors.accent,
-            size: 26.sp,
-          ),
+          Icon(Icons.local_fire_department, color: colors.accent, size: 26.sp),
           SizedBox(width: 2.w),
           Text(
             '2',
@@ -194,28 +169,28 @@ class _AnatomySection extends ConsumerWidget {
         height: 350.h,
         child: Center(
           child: muscleStates.when(
-          data:
-              (states) => AnatomyBody(
-                muscleStates: states,
-                height: 350.h,
-                gender: ref.watch(anatomyGenderProvider),
-              ),
-          loading:
-              () => SizedBox(
-                height: 350.h,
-                child: Center(
-                  child: CircularProgressIndicator(
-                    color: colors.accent,
-                    strokeWidth: 2.w,
+            data:
+                (states) => AnatomyBody(
+                  muscleStates: states,
+                  height: 350.h,
+                  gender: ref.watch(anatomyGenderProvider),
+                ),
+            loading:
+                () => SizedBox(
+                  height: 350.h,
+                  child: Center(
+                    child: CircularProgressIndicator(
+                      color: colors.accent,
+                      strokeWidth: 2.w,
+                    ),
                   ),
                 ),
-              ),
-          error:
-              (_, __) => AnatomyBody(
-                muscleStates: const [],
-                height: 350.h,
-                gender: ref.watch(anatomyGenderProvider),
-              ),
+            error:
+                (_, __) => AnatomyBody(
+                  muscleStates: const [],
+                  height: 350.h,
+                  gender: ref.watch(anatomyGenderProvider),
+                ),
           ),
         ),
       ),
@@ -518,10 +493,7 @@ class _StatLine extends StatelessWidget {
             angle: isPositive ? -1.5708 : 1.5708,
             child: Icon(
               Icons.arrow_forward_rounded,
-              color:
-                  isPositive
-                      ? colors.trendPositive
-                      : colors.trendNegative,
+              color: isPositive ? colors.trendPositive : colors.trendNegative,
               size: 24.sp,
             ),
           ),
@@ -575,8 +547,11 @@ class _ScheduleCardState extends ConsumerState<_ScheduleCard> {
     // Resolve which schedule is selected (default: the active one)
     final selected = schedules.firstWhere(
       (s) => s.localId == cardState.selectedScheduleId,
-      orElse: () =>
-          schedules.firstWhere((s) => s.isActive, orElse: () => schedules.first),
+      orElse:
+          () => schedules.firstWhere(
+            (s) => s.isActive,
+            orElse: () => schedules.first,
+          ),
     );
 
     // Watch the days for the selected schedule
@@ -584,24 +559,30 @@ class _ScheduleCardState extends ConsumerState<_ScheduleCard> {
     final allDays = daysAsync.valueOrNull ?? [];
     // Filter out rest days for the card swiper — rest days don't need play/edit.
     // Also check label as fallback for legacy data where isRestDay may not be set.
-    final trainingDays = allDays
-        .where((d) =>
-            !d.isRestDay &&
-            !(d.label?.toLowerCase().contains('rest') ?? false))
-        .toList();
+    final trainingDays =
+        allDays
+            .where(
+              (d) =>
+                  !d.isRestDay &&
+                  !(d.label?.toLowerCase().contains('rest') ?? false),
+            )
+            .toList();
 
     // Total pages: training days + "Add Day" card at the end
     final totalPages = trainingDays.length + 1;
 
     // Auto-advance: determine which training day is next based on completed sessions
-    final nextDayAsync = ref.watch(nextTrainingDayIndexProvider(selected.localId));
+    final nextDayAsync = ref.watch(
+      nextTrainingDayIndexProvider(selected.localId),
+    );
     final autoPage = nextDayAsync.valueOrNull;
 
     // Use auto-advance page if the user hasn't manually changed the page yet,
     // otherwise respect the user's persisted page choice.
-    final effectivePage = (cardState.currentPage == 0 && autoPage != null)
-        ? autoPage
-        : cardState.currentPage;
+    final effectivePage =
+        (cardState.currentPage == 0 && autoPage != null)
+            ? autoPage
+            : cardState.currentPage;
     final safePage = effectivePage.clamp(0, totalPages - 1);
 
     // Create or recreate PageController at the persisted page
@@ -616,8 +597,8 @@ class _ScheduleCardState extends ConsumerState<_ScheduleCard> {
             controller: _pageController,
             itemCount: totalPages,
             onPageChanged: (i) {
-              ref.read(workoutCardStateProvider.notifier).state =
-                  cardState.copyWith(currentPage: i);
+              ref.read(workoutCardStateProvider.notifier).state = cardState
+                  .copyWith(currentPage: i);
             },
             itemBuilder: (context, i) {
               // Last page = "Add Day"
@@ -648,8 +629,10 @@ class _ScheduleCardState extends ConsumerState<_ScheduleCard> {
   void _onProgramChanged(int scheduleId) {
     // Reset to page 0; the auto-advance logic in build() will jump
     // to the correct next training day once the provider resolves.
-    ref.read(workoutCardStateProvider.notifier).state =
-        WorkoutCardState(selectedScheduleId: scheduleId, currentPage: 0);
+    ref.read(workoutCardStateProvider.notifier).state = WorkoutCardState(
+      selectedScheduleId: scheduleId,
+      currentPage: 0,
+    );
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (_pageController?.hasClients ?? false) {
         _pageController!.jumpToPage(0);
@@ -716,9 +699,15 @@ class _AddDayCard extends StatelessWidget {
                 ),
                 // Bottom: program picker or "New Program"
                 GestureDetector(
-                  onTap: allSchedules.length > 1 && schedule != null
-                      ? () => _showProgramPicker(context, schedule!, allSchedules, onProgramChanged)
-                      : () => context.push(AppRoutes.scheduleBuilder),
+                  onTap:
+                      allSchedules.length > 1 && schedule != null
+                          ? () => _showProgramPicker(
+                            context,
+                            schedule!,
+                            allSchedules,
+                            onProgramChanged,
+                          )
+                          : () => context.push(AppRoutes.scheduleBuilder),
                   child: Padding(
                     padding: EdgeInsets.only(top: 8.h),
                     child: Row(
@@ -752,10 +741,11 @@ class _AddDayCard extends StatelessWidget {
             children: [
               // Green + button
               GestureDetector(
-                onTap: () => context.push(
-                  AppRoutes.scheduleBuilder,
-                  extra: schedule?.localId,
-                ),
+                onTap:
+                    () => context.push(
+                      AppRoutes.scheduleBuilder,
+                      extra: schedule?.localId,
+                    ),
                 child: Container(
                   width: 69.w,
                   height: 68.h,
@@ -871,9 +861,13 @@ class _DayCard extends ConsumerWidget {
                 ),
                 // Program name selector at bottom
                 GestureDetector(
-                  onTap: () => _showProgramPicker(
-                    context, schedule, allSchedules, onProgramChanged,
-                  ),
+                  onTap:
+                      () => _showProgramPicker(
+                        context,
+                        schedule,
+                        allSchedules,
+                        onProgramChanged,
+                      ),
                   child: Padding(
                     padding: EdgeInsets.only(top: 8.h),
                     child: Row(
@@ -925,10 +919,11 @@ class _DayCard extends ConsumerWidget {
               SizedBox(height: 8.h),
               // Edit button
               GestureDetector(
-                onTap: () => context.push(
-                  AppRoutes.scheduleBuilder,
-                  extra: schedule.localId,
-                ),
+                onTap:
+                    () => context.push(
+                      AppRoutes.scheduleBuilder,
+                      extra: schedule.localId,
+                    ),
                 child: Container(
                   width: 69.w,
                   height: 64.h,
@@ -1002,37 +997,41 @@ void _showProgramPicker(
   for (var i = 0; i < schedules.length; i++) {
     final schedule = schedules[i];
     final isCurrent = schedule.localId == currentSchedule.localId;
-    items.add(PopupMenuItem<int>(
-      value: schedule.localId,
+    items.add(
+      PopupMenuItem<int>(
+        value: schedule.localId,
+        height: 40.h,
+        child: Center(
+          child: Text(
+            schedule.name,
+            style: TextStyle(
+              color: isCurrent ? const Color(0xFFD2FF00) : Colors.black,
+              fontSize: 15.sp,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+        ),
+      ),
+    );
+    items.add(const PopupMenuDivider(height: 1));
+  }
+  // "Create +" action
+  items.add(
+    PopupMenuItem<int>(
+      value: -1,
       height: 40.h,
       child: Center(
         child: Text(
-          schedule.name,
+          'Create +',
           style: TextStyle(
-            color: isCurrent ? const Color(0xFFD2FF00) : Colors.black,
+            color: Colors.black54,
             fontSize: 15.sp,
             fontWeight: FontWeight.w600,
           ),
         ),
       ),
-    ));
-    items.add(const PopupMenuDivider(height: 1));
-  }
-  // "Create +" action
-  items.add(PopupMenuItem<int>(
-    value: -1,
-    height: 40.h,
-    child: Center(
-      child: Text(
-        'Create +',
-        style: TextStyle(
-          color: Colors.black54,
-          fontSize: 15.sp,
-          fontWeight: FontWeight.w600,
-        ),
-      ),
     ),
-  ));
+  );
 
   showMenu<int>(
     context: context,
@@ -1079,9 +1078,7 @@ class _PageDots extends StatelessWidget {
           margin: EdgeInsets.only(right: i < count - 1 ? 8.w : 0),
           decoration: BoxDecoration(
             color:
-                isActive
-                    ? colors.accent
-                    : Colors.white.withValues(alpha: 0.25),
+                isActive ? colors.accent : Colors.white.withValues(alpha: 0.25),
             shape: BoxShape.circle,
           ),
         );

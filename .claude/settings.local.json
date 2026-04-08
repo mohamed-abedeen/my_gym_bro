@@ -62,7 +62,11 @@
       "WebFetch(domain:github.com)",
       "mcp__68ad1b24-8060-44b7-9199-bf390cf78153__list_projects",
       "Bash(grep -E \"\\\\.\\(dart|drift|sql\\)$\")",
-      "Bash(node -e \"const data = require\\(''./assets/exercises.json''\\); const equips = new Set\\(\\); data.forEach\\(e => \\(e.equipments||[]\\).forEach\\(eq => equips.add\\(eq\\)\\)\\); console.log\\(''Equipment values:'', [...equips].sort\\(\\).join\\('', ''\\)\\); console.log\\(''Total exercises:'', data.length\\);\")"
+      "Bash(node -e \"const data = require\\(''./assets/exercises.json''\\); const equips = new Set\\(\\); data.forEach\\(e => \\(e.equipments||[]\\).forEach\\(eq => equips.add\\(eq\\)\\)\\); console.log\\(''Equipment values:'', [...equips].sort\\(\\).join\\('', ''\\)\\); console.log\\(''Total exercises:'', data.length\\);\")",
+      "Bash(find /c/Users/abede/my_gym_bro/assets -type f -exec ls -lh {} \\\\;)",
+      "Bash(sort -k2)",
+      "Bash(grep -E \"\\\\.\\(json|gradle|xml\\)$\")",
+      "Bash(dart pub:*)"
     ]
   }
 }
