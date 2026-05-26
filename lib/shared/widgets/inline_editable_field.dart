@@ -1,16 +1,12 @@
 import 'package:flutter/material.dart';
 
-import '../../l10n/app_localizations.dart';
-import '../constants.dart';
-import '../responsive.dart';
-import 'liquid_glass_button.dart';
+import 'package:my_gym_bro/l10n/app_localizations.dart';
+import 'package:my_gym_bro/shared/constants.dart';
+import 'package:my_gym_bro/shared/responsive.dart';
+import 'package:my_gym_bro/shared/widgets/liquid_glass_button.dart';
 
 /// A tappable text field that opens a numpad bottom sheet for input.
 class InlineEditableField extends StatelessWidget {
-  final String value;
-  final String? suffix;
-  final ValueChanged<String> onChanged;
-  final bool allowDecimal;
 
   const InlineEditableField({
     required this.value,
@@ -19,38 +15,54 @@ class InlineEditableField extends StatelessWidget {
     this.allowDecimal = true,
     super.key,
   });
+  final String value;
+  final String? suffix;
+  final ValueChanged<String> onChanged;
+  final bool allowDecimal;
 
   @override
   Widget build(BuildContext context) {
     final colors = AppColors.of(context);
     return GestureDetector(
       onTap: () => _showNumpad(context),
-      child: Text(
-        suffix != null ? '$value $suffix' : value,
-        style: TextStyle(
-          color: colors.textPrimary,
-          fontSize: 16.sp,
-          fontWeight: FontWeight.w700,
-          fontFeatures: const [FontFeature('ss15')],
+      behavior: HitTestBehavior.opaque,
+      child: ConstrainedBox(
+        constraints: BoxConstraints(minWidth: 44.w, minHeight: 44.h),
+        child: Center(
+          widthFactor: 1,
+          child: Padding(
+            padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 4.h),
+            child: Text(
+              suffix != null ? '$value $suffix' : value,
+              style: TextStyle(
+                color: colors.textPrimary,
+                fontSize: 16.sp,
+                fontWeight: FontWeight.w700,
+                fontFeatures: const [FontFeature('ss15')],
+              ),
+            ),
+          ),
         ),
       ),
     );
   }
 
   void _showNumpad(BuildContext context) {
-    String current = value;
+    var current = value;
     final l10n = AppLocalizations.of(context);
     final colors = AppColors.of(context);
 
-    showModalBottomSheet(
+    showModalBottomSheet<void>(
       context: context,
       backgroundColor: colors.card,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(24.r)),
       ),
       builder: (ctx) {
+        var isFirstTap = true;
         return StatefulBuilder(
           builder: (ctx, setState) {
+            final displayText = suffix != null ? '$current $suffix' : current;
             return Padding(
               padding: EdgeInsets.all(20.w),
               child: Column(
@@ -62,18 +74,39 @@ class InlineEditableField extends StatelessWidget {
                     padding: EdgeInsets.symmetric(
                         vertical: 16.h, horizontal: 20.w),
                     decoration: BoxDecoration(
-                      color: Colors.white.withValues(alpha: 0.07),
+                      color: AppColors.of(context).white.withValues(alpha: 0.07),
                       borderRadius: BorderRadius.circular(16.r),
                     ),
-                    child: Text(
-                      suffix != null ? '$current $suffix' : current,
-                      textAlign: TextAlign.center,
-                      style: TextStyle(
-                        color: colors.textPrimary,
-                        fontSize: 32.sp,
-                        fontWeight: FontWeight.w700,
-                        fontFeatures: const [FontFeature('ss15')],
-                      ),
+                    child: Center(
+                      child: isFirstTap
+                          ? Container(
+                              padding: EdgeInsets.symmetric(
+                                  horizontal: 8.w, vertical: 2.h),
+                              decoration: BoxDecoration(
+                                color: colors.accent.withValues(alpha: 0.3),
+                                borderRadius: BorderRadius.circular(6.r),
+                              ),
+                              child: Text(
+                                displayText,
+                                textAlign: TextAlign.center,
+                                style: TextStyle(
+                                  color: colors.accent,
+                                  fontSize: 32.sp,
+                                  fontWeight: FontWeight.w700,
+                                  fontFeatures: const [FontFeature('ss15')],
+                                ),
+                              ),
+                            )
+                          : Text(
+                              displayText,
+                              textAlign: TextAlign.center,
+                              style: TextStyle(
+                                color: colors.textPrimary,
+                                fontSize: 32.sp,
+                                fontWeight: FontWeight.w700,
+                                fontFeatures: const [FontFeature('ss15')],
+                              ),
+                            ),
                     ),
                   ),
                   SizedBox(height: 16.h),
@@ -81,20 +114,33 @@ class InlineEditableField extends StatelessWidget {
                   _NumpadGrid(
                     allowDecimal: allowDecimal,
                     onDigit: (d) => setState(() {
-                      if (current == '0') {
+                      if (isFirstTap) {
+                        current = d;
+                        isFirstTap = false;
+                      } else if (current == '0') {
                         current = d;
                       } else {
                         current += d;
                       }
                     }),
                     onDecimal: () => setState(() {
-                      if (!current.contains('.')) current += '.';
+                      if (isFirstTap) {
+                        current = '0.';
+                        isFirstTap = false;
+                      } else if (!current.contains('.')) {
+                        current += '.';
+                      }
                     }),
                     onBackspace: () => setState(() {
-                      if (current.isNotEmpty) {
-                        current = current.substring(0, current.length - 1);
+                      if (isFirstTap) {
+                        current = '0';
+                        isFirstTap = false;
+                      } else {
+                        if (current.isNotEmpty) {
+                          current = current.substring(0, current.length - 1);
+                        }
+                        if (current.isEmpty) current = '0';
                       }
-                      if (current.isEmpty) current = '0';
                     }),
                   ),
                   SizedBox(height: 12.h),
@@ -131,10 +177,6 @@ class InlineEditableField extends StatelessWidget {
 }
 
 class _NumpadGrid extends StatelessWidget {
-  final ValueChanged<String> onDigit;
-  final VoidCallback onDecimal;
-  final VoidCallback onBackspace;
-  final bool allowDecimal;
 
   const _NumpadGrid({
     required this.onDigit,
@@ -142,6 +184,10 @@ class _NumpadGrid extends StatelessWidget {
     required this.onBackspace,
     required this.allowDecimal,
   });
+  final ValueChanged<String> onDigit;
+  final VoidCallback onDecimal;
+  final VoidCallback onBackspace;
+  final bool allowDecimal;
 
   @override
   Widget build(BuildContext context) {
@@ -150,7 +196,7 @@ class _NumpadGrid extends StatelessWidget {
       ['1', '2', '3'],
       ['4', '5', '6'],
       ['7', '8', '9'],
-      [allowDecimal ? '.' : '', '0', '⌫'],
+      [if (allowDecimal) '.' else '', '0', '⌫'],
     ];
 
     return Column(
@@ -177,7 +223,7 @@ class _NumpadGrid extends StatelessWidget {
                   width: 72.w,
                   height: 48.h,
                   decoration: BoxDecoration(
-                    color: Colors.white.withValues(alpha: 0.1),
+                    color: AppColors.of(context).white.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(12.r),
                   ),
                   child: Center(

@@ -1,12 +1,11 @@
 import 'dart:io';
 
 import 'package:drift/drift.dart' as drift;
+import 'package:my_gym_bro/core/database/app_database.dart';
+import 'package:my_gym_bro/core/database/daos/dm_dao.dart';
+import 'package:my_gym_bro/features/community/dm/dm_models.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:uuid/uuid.dart';
-
-import '../../../core/database/app_database.dart';
-import '../../../core/database/daos/dm_dao.dart';
-import 'dm_models.dart';
 
 const _uuid = Uuid();
 
@@ -30,7 +29,7 @@ class DmRepository {
     return supabase
         .from('dm_conversations')
         .stream(primaryKey: ['id'])
-        .order('last_message_at', ascending: false)
+        .order('last_message_at')
         .map((rows) {
           return rows
               .where((r) =>

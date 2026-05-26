@@ -1,53 +1,49 @@
-import 'package:drift/drift.dart';
-import 'package:flutter/foundation.dart';
+import 'dart:async';
+
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:my_gym_bro/core/security/input_sanitiser.dart';
+import 'package:my_gym_bro/core/services/notification_service.dart';
+import 'package:my_gym_bro/features/workout/active_session/rest_timer_service.dart';
+import 'package:my_gym_bro/features/workout/workout_log_repository.dart';
+import 'package:my_gym_bro/features/workout/workout_providers.dart';
 
-import '../../../core/database/app_database.dart';
-import '../../../core/database/daos/exercise_dao.dart';
-import '../../../core/database/daos/schedule_dao.dart';
-import '../../../core/database/daos/session_dao.dart';
-import '../../../core/database/daos/sync_queue_dao.dart';
-import '../../../core/security/input_sanitiser.dart';
-import '../../../core/services/sync_service.dart';
-import '../../../core/providers/providers.dart';
-import '../workout_providers.dart';
-import 'rest_timer_service.dart';
+// ── Set type ──────────────────────────────────
+
+enum SetType { normal, warmUp, failure, dropset }
 
 // ── Models ────────────────────────────────────
 
 class ActiveExercise {
-  final int sessionExerciseId;
-  final String exerciseId;
-  final String name;
-  final String? gifUrl;
-  final List<ActiveSet> sets;
 
   ActiveExercise({
     required this.sessionExerciseId,
     required this.exerciseId,
     required this.name,
     this.gifUrl,
+    this.muscleGroup,
     List<ActiveSet>? sets,
   }) : sets = sets ?? [];
+  final int sessionExerciseId;
+  final String exerciseId;
+  final String name;
+  final String? gifUrl;
+  final String? muscleGroup;
+  final List<ActiveSet> sets;
+
+  bool get isCardio => muscleGroup?.toLowerCase() == 'cardio';
 
   ActiveExercise copyWith({List<ActiveSet>? sets}) => ActiveExercise(
         sessionExerciseId: sessionExerciseId,
         exerciseId: exerciseId,
         name: name,
         gifUrl: gifUrl,
+        muscleGroup: muscleGroup,
         sets: sets ?? this.sets,
       );
 }
 
 class ActiveSet {
-  final int localId;
-  final int setIndex;
-  final double? weight;
-  final int? reps;
-  final bool isWarmup;
-  final bool isDropset;
-  final bool isCompleted;
 
   const ActiveSet({
     required this.localId,
@@ -56,15 +52,44 @@ class ActiveSet {
     this.reps,
     this.isWarmup = false,
     this.isDropset = false,
+    this.isFailure = false,
     this.isCompleted = false,
+    this.durationSeconds,
+    this.distance,
+    this.speed,
+    this.incline,
   });
+  final int localId;
+  final int setIndex;
+  final double? weight;
+  final int? reps;
+  final bool isWarmup;
+  final bool isDropset;
+  final bool isFailure;
+  final bool isCompleted;
+  final int? durationSeconds;
+  final double? distance;
+  final double? speed;
+  final double? incline;
+
+  SetType get setType {
+    if (isWarmup) return SetType.warmUp;
+    if (isDropset) return SetType.dropset;
+    if (isFailure) return SetType.failure;
+    return SetType.normal;
+  }
 
   ActiveSet copyWith({
     double? weight,
     int? reps,
     bool? isWarmup,
     bool? isDropset,
+    bool? isFailure,
     bool? isCompleted,
+    int? durationSeconds,
+    double? distance,
+    double? speed,
+    double? incline,
   }) =>
       ActiveSet(
         localId: localId,
@@ -73,17 +98,16 @@ class ActiveSet {
         reps: reps ?? this.reps,
         isWarmup: isWarmup ?? this.isWarmup,
         isDropset: isDropset ?? this.isDropset,
+        isFailure: isFailure ?? this.isFailure,
         isCompleted: isCompleted ?? this.isCompleted,
+        durationSeconds: durationSeconds ?? this.durationSeconds,
+        distance: distance ?? this.distance,
+        speed: speed ?? this.speed,
+        incline: incline ?? this.incline,
       );
 }
 
 class ActiveSessionState {
-  final int? sessionId;
-  final List<ActiveExercise> exercises;
-  final int currentExerciseIndex;
-  final DateTime? startedAt;
-  final bool showRestTimer;
-  final bool isFinishing;
 
   const ActiveSessionState({
     this.sessionId,
@@ -93,6 +117,12 @@ class ActiveSessionState {
     this.showRestTimer = false,
     this.isFinishing = false,
   });
+  final int? sessionId;
+  final List<ActiveExercise> exercises;
+  final int currentExerciseIndex;
+  final DateTime? startedAt;
+  final bool showRestTimer;
+  final bool isFinishing;
 
   ActiveSessionState copyWith({
     int? sessionId,
@@ -134,7 +164,7 @@ class ActiveSessionState {
   }
 
   int get totalCompletedSets {
-    int count = 0;
+    var count = 0;
     for (final ex in exercises) {
       count += ex.sets.where((s) => s.isCompleted).length;
     }
@@ -145,47 +175,102 @@ class ActiveSessionState {
 // ── Notifier ──────────────────────────────────
 
 class ActiveSessionNotifier extends StateNotifier<ActiveSessionState> {
-  final SessionDao _sessionDao;
-  final ExerciseDao _exerciseDao;
-  final ScheduleDao _scheduleDao;
-  final SyncQueueDao _syncQueueDao;
-  final SyncService _syncService;
+  static const double _kLbsPerKg = 2.20462;
+
+  ActiveSessionNotifier({
+    required WorkoutLogRepository repository,
+    int defaultRestSeconds = 90,
+    String weightUnit = 'kg',
+    String restNotificationTitle = 'Rest complete!',
+    String restNotificationBody = 'Time to start your next set.',
+  })  : _repository = repository,
+        _defaultRestSeconds = defaultRestSeconds,
+        _weightUnit = weightUnit,
+        _restNotificationTitle = restNotificationTitle,
+        _restNotificationBody = restNotificationBody,
+        super(const ActiveSessionState());
+  final WorkoutLogRepository _repository;
   final RestTimerService restTimerService = RestTimerService();
+
+  /// Subscription to the rest-timer tick stream for updating the
+  /// notification progress bar every second.
+  StreamSubscription<int>? _restTickSub;
+
+  /// Per-session cache so we only hit the DB once per exercise.
+  final Map<String, List<LastLoggedSetInfo>> _lastLoggedCache = {};
 
   int _defaultRestSeconds;
   String _weightUnit;
+  String _restNotificationTitle;
+  String _restNotificationBody;
+  String _workoutReminderTitle = 'Workout day';
+  String _workoutReminderBody = 'Keep your streak going. Let\'s train.';
 
-  ActiveSessionNotifier({
-    required SessionDao sessionDao,
-    required ExerciseDao exerciseDao,
-    required ScheduleDao scheduleDao,
-    required SyncQueueDao syncQueueDao,
-    required SyncService syncService,
-    int defaultRestSeconds = 90,
-    String weightUnit = 'kg',
-  })  : _sessionDao = sessionDao,
-        _exerciseDao = exerciseDao,
-        _scheduleDao = scheduleDao,
-        _syncQueueDao = syncQueueDao,
-        _syncService = syncService,
-        _defaultRestSeconds = defaultRestSeconds,
-        _weightUnit = weightUnit,
-        super(const ActiveSessionState());
+  /// Called by the workout screen whenever the active locale or the
+  /// user's `notificationTone` changes — keeps the rest-complete
+  /// notification copy in sync with the user's current preferences.
+  void setRestNotificationStrings(String title, String body) {
+    _restNotificationTitle = title;
+    _restNotificationBody = body;
+  }
+
+  /// Called by the screen each build with tone- and rest-day-aware copy.
+  void setWorkoutReminderStrings(String title, String body) {
+    _workoutReminderTitle = title;
+    _workoutReminderBody = body;
+  }
+
+  /// Attempt to restore a rest timer that was persisted before the OS killed
+  /// the app. Should be called once after session state is rebuilt on app
+  /// restart (e.g. from the workout screen's `initState`).
+  Future<void> tryRestoreRestTimer() async {
+    // Don't restore if a timer is already ticking.
+    if (restTimerService.remaining > 0) return;
+
+    final saved = await RestTimerService.loadPersistedState();
+    if (saved == null) return;
+
+    state = state.copyWith(showRestTimer: true);
+    restTimerService.restore(
+      remaining: saved.remaining,
+      total: saved.total,
+      onComplete: _onRestComplete,
+      soundEnabled: saved.soundEnabled,
+      notificationTitle: saved.title,
+      notificationBody: saved.body,
+    );
+
+    // Subscribe to the tick stream so the notification updates every second.
+    _restTickSub?.cancel();
+    _restTickSub =
+        restTimerService.stream?.listen(_updateRestTimerNotification);
+  }
 
   /// Start a new workout session, optionally pre-loading exercises from a
   /// schedule day.
   Future<void> startSession({int? scheduleDayId}) async {
     final now = DateTime.now();
-    final id = await _sessionDao.createSession(SessionsCompanion(
-      startedAt: Value(now),
-      createdAt: Value(now),
-    ));
+    final id = await _repository.createSession(
+      CreateSessionParams(startedAt: now),
+    );
 
     state = state.copyWith(
       sessionId: id,
       startedAt: now,
       exercises: [],
     );
+
+    // Show a persistent ongoing notification in the status bar so the user
+    // can see the elapsed workout time even when the app is backgrounded.
+    unawaited(NotificationService.showActiveWorkout(
+      title: 'Workout in progress',
+      body: 'Tap to return to your session.',
+      startedAt: now,
+    ));
+
+    // Allow the notification "Complete Set" action to call completeNextSet()
+    // without needing a Riverpod ref.
+    restTimerService.completeSetFromNotification = completeNextSet;
 
     // If a schedule day was provided, load its exercises into the session.
     if (scheduleDayId != null) {
@@ -198,39 +283,55 @@ class ActiveSessionNotifier extends StateNotifier<ActiveSessionState> {
     if (state.sessionId == null) return;
 
     final scheduledExercises =
-        await _scheduleDao.getExercises(scheduleDayId);
+        await _repository.getScheduledExercises(scheduleDayId);
 
-    // Sort by orderIndex (should already be sorted from DAO)
-    scheduledExercises.sort((a, b) => a.orderIndex.compareTo(b.orderIndex));
+    // Batch-fetch all exercises in one query instead of N individual queries.
+    final exerciseIds =
+        scheduledExercises.map((se) => se.exerciseId).toList();
+    final exerciseMap = await _repository.findExercisesByIds(exerciseIds);
 
     for (final scheduled in scheduledExercises) {
-      final exercise =
-          await _exerciseDao.findByExerciseId(scheduled.exerciseId);
+      final exercise = exerciseMap[scheduled.exerciseId];
       if (exercise == null) continue;
 
+      unawaited(_repository.incrementExerciseUsage(scheduled.exerciseId));
+
       final orderIndex = state.exercises.length;
-      final seId = await _sessionDao.addSessionExercise(
-        SessionExercisesCompanion(
-          sessionId: Value(state.sessionId!),
-          exerciseId: Value(scheduled.exerciseId),
-          orderIndex: Value(orderIndex),
-          createdAt: Value(DateTime.now()),
+      final seId = await _repository.addSessionExercise(
+        AddSessionExerciseParams(
+          sessionId: state.sessionId!,
+          exerciseId: scheduled.exerciseId,
+          orderIndex: orderIndex,
         ),
       );
 
-      // Create sets based on the scheduled target sets and reps
+      // Fetch the user's last logged sets for this exercise (auto-fill).
+      final history = await _getLastLoggedSets(scheduled.exerciseId);
+
+      // Create sets based on the scheduled target sets and reps,
+      // but auto-fill weight & cardio fields from history when available.
       final sets = <ActiveSet>[];
       for (var s = 0; s < scheduled.targetSets; s++) {
-        final setId = await _sessionDao.addSet(WorkoutSetsCompanion(
-          sessionExerciseId: Value(seId),
-          setIndex: Value(s),
-          reps: Value(scheduled.targetReps),
-          createdAt: Value(DateTime.now()),
+        final histSet = s < history.length ? history[s] : null;
+        final setId = await _repository.addSet(AddSetParams(
+          sessionExerciseId: seId,
+          setIndex: s,
+          weight: histSet?.weight,
+          reps: histSet?.reps ?? scheduled.targetReps,
+          durationSeconds: histSet?.durationSeconds,
+          distance: histSet?.distance,
+          speed: histSet?.speed,
+          incline: histSet?.incline,
         ));
         sets.add(ActiveSet(
           localId: setId,
           setIndex: s,
-          reps: scheduled.targetReps,
+          weight: histSet?.weight,
+          reps: histSet?.reps ?? scheduled.targetReps,
+          durationSeconds: histSet?.durationSeconds,
+          distance: histSet?.distance,
+          speed: histSet?.speed,
+          incline: histSet?.incline,
         ));
       }
 
@@ -239,6 +340,7 @@ class ActiveSessionNotifier extends StateNotifier<ActiveSessionState> {
         exerciseId: scheduled.exerciseId,
         name: exercise.name,
         gifUrl: exercise.gifUrl,
+        muscleGroup: exercise.muscleGroup,
         sets: sets,
       );
 
@@ -254,33 +356,69 @@ class ActiveSessionNotifier extends StateNotifier<ActiveSessionState> {
   }
 
   /// Add an exercise by its exerciseId string.
+  ///
+  /// Auto-fills sets from the user's most recently completed session for
+  /// this exercise. Falls back to a single empty set when no history exists.
   Future<void> addExercise(String exerciseId) async {
-    final exercise = await _exerciseDao.findByExerciseId(exerciseId);
+    final exercise = await _repository.findExercise(exerciseId);
     if (exercise == null || state.sessionId == null) return;
 
+    unawaited(_repository.incrementExerciseUsage(exerciseId));
+
     final orderIndex = state.exercises.length;
-    final seId = await _sessionDao.addSessionExercise(
-      SessionExercisesCompanion(
-        sessionId: Value(state.sessionId!),
-        exerciseId: Value(exerciseId),
-        orderIndex: Value(orderIndex),
-        createdAt: Value(DateTime.now()),
+    final seId = await _repository.addSessionExercise(
+      AddSessionExerciseParams(
+        sessionId: state.sessionId!,
+        exerciseId: exerciseId,
+        orderIndex: orderIndex,
       ),
     );
 
-    // Add one default empty set
-    final setId = await _sessionDao.addSet(WorkoutSetsCompanion(
-      sessionExerciseId: Value(seId),
-      setIndex: const Value(0),
-      createdAt: Value(DateTime.now()),
-    ));
+    // Fetch the user's last logged sets for this exercise (auto-fill).
+    final history = await _getLastLoggedSets(exerciseId);
+
+    final sets = <ActiveSet>[];
+    if (history.isNotEmpty) {
+      // Recreate the same number of sets with their weights/reps pre-filled.
+      for (var i = 0; i < history.length; i++) {
+        final h = history[i];
+        final setId = await _repository.addSet(AddSetParams(
+          sessionExerciseId: seId,
+          setIndex: i,
+          weight: h.weight,
+          reps: h.reps,
+          durationSeconds: h.durationSeconds,
+          distance: h.distance,
+          speed: h.speed,
+          incline: h.incline,
+        ));
+        sets.add(ActiveSet(
+          localId: setId,
+          setIndex: i,
+          weight: h.weight,
+          reps: h.reps,
+          durationSeconds: h.durationSeconds,
+          distance: h.distance,
+          speed: h.speed,
+          incline: h.incline,
+        ));
+      }
+    } else {
+      // No history — add one empty set.
+      final setId = await _repository.addSet(AddSetParams(
+        sessionExerciseId: seId,
+        setIndex: 0,
+      ));
+      sets.add(ActiveSet(localId: setId, setIndex: 0));
+    }
 
     final activeExercise = ActiveExercise(
       sessionExerciseId: seId,
       exerciseId: exerciseId,
       name: exercise.name,
       gifUrl: exercise.gifUrl,
-      sets: [ActiveSet(localId: setId, setIndex: 0)],
+      muscleGroup: exercise.muscleGroup,
+      sets: sets,
     );
 
     state = state.copyWith(
@@ -289,41 +427,143 @@ class ActiveSessionNotifier extends StateNotifier<ActiveSessionState> {
     );
   }
 
+  /// Remove the currently active exercise (and all its sets) from the session.
+  Future<void> removeCurrentExercise() async {
+    final ex = state.currentExercise;
+    if (ex == null) return;
+
+    final exercises = [...state.exercises]
+      ..removeAt(state.currentExerciseIndex);
+    final newIndex =
+        state.currentExerciseIndex >= exercises.length && exercises.isNotEmpty
+            ? exercises.length - 1
+            : state.currentExerciseIndex.clamp(0, exercises.isEmpty ? 0 : exercises.length - 1);
+
+    state = state.copyWith(
+      exercises: exercises,
+      currentExerciseIndex: newIndex,
+    );
+
+    await _repository.deleteSessionExercise(ex.sessionExerciseId);
+  }
+
+  /// Delete a set by its local id, removing it from both state and the DB.
+  Future<void> deleteSet(int setLocalId) async {
+    final exercises = [...state.exercises];
+    for (var i = 0; i < exercises.length; i++) {
+      final ex = exercises[i];
+      final idx = ex.sets.indexWhere((s) => s.localId == setLocalId);
+      if (idx < 0) continue;
+
+      final remaining = [...ex.sets]..removeAt(idx);
+      // Re-number setIndex so displayed set numbers stay contiguous.
+      final reindexed = List<ActiveSet>.generate(
+        remaining.length,
+        (j) => ActiveSet(
+          localId: remaining[j].localId,
+          setIndex: j,
+          weight: remaining[j].weight,
+          reps: remaining[j].reps,
+          isWarmup: remaining[j].isWarmup,
+          isDropset: remaining[j].isDropset,
+          isFailure: remaining[j].isFailure,
+          isCompleted: remaining[j].isCompleted,
+          durationSeconds: remaining[j].durationSeconds,
+          distance: remaining[j].distance,
+          speed: remaining[j].speed,
+          incline: remaining[j].incline,
+        ),
+      );
+      exercises[i] = ex.copyWith(sets: reindexed);
+      state = state.copyWith(exercises: exercises);
+      break;
+    }
+    await _repository.deleteSet(setLocalId);
+  }
+
+  /// Complete the first incomplete set in the current exercise.
+  Future<void> completeNextSet() async {
+    final ex = state.currentExercise;
+    if (ex == null) return;
+    final next = ex.sets.where((s) => !s.isCompleted).firstOrNull;
+    if (next != null) await completeSet(next.localId);
+  }
+
   /// Add a new set to the current exercise.
   Future<void> addSet() async {
     final ex = state.currentExercise;
     if (ex == null) return;
 
     final setIndex = ex.sets.length;
-    final setId = await _sessionDao.addSet(WorkoutSetsCompanion(
-      sessionExerciseId: Value(ex.sessionExerciseId),
-      setIndex: Value(setIndex),
-      createdAt: Value(DateTime.now()),
+    final prevSet = ex.sets.isNotEmpty ? ex.sets.last : null;
+
+    final setId = await _repository.addSet(AddSetParams(
+      sessionExerciseId: ex.sessionExerciseId,
+      setIndex: setIndex,
+      weight: prevSet?.weight,
+      reps: prevSet?.reps,
+      durationSeconds: prevSet?.durationSeconds,
+      distance: prevSet?.distance,
+      speed: prevSet?.speed,
+      incline: prevSet?.incline,
     ));
 
-    final newSet = ActiveSet(localId: setId, setIndex: setIndex);
+    final newSet = ActiveSet(
+      localId: setId,
+      setIndex: setIndex,
+      weight: prevSet?.weight,
+      reps: prevSet?.reps,
+      durationSeconds: prevSet?.durationSeconds,
+      distance: prevSet?.distance,
+      speed: prevSet?.speed,
+      incline: prevSet?.incline,
+    );
     final updatedEx = ex.copyWith(sets: [...ex.sets, newSet]);
     _updateExercise(updatedEx);
   }
 
-  /// Update a set's weight or reps.
-  Future<void> updateSet(int setLocalId, {String? weightStr, String? repsStr}) async {
+  /// Update a set's fields (strength or cardio).
+  Future<void> updateSet(
+    int setLocalId, {
+    String? weightStr,
+    String? repsStr,
+    String? durationStr,
+    String? distanceStr,
+    String? speedStr,
+    String? inclineStr,
+  }) async {
     final ex = state.currentExercise;
     if (ex == null) return;
 
     double? weight;
     int? reps;
+    int? durationSeconds;
+    double? distance;
+    double? speed;
+    double? incline;
 
     if (weightStr != null) {
       weight = InputSanitiser.parseWeight(weightStr);
-      // Convert lbs input to kg for storage
-      if (_weightUnit == 'lbs' && weight != null) {
-        weight = weight / 2.20462;
+      if (_weightUnit == 'lbs' && weight != null) weight = weight / _kLbsPerKg;
+    }
+    if (repsStr != null) reps = InputSanitiser.parseReps(repsStr);
+    if (durationStr != null) {
+      final minutes = double.tryParse(durationStr.replaceAll(RegExp('[^0-9.]'), ''));
+      if (minutes != null && minutes >= 0 && minutes <= 999) {
+        durationSeconds = (minutes * 60).round();
       }
     }
-
-    if (repsStr != null) {
-      reps = InputSanitiser.parseReps(repsStr);
+    if (distanceStr != null) {
+      distance = double.tryParse(distanceStr.replaceAll(RegExp('[^0-9.]'), ''));
+      if (distance != null && (distance < 0 || distance > 9999)) distance = null;
+    }
+    if (speedStr != null) {
+      speed = double.tryParse(speedStr.replaceAll(RegExp('[^0-9.]'), ''));
+      if (speed != null && (speed < 0 || speed > 9999)) speed = null;
+    }
+    if (inclineStr != null) {
+      incline = double.tryParse(inclineStr.replaceAll(RegExp('[^0-9.]'), ''));
+      if (incline != null && (incline < 0 || incline > 90)) incline = null;
     }
 
     final updatedSets = ex.sets.map((s) {
@@ -331,6 +571,10 @@ class ActiveSessionNotifier extends StateNotifier<ActiveSessionState> {
         return s.copyWith(
           weight: weight ?? s.weight,
           reps: reps ?? s.reps,
+          durationSeconds: durationSeconds ?? s.durationSeconds,
+          distance: distance ?? s.distance,
+          speed: speed ?? s.speed,
+          incline: incline ?? s.incline,
         );
       }
       return s;
@@ -340,12 +584,43 @@ class ActiveSessionNotifier extends StateNotifier<ActiveSessionState> {
     _updateExercise(updatedEx);
 
     // Persist to DB
-    final setEntity = await _sessionDao.getSets(ex.sessionExerciseId);
-    final dbSet = setEntity.firstWhere((s) => s.localId == setLocalId);
-    await _sessionDao.updateSet(dbSet.copyWith(
-      weight: Value(weight ?? dbSet.weight),
-      reps: Value(reps ?? dbSet.reps),
+    await _repository.updateSet(UpdateSetParams(
+      sessionExerciseId: ex.sessionExerciseId,
+      setLocalId: setLocalId,
+      weight: weight,
+      reps: reps,
+      durationSeconds: durationSeconds,
+      distance: distance,
+      speed: speed,
+      incline: incline,
     ));
+  }
+
+  /// Change the type of a set (warm-up / normal / failure / drop-set).
+  Future<void> updateSetType(int setLocalId, SetType type) async {
+    for (final ex in state.exercises) {
+      final idx = ex.sets.indexWhere((s) => s.localId == setLocalId);
+      if (idx < 0) continue;
+
+      final updatedSets = ex.sets.map((s) {
+        if (s.localId != setLocalId) return s;
+        return s.copyWith(
+          isWarmup: type == SetType.warmUp,
+          isDropset: type == SetType.dropset,
+          isFailure: type == SetType.failure,
+        );
+      }).toList();
+      _updateExercise(ex.copyWith(sets: updatedSets));
+
+      await _repository.updateSetType(UpdateSetTypeParams(
+        sessionExerciseId: ex.sessionExerciseId,
+        setLocalId: setLocalId,
+        isWarmup: type == SetType.warmUp,
+        isDropset: type == SetType.dropset,
+        isFailure: type == SetType.failure,
+      ));
+      return;
+    }
   }
 
   /// Mark a set as completed, trigger rest timer.
@@ -364,23 +639,37 @@ class ActiveSessionNotifier extends StateNotifier<ActiveSessionState> {
     _updateExercise(updatedEx);
 
     // Haptic
-    HapticFeedback.mediumImpact();
+    unawaited(HapticFeedback.mediumImpact());
 
     // Start rest timer
     state = state.copyWith(showRestTimer: true);
     restTimerService.start(
       seconds: _defaultRestSeconds,
       onComplete: _onRestComplete,
+      notificationTitle: _restNotificationTitle,
+      notificationBody: _restNotificationBody,
     );
+
+    // Subscribe to the tick stream so the notification updates every second.
+    _restTickSub?.cancel();
+    _restTickSub = restTimerService.stream?.listen(_updateRestTimerNotification);
   }
 
   void _onRestComplete() {
+    _restTickSub?.cancel();
+    _restTickSub = null;
     state = state.copyWith(showRestTimer: false);
+    // Switch the notification back to the "active set" state.
+    _updateActiveSetNotification();
   }
 
   void hideRestTimer() {
+    _restTickSub?.cancel();
+    _restTickSub = null;
     restTimerService.cancel();
     state = state.copyWith(showRestTimer: false);
+    // Switch the notification back to the "active set" state.
+    _updateActiveSetNotification();
   }
 
   /// Switch to a different exercise.
@@ -398,36 +687,50 @@ class ActiveSessionNotifier extends StateNotifier<ActiveSessionState> {
     final now = DateTime.now();
     final durationSecs = now.difference(state.startedAt!).inSeconds;
 
-    await _sessionDao.finishSession(
-      state.sessionId!,
-      now,
-      durationSecs,
-      state.totalVolume,
-    );
-
-    // Queue for sync
-    await _syncQueueDao.enqueue(SyncQueueCompanion(
-      syncTableName: const Value('sessions'),
-      rowId: Value(state.sessionId!),
-      operation: const Value('update'),
-      payload: const Value('{}'),
-      createdAt: Value(now),
+    await _repository.finishSession(FinishSessionParams(
+      sessionId: state.sessionId!,
+      finishedAt: now,
+      durationSeconds: durationSecs,
+      totalVolume: state.totalVolume,
     ));
 
-    // Try sync
-    try {
-      await _syncService.syncAll();
-    } catch (e) {
-      debugPrint('Session sync failed: $e');
-    }
-
+    _restTickSub?.cancel();
+    _restTickSub = null;
     restTimerService.dispose();
+
+    // Remove the persistent workout-in-progress notification.
+    unawaited(NotificationService.cancelActiveWorkout());
+
+    // Schedule a daily workout reminder for tomorrow using rest-day-aware copy.
+    unawaited(NotificationService.scheduleWorkoutReminder(
+      title: _workoutReminderTitle,
+      body: _workoutReminderBody,
+    ));
+
+    // Reset state so a subsequent session starts clean.
+    _lastLoggedCache.clear();
+    state = const ActiveSessionState();
   }
 
   /// Discard the session.
   Future<void> discardSession() async {
+    _restTickSub?.cancel();
+    _restTickSub = null;
     restTimerService.dispose();
+    _lastLoggedCache.clear();
+    unawaited(NotificationService.cancelActiveWorkout());
     state = const ActiveSessionState();
+  }
+
+  /// Retrieve the user's last logged sets for [exerciseId], using a
+  /// per-session in-memory cache to avoid redundant DB hits.
+  Future<List<LastLoggedSetInfo>> _getLastLoggedSets(String exerciseId) async {
+    if (_lastLoggedCache.containsKey(exerciseId)) {
+      return _lastLoggedCache[exerciseId]!;
+    }
+    final sets = await _repository.getLastLoggedSets(exerciseId);
+    _lastLoggedCache[exerciseId] = sets;
+    return sets;
   }
 
   void updateSettings({int? restSeconds, String? weightUnit}) {
@@ -441,9 +744,24 @@ class ActiveSessionNotifier extends StateNotifier<ActiveSessionState> {
   String displayWeight(double? weightKg) {
     if (weightKg == null) return '0';
     if (_weightUnit == 'lbs') {
-      return (weightKg * 2.20462).toStringAsFixed(0);
+      return (weightKg * _kLbsPerKg).toStringAsFixed(0);
     }
     return weightKg.toStringAsFixed(0);
+  }
+
+  /// Display duration in decimal minutes (e.g. 330 s → "5.5").
+  String displayDuration(int? seconds) {
+    if (seconds == null || seconds == 0) return '0';
+    if (seconds % 60 == 0) return '${seconds ~/ 60}';
+    return (seconds / 60.0).toStringAsFixed(1);
+  }
+
+  /// Display a nullable double field, defaulting to '0'.
+  String displayDouble(double? value) {
+    if (value == null || value == 0) return '0';
+    return value % 1 == 0
+        ? value.toStringAsFixed(0)
+        : value.toStringAsFixed(1);
   }
 
   void _updateExercise(ActiveExercise updated) {
@@ -456,8 +774,60 @@ class ActiveSessionNotifier extends StateNotifier<ActiveSessionState> {
     }
   }
 
+  // ── Notification helpers ────────────────────────────────────────────────
+
+  /// Push the "active set" notification (State A).
+  ///
+  /// Shows the next incomplete set for the current exercise, or falls
+  /// back to a generic "workout in progress" notification.
+  void _updateActiveSetNotification() {
+    final ex = state.currentExercise;
+    if (ex == null) return;
+
+    final nextSet = ex.sets.where((s) => !s.isCompleted).firstOrNull;
+    if (nextSet == null) return;
+
+    final currentNum = nextSet.setIndex + 1;
+    final totalSets = ex.sets.length;
+    final weight = displayWeight(nextSet.weight);
+    final unit = _weightUnit;
+    final reps = nextSet.reps ?? 0;
+
+    unawaited(NotificationService.showActiveSet(
+      exerciseName: ex.name,
+      currentSet: currentNum,
+      totalSets: totalSets,
+      weight: '$weight$unit',
+      reps: reps,
+    ));
+  }
+
+  /// Push the "rest timer" notification (State B) with a progress bar.
+  void _updateRestTimerNotification(int remaining) {
+    final ex = state.currentExercise;
+    if (ex == null) return;
+
+    final nextSet = ex.sets.where((s) => !s.isCompleted).firstOrNull;
+    final nextNum = nextSet != null ? nextSet.setIndex + 1 : ex.sets.length;
+    final totalSets = ex.sets.length;
+    final weight = displayWeight(nextSet?.weight);
+    final unit = _weightUnit;
+    final reps = nextSet?.reps ?? 0;
+
+    unawaited(NotificationService.updateRestTimer(
+      exerciseName: ex.name,
+      nextSet: nextNum,
+      totalSets: totalSets,
+      weight: '$weight$unit',
+      reps: reps,
+      remaining: remaining,
+      totalSeconds: restTimerService.total,
+    ));
+  }
+
   @override
   void dispose() {
+    _restTickSub?.cancel();
     restTimerService.dispose();
     super.dispose();
   }
@@ -467,21 +837,28 @@ class ActiveSessionNotifier extends StateNotifier<ActiveSessionState> {
 
 final activeSessionProvider =
     StateNotifierProvider<ActiveSessionNotifier, ActiveSessionState>((ref) {
-  final sessionDao = ref.watch(sessionDaoProvider);
-  final exerciseDao = ref.watch(exerciseDaoProvider);
-  final scheduleDao = ref.watch(scheduleDaoProvider);
-  final syncQueueDao = SyncQueueDao(ref.watch(databaseProvider));
-  final syncService = ref.watch(syncServiceProvider);
+  final repository = ref.watch(workoutLogRepositoryProvider);
 
-  final profile = ref.watch(userProfileProvider).valueOrNull;
+  // Use ref.read so that profile changes don't recreate (and wipe) the
+  // notifier mid-session. Settings are pushed reactively via ref.listen below.
+  final profile = ref.read(userProfileProvider).valueOrNull;
 
-  return ActiveSessionNotifier(
-    sessionDao: sessionDao,
-    exerciseDao: exerciseDao,
-    scheduleDao: scheduleDao,
-    syncQueueDao: syncQueueDao,
-    syncService: syncService,
+  final notifier = ActiveSessionNotifier(
+    repository: repository,
     defaultRestSeconds: profile?.defaultRestSeconds ?? 90,
     weightUnit: profile?.weightUnit ?? 'kg',
   );
+
+  // Keep rest-time / weight-unit in sync without recreating the notifier.
+  ref.listen(userProfileProvider, (_, next) {
+    final p = next.valueOrNull;
+    if (p != null) {
+      notifier.updateSettings(
+        restSeconds: p.defaultRestSeconds,
+        weightUnit: p.weightUnit,
+      );
+    }
+  });
+
+  return notifier;
 });

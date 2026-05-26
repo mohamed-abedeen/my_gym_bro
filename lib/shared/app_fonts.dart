@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
-import 'constants.dart';
-import 'responsive.dart';
+import 'package:my_gym_bro/shared/constants.dart';
+import 'package:my_gym_bro/shared/responsive.dart';
 
 /// Font styles for the app.
 ///

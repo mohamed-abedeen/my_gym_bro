@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 
-import '../../core/database/app_database.dart';
-import '../../core/database/daos/exercise_dao.dart';
-import '../../core/database/daos/session_dao.dart';
-import '../../shared/constants.dart';
+import 'package:my_gym_bro/core/database/app_database.dart';
+import 'package:my_gym_bro/core/database/daos/exercise_dao.dart';
+import 'package:my_gym_bro/core/database/daos/session_dao.dart';
+import 'package:my_gym_bro/shared/constants.dart';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Muscle State Enum
@@ -11,7 +11,7 @@ import '../../shared/constants.dart';
 
 /// The three lifecycle phases of a muscle after training.
 ///
-/// ```
+/// ```text
 ///  WORKOUT ──► recovering (0 → recoveryHours)
 ///          ──► recovered  (recoveryHours → 168 h / 7 days)
 ///          ──► undertrained (> 168 h  OR  never trained)
@@ -28,18 +28,18 @@ enum MuscleState { recovered, recovering, undertrained }
 enum MuscleSize {
   /// Large compound movers — high CNS load, dense fibre volume.
   /// Base recovery: **48–72 h** (we use 60 h midpoint).
-  large(baseRecoveryHours: 60.0),
+  large(baseRecoveryHours: 60),
 
   /// Mid-size movers — moderate fibre volume, moderate CNS demand.
   /// Base recovery: **36–48 h** (we use 42 h midpoint).
-  medium(baseRecoveryHours: 42.0),
+  medium(baseRecoveryHours: 42),
 
   /// Small / stabiliser muscles — low total volume, fast turnover.
   /// Base recovery: **24–36 h** (we use 30 h midpoint).
-  small(baseRecoveryHours: 30.0);
+  small(baseRecoveryHours: 30);
 
-  final double baseRecoveryHours;
   const MuscleSize({required this.baseRecoveryHours});
+  final double baseRecoveryHours;
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -47,6 +47,12 @@ enum MuscleSize {
 // ─────────────────────────────────────────────────────────────────────────────
 
 class MuscleStateInfo {
+  const MuscleStateInfo({
+    required this.muscleGroup,
+    required this.state,
+    this.lastTrainedAt,
+    this.recoveryPercent,
+  });
   final String muscleGroup;
   final MuscleState state;
   final DateTime? lastTrainedAt;
@@ -60,13 +66,6 @@ class MuscleStateInfo {
   /// Soreness is the inverse of recovery: 1.0 = just trained, 0.0 = recovered.
   double? get soreness =>
       recoveryPercent == null ? null : (1.0 - recoveryPercent!).clamp(0.0, 1.0);
-
-  const MuscleStateInfo({
-    required this.muscleGroup,
-    required this.state,
-    this.lastTrainedAt,
-    this.recoveryPercent,
-  });
 
   /// Colour that maps to the current state:
   ///
@@ -105,10 +104,9 @@ class MuscleStateInfo {
 // ─────────────────────────────────────────────────────────────────────────────
 
 class MuscleRecoveryService {
+  MuscleRecoveryService(this._sessionDao, this._exerciseDao);
   final SessionDao _sessionDao;
   final ExerciseDao _exerciseDao;
-
-  MuscleRecoveryService(this._sessionDao, this._exerciseDao);
 
   // ── Canonical muscle group list ──────────────────────────────────────────
 
@@ -119,6 +117,9 @@ class MuscleRecoveryService {
     'Lower Back',
     'Traps',
     'Shoulders',
+    'Front Delt',
+    'Side Delt',
+    'Rear Delt',
     'Biceps',
     'Triceps',
     'Forearms',
@@ -153,12 +154,14 @@ class MuscleRecoveryService {
     'Quads': MuscleSize.large, // quadriceps — largest muscle group
     'Hamstrings': MuscleSize.large, // biceps femoris + semis
     'Glutes': MuscleSize.large, // gluteus maximus — biggest single muscle
-
     // ── Medium ──
-    'Shoulders': MuscleSize.medium, // 3-head deltoid
+    'Shoulders': MuscleSize.medium, // 3-head deltoid (catch-all / unclassified)
+    // ── Deltoid sub-groups (individual heads) ──
+    'Front Delt': MuscleSize.small, // anterior deltoid
+    'Side Delt': MuscleSize.small, // lateral deltoid
+    'Rear Delt': MuscleSize.small, // posterior deltoid
     'Traps': MuscleSize.medium, // upper traps — heavy shrugs / carries
     'Triceps': MuscleSize.medium, // 3-head, moderate volume
-
     // ── Small ──
     'Biceps': MuscleSize.small, // 2-head, small cross-section
     'Forearms': MuscleSize.small, // brachioradialis + grip extensors
@@ -170,7 +173,7 @@ class MuscleRecoveryService {
 
   /// The "trained & retained" window. After full recovery, the muscle stays
   /// green for this long before fading to untrained (grey).
-  static const _retentionHours = 168.0; // 7 days
+  static const _retentionHours = 240.0; // 10 days
 
   // ── Public API ──────────────────────────────────────────────────────────
 
@@ -206,7 +209,7 @@ class MuscleRecoveryService {
     if (hoursSince > _retentionHours) return null;
 
     // Fully recovered and within retention window
-    if (hoursSince >= recoveryH) return 1.0;
+    if (hoursSince >= recoveryH) return 1;
 
     // Still recovering: linear 0.0 → 1.0 over recoveryH hours
     return (hoursSince / recoveryH).clamp(0.0, 1.0);
@@ -222,24 +225,25 @@ class MuscleRecoveryService {
 
     // Batch: get all session exercises in one query
     final sessionIds = finished.map((s) => s.localId).toList();
-    final allSessionExercises =
-        await _sessionDao.getSessionExercisesForSessions(sessionIds);
+    final allSessionExercises = await _sessionDao
+        .getSessionExercisesForSessions(sessionIds);
 
     // Batch: get all exercises referenced
     final uniqueExerciseIds =
         allSessionExercises.map((se) => se.exerciseId).toSet().toList();
-    final exerciseList = uniqueExerciseIds.isNotEmpty
-        ? await _exerciseDao.findByExerciseIds(uniqueExerciseIds)
-        : <Exercise>[];
+    final exerciseList =
+        uniqueExerciseIds.isNotEmpty
+            ? await _exerciseDao.findByExerciseIds(uniqueExerciseIds)
+            : <Exercise>[];
     final exerciseMap = {for (final e in exerciseList) e.exerciseId: e};
 
     // Map sessionId to finishedAt
     final sessionFinishedAt = {
-      for (final s in finished) s.localId: s.finishedAt!
+      for (final s in finished) s.localId: s.finishedAt!,
     };
 
     // Build last-trained dates
-    final Map<String, DateTime> lastTrained = {};
+    final lastTrained = <String, DateTime>{};
     for (final se in allSessionExercises) {
       final exercise = exerciseMap[se.exerciseId];
       if (exercise == null || exercise.muscleGroup == null) continue;

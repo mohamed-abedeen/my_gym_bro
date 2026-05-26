@@ -1,9 +1,9 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../../../core/providers/providers.dart';
-import '../../../core/database/daos/dm_dao.dart';
-import 'dm_repository.dart';
-import 'dm_models.dart';
-import '../../../core/database/app_database.dart';
+import 'package:my_gym_bro/core/database/app_database.dart';
+import 'package:my_gym_bro/core/database/daos/dm_dao.dart';
+import 'package:my_gym_bro/core/providers/providers.dart';
+import 'package:my_gym_bro/features/community/dm/dm_models.dart';
+import 'package:my_gym_bro/features/community/dm/dm_repository.dart';
 
 /// Provider for the DmDao.
 final dmDaoProvider = Provider<DmDao>((ref) {
@@ -21,14 +21,14 @@ final dmRepositoryProvider = Provider<DmRepository?>((ref) {
 });
 
 /// Stream of all conversations for the current user.
-final dmConversationsProvider = StreamProvider<List<DmConversation>>((ref) {
+final dmConversationsProvider = StreamProvider.autoDispose<List<DmConversation>>((ref) {
   final repo = ref.watch(dmRepositoryProvider);
   if (repo == null) return Stream.value([]);
   return repo.streamConversations();
 });
 
 /// Stream of messages for a specific conversation.
-final dmMessagesProvider = StreamProvider.family<List<DmMessage>, String>((ref, conversationId) {
+final dmMessagesProvider = StreamProvider.autoDispose.family<List<DmMessage>, String>((ref, conversationId) {
   final repo = ref.watch(dmRepositoryProvider);
   if (repo == null) return Stream.value([]);
   // Fire-and-forget fetch to ensure local cache is up to date, 

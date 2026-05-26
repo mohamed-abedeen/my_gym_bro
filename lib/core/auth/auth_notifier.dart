@@ -4,29 +4,30 @@ import 'dart:io';
 import 'package:drift/drift.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:my_gym_bro/core/database/app_database.dart';
+import 'package:my_gym_bro/core/database/daos/user_profile_dao.dart';
+import 'package:my_gym_bro/core/security/input_sanitiser.dart';
+import 'package:my_gym_bro/core/security/secure_storage.dart';
+import 'package:my_gym_bro/core/services/crash_reporter.dart';
+import 'package:my_gym_bro/core/services/sync_service.dart';
+import 'package:my_gym_bro/shared/app_constants.dart';
 import 'package:purchases_flutter/purchases_flutter.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-
-import '../database/app_database.dart';
-import '../database/daos/user_profile_dao.dart';
-import '../security/input_sanitiser.dart';
-import '../security/secure_storage.dart';
-import '../services/sync_service.dart';
 
 /// Authentication state.
 enum AuthStatus { initial, loading, authenticated, unauthenticated, error }
 
 @immutable
 class AppAuthState {
-  final AuthStatus status;
-  final String? errorMessage;
-  final User? user;
 
   const AppAuthState({
     this.status = AuthStatus.initial,
     this.errorMessage,
     this.user,
   });
+  final AuthStatus status;
+  final String? errorMessage;
+  final User? user;
 
   AppAuthState copyWith({AuthStatus? status, String? errorMessage, User? user}) =>
       AppAuthState(
@@ -38,12 +39,60 @@ class AppAuthState {
 
 /// Auth notifier — handles sign-up, sign-in, sign-out, and social auth.
 class AuthNotifier extends StateNotifier<AppAuthState> {
+
+  AuthNotifier(this._db, this._supabase, this._syncService)
+      : super(const AppAuthState()) {
+    // OAuth (Google/Apple) returns from signInWithOAuth before the session
+    // exists — the real login arrives via the deep-link callback. Subscribe
+    // here so the state transitions to authenticated whenever Supabase
+    // actually has a session, regardless of which flow produced it.
+    final sb = _supabase;
+    if (sb != null) {
+      _authSub = sb.auth.onAuthStateChange.listen((data) {
+        final user = data.session?.user;
+        switch (data.event) {
+          case AuthChangeEvent.signedIn:
+          case AuthChangeEvent.tokenRefreshed:
+          case AuthChangeEvent.userUpdated:
+          case AuthChangeEvent.initialSession:
+            if (user != null) {
+              // RevenueCat login — fire-and-forget; don't block auth state.
+              unawaited(_revenueCatLogin(user.id));
+              unawaited(_syncService.syncAll());
+              state = state.copyWith(
+                status: AuthStatus.authenticated,
+                user: user,
+              );
+            }
+          case AuthChangeEvent.signedOut:
+            state = const AppAuthState(status: AuthStatus.unauthenticated);
+          case AuthChangeEvent.mfaChallengeVerified:
+          case AuthChangeEvent.passwordRecovery:
+          // ignore: deprecated_member_use -- userDeleted was removed in Supabase v2; kept to satisfy the exhaustive switch until the SDK drops this enum value.
+          case AuthChangeEvent.userDeleted:
+            break;
+        }
+      });
+    }
+  }
   final AppDatabase _db;
   final SupabaseClient? _supabase;
   final SyncService _syncService;
+  StreamSubscription<AuthState>? _authSub;
 
-  AuthNotifier(this._db, this._supabase, this._syncService)
-      : super(const AppAuthState());
+  @override
+  void dispose() {
+    _authSub?.cancel();
+    super.dispose();
+  }
+
+  Future<void> _revenueCatLogin(String userId) async {
+    try {
+      await Purchases.logIn(userId);
+    } on Exception catch (e) {
+      CrashReporter.recordError(e, reason: 'RevenueCat logIn failed');
+    }
+  }
 
   // ──────────────────────────────────────────────
   // Sign Up
@@ -55,6 +104,7 @@ class AuthNotifier extends StateNotifier<AppAuthState> {
     String? goal,
     String? experience,
     String? gender,
+    String notificationTone = AppConstants.defaultNotificationTone,
   }) async {
     if (_supabase == null) {
       state = state.copyWith(
@@ -89,9 +139,10 @@ class AuthNotifier extends StateNotifier<AppAuthState> {
         goal: Value(goal),
         experience: Value(experience),
         gender: Value(gender),
+        notificationTone: Value(notificationTone),
         trialStartedAt: Value(now),
         subscriptionStatus: const Value('trial'),
-        subscriptionExpiresAt: Value(now.add(const Duration(days: 7))),
+        subscriptionExpiresAt: Value(now.add(const Duration(days: AppConstants.trialDurationDays))),
         createdAt: Value(now),
         updatedAt: Value(now),
       ));
@@ -102,14 +153,14 @@ class AuthNotifier extends StateNotifier<AppAuthState> {
       // RevenueCat login
       try {
         await Purchases.logIn(user.id);
-      } catch (e) {
-        if (kDebugMode) debugPrint('RevenueCat logIn failed: $e');
+      } on Exception catch (e) {
+        CrashReporter.recordError(e, reason: 'RevenueCat logIn failed');
       }
 
       state = state.copyWith(status: AuthStatus.authenticated, user: user);
     } on AuthException catch (e) {
       state = state.copyWith(status: AuthStatus.error, errorMessage: e.message);
-    } catch (e) {
+    } on Exception catch (e) {
       state = state.copyWith(
           status: AuthStatus.error,
           errorMessage: _friendlyError(e));
@@ -145,8 +196,8 @@ class AuthNotifier extends StateNotifier<AppAuthState> {
       // RevenueCat login
       try {
         await Purchases.logIn(user.id);
-      } catch (e) {
-        if (kDebugMode) debugPrint('RevenueCat logIn failed: $e');
+      } on Exception catch (e) {
+        CrashReporter.recordError(e, reason: 'RevenueCat logIn failed');
       }
 
       // Sync
@@ -155,7 +206,7 @@ class AuthNotifier extends StateNotifier<AppAuthState> {
       state = state.copyWith(status: AuthStatus.authenticated, user: user);
     } on AuthException catch (e) {
       state = state.copyWith(status: AuthStatus.error, errorMessage: e.message);
-    } catch (e) {
+    } on Exception catch (e) {
       state = state.copyWith(
           status: AuthStatus.error, errorMessage: _friendlyError(e));
     }
@@ -169,13 +220,13 @@ class AuthNotifier extends StateNotifier<AppAuthState> {
     try {
       try {
         await Purchases.logOut();
-      } catch (e) {
-        if (kDebugMode) debugPrint('RevenueCat logOut failed: $e');
+      } on Exception catch (e) {
+        CrashReporter.recordError(e, reason: 'RevenueCat logOut failed');
       }
       await _supabase?.auth.signOut();
       await SecureStorage().clearTokens();
       state = const AppAuthState(status: AuthStatus.unauthenticated);
-    } catch (e) {
+    } on Exception catch (e) {
       state = state.copyWith(
           status: AuthStatus.error, errorMessage: e.toString());
     }
@@ -192,20 +243,14 @@ class AuthNotifier extends StateNotifier<AppAuthState> {
     }
     state = state.copyWith(status: AuthStatus.loading);
     try {
+      // Kicks off the external browser flow and returns immediately. The
+      // session lands asynchronously via the deep-link callback and is
+      // handled by the onAuthStateChange subscription in the constructor.
       await _supabase.auth.signInWithOAuth(
         OAuthProvider.google,
-        redirectTo: 'io.supabase.mygymbro://callback',
+        redirectTo: AppConstants.oauthRedirectUri,
       );
-      final user = _supabase.auth.currentUser;
-      if (user != null) {
-        try {
-          await Purchases.logIn(user.id);
-        } catch (e) {
-          if (kDebugMode) debugPrint('RevenueCat logIn failed: $e');
-        }
-        state = state.copyWith(status: AuthStatus.authenticated, user: user);
-      }
-    } catch (e) {
+    } on Exception catch (e) {
       state = state.copyWith(
           status: AuthStatus.error, errorMessage: e.toString());
     }
@@ -215,20 +260,13 @@ class AuthNotifier extends StateNotifier<AppAuthState> {
     if (!Platform.isIOS || _supabase == null) return;
     state = state.copyWith(status: AuthStatus.loading);
     try {
+      // See signInWithGoogle — auth completes via the deep-link callback,
+      // picked up by the onAuthStateChange listener.
       await _supabase.auth.signInWithOAuth(
         OAuthProvider.apple,
-        redirectTo: 'io.supabase.mygymbro://callback',
+        redirectTo: AppConstants.oauthRedirectUri,
       );
-      final user = _supabase.auth.currentUser;
-      if (user != null) {
-        try {
-          await Purchases.logIn(user.id);
-        } catch (e) {
-          if (kDebugMode) debugPrint('RevenueCat logIn failed: $e');
-        }
-        state = state.copyWith(status: AuthStatus.authenticated, user: user);
-      }
-    } catch (e) {
+    } on Exception catch (e) {
       state = state.copyWith(
           status: AuthStatus.error, errorMessage: e.toString());
     }
@@ -242,8 +280,8 @@ class AuthNotifier extends StateNotifier<AppAuthState> {
       if (_supabase == null) return false;
       await _supabase.auth.resetPasswordForEmail(email.trim().toLowerCase());
       return true;
-    } catch (e) {
-      if (kDebugMode) debugPrint('Reset password failed: $e');
+    } on Exception catch (e) {
+      CrashReporter.recordError(e, reason: 'Reset password failed');
       return false;
     }
   }

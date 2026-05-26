@@ -2,17 +2,17 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
-
-import '../../l10n/app_localizations.dart';
-import '../../shared/constants.dart';
-import '../../shared/responsive.dart';
-import '../../shared/widgets/liquid_glass_button.dart';
-import 'exercise_detail_sheet.dart';
-import 'workout_providers.dart';
+import 'package:my_gym_bro/core/services/units.dart';
+import 'package:my_gym_bro/features/workout/exercise_detail_sheet.dart';
+import 'package:my_gym_bro/features/workout/workout_providers.dart';
+import 'package:my_gym_bro/l10n/app_localizations.dart';
+import 'package:my_gym_bro/shared/constants.dart';
+import 'package:my_gym_bro/shared/responsive.dart';
+import 'package:my_gym_bro/shared/widgets/liquid_glass_button.dart';
 
 /// Show the Log bottom sheet — matches Figma Past Sessions design.
 void showLogBottomSheet(BuildContext context) {
-  showModalBottomSheet(
+  showModalBottomSheet<void>(
     context: context,
     isScrollControlled: true,
     backgroundColor: Colors.transparent,
@@ -29,6 +29,7 @@ class _LogSheet extends ConsumerWidget {
     final colors = AppColors.of(context);
     final l10n = AppLocalizations.of(context);
     final enriched = ref.watch(enrichedAllSessionsProvider);
+    final unit = ref.watch(weightUnitProvider);
 
     return DraggableScrollableSheet(
       initialChildSize: 0.85,
@@ -141,6 +142,7 @@ class _LogSheet extends ConsumerWidget {
                         itemBuilder: (_, i) => _SessionCard(
                           enriched: list[i],
                           l10n: l10n,
+                          unit: unit,
                           initiallyExpanded: i == 0,
                         ),
                       ),
@@ -167,22 +169,24 @@ class _LogSheet extends ConsumerWidget {
 // footer with Total Volume + Total Time, share button
 // ═══════════════════════════════════════════════════════════════════
 
-class _SessionCard extends StatefulWidget {
-  final EnrichedSession enriched;
-  final AppLocalizations l10n;
-  final bool initiallyExpanded;
+class _SessionCard extends ConsumerStatefulWidget {
 
   const _SessionCard({
     required this.enriched,
     required this.l10n,
+    required this.unit,
     this.initiallyExpanded = false,
   });
+  final EnrichedSession enriched;
+  final AppLocalizations l10n;
+  final WeightUnit unit;
+  final bool initiallyExpanded;
 
   @override
-  State<_SessionCard> createState() => _SessionCardState();
+  ConsumerState<_SessionCard> createState() => _SessionCardState();
 }
 
-class _SessionCardState extends State<_SessionCard>
+class _SessionCardState extends ConsumerState<_SessionCard>
     with SingleTickerProviderStateMixin {
   late bool _expanded;
 
@@ -190,6 +194,52 @@ class _SessionCardState extends State<_SessionCard>
   void initState() {
     super.initState();
     _expanded = widget.initiallyExpanded;
+  }
+
+  Future<void> _confirmDeleteSession(int sessionId) async {
+    final l10n = AppLocalizations.of(context);
+    final colors = AppColors.of(context);
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: colors.panelBackground,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(20.r),
+        ),
+        title: Text(
+          l10n.deleteWorkout,
+          style: TextStyle(
+            color: colors.textPrimary,
+            fontWeight: FontWeight.w700,
+          ),
+        ),
+        content: Text(
+          l10n.deleteWorkoutConfirm,
+          style: TextStyle(color: colors.textSecondary),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(false),
+            child: Text(
+              l10n.cancel,
+              style: TextStyle(color: colors.textSecondary),
+            ),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(true),
+            child: Text(
+              l10n.delete,
+              style: const TextStyle(color: Colors.redAccent),
+            ),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed != true || !mounted) return;
+
+    await ref.read(sessionDaoProvider).deleteSession(sessionId);
+    ref.invalidate(enrichedAllSessionsProvider);
   }
 
   @override
@@ -200,7 +250,7 @@ class _SessionCardState extends State<_SessionCard>
     final dateStr = DateFormat('d / M / yyyy').format(s.startedAt);
     final title = '$dayAbbr, ${widget.enriched.workoutName}';
     final durationMin = (s.durationSeconds ?? 0) ~/ 60;
-    final volume = s.totalVolume?.toInt() ?? 0;
+    final volumeStr = formatWeight(s.totalVolume, widget.unit, decimals: 0, withUnit: true);
 
     return GestureDetector(
       onTap: () => setState(() => _expanded = !_expanded),
@@ -351,7 +401,7 @@ class _SessionCardState extends State<_SessionCard>
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          '${widget.l10n.totalVolume} ${volume}lbs',
+                          '${widget.l10n.totalVolume} $volumeStr',
                           style: TextStyle(
                             color: colors.textPrimary,
                             fontSize: 16.sp,
@@ -370,6 +420,19 @@ class _SessionCardState extends State<_SessionCard>
                       ],
                     ),
                     const Spacer(),
+                    // Delete button
+                    LiquidGlassButton(
+                      width: 48.w,
+                      height: 48.h,
+                      opacity: 0.15,
+                      radius: 24.r,
+                      onTap: () => _confirmDeleteSession(
+                        widget.enriched.session.localId,
+                      ),
+                      child: Icon(Icons.delete_outline_rounded,
+                          color: Colors.redAccent, size: 20.sp),
+                    ),
+                    SizedBox(width: 8.w),
                     // Share icon — 48x48 per Figma
                     LiquidGlassButton(
                       width: 48.w,

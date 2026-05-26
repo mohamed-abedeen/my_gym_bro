@@ -1,26 +1,28 @@
 import 'dart:io';
 import 'dart:ui';
-import 'package:cached_network_image/cached_network_image.dart';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:my_gym_bro/core/database/app_database.dart';
+import 'package:my_gym_bro/core/services/crash_reporter.dart';
+import 'package:my_gym_bro/features/community/dm/dm_mock_data.dart';
+import 'package:my_gym_bro/features/community/dm/dm_models.dart';
+import 'package:my_gym_bro/features/community/dm/dm_providers.dart';
+import 'package:my_gym_bro/features/community/dm/widgets/dm_bubble.dart';
+import 'package:my_gym_bro/features/community/dm/widgets/schedule_share_sheet.dart';
+import 'package:my_gym_bro/l10n/app_localizations.dart';
+import 'package:my_gym_bro/shared/constants.dart';
+import 'package:my_gym_bro/shared/responsive.dart';
+import 'package:my_gym_bro/shared/widgets/oc_glass_btn.dart';
+import 'package:my_gym_bro/shared/widgets/user_avatar.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
-import '../../../core/database/app_database.dart';
-import '../../../l10n/app_localizations.dart';
-import '../../../shared/constants.dart';
-import '../../../shared/responsive.dart';
-import '../../../shared/widgets/oc_glass_btn.dart';
-import 'dm_models.dart';
-import 'dm_providers.dart';
-import 'widgets/dm_bubble.dart';
-import 'widgets/schedule_share_sheet.dart';
-
 class DmChatScreen extends ConsumerStatefulWidget {
-  final DmConversation conversation;
 
-  const DmChatScreen({super.key, required this.conversation});
+  const DmChatScreen({required this.conversation, super.key});
+  final DmConversation conversation;
 
   @override
   ConsumerState<DmChatScreen> createState() => _DmChatScreenState();
@@ -60,7 +62,7 @@ class _DmChatScreenState extends ConsumerState<DmChatScreen> {
 
   // ── Actions ──────────────────────────────────────────────────────────────
 
-  void _sendMessage() async {
+  Future<void> _sendMessage() async {
     final text = _textController.text.trim();
     if (text.isEmpty) return;
 
@@ -72,7 +74,7 @@ class _DmChatScreenState extends ConsumerState<DmChatScreen> {
             widget.conversation.id,
             text,
           );
-    } catch (_) {
+    } on Exception catch (_) {
       if (mounted) _showSendError();
     }
   }
@@ -81,7 +83,7 @@ class _DmChatScreenState extends ConsumerState<DmChatScreen> {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (_scrollController.hasClients) {
         _scrollController.animateTo(
-          0.0,
+          0,
           duration: const Duration(milliseconds: 300),
           curve: Curves.easeOut,
         );
@@ -106,14 +108,14 @@ class _DmChatScreenState extends ConsumerState<DmChatScreen> {
             widget.conversation.id,
             File(xFile.path),
           );
-    } catch (_) {
+    } on Exception catch (_) {
       if (mounted) _showSendError();
     }
   }
 
   void _showAttachmentSheet() {
     final colors = AppColors.of(context);
-    showModalBottomSheet(
+    showModalBottomSheet<void>(
       context: context,
       backgroundColor: Colors.transparent,
       builder: (_) => ClipRRect(
@@ -185,7 +187,7 @@ class _DmChatScreenState extends ConsumerState<DmChatScreen> {
                                               ))
                                           .toList(),
                                     );
-                              } catch (_) {
+                              } on Exception catch (_) {
                                 if (mounted) _showSendError();
                               }
                             },
@@ -225,8 +227,11 @@ class _DmChatScreenState extends ConsumerState<DmChatScreen> {
   Widget build(BuildContext context) {
     Responsive.init(context);
     final colors = AppColors.of(context);
-    final messagesAsync =
-        ref.watch(dmMessagesProvider(widget.conversation.id));
+    // TODO(dev): flip to false before shipping
+    const kUseMockDm = true;
+    final AsyncValue<List<DmMessage>> messagesAsync = kUseMockDm
+        ? AsyncValue.data(mockDmMessages)
+        : ref.watch(dmMessagesProvider(widget.conversation.id));
 
     return Scaffold(
       backgroundColor: colors.background,
@@ -284,19 +289,26 @@ class _DmChatScreenState extends ConsumerState<DmChatScreen> {
               loading: () => Center(
                 child: CircularProgressIndicator(color: colors.accent),
               ),
-              error: (e, _) => Center(
-                child: Padding(
-                  padding: EdgeInsets.all(24.w),
-                  child: Text(
-                    'Failed to load messages.\n$e',
-                    textAlign: TextAlign.center,
-                    style: TextStyle(
-                      color: colors.danger,
-                      fontSize: 13.sp,
+              error: (e, st) {
+                CrashReporter.recordError(
+                  e,
+                  stackTrace: st,
+                  reason: 'DM messages failed to load',
+                );
+                return Center(
+                  child: Padding(
+                    padding: EdgeInsets.all(24.w),
+                    child: Text(
+                      'Failed to load messages. Please try again.',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        color: colors.danger,
+                        fontSize: 13.sp,
+                      ),
                     ),
                   ),
-                ),
-              ),
+                );
+              },
             ),
           ),
 
@@ -350,14 +362,13 @@ class _DmChatScreenState extends ConsumerState<DmChatScreen> {
 // ═══════════════════════════════════════════════════════════════════════════
 
 class _ChatHeader extends ConsumerWidget {
-  final DmConversation conversation;
 
   const _ChatHeader({required this.conversation});
+  final DmConversation conversation;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final colors = AppColors.of(context);
-    final dpr = MediaQuery.devicePixelRatioOf(context);
 
     return Container(
       padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 10.h),
@@ -391,39 +402,11 @@ class _ChatHeader extends ConsumerWidget {
           SizedBox(width: 4.w),
 
           // Avatar — cached, 44×44
-          Container(
-            width: 44.w,
-            height: 44.w,
-            decoration: BoxDecoration(
-              color: colors.panelBackground,
-              shape: BoxShape.circle,
-            ),
-            child: conversation.otherAvatarUrl != null
-                ? ClipOval(
-                    child: CachedNetworkImage(
-                      imageUrl: conversation.otherAvatarUrl!,
-                      width: 44.w,
-                      height: 44.w,
-                      fit: BoxFit.cover,
-                      memCacheWidth: (44.w * dpr).toInt(),
-                      memCacheHeight: (44.w * dpr).toInt(),
-                      placeholder: (_, __) => Icon(
-                        Icons.person_rounded,
-                        color: colors.textSecondary,
-                        size: 22.sp,
-                      ),
-                      errorWidget: (_, __, ___) => Icon(
-                        Icons.person_rounded,
-                        color: colors.textSecondary,
-                        size: 22.sp,
-                      ),
-                    ),
-                  )
-                : Icon(
-                    Icons.person_rounded,
-                    color: colors.textSecondary,
-                    size: 22.sp,
-                  ),
+          UserAvatar(
+            size: 44,
+            url: conversation.otherAvatarUrl,
+            placeholderColor: colors.panelBackground,
+            iconColor: colors.textSecondary,
           ),
 
           SizedBox(width: 12.w),
@@ -469,9 +452,9 @@ class _ChatHeader extends ConsumerWidget {
 // ═══════════════════════════════════════════════════════════════════════════
 
 class _TimestampLabel extends StatelessWidget {
-  final DateTime time;
 
   const _TimestampLabel({required this.time});
+  final DateTime time;
 
   @override
   Widget build(BuildContext context) {
@@ -523,9 +506,9 @@ class _TimestampLabel extends StatelessWidget {
 // ═══════════════════════════════════════════════════════════════════════════
 
 class _EmptyChatState extends StatelessWidget {
-  final String name;
 
   const _EmptyChatState({required this.name});
+  final String name;
 
   @override
   Widget build(BuildContext context) {
@@ -571,15 +554,15 @@ class _EmptyChatState extends StatelessWidget {
 // ═══════════════════════════════════════════════════════════════════════════
 
 class _ChatInputBar extends StatelessWidget {
-  final TextEditingController controller;
-  final VoidCallback onSend;
-  final VoidCallback onAttach;
 
   const _ChatInputBar({
     required this.controller,
     required this.onSend,
     required this.onAttach,
   });
+  final TextEditingController controller;
+  final VoidCallback onSend;
+  final VoidCallback onAttach;
 
   @override
   Widget build(BuildContext context) {
@@ -673,7 +656,7 @@ class _ChatInputBar extends StatelessWidget {
                           child: Icon(
                             Icons.arrow_upward_rounded,
                             color: hasText
-                                ? Colors.black
+                                ? AppColors.of(context).black
                                 : colors.textSecondary,
                             size: 20.sp,
                           ),
@@ -696,10 +679,6 @@ class _ChatInputBar extends StatelessWidget {
 // ═══════════════════════════════════════════════════════════════════════════
 
 class _AttachOption extends StatelessWidget {
-  final IconData icon;
-  final String label;
-  final Color color;
-  final VoidCallback onTap;
 
   const _AttachOption({
     required this.icon,
@@ -707,6 +686,10 @@ class _AttachOption extends StatelessWidget {
     required this.color,
     required this.onTap,
   });
+  final IconData icon;
+  final String label;
+  final Color color;
+  final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
@@ -733,6 +716,8 @@ class _AttachOption extends StatelessWidget {
               fontSize: 12.sp,
               fontWeight: FontWeight.w500,
             ),
+            textAlign: TextAlign.center,
+            overflow: TextOverflow.ellipsis,
           ),
         ],
       ),

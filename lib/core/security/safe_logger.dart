@@ -27,7 +27,7 @@ class SafeLogger {
       // Redact patterns like: "token": "abc123" or token=abc123
       safe = safe.replaceAll(
         RegExp('("$pattern"\\s*:\\s*)"[^"]*"', caseSensitive: false),
-        '\$1"[REDACTED]"',
+        r'$1"[REDACTED]"',
       );
       safe = safe.replaceAll(
         RegExp('$pattern=\\S+', caseSensitive: false),

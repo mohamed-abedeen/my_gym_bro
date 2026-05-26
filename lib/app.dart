@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:my_gym_bro/core/providers/providers.dart';
+import 'package:my_gym_bro/core/router/app_router.dart';
 import 'package:my_gym_bro/l10n/app_localizations.dart';
-
-import 'core/providers/providers.dart';
-import 'core/router/app_router.dart';
-import 'shared/constants.dart';
+import 'package:my_gym_bro/shared/constants.dart';
+import 'package:my_gym_bro/shared/widgets/connectivity_banner.dart';
 
 /// Root app widget.
 class MyGymBroApp extends ConsumerWidget {
@@ -46,6 +46,8 @@ class MyGymBroApp extends ConsumerWidget {
 
       // Router
       routerConfig: router,
+      builder: (context, child) =>
+          ConnectivityBanner(child: child ?? const SizedBox.shrink()),
     );
   }
 }

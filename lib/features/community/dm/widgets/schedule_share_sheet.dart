@@ -1,12 +1,13 @@
 import 'dart:ui';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../../../../l10n/app_localizations.dart';
-import '../../../../shared/constants.dart';
-import '../../../../shared/responsive.dart';
-import '../../../workout/workout_providers.dart';
+import 'package:my_gym_bro/features/workout/workout_providers.dart';
+import 'package:my_gym_bro/l10n/app_localizations.dart';
+import 'package:my_gym_bro/shared/constants.dart';
+import 'package:my_gym_bro/shared/responsive.dart';
 
-Future<void> showScheduleShareSheet(BuildContext context, {required Function(int id, String name, List<String> days) onShare}) {
+Future<void> showScheduleShareSheet(BuildContext context, {required void Function(int id, String name, List<String> days) onShare}) {
   return showModalBottomSheet(
     context: context,
     backgroundColor: Colors.transparent,
@@ -16,9 +17,9 @@ Future<void> showScheduleShareSheet(BuildContext context, {required Function(int
 }
 
 class _ScheduleShareSheetContent extends ConsumerWidget {
-  final Function(int id, String name, List<String> days) onShare;
 
   const _ScheduleShareSheetContent({required this.onShare});
+  final void Function(int id, String name, List<String> days) onShare;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -85,15 +86,15 @@ class _ScheduleShareSheetContent extends ConsumerWidget {
 }
 
 class _ScheduleCard extends ConsumerWidget {
-  final int scheduleId;
-  final String name;
-  final Function(int id, String name, List<String> days) onShare;
 
   const _ScheduleCard({
     required this.scheduleId,
     required this.name,
     required this.onShare,
   });
+  final int scheduleId;
+  final String name;
+  final void Function(int id, String name, List<String> days) onShare;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {

@@ -3,8 +3,8 @@ import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 
-import '../../../shared/constants.dart';
-import '../../../shared/responsive.dart';
+import 'package:my_gym_bro/shared/constants.dart';
+import 'package:my_gym_bro/shared/responsive.dart';
 
 /// Pre-workout countdown sequence — matches Figma frames 12a–12d.
 ///
@@ -16,9 +16,6 @@ import '../../../shared/responsive.dart';
 ///
 /// Pops with `true` when complete (caller starts the session).
 class CountdownScreen extends StatefulWidget {
-  final String dayLabel;
-  final int exerciseCount;
-  final String estimatedTime;
 
   const CountdownScreen({
     super.key,
@@ -26,6 +23,9 @@ class CountdownScreen extends StatefulWidget {
     this.exerciseCount = 5,
     this.estimatedTime = '1h',
   });
+  final String dayLabel;
+  final int exerciseCount;
+  final String estimatedTime;
 
   @override
   State<CountdownScreen> createState() => _CountdownScreenState();
@@ -40,7 +40,7 @@ class _CountdownScreenState extends State<CountdownScreen>
 
   static const _stageDurationMs = 1000;
   static const _ringTargets = [1.0, 0.75, 0.50, 0.25];
-  double _ringProgress = 1.0;
+  double _ringProgress = 1;
 
   // Orb positions per stage (from Figma CSS positions):
   // Each entry: [orb1Left, orb1Top, orb2Left, orb2Top]
@@ -218,16 +218,16 @@ class _CountdownScreenState extends State<CountdownScreen>
     return [
       // Orb 1
       Positioned(
-        left: orb1Left * Responsive.sw,
-        top: orb1Top * Responsive.sh,
+        left: orb1Left.w,
+        top: orb1Top.h,
         child: Container(
-          width: orbSize * Responsive.sw,
-          height: orbSize * Responsive.sw,
+          width: orbSize.w,
+          height: orbSize.w,
           decoration: ShapeDecoration(
             gradient: RadialGradient(
               center: const Alignment(0.44, 0.57),
               radius: 0.44,
-              colors: [_orb1Colors[_stage], Colors.black],
+              colors: [_orb1Colors[_stage], AppColors.of(context).black],
             ),
             shape: const OvalBorder(),
           ),
@@ -235,16 +235,16 @@ class _CountdownScreenState extends State<CountdownScreen>
       ),
       // Orb 2
       Positioned(
-        left: orb2Left * Responsive.sw,
-        top: orb2Top * Responsive.sh,
+        left: orb2Left.w,
+        top: orb2Top.h,
         child: Container(
-          width: orbSize * Responsive.sw,
-          height: orbSize * Responsive.sw,
+          width: orbSize.w,
+          height: orbSize.w,
           decoration: ShapeDecoration(
             gradient: RadialGradient(
               center: const Alignment(0.44, 0.57),
               radius: 0.44,
-              colors: [_orb2Colors[_stage], Colors.black],
+              colors: [_orb2Colors[_stage], AppColors.of(context).black],
             ),
             shape: const OvalBorder(),
           ),
@@ -263,10 +263,6 @@ class _CountdownScreenState extends State<CountdownScreen>
 /// - Stroke width: 20px
 /// - Dot at end of progress arc
 class _RingPainter extends CustomPainter {
-  final double progress; // 1.0 = full, 0.0 = empty
-  final int stage;
-  final double strokeWidth;
-  final Color accentColor;
 
   _RingPainter({
     required this.progress,
@@ -274,6 +270,10 @@ class _RingPainter extends CustomPainter {
     required this.strokeWidth,
     required this.accentColor,
   });
+  final double progress; // 1.0 = full, 0.0 = empty
+  final int stage;
+  final double strokeWidth;
+  final Color accentColor;
 
   @override
   void paint(Canvas canvas, Size size) {

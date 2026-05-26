@@ -4,11 +4,14 @@ import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:oc_liquid_glass/oc_liquid_glass.dart';
 
-import '../../l10n/app_localizations.dart';
-import '../../shared/constants.dart';
-import '../../shared/responsive.dart';
-import '../../shared/widgets/liquid_glass_button.dart';
+import 'package:my_gym_bro/features/community/community_mock_data.dart';
+import 'package:my_gym_bro/l10n/app_localizations.dart';
+import 'package:my_gym_bro/shared/constants.dart';
+import 'package:my_gym_bro/shared/responsive.dart';
+import 'package:my_gym_bro/shared/widgets/liquid_glass_button.dart';
+import 'package:my_gym_bro/shared/widgets/user_avatar.dart';
 
 /// Community tab — matches Figma screen 4 (pixel-perfect from CSS).
 class CommunityScreen extends ConsumerStatefulWidget {
@@ -19,7 +22,15 @@ class CommunityScreen extends ConsumerStatefulWidget {
 }
 
 class _CommunityScreenState extends ConsumerState<CommunityScreen> {
-  bool _showComposer = true;
+  bool _showComposer = false;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) setState(() => _showComposer = true);
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -52,46 +63,14 @@ class _CommunityScreenState extends ConsumerState<CommunityScreen> {
                   // Stories row
                   const SliverToBoxAdapter(child: _StoriesRow()),
 
-                  // Posts feed
+                  // Posts feed — driven by CommunityMockData (swap for
+                  // real backend data when the social feature is ready).
                   SliverList(
                     delegate: SliverChildListDelegate([
-                      _PostCard(
-                        authorName: 'Aziz Rhuma',
-                        likes: '10k',
-                        comments: '324',
-                        bookmarks: '67',
-                        description:
-                            'A fundamental compound movement that builds massive lower-body power and functional strength. By mimicking a natural sitting motion, it engages multiple muscle groups simultaneously, boosting metabolism and improving overall athletic performance.',
-                        topComments: const [
-                          _CommentData(
-                            'Omar',
-                            'This is insane bro, keep pushing!',
-                          ),
-                          _CommentData(
-                            'Ali',
-                            'What weight are you squatting here?',
-                          ),
-                          _CommentData('Nasser', 'Form looks clean 💪'),
-                        ],
-                      ),
-                      SizedBox(height: 8.h),
-                      _PostCard(
-                        authorName: 'Omar',
-                        likes: '5.2k',
-                        comments: '142',
-                        bookmarks: '31',
-                        description:
-                            'Building strength one rep at a time. Consistency is key to unlocking your full potential.',
-                        topComments: const [
-                          _CommentData('Aziz', 'Let\'s go champ!'),
-                          _CommentData(
-                            'Khaled',
-                            'Consistency is everything 🔥',
-                          ),
-                          _CommentData(
-                            'Yusuf',
-                            'Need to train with you sometime',
-                          ),
+                      ...CommunityMockData.posts.expand(
+                        (post) => [
+                          _PostCard(post: post),
+                          SizedBox(height: 8.h),
                         ],
                       ),
                       // Bottom padding for composer + nav
@@ -122,14 +101,14 @@ class _CommunityScreenState extends ConsumerState<CommunityScreen> {
 // Header: "Community" + search + notifications + comment + avatar
 // ═══════════════════════════════════════════════════════════════════
 class _Header extends StatelessWidget {
-  final AppLocalizations l10n;
   const _Header({required this.l10n});
+  final AppLocalizations l10n;
 
   @override
   Widget build(BuildContext context) {
     final colors = AppColors.of(context);
     return Padding(
-      padding: EdgeInsets.only(left: 22.w, right: 16.w, top: 6.h, bottom: 0),
+      padding: EdgeInsets.only(left: 22.w, right: 16.w, top: 6.h),
       child: Row(
         children: [
           // Title — expanded to push icons to the right
@@ -177,15 +156,8 @@ class _Header extends StatelessWidget {
             height: 48.h,
             opacity: 0.65,
             radius: 296.r,
-            child: Container(
-              width: 44.w,
-              height: 44.h,
-              decoration: BoxDecoration(
-                color: Colors.grey[700],
-                borderRadius: BorderRadius.circular(33.r),
-              ),
-              child: Icon(Icons.person, color: colors.textPrimary, size: 24.sp),
-            ),
+            onTap: () => GoRouter.of(context).push('/profile'),
+            child: UserAvatar(size: 44, iconColor: colors.textPrimary),
           ),
         ],
       ),
@@ -211,13 +183,13 @@ class _StoriesRow extends StatelessWidget {
           _OwnStoryAvatar(),
           SizedBox(width: 16.w),
           // Friend stories with green gradient ring
-          _FriendStory(index: 0),
+          const _FriendStory(index: 0),
           SizedBox(width: 16.w),
-          _FriendStory(index: 1),
+          const _FriendStory(index: 1),
           SizedBox(width: 16.w),
-          _FriendStory(index: 2),
+          const _FriendStory(index: 2),
           SizedBox(width: 16.w),
-          _FriendStory(index: 3),
+          const _FriendStory(index: 3),
         ],
       ),
     );
@@ -238,7 +210,7 @@ class _OwnStoryAvatar extends StatelessWidget {
             width: 85.w,
             height: 85.h,
             decoration: BoxDecoration(
-              color: Colors.grey[800],
+              color: colors.avatarPlaceholderDark,
               borderRadius: BorderRadius.circular(42.5.r),
             ),
             child: Icon(Icons.person, color: colors.textSecondary, size: 40.sp),
@@ -254,11 +226,11 @@ class _OwnStoryAvatar extends StatelessWidget {
                 gradient: LinearGradient(
                   begin: Alignment.topCenter,
                   end: Alignment.bottomCenter,
-                  colors: [Color(0xFFD0FF00), Color(0xFF12FF00)],
+                  colors: [AppColors.storyRingStart, AppColors.storyRingEnd],
                 ),
                 shape: BoxShape.circle,
               ),
-              child: Icon(Icons.add, color: Colors.black, size: 14.sp),
+              child: Icon(Icons.add, color: AppColors.of(context).black, size: 14.sp),
             ),
           ),
         ],
@@ -268,14 +240,14 @@ class _OwnStoryAvatar extends StatelessWidget {
 }
 
 class _FriendStory extends StatelessWidget {
-  final int index;
   const _FriendStory({required this.index});
+  final int index;
 
   static const _avatarColors = [
-    Color(0xFF4A6741),
-    Color(0xFF6B4423),
-    Color(0xFF3D5A80),
-    Color(0xFF7B6B4F),
+    AppColors.categoryGreen,
+    AppColors.categoryBrown,
+    AppColors.categoryBlue,
+    AppColors.categoryTan,
   ];
 
   @override
@@ -292,7 +264,7 @@ class _FriendStory extends StatelessWidget {
             gradient: LinearGradient(
               begin: Alignment.topCenter,
               end: Alignment.bottomCenter,
-              colors: [Color(0xFFD2FF00), Color(0xFF0DFF00)],
+              colors: [AppColors.storyRingAltStart, AppColors.storyRingAltEnd],
             ),
             shape: BoxShape.circle,
           ),
@@ -331,21 +303,9 @@ class _FriendStory extends StatelessWidget {
 // Post card: author row + image + interaction bar + description
 // ═══════════════════════════════════════════════════════════════════
 class _PostCard extends StatelessWidget {
-  final String authorName;
-  final String likes;
-  final String comments;
-  final String bookmarks;
-  final String description;
-  final List<_CommentData> topComments;
+  const _PostCard({required this.post});
 
-  const _PostCard({
-    required this.authorName,
-    required this.likes,
-    required this.comments,
-    required this.bookmarks,
-    required this.description,
-    this.topComments = const [],
-  });
+  final CommunityPost post;
 
   @override
   Widget build(BuildContext context) {
@@ -359,27 +319,18 @@ class _PostCard extends StatelessWidget {
           child: Row(
             children: [
               // Avatar
-              Container(
-                width: 35.w,
-                height: 35.h,
-                decoration: BoxDecoration(
-                  color: Colors.grey[700],
-                  borderRadius: BorderRadius.circular(42.5.r),
-                ),
-                child: Icon(
-                  Icons.person,
-                  color: colors.textSecondary,
-                  size: 18.sp,
-                ),
-              ),
+              UserAvatar(size: 35, iconColor: colors.textSecondary),
               SizedBox(width: 6.w),
               // Name
-              Text(
-                authorName,
-                style: TextStyle(
-                  fontSize: 10.sp,
-                  fontWeight: FontWeight.w700,
-                  color: colors.textPrimary,
+              Flexible(
+                child: Text(
+                  post.authorName,
+                  style: TextStyle(
+                    fontSize: 10.sp,
+                    fontWeight: FontWeight.w700,
+                    color: colors.textPrimary,
+                  ),
+                  overflow: TextOverflow.ellipsis,
                 ),
               ),
               const Spacer(),
@@ -393,7 +344,7 @@ class _PostCard extends StatelessWidget {
         Container(
           width: double.infinity,
           height: 297.h,
-          color: Colors.grey[900],
+          color: colors.avatarPlaceholderDarker,
           child: Stack(
             fit: StackFit.expand,
             children: [
@@ -404,9 +355,9 @@ class _PostCard extends StatelessWidget {
                     begin: Alignment.topLeft,
                     end: Alignment.bottomRight,
                     colors: [
-                      Colors.grey[850] ?? Colors.grey[900]!,
-                      Colors.grey[800]!,
-                      Colors.grey[900]!,
+                      colors.avatarPlaceholderDarker,
+                      colors.avatarPlaceholderDark,
+                      colors.avatarPlaceholderDarker,
                     ],
                   ),
                 ),
@@ -431,10 +382,9 @@ class _PostCard extends StatelessWidget {
             children: [
               // Glassy pill with likes + comments + bookmarks
               _GlassPill(
-                width: 186.w,
                 height: 29.h,
                 child: Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
+                  mainAxisSize: MainAxisSize.min,
                   children: [
                     Image.asset(
                       'assets/images/bicep.png',
@@ -443,7 +393,7 @@ class _PostCard extends StatelessWidget {
                     ),
                     SizedBox(width: 4.w),
                     Text(
-                      likes,
+                      post.likes,
                       style: TextStyle(
                         fontSize: 10.sp,
                         fontWeight: FontWeight.w700,
@@ -458,7 +408,7 @@ class _PostCard extends StatelessWidget {
                     ),
                     SizedBox(width: 4.w),
                     Text(
-                      comments,
+                      post.comments,
                       style: TextStyle(
                         fontSize: 10.sp,
                         fontWeight: FontWeight.w700,
@@ -473,7 +423,7 @@ class _PostCard extends StatelessWidget {
                     ),
                     SizedBox(width: 4.w),
                     Text(
-                      bookmarks,
+                      post.bookmarks,
                       style: TextStyle(
                         fontSize: 10.sp,
                         fontWeight: FontWeight.w700,
@@ -504,7 +454,7 @@ class _PostCard extends StatelessWidget {
         Padding(
           padding: EdgeInsets.symmetric(horizontal: 24.w),
           child: Text(
-            description,
+            post.description,
             style: TextStyle(
               fontSize: 10.sp,
               fontWeight: FontWeight.w500,
@@ -517,14 +467,14 @@ class _PostCard extends StatelessWidget {
         ),
 
         // Top comments preview
-        if (topComments.isNotEmpty) ...[
+        if (post.topComments.isNotEmpty) ...[
           SizedBox(height: 10.h),
           Padding(
             padding: EdgeInsets.symmetric(horizontal: 24.w),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children:
-                  topComments
+                  post.topComments
                       .map(
                         (c) => Padding(
                           padding: EdgeInsets.only(bottom: 6.h),
@@ -536,7 +486,7 @@ class _PostCard extends StatelessWidget {
                                 width: 22.w,
                                 height: 22.h,
                                 decoration: BoxDecoration(
-                                  color: Colors.grey[700],
+                                  color: colors.avatarPlaceholder,
                                   shape: BoxShape.circle,
                                 ),
                                 child: Icon(
@@ -587,75 +537,193 @@ class _PostCard extends StatelessWidget {
   }
 }
 
-class _CommentData {
-  final String name;
-  final String text;
-  const _CommentData(this.name, this.text);
-}
-
 // ═══════════════════════════════════════════════════════════════════
-// Bottom composer bar: glass pill with avatar + text + image icon
+// Bottom composer bar: oc_liquid_glass pill — same aesthetic as nav
 // ═══════════════════════════════════════════════════════════════════
 class _ComposerBar extends StatelessWidget {
-  final AppLocalizations l10n;
   const _ComposerBar({required this.l10n});
+  final AppLocalizations l10n;
 
   @override
   Widget build(BuildContext context) {
     final colors = AppColors.of(context);
-    return ClipRRect(
-      borderRadius: BorderRadius.circular(296.r),
-      child: BackdropFilter(
-        filter: ImageFilter.blur(sigmaX: 30, sigmaY: 30),
-        child: Container(
-          width: double.infinity,
-          height: 48.h,
-          decoration: BoxDecoration(
-            color: Colors.white.withValues(alpha: 0.12),
-            borderRadius: BorderRadius.circular(296.r),
-            border: Border.all(
-              color: Colors.white.withValues(alpha: 0.08),
-              width: 0.5,
-            ),
-          ),
-          padding: EdgeInsets.symmetric(horizontal: 8.w),
-          child: Row(
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final pillH = 52.h;
+    final pillR = 296.r;
+
+    final glassSettings = OCLiquidGlassSettings(
+      blendPx: 3,
+      refractStrength: isDark ? 0.01 : 0.1,
+      distortFalloffPx: 13,
+      blurRadiusPx: isDark ? 4 : 5.5,
+      specAngle: 0.1,
+      specStrength: isDark ? -1 : -1.0,
+      specPower: 1,
+      specWidth: 1.7,
+      lightbandOffsetPx: 3,
+      lightbandWidthPx: 3.5,
+      lightbandStrength: isDark ? 0.6 : 0.4,
+      lightbandColor:
+          isDark ? const Color.fromARGB(255, 255, 255, 255) : AppColors.of(context).white,
+    );
+
+    return GestureDetector(
+      onTap: () => _showComposeSheet(context),
+      child: SizedBox(
+        width: double.infinity,
+        height: pillH,
+        child: OCLiquidGlassGroup(
+          settings: glassSettings,
+          child: Stack(
+            clipBehavior: Clip.none,
             children: [
-              // Avatar
-              Container(
-                width: 35.w,
-                height: 35.h,
-                decoration: BoxDecoration(
-                  color: Colors.grey[700],
-                  borderRadius: BorderRadius.circular(42.5.r),
+              // ── Glass pill shell ──
+              OCLiquidGlass(
+                width: double.infinity,
+                height: pillH,
+                borderRadius: pillR,
+                color:
+                    isDark
+                        ? AppColors.of(context).white.withValues(alpha: 0.06)
+                        : AppColors.of(context).black.withValues(alpha: 0.04),
+                shadow: BoxShadow(
+                  color: AppColors.of(context).black.withValues(alpha: isDark ? 0.30 : 0.15),
+                  blurRadius: 28.w,
+                  offset: Offset(0, 10.h),
                 ),
-                child: Icon(
-                  Icons.person,
-                  color: colors.textSecondary,
-                  size: 18.sp,
-                ),
+                child: const SizedBox.expand(),
               ),
-              SizedBox(width: 5.w),
-              // Text
-              Text(
-                l10n.whatOnYourMind,
-                style: TextStyle(
-                  fontSize: 10.sp,
-                  fontWeight: FontWeight.w700,
-                  color: colors.textPrimary,
+
+              // ── Content row ──
+              Positioned.fill(
+                child: Padding(
+                  padding: EdgeInsets.symmetric(horizontal: 10.w),
+                  child: Row(
+                    children: [
+                      // Avatar
+                      UserAvatar(size: 35, iconColor: colors.textSecondary),
+                      SizedBox(width: 8.w),
+                      // Placeholder text
+                      Text(
+                        l10n.whatOnYourMind,
+                        style: TextStyle(
+                          fontSize: 10.sp,
+                          fontWeight: FontWeight.w700,
+                          color: colors.textSecondary,
+                        ),
+                      ),
+                      const Spacer(),
+                      // Image icon
+                      Icon(
+                        Icons.image_outlined,
+                        color: colors.textPrimary,
+                        size: 18.sp,
+                      ),
+                      SizedBox(width: 4.w),
+                    ],
+                  ),
                 ),
-              ),
-              const Spacer(),
-              // Image icon
-              Icon(
-                Icons.image_outlined,
-                color: colors.textPrimary,
-                size: 16.sp,
               ),
             ],
           ),
         ),
       ),
+    );
+  }
+
+  void _showComposeSheet(BuildContext context) {
+    final colors = AppColors.of(context);
+    showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: colors.background,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20.r)),
+      ),
+      builder: (ctx) {
+        final controller = TextEditingController();
+        return Padding(
+          padding: EdgeInsets.only(
+            left: 16.w,
+            right: 16.w,
+            top: 16.h,
+            bottom: MediaQuery.viewInsetsOf(ctx).bottom + 24.h,
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Center(
+                child: Container(
+                  width: 40.w,
+                  height: 4.h,
+                  decoration: BoxDecoration(
+                    color: colors.textSecondary.withValues(alpha: 0.4),
+                    borderRadius: BorderRadius.circular(2.r),
+                  ),
+                ),
+              ),
+              SizedBox(height: 16.h),
+              Row(
+                children: [
+                  UserAvatar(size: 36, iconColor: colors.textSecondary),
+                  SizedBox(width: 10.w),
+                  Expanded(
+                    child: TextField(
+                      controller: controller,
+                      autofocus: true,
+                      maxLines: 5,
+                      minLines: 1,
+                      style: TextStyle(
+                        color: colors.textPrimary,
+                        fontSize: 14.sp,
+                      ),
+                      decoration: InputDecoration(
+                        hintText: l10n.whatOnYourMind,
+                        hintStyle: TextStyle(
+                          color: colors.textSecondary,
+                          fontSize: 14.sp,
+                        ),
+                        border: InputBorder.none,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              SizedBox(height: 12.h),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Icon(
+                    Icons.image_outlined,
+                    color: colors.textSecondary,
+                    size: 24.sp,
+                  ),
+                  ElevatedButton(
+                    onPressed: () => Navigator.of(ctx).pop(),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppColors.storyRingEnd,
+                      foregroundColor: colors.black,
+                      shape: StadiumBorder(),
+                      padding: EdgeInsets.symmetric(
+                        horizontal: 24.w,
+                        vertical: 10.h,
+                      ),
+                    ),
+                    child: Text(
+                      'Post',
+                      style: TextStyle(
+                        fontWeight: FontWeight.w700,
+                        fontSize: 13.sp,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        );
+      },
     );
   }
 }
@@ -664,15 +732,14 @@ class _ComposerBar extends StatelessWidget {
 // Frosted glass pill — backdrop blur for interaction buttons
 // ═══════════════════════════════════════════════════════════════════
 class _GlassPill extends StatelessWidget {
-  final double width;
-  final double height;
-  final Widget child;
-
   const _GlassPill({
-    required this.width,
+    this.width,
     required this.height,
     required this.child,
   });
+  final double? width;
+  final double height;
+  final Widget child;
 
   @override
   Widget build(BuildContext context) {
@@ -683,11 +750,14 @@ class _GlassPill extends StatelessWidget {
         child: Container(
           width: width,
           height: height,
+          padding: width == null
+              ? EdgeInsets.symmetric(horizontal: 12.w)
+              : null,
           decoration: BoxDecoration(
-            color: Colors.white.withValues(alpha: 0.15),
+            color: AppColors.of(context).white.withValues(alpha: 0.15),
             borderRadius: BorderRadius.circular(296.r),
             border: Border.all(
-              color: Colors.white.withValues(alpha: 0.08),
+              color: AppColors.of(context).white.withValues(alpha: 0.08),
               width: 0.5,
             ),
           ),

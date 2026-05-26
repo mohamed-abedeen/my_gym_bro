@@ -1,12 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-
-import '../../shared/constants.dart';
-import '../../shared/responsive.dart';
-import '../../shared/widgets/bottom_nav_pill.dart';
-import '../home/home_screen.dart';
-import '../workout/workout_screen.dart';
-import '../community/community_screen.dart';
+import 'package:go_router/go_router.dart';
+import 'package:my_gym_bro/core/router/app_router.dart';
+import 'package:my_gym_bro/features/community/community_screen.dart';
+import 'package:my_gym_bro/features/home/home_screen.dart';
+import 'package:my_gym_bro/features/workout/workout_providers.dart';
+import 'package:my_gym_bro/features/workout/workout_screen.dart';
+import 'package:my_gym_bro/shared/constants.dart';
+import 'package:my_gym_bro/shared/responsive.dart';
+import 'package:my_gym_bro/shared/widgets/bottom_nav_pill.dart';
 
 /// Main app scaffold — animated tab switching with floating nav pill.
 ///
@@ -19,8 +21,44 @@ class MyGymBroScaffold extends ConsumerStatefulWidget {
   ConsumerState<MyGymBroScaffold> createState() => _MyGymBroScaffoldState();
 }
 
-class _MyGymBroScaffoldState extends ConsumerState<MyGymBroScaffold> {
+class _MyGymBroScaffoldState extends ConsumerState<MyGymBroScaffold>
+    with WidgetsBindingObserver {
   int _previousIndex = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+    // Check on first load (after first frame so context is ready).
+    WidgetsBinding.instance.addPostFrameCallback((_) => _checkTrial());
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) _checkTrial();
+  }
+
+  void _checkTrial() {
+    if (!mounted) return;
+    final profile = ref.read(userProfileProvider).valueOrNull;
+    if (profile == null) return;
+
+    final isTrialExpired = profile.subscriptionStatus == 'trial' &&
+        profile.subscriptionExpiresAt != null &&
+        DateTime.now().isAfter(profile.subscriptionExpiresAt!);
+
+    final isExpired = profile.subscriptionStatus == 'expired';
+
+    if (isTrialExpired || isExpired) {
+      context.push(AppRoutes.paywall);
+    }
+  }
 
   static const _pages = <Widget>[
     HomeScreen(),

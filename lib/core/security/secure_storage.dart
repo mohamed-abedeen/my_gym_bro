@@ -5,9 +5,9 @@ import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 /// Android: encryptedSharedPreferences.
 /// iOS: first_unlock_this_device accessibility.
 class SecureStorage {
-  static final SecureStorage _instance = SecureStorage._();
   factory SecureStorage() => _instance;
   SecureStorage._();
+  static final SecureStorage _instance = SecureStorage._();
 
   final _storage = const FlutterSecureStorage(
     aOptions: AndroidOptions(encryptedSharedPreferences: true),

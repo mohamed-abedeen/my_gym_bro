@@ -1,17 +1,17 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-
-import '../../core/providers/providers.dart';
-
-import '../../shared/constants.dart';
-import '../../shared/responsive.dart';
-import '../../shared/widgets/anatomy_body.dart';
-import 'muscle_recovery_service.dart';
-import 'workout_providers.dart';
+import 'package:my_gym_bro/core/providers/providers.dart';
+import 'package:my_gym_bro/features/workout/muscle_recovery_service.dart';
+import 'package:my_gym_bro/features/settings/skin_provider.dart';
+import 'package:my_gym_bro/features/workout/workout_providers.dart';
+import 'package:my_gym_bro/l10n/app_localizations.dart';
+import 'package:my_gym_bro/shared/constants.dart';
+import 'package:my_gym_bro/shared/responsive.dart';
+import 'package:my_gym_bro/shared/widgets/anatomy_body.dart';
 
 /// Shows a full-screen modal with the anatomy body and muscle recovery details.
 void showMuscleDetailSheet(BuildContext context) {
-  showModalBottomSheet(
+  showModalBottomSheet<void>(
     context: context,
     isScrollControlled: true,
     backgroundColor: Colors.transparent,
@@ -25,6 +25,7 @@ class _MuscleDetailSheet extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final colors = AppColors.of(context);
+    final l10n = AppLocalizations.of(context);
     final muscleStates = ref.watch(muscleRecoveryProvider);
 
     return Container(
@@ -42,7 +43,7 @@ class _MuscleDetailSheet extends ConsumerWidget {
               width: 40.w,
               height: 4.h,
               decoration: BoxDecoration(
-                color: Colors.white24,
+                color: AppColors.of(context).white.withValues(alpha: 0.24),
                 borderRadius: BorderRadius.circular(2.r),
               ),
             ),
@@ -54,7 +55,7 @@ class _MuscleDetailSheet extends ConsumerWidget {
             child: Row(
               children: [
                 Text(
-                  'Muscle Recovery',
+                  l10n.muscleRecovery,
                   style: TextStyle(
                     color: colors.textPrimary,
                     fontSize: 20.sp,
@@ -90,6 +91,7 @@ class _MuscleDetailSheet extends ConsumerWidget {
               muscleStates: states,
               height: 300.h,
               gender: ref.watch(anatomyGenderProvider),
+              basePngPath: ref.watch(activeSkinPathProvider),
             ),
             loading: () => SizedBox(
               height: 300.h,
@@ -104,6 +106,7 @@ class _MuscleDetailSheet extends ConsumerWidget {
               muscleStates: const [],
               height: 300.h,
               gender: ref.watch(anatomyGenderProvider),
+              basePngPath: ref.watch(activeSkinPathProvider),
             ),
           ),
 
@@ -115,13 +118,13 @@ class _MuscleDetailSheet extends ConsumerWidget {
             child: Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                _LegendDot(color: colors.danger, label: 'Sore'),
+                _LegendDot(color: colors.danger, label: l10n.sore),
                 SizedBox(width: 12.w),
-                _LegendDot(color: colors.amber, label: 'Recovering'),
+                _LegendDot(color: colors.amber, label: l10n.recovering),
                 SizedBox(width: 12.w),
-                _LegendDot(color: colors.success, label: 'Recovered'),
+                _LegendDot(color: colors.success, label: l10n.recovered),
                 SizedBox(width: 12.w),
-                _LegendDot(color: colors.muscleUntrained, label: 'Untrained'),
+                _LegendDot(color: colors.muscleUntrained, label: l10n.undertrained),
               ],
             ),
           ),
@@ -130,7 +133,7 @@ class _MuscleDetailSheet extends ConsumerWidget {
 
           // Divider
           Divider(
-            color: Colors.white12,
+            color: AppColors.of(context).white.withValues(alpha: 0.12),
             height: 1,
             indent: 20.w,
             endIndent: 20.w,
@@ -164,6 +167,7 @@ class _MuscleDetailSheet extends ConsumerWidget {
                   separatorBuilder: (_, __) => SizedBox(height: 8.h),
                   itemBuilder: (_, i) => _MuscleRecoveryTile(
                     muscle: filtered[i],
+                    l10n: l10n,
                   ),
                 );
               },
@@ -189,13 +193,14 @@ int _stateOrder(MuscleState state) => switch (state) {
     };
 
 class _MuscleRecoveryTile extends StatelessWidget {
+  const _MuscleRecoveryTile({required this.muscle, required this.l10n});
   final MuscleStateInfo muscle;
-  const _MuscleRecoveryTile({required this.muscle});
+  final AppLocalizations l10n;
 
   @override
   Widget build(BuildContext context) {
     final colors = AppColors.of(context);
-    final recoveryText = _getRecoveryText();
+    final recoveryText = _getRecoveryText(l10n);
     final isUntrained = muscle.state == MuscleState.undertrained;
     final percentage = isUntrained
         ? '--'
@@ -259,18 +264,18 @@ class _MuscleRecoveryTile extends StatelessWidget {
     );
   }
 
-  String _getRecoveryText() {
+  String _getRecoveryText(AppLocalizations l10n) {
     if (muscle.state == MuscleState.undertrained) {
-      return 'Not trained yet';
+      return l10n.notTrainedYet;
     }
 
-    if (muscle.lastTrainedAt == null) return 'Not trained yet';
+    if (muscle.lastTrainedAt == null) return l10n.notTrainedYet;
 
     final hoursSince =
         DateTime.now().difference(muscle.lastTrainedAt!).inMinutes / 60.0;
 
     if (muscle.state == MuscleState.recovered) {
-      return 'Fully recovered — ready to train';
+      return l10n.fullyRecovered;
     }
 
     // Hours remaining until full recovery (per-muscle recovery time)
@@ -278,24 +283,24 @@ class _MuscleRecoveryTile extends StatelessWidget {
     final hoursRemaining = (recoveryH - hoursSince).clamp(0.0, recoveryH);
 
     if (hoursRemaining < 1) {
-      return 'Less than 1 hour to full recovery';
+      return l10n.lessThanOneHourRecovery;
     } else if (hoursRemaining < 24) {
-      return '${hoursRemaining.toInt()}h more rest needed';
+      return l10n.hoursRestNeeded(hoursRemaining.toInt());
     } else {
       final days = (hoursRemaining / 24).floor();
       final hours = (hoursRemaining % 24).toInt();
       if (hours == 0) {
-        return '${days}d more rest needed';
+        return l10n.daysRestNeeded(days);
       }
-      return '${days}d ${hours}h more rest needed';
+      return l10n.daysHoursRestNeeded(days, hours);
     }
   }
 }
 
 class _LegendDot extends StatelessWidget {
+  const _LegendDot({required this.color, required this.label});
   final Color color;
   final String label;
-  const _LegendDot({required this.color, required this.label});
 
   @override
   Widget build(BuildContext context) {

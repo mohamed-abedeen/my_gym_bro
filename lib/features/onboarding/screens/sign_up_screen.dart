@@ -4,15 +4,15 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-
-import '../../../core/auth/auth_notifier.dart';
-import '../../../core/providers/providers.dart';
-import '../../../core/security/secure_storage.dart';
-import '../../../core/services/exercise_local_service.dart';
-import '../../../l10n/app_localizations.dart';
-import '../../../shared/constants.dart';
-import '../../../shared/responsive.dart';
-import '../onboarding_state.dart';
+import 'package:my_gym_bro/core/auth/auth_notifier.dart';
+import 'package:my_gym_bro/core/providers/providers.dart';
+import 'package:my_gym_bro/core/security/secure_storage.dart';
+import 'package:my_gym_bro/core/services/exercise_local_service.dart';
+import 'package:my_gym_bro/core/services/notification_tone.dart';
+import 'package:my_gym_bro/features/onboarding/onboarding_state.dart';
+import 'package:my_gym_bro/l10n/app_localizations.dart';
+import 'package:my_gym_bro/shared/constants.dart';
+import 'package:my_gym_bro/shared/responsive.dart';
 
 /// Screen 6 — Create Account (/onboarding/signup)
 /// Name + Email + Password fields. Password strength bar.
@@ -46,8 +46,8 @@ class _SignUpScreenState extends ConsumerState<SignUpScreen> {
     if (pw.isEmpty) return 0;
     var score = 0.0;
     if (pw.length >= 8) score += 0.25;
-    if (pw.contains(RegExp(r'[A-Z]'))) score += 0.25;
-    if (pw.contains(RegExp(r'[0-9]'))) score += 0.25;
+    if (pw.contains(RegExp('[A-Z]'))) score += 0.25;
+    if (pw.contains(RegExp('[0-9]'))) score += 0.25;
     if (pw.contains(RegExp(r'[!@#$%^&*(),.?":{}|<>]'))) score += 0.25;
     return score;
   }
@@ -72,8 +72,8 @@ class _SignUpScreenState extends ConsumerState<SignUpScreen> {
 
   bool _isValidPassword(String pw) =>
       pw.length >= 8 &&
-      pw.contains(RegExp(r'[A-Z]')) &&
-      pw.contains(RegExp(r'[0-9]')) &&
+      pw.contains(RegExp('[A-Z]')) &&
+      pw.contains(RegExp('[0-9]')) &&
       pw.contains(RegExp(r'[!@#$%^&*(),.?":{}|<>]'));
 
   Future<void> _handleSignUp() async {
@@ -89,6 +89,7 @@ class _SignUpScreenState extends ConsumerState<SignUpScreen> {
       goal: onboarding.goal,
       experience: onboarding.experience,
       gender: onboarding.gender,
+      notificationTone: onboarding.notificationTone.wireValue,
     );
 
     final authState = ref.read(authNotifierProvider);
@@ -131,7 +132,7 @@ class _SignUpScreenState extends ConsumerState<SignUpScreen> {
         await ExerciseLocalService.seedFromAssets(db);
       });
       await SecureStorage().delete('needs_exercise_seed');
-    } catch (e) {
+    } on Exception catch (e) {
       if (kDebugMode) print('Exercise seeding failed: $e');
       // Still proceed even if seeding fails
     }
@@ -336,8 +337,10 @@ class _SignUpScreenState extends ConsumerState<SignUpScreen> {
                     Center(
                       child: TextButton(
                         onPressed: () async {
+                          final router = GoRouter.of(context);
                           await _seedExercisesIfNeeded();
-                          if (mounted) context.go('/');
+                          if (!mounted) return;
+                          router.go('/');
                         },
                         child: Text(
                           l10n.skip,
@@ -359,7 +362,7 @@ class _SignUpScreenState extends ConsumerState<SignUpScreen> {
 
             // Exercise seeding overlay
             if (_seeding)
-              Container(
+              ColoredBox(
                 color: colors.background.withValues(alpha: 0.9),
                 child: Center(
                   child: Column(
@@ -401,7 +404,7 @@ class _SignUpScreenState extends ConsumerState<SignUpScreen> {
       ),
       errorBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(12.r),
-        borderSide: BorderSide(color: colors.danger, width: 1),
+        borderSide: BorderSide(color: colors.danger),
       ),
       focusedErrorBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(12.r),

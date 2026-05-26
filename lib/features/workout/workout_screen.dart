@@ -1,24 +1,26 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
-
-import '../../core/providers/providers.dart';
-
-import 'muscle_detail_sheet.dart';
-
-import '../../core/database/app_database.dart';
-import '../../core/router/app_router.dart';
-import '../../l10n/app_localizations.dart';
-import '../../shared/app_fonts.dart';
-import '../../shared/constants.dart';
-import '../../shared/responsive.dart';
-import '../../shared/widgets/anatomy_body.dart';
-import '../../shared/widgets/liquid_glass_button.dart';
-import 'active_session/countdown_screen.dart';
-import 'log_bottom_sheet.dart';
-import 'status_bottom_sheet.dart';
-import 'workout_providers.dart';
+import 'package:my_gym_bro/core/database/app_database.dart';
+import 'package:my_gym_bro/core/providers/providers.dart';
+import 'package:my_gym_bro/core/router/app_router.dart';
+import 'package:my_gym_bro/core/security/secure_storage.dart';
+import 'package:my_gym_bro/core/services/units.dart';
+import 'package:my_gym_bro/features/settings/skin_provider.dart';
+import 'package:my_gym_bro/features/workout/active_session/countdown_screen.dart';
+import 'package:my_gym_bro/features/workout/log_bottom_sheet.dart';
+import 'package:my_gym_bro/features/workout/muscle_detail_sheet.dart';
+import 'package:my_gym_bro/features/workout/status_bottom_sheet.dart';
+import 'package:my_gym_bro/features/workout/workout_providers.dart';
+import 'package:my_gym_bro/l10n/app_localizations.dart';
+import 'package:my_gym_bro/shared/app_fonts.dart';
+import 'package:my_gym_bro/shared/constants.dart';
+import 'package:my_gym_bro/shared/responsive.dart';
+import 'package:my_gym_bro/shared/widgets/anatomy_body.dart';
+import 'package:my_gym_bro/shared/widgets/liquid_glass_button.dart';
 
 /// Workout tab — pixel-perfect from Figma CSS.
 class WorkoutScreen extends ConsumerWidget {
@@ -45,7 +47,7 @@ class WorkoutScreen extends ConsumerWidget {
                 end: Alignment.bottomCenter,
                 colors:
                     isDark
-                        ? const [Color(0xFF1A1A1A), Colors.black]
+                        ? [Color(0xFF1A1A1A), AppColors.of(context).black]
                         : [colors.panelBackground, colors.background],
               ),
             ),
@@ -89,8 +91,8 @@ class WorkoutScreen extends ConsumerWidget {
 // Header: "Workout" + fire streak + glass menu button
 // ═══════════════════════════════════════════════════════════════════
 class _Header extends StatelessWidget {
-  final AppLocalizations l10n;
   const _Header({required this.l10n});
+  final AppLocalizations l10n;
 
   @override
   Widget build(BuildContext context) {
@@ -154,8 +156,8 @@ class _Header extends StatelessWidget {
 // Gradient background #1A1A1A → black per Figma
 // ═══════════════════════════════════════════════════════════════════
 class _AnatomySection extends ConsumerWidget {
-  final AppLocalizations l10n;
   const _AnatomySection({required this.l10n});
+  final AppLocalizations l10n;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -174,6 +176,7 @@ class _AnatomySection extends ConsumerWidget {
                   muscleStates: states,
                   height: 350.h,
                   gender: ref.watch(anatomyGenderProvider),
+                  basePngPath: ref.watch(activeSkinPathProvider),
                 ),
             loading:
                 () => SizedBox(
@@ -190,6 +193,7 @@ class _AnatomySection extends ConsumerWidget {
                   muscleStates: const [],
                   height: 350.h,
                   gender: ref.watch(anatomyGenderProvider),
+                  basePngPath: ref.watch(activeSkinPathProvider),
                 ),
           ),
         ),
@@ -202,8 +206,8 @@ class _AnatomySection extends ConsumerWidget {
 // Stats row: Sessions Log (left) + Status (right)
 // ═══════════════════════════════════════════════════════════════════
 class _StatsRow extends StatelessWidget {
-  final AppLocalizations l10n;
   const _StatsRow({required this.l10n});
+  final AppLocalizations l10n;
 
   @override
   Widget build(BuildContext context) {
@@ -223,8 +227,8 @@ class _StatsRow extends StatelessWidget {
 // ── Sessions Log Card ──
 // Figma: 194x159, bg #1C1C1E, radius 24
 class _SessionsLogCard extends ConsumerWidget {
-  final AppLocalizations l10n;
   const _SessionsLogCard({required this.l10n});
+  final AppLocalizations l10n;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -245,12 +249,15 @@ class _SessionsLogCard extends ConsumerWidget {
           children: [
             Row(
               children: [
-                Text(
-                  l10n.sessionLog,
-                  style: TextStyle(
-                    color: colors.textPrimary,
-                    fontSize: 16.sp,
-                    fontWeight: FontWeight.w700,
+                Flexible(
+                  child: Text(
+                    l10n.sessionLog,
+                    style: TextStyle(
+                      color: colors.textPrimary,
+                      fontSize: 16.sp,
+                      fontWeight: FontWeight.w700,
+                    ),
+                    overflow: TextOverflow.ellipsis,
                   ),
                 ),
                 const Spacer(),
@@ -301,8 +308,8 @@ class _SessionsLogCard extends ConsumerWidget {
 }
 
 class _SessionRow extends StatelessWidget {
-  final EnrichedSession enriched;
   const _SessionRow({required this.enriched});
+  final EnrichedSession enriched;
 
   @override
   Widget build(BuildContext context) {
@@ -348,19 +355,14 @@ class _SessionRow extends StatelessWidget {
 // Figma: 194x159, bg #1C1C1E, radius 24
 // Labels 11px w400, values 13px w700, arrows 24x24 rotated -90deg
 class _StatusLogCard extends ConsumerWidget {
-  final AppLocalizations l10n;
   const _StatusLogCard({required this.l10n});
+  final AppLocalizations l10n;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final colors = AppColors.of(context);
     final stats = ref.watch(weeklyStatsProvider);
-    final profile = ref.watch(userProfileProvider);
-    final weightUnit = profile.when(
-      data: (p) => p?.weightUnit ?? 'kg',
-      loading: () => 'kg',
-      error: (_, __) => 'kg',
-    );
+    final unit = ref.watch(weightUnitProvider);
 
     return GestureDetector(
       onTap: () => showStatusBottomSheet(context),
@@ -376,12 +378,15 @@ class _StatusLogCard extends ConsumerWidget {
           children: [
             Row(
               children: [
-                Text(
-                  l10n.statusLog,
-                  style: TextStyle(
-                    color: colors.textPrimary,
-                    fontSize: 16.sp,
-                    fontWeight: FontWeight.w700,
+                Flexible(
+                  child: Text(
+                    l10n.statusLog,
+                    style: TextStyle(
+                      color: colors.textPrimary,
+                      fontSize: 16.sp,
+                      fontWeight: FontWeight.w700,
+                    ),
+                    overflow: TextOverflow.ellipsis,
                   ),
                 ),
                 const Spacer(),
@@ -401,7 +406,12 @@ class _StatusLogCard extends ConsumerWidget {
                     children: [
                       _StatLine(
                         label: l10n.volume,
-                        value: '${s.totalVolume.toInt()} $weightUnit',
+                        value: formatWeight(
+                          s.totalVolume,
+                          unit,
+                          decimals: 0,
+                          withUnit: true,
+                        ),
                         trend: s.volumeTrend,
                       ),
                       SizedBox(height: 2.h),
@@ -414,7 +424,11 @@ class _StatusLogCard extends ConsumerWidget {
                       SizedBox(height: 2.h),
                       _StatLine(
                         label: l10n.avgStrength,
-                        value: '${s.avgStrength.toInt()}',
+                        value: formatWeight(
+                          s.avgStrength,
+                          unit,
+                          decimals: 0,
+                        ),
                         trend: s.strengthTrend,
                       ),
                     ],
@@ -436,17 +450,16 @@ class _StatusLogCard extends ConsumerWidget {
 }
 
 class _StatLine extends StatelessWidget {
-  final String label;
-  final String value;
-  final double? trend;
-  final String trendSuffix;
-
   const _StatLine({
     required this.label,
     required this.value,
     this.trend,
     this.trendSuffix = '',
   });
+  final String label;
+  final String value;
+  final double? trend;
+  final String trendSuffix;
 
   @override
   Widget build(BuildContext context) {
@@ -490,7 +503,8 @@ class _StatLine extends StatelessWidget {
           SizedBox(width: 2.w),
           // Arrow rotated -90deg (pointing up-right / down-right)
           Transform.rotate(
-            angle: isPositive ? -1.5708 : 1.5708,
+            angle:
+                isPositive ? AppAngles.quarterTurnCcw : AppAngles.quarterTurnCw,
             child: Icon(
               Icons.arrow_forward_rounded,
               color: isPositive ? colors.trendPositive : colors.trendNegative,
@@ -510,8 +524,8 @@ class _StatLine extends StatelessWidget {
 // The program picker (bottom button) switches to a different program.
 // ═══════════════════════════════════════════════════════════════════
 class _ScheduleCard extends ConsumerStatefulWidget {
-  final AppLocalizations l10n;
   const _ScheduleCard({required this.l10n});
+  final AppLocalizations l10n;
 
   @override
   ConsumerState<_ScheduleCard> createState() => _ScheduleCardState();
@@ -519,6 +533,7 @@ class _ScheduleCard extends ConsumerStatefulWidget {
 
 class _ScheduleCardState extends ConsumerState<_ScheduleCard> {
   PageController? _pageController;
+  int _lastSyncedPage = -1;
 
   @override
   void dispose() {
@@ -585,9 +600,19 @@ class _ScheduleCardState extends ConsumerState<_ScheduleCard> {
             : cardState.currentPage;
     final safePage = effectivePage.clamp(0, totalPages - 1);
 
-    // Create or recreate PageController at the persisted page
-    _pageController?.dispose();
-    _pageController = PageController(initialPage: safePage);
+    // Create the PageController once, then sync page changes via jumpToPage
+    // post-frame. Recreating/disposing it on every build() leaked controllers
+    // and caused a flicker mid-frame.
+    _pageController ??= PageController(initialPage: safePage);
+    if (_lastSyncedPage != safePage) {
+      _lastSyncedPage = safePage;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        final c = _pageController;
+        if (c != null && c.hasClients && c.page?.round() != safePage) {
+          c.jumpToPage(safePage);
+        }
+      });
+    }
 
     return Column(
       children: [
@@ -631,8 +656,8 @@ class _ScheduleCardState extends ConsumerState<_ScheduleCard> {
     // to the correct next training day once the provider resolves.
     ref.read(workoutCardStateProvider.notifier).state = WorkoutCardState(
       selectedScheduleId: scheduleId,
-      currentPage: 0,
     );
+    SecureStorage().write('last_selected_schedule_id', scheduleId.toString());
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (_pageController?.hasClients ?? false) {
         _pageController!.jumpToPage(0);
@@ -643,17 +668,16 @@ class _ScheduleCardState extends ConsumerState<_ScheduleCard> {
 
 // ── "Add Day" card — shown as the last swipeable page, or alone if no programs ──
 class _AddDayCard extends StatelessWidget {
-  final AppLocalizations l10n;
-  final Schedule? schedule;
-  final List<Schedule> allSchedules;
-  final ValueChanged<int>? onProgramChanged;
-
   const _AddDayCard({
     required this.l10n,
     this.schedule,
     this.allSchedules = const [],
     this.onProgramChanged,
   });
+  final AppLocalizations l10n;
+  final Schedule? schedule;
+  final List<Schedule> allSchedules;
+  final ValueChanged<int>? onProgramChanged;
 
   @override
   Widget build(BuildContext context) {
@@ -755,7 +779,7 @@ class _AddDayCard extends StatelessWidget {
                       AppRadius.scheduleCircle.r,
                     ),
                   ),
-                  child: Icon(Icons.add, color: Colors.black, size: 46.sp),
+                  child: Icon(Icons.add, color: colors.todayPillText, size: 46.sp),
                 ),
               ),
               SizedBox(height: 8.h),
@@ -766,12 +790,12 @@ class _AddDayCard extends StatelessWidget {
                   width: 69.w,
                   height: 64.h,
                   decoration: BoxDecoration(
-                    color: Colors.white,
+                    color: AppColors.of(context).white,
                     borderRadius: BorderRadius.circular(
                       AppRadius.scheduleCircle.r,
                     ),
                   ),
-                  child: Icon(Icons.search, color: Colors.black, size: 33.sp),
+                  child: Icon(Icons.search, color: colors.todayPillText, size: 33.sp),
                 ),
               ),
             ],
@@ -784,12 +808,6 @@ class _AddDayCard extends StatelessWidget {
 
 // ── Day card — one training day within a program ──
 class _DayCard extends ConsumerWidget {
-  final AppLocalizations l10n;
-  final Schedule schedule;
-  final ScheduleDay day;
-  final List<Schedule> allSchedules;
-  final ValueChanged<int> onProgramChanged;
-
   const _DayCard({
     required this.l10n,
     required this.schedule,
@@ -797,6 +815,11 @@ class _DayCard extends ConsumerWidget {
     required this.allSchedules,
     required this.onProgramChanged,
   });
+  final AppLocalizations l10n;
+  final Schedule schedule;
+  final ScheduleDay day;
+  final List<Schedule> allSchedules;
+  final ValueChanged<int> onProgramChanged;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -911,7 +934,7 @@ class _DayCard extends ConsumerWidget {
                   ),
                   child: Icon(
                     Icons.play_arrow_rounded,
-                    color: Colors.black,
+                    color: AppColors.of(context).black,
                     size: 36.sp,
                   ),
                 ),
@@ -928,14 +951,14 @@ class _DayCard extends ConsumerWidget {
                   width: 69.w,
                   height: 64.h,
                   decoration: BoxDecoration(
-                    color: Colors.white,
+                    color: AppColors.of(context).white,
                     borderRadius: BorderRadius.circular(
                       AppRadius.scheduleCircle.r,
                     ),
                   ),
                   child: Icon(
                     Icons.edit_rounded,
-                    color: Colors.black,
+                    color: AppColors.of(context).black,
                     size: 33.sp,
                   ),
                 ),
@@ -962,58 +985,57 @@ class _DayCard extends ConsumerWidget {
     // Show countdown screen as a full-screen modal
     final shouldStart = await Navigator.of(context).push<bool>(
       PageRouteBuilder(
-        opaque: true,
         pageBuilder:
             (_, __, ___) => CountdownScreen(
               dayLabel: dayLabel,
               exerciseCount: exercises.length,
-              estimatedTime: '1h',
             ),
         transitionsBuilder: (_, animation, __, child) {
           return FadeTransition(opacity: animation, child: child);
         },
-        transitionDuration: const Duration(milliseconds: 300),
       ),
     );
 
-    if (shouldStart == true && context.mounted) {
-      context.push(AppRoutes.activeSession, extra: day.localId);
+    if ((shouldStart ?? false) && context.mounted) {
+      unawaited(context.push(AppRoutes.activeSession, extra: day.localId));
     }
   }
 }
 
 // ── Shared program picker — used by both _DayCard and _AddDayCard ──
-void _showProgramPicker(
+Future<void> _showProgramPicker(
   BuildContext context,
   Schedule currentSchedule,
   List<Schedule> schedules,
   ValueChanged<int>? onProgramChanged,
-) {
-  final RenderBox box = context.findRenderObject() as RenderBox;
+) async {
+  final box = context.findRenderObject()! as RenderBox;
   final offset = box.localToGlobal(Offset.zero);
+  final colors = AppColors.of(context);
 
   // Build items: each program + divider + "Create +" at the end
   final items = <PopupMenuEntry<int>>[];
   for (var i = 0; i < schedules.length; i++) {
     final schedule = schedules[i];
     final isCurrent = schedule.localId == currentSchedule.localId;
-    items.add(
-      PopupMenuItem<int>(
-        value: schedule.localId,
-        height: 40.h,
-        child: Center(
-          child: Text(
-            schedule.name,
-            style: TextStyle(
-              color: isCurrent ? const Color(0xFFD2FF00) : Colors.black,
-              fontSize: 15.sp,
-              fontWeight: FontWeight.w600,
+    items
+      ..add(
+        PopupMenuItem<int>(
+          value: schedule.localId,
+          height: 40.h,
+          child: Center(
+            child: Text(
+              schedule.name,
+              style: TextStyle(
+                color: isCurrent ? colors.accent : colors.todayPillText,
+                fontSize: 15.sp,
+                fontWeight: FontWeight.w600,
+              ),
             ),
           ),
         ),
-      ),
-    );
-    items.add(const PopupMenuDivider(height: 1));
+      )
+      ..add(const PopupMenuDivider(height: 1));
   }
   // "Create +" action
   items.add(
@@ -1024,7 +1046,7 @@ void _showProgramPicker(
         child: Text(
           'Create +',
           style: TextStyle(
-            color: Colors.black54,
+            color: colors.textSecondary,
             fontSize: 15.sp,
             fontWeight: FontWeight.w600,
           ),
@@ -1033,7 +1055,7 @@ void _showProgramPicker(
     ),
   );
 
-  showMenu<int>(
+  final selected = await showMenu<int>(
     context: context,
     position: RelativeRect.fromLTRB(
       offset.dx + 24.w,
@@ -1045,14 +1067,14 @@ void _showProgramPicker(
     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20.r)),
     elevation: 8,
     items: items,
-  ).then((selected) {
-    if (selected == null) return;
-    if (selected == -1) {
-      context.push(AppRoutes.scheduleBuilder);
-    } else {
-      onProgramChanged?.call(selected);
-    }
-  });
+  );
+
+  if (selected == null || !context.mounted) return;
+  if (selected == -1) {
+    unawaited(context.push(AppRoutes.scheduleBuilder));
+  } else {
+    onProgramChanged?.call(selected);
+  }
 }
 
 // ═══════════════════════════════════════════════════════════════════
@@ -1060,9 +1082,9 @@ void _showProgramPicker(
 // Figma: 8px circles, active = #D2FF00, inactive = glass 0.25
 // ═══════════════════════════════════════════════════════════════════
 class _PageDots extends StatelessWidget {
+  const _PageDots({required this.activeIndex, required this.count});
   final int activeIndex;
   final int count;
-  const _PageDots({required this.activeIndex, required this.count});
 
   @override
   Widget build(BuildContext context) {
@@ -1078,7 +1100,7 @@ class _PageDots extends StatelessWidget {
           margin: EdgeInsets.only(right: i < count - 1 ? 8.w : 0),
           decoration: BoxDecoration(
             color:
-                isActive ? colors.accent : Colors.white.withValues(alpha: 0.25),
+                isActive ? colors.accent : AppColors.of(context).white.withValues(alpha: 0.25),
             shape: BoxShape.circle,
           ),
         );

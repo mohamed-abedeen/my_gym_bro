@@ -4,11 +4,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
-import '../../core/auth/auth_notifier.dart';
-import '../../core/providers/providers.dart';
-import '../../l10n/app_localizations.dart';
-import '../../shared/constants.dart';
-import '../../shared/responsive.dart';
+import 'package:my_gym_bro/core/auth/auth_notifier.dart';
+import 'package:my_gym_bro/core/providers/providers.dart';
+import 'package:my_gym_bro/l10n/app_localizations.dart';
+import 'package:my_gym_bro/shared/constants.dart';
+import 'package:my_gym_bro/shared/responsive.dart';
 
 /// Sign In (/auth/signin)
 /// Email + Password. Forgot password → resetPasswordForEmail().

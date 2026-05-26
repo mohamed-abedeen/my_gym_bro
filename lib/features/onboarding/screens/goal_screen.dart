@@ -1,11 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-
-import '../../../l10n/app_localizations.dart';
-import '../../../shared/constants.dart';
-import '../../../shared/responsive.dart';
-import '../onboarding_state.dart';
+import 'package:my_gym_bro/features/onboarding/onboarding_state.dart';
+import 'package:my_gym_bro/l10n/app_localizations.dart';
+import 'package:my_gym_bro/shared/constants.dart';
+import 'package:my_gym_bro/shared/responsive.dart';
 
 /// Figma frames 33-37 — Goal selection.
 /// "What's your main goal for training?"
@@ -72,7 +71,7 @@ class GoalScreen extends ConsumerWidget {
                         color: colors.textPrimary, size: 28.sp),
                   ),
                   SizedBox(width: 8.w),
-                  Expanded(
+                  const Expanded(
                     child: _ProgressBar(progress: progress),
                   ),
                 ],
@@ -205,10 +204,6 @@ class GoalScreen extends ConsumerWidget {
 }
 
 class _GoalOption {
-  final String key;
-  final String title;
-  final String subtitle;
-  final IconData icon;
 
   const _GoalOption({
     required this.key,
@@ -216,12 +211,16 @@ class _GoalOption {
     required this.subtitle,
     required this.icon,
   });
+  final String key;
+  final String title;
+  final String subtitle;
+  final IconData icon;
 }
 
 /// Green-to-dark progress bar matching Figma onboarding.
 class _ProgressBar extends StatelessWidget {
-  final double progress;
   const _ProgressBar({required this.progress});
+  final double progress;
 
   @override
   Widget build(BuildContext context) {
@@ -229,7 +228,7 @@ class _ProgressBar extends StatelessWidget {
     return Container(
       height: 6.h,
       decoration: BoxDecoration(
-        color: Colors.grey[800],
+        color: AppColors.of(context).avatarPlaceholderDark,
         borderRadius: BorderRadius.circular(3.r),
       ),
       child: FractionallySizedBox(

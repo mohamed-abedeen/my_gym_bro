@@ -1,15 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-
-import '../../l10n/app_localizations.dart';
-import '../../shared/constants.dart';
-import '../../shared/responsive.dart';
-import '../../shared/widgets/liquid_glass_button.dart';
-import 'workout_providers.dart';
+import 'package:my_gym_bro/core/services/units.dart';
+import 'package:my_gym_bro/features/workout/workout_providers.dart';
+import 'package:my_gym_bro/l10n/app_localizations.dart';
+import 'package:my_gym_bro/shared/constants.dart';
+import 'package:my_gym_bro/shared/responsive.dart';
+import 'package:my_gym_bro/shared/widgets/liquid_glass_button.dart';
 
 /// Show the Status bottom sheet — Figma "Status" screen.
 void showStatusBottomSheet(BuildContext context) {
-  showModalBottomSheet(
+  showModalBottomSheet<void>(
     context: context,
     isScrollControlled: true,
     backgroundColor: Colors.transparent,
@@ -147,8 +147,8 @@ class _StatusSheet extends ConsumerWidget {
 // ═══════════════════════════════════════════════════════════════════
 
 class _BodyStatusCard extends StatelessWidget {
-  final AppLocalizations l10n;
   const _BodyStatusCard({required this.l10n});
+  final AppLocalizations l10n;
 
   @override
   Widget build(BuildContext context) {
@@ -184,9 +184,9 @@ class _BodyStatusCard extends StatelessWidget {
 }
 
 class _CalRow extends StatelessWidget {
+  const _CalRow({required this.label, required this.value});
   final String label;
   final String value;
-  const _CalRow({required this.label, required this.value});
 
   @override
   Widget build(BuildContext context) {
@@ -219,7 +219,7 @@ class _CalRow extends StatelessWidget {
         ),
         // Trend arrow (up-right)
         Transform.rotate(
-          angle: -1.5708,
+          angle: AppAngles.quarterTurnCcw,
           child: Icon(
             Icons.arrow_forward_rounded,
             color: colors.trendPositive,
@@ -239,19 +239,14 @@ class _CalRow extends StatelessWidget {
 // ═══════════════════════════════════════════════════════════════════
 
 class _WorkoutStatusCard extends ConsumerWidget {
-  final AppLocalizations l10n;
   const _WorkoutStatusCard({required this.l10n});
+  final AppLocalizations l10n;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final colors = AppColors.of(context);
     final stats = ref.watch(weeklyStatsProvider);
-    final profile = ref.watch(userProfileProvider);
-    final weightUnit = profile.when(
-      data: (p) => p?.weightUnit ?? 'lbs',
-      loading: () => 'lbs',
-      error: (_, __) => 'lbs',
-    );
+    final unit = ref.watch(weightUnitProvider);
 
     return Container(
       width: double.infinity,
@@ -277,7 +272,12 @@ class _WorkoutStatusCard extends ConsumerWidget {
               children: [
                 _WorkoutStatRow(
                   label: l10n.volume,
-                  value: '${s.totalVolume.toInt()}  $weightUnit',
+                  value: formatWeight(
+                    s.totalVolume,
+                    unit,
+                    decimals: 0,
+                    withUnit: true,
+                  ),
                   trend: s.volumeTrend,
                 ),
                 SizedBox(height: 10.h),
@@ -319,10 +319,6 @@ class _WorkoutStatusCard extends ConsumerWidget {
 }
 
 class _WorkoutStatRow extends StatelessWidget {
-  final String label;
-  final String value;
-  final double? trend;
-  final String trendSuffix;
 
   const _WorkoutStatRow({
     required this.label,
@@ -330,6 +326,10 @@ class _WorkoutStatRow extends StatelessWidget {
     this.trend,
     this.trendSuffix = '',
   });
+  final String label;
+  final String value;
+  final double? trend;
+  final String trendSuffix;
 
   @override
   Widget build(BuildContext context) {
@@ -375,7 +375,7 @@ class _WorkoutStatRow extends StatelessWidget {
           ),
           SizedBox(width: 2.w),
           Transform.rotate(
-            angle: isPositive ? -1.5708 : 1.5708,
+            angle: isPositive ? AppAngles.quarterTurnCcw : AppAngles.quarterTurnCw,
             child: Icon(
               Icons.arrow_forward_rounded,
               color: isPositive

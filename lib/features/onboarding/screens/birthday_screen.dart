@@ -2,11 +2,10 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-
-import '../../../l10n/app_localizations.dart';
-import '../../../shared/constants.dart';
-import '../../../shared/responsive.dart';
-import '../onboarding_state.dart';
+import 'package:my_gym_bro/features/onboarding/onboarding_state.dart';
+import 'package:my_gym_bro/l10n/app_localizations.dart';
+import 'package:my_gym_bro/shared/constants.dart';
+import 'package:my_gym_bro/shared/responsive.dart';
 
 /// Figma frames 38-39 — Birthday date picker.
 /// CupertinoDatePicker in dark theme. "What's your birthday?"
@@ -18,7 +17,7 @@ class BirthdayScreen extends ConsumerStatefulWidget {
 }
 
 class _BirthdayScreenState extends ConsumerState<BirthdayScreen> {
-  DateTime _selectedDate = DateTime(2000, 1, 1);
+  DateTime _selectedDate = DateTime(2000);
 
   @override
   void initState() {
@@ -53,7 +52,7 @@ class _BirthdayScreenState extends ConsumerState<BirthdayScreen> {
                         color: colors.textPrimary, size: 28.sp),
                   ),
                   SizedBox(width: 8.w),
-                  Expanded(child: _ProgressBar(progress: progress)),
+                  const Expanded(child: _ProgressBar(progress: progress)),
                 ],
               ),
             ),
@@ -147,8 +146,8 @@ class _BirthdayScreenState extends ConsumerState<BirthdayScreen> {
 }
 
 class _ProgressBar extends StatelessWidget {
-  final double progress;
   const _ProgressBar({required this.progress});
+  final double progress;
 
   @override
   Widget build(BuildContext context) {
@@ -156,7 +155,7 @@ class _ProgressBar extends StatelessWidget {
     return Container(
       height: 6.h,
       decoration: BoxDecoration(
-        color: Colors.grey[800],
+        color: AppColors.of(context).avatarPlaceholderDark,
         borderRadius: BorderRadius.circular(3.r),
       ),
       child: FractionallySizedBox(

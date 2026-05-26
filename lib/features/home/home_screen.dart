@@ -1,16 +1,19 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-
-import '../../core/providers/providers.dart';
-import '../../l10n/app_localizations.dart';
-import '../../shared/constants.dart';
-import '../../shared/responsive.dart';
-import '../../shared/widgets/anatomy_body.dart';
-import '../../shared/widgets/liquid_glass_button.dart';
-import '../settings/settings_screen.dart';
-import '../workout/muscle_detail_sheet.dart';
-import '../workout/workout_providers.dart';
+import 'package:my_gym_bro/core/providers/providers.dart';
+import 'package:my_gym_bro/core/services/units.dart';
+import 'package:my_gym_bro/features/settings/settings_screen.dart';
+import 'package:my_gym_bro/features/settings/skin_provider.dart';
+import 'package:my_gym_bro/features/workout/muscle_detail_sheet.dart';
+import 'package:my_gym_bro/features/workout/workout_providers.dart';
+import 'package:my_gym_bro/l10n/app_localizations.dart';
+import 'package:my_gym_bro/shared/constants.dart';
+import 'package:my_gym_bro/shared/responsive.dart';
+import 'package:my_gym_bro/shared/widgets/anatomy_body.dart';
+import 'package:my_gym_bro/shared/widgets/liquid_glass_button.dart';
+import 'package:my_gym_bro/shared/widgets/shimmer_box.dart';
+import 'package:my_gym_bro/shared/widgets/user_avatar.dart';
 
 class HomeScreen extends ConsumerWidget {
   const HomeScreen({super.key});
@@ -65,8 +68,8 @@ class HomeScreen extends ConsumerWidget {
 }
 
 class _Header extends ConsumerWidget {
-  final AppLocalizations l10n;
   const _Header({required this.l10n});
+  final AppLocalizations l10n;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -118,48 +121,17 @@ class _Header extends ConsumerWidget {
           GestureDetector(
             onTap:
                 () => Navigator.of(context).push(
-                  CupertinoPageRoute(builder: (_) => const SettingsScreen()),
+                  CupertinoPageRoute<void>(builder: (_) => const SettingsScreen()),
                 ),
             child: LiquidGlassButton(
               width: 48.w,
               height: 48.h,
               opacity: 0.65,
               radius: 296.r,
-              child: profile.when(
-                data:
-                    (p) =>
-                        p?.avatarUrl != null
-                            ? ClipOval(
-                              child: Image.network(
-                                p!.avatarUrl!,
-                                width: 44.w,
-                                height: 44.h,
-                                fit: BoxFit.cover,
-                                errorBuilder:
-                                    (_, __, ___) => Icon(
-                                      Icons.person_rounded,
-                                      color: colors.textPrimary,
-                                      size: 28.sp,
-                                    ),
-                              ),
-                            )
-                            : Icon(
-                              Icons.person_rounded,
-                              color: colors.textPrimary,
-                              size: 28.sp,
-                            ),
-                loading:
-                    () => Icon(
-                      Icons.person_rounded,
-                      color: colors.textPrimary,
-                      size: 28.sp,
-                    ),
-                error:
-                    (_, __) => Icon(
-                      Icons.person_rounded,
-                      color: colors.textPrimary,
-                      size: 28.sp,
-                    ),
+              child: UserAvatar(
+                size: 44,
+                url: profile.valueOrNull?.avatarUrl,
+                iconColor: colors.textPrimary,
               ),
             ),
           ),
@@ -175,8 +147,8 @@ class _Header extends ConsumerWidget {
 // ─────────────────────────────────────────────
 
 class _LeaderboardCard extends StatelessWidget {
-  final AppLocalizations l10n;
   const _LeaderboardCard({required this.l10n});
+  final AppLocalizations l10n;
 
   @override
   Widget build(BuildContext context) {
@@ -224,7 +196,7 @@ class _LeaderboardCard extends StatelessWidget {
                         style: TextStyle(color: colors.textPrimary),
                       ),
                       TextSpan(
-                        text: 'Leaderboard',
+                        text: l10n.leaderboard,
                         style: TextStyle(color: colors.accent),
                       ),
                     ],
@@ -259,7 +231,7 @@ class _LeaderboardCard extends StatelessWidget {
                           width: 44.w,
                           height: 44.h,
                           decoration: BoxDecoration(
-                            color: Colors.black.withValues(alpha: 0.5),
+                            color: colors.overlayBlack,
                             shape: BoxShape.circle,
                           ),
                           child: Center(
@@ -313,8 +285,8 @@ class _LeaderboardCard extends StatelessWidget {
 // ─────────────────────────────────────────────
 
 class _HomeWeeklyStrip extends ConsumerWidget {
-  final Locale locale;
   const _HomeWeeklyStrip({required this.locale});
+  final Locale locale;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -364,15 +336,85 @@ class _HomeWeeklyStrip extends ConsumerWidget {
               ),
             ],
           ),
-      loading: () => SizedBox(height: 95.h),
-      error: (_, __) => SizedBox(height: 95.h),
+      loading: () => const _WeekStripSkeleton(),
+      error:
+          (_, __) => SizedBox(
+            height: 95.h,
+            child: Center(
+              child: GestureDetector(
+                onTap: () => ref.invalidate(weekStripProvider(locale)),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(
+                      Icons.refresh_rounded,
+                      color: AppColors.of(context).textSecondary,
+                      size: 16.sp,
+                    ),
+                    SizedBox(width: 6.w),
+                    Text(
+                      AppLocalizations.of(context).retry,
+                      style: TextStyle(
+                        color: AppColors.of(context).textSecondary,
+                        fontSize: 13.sp,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+    );
+  }
+}
+
+class _WeekStripSkeleton extends StatelessWidget {
+  const _WeekStripSkeleton();
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      children: [
+        // 7 pill skeletons
+        Row(
+          children: List.generate(
+            7,
+            (_) => Expanded(
+              child: Padding(
+                padding: EdgeInsets.symmetric(horizontal: 2.w),
+                child: ShimmerBox(
+                  width: double.infinity,
+                  height: AppSizes.dayPillH.h,
+                  borderRadius: BorderRadius.circular(25.r),
+                ),
+              ),
+            ),
+          ),
+        ),
+        SizedBox(height: 6.h),
+        // Flame icon row skeletons
+        Row(
+          children: List.generate(
+            7,
+            (_) => Expanded(
+              child: Center(
+                child: ShimmerBox(
+                  width: 15.sp,
+                  height: 15.sp,
+                  borderRadius: BorderRadius.circular(4.r),
+                ),
+              ),
+            ),
+          ),
+        ),
+      ],
     );
   }
 }
 
 class _HomeDayPill extends StatelessWidget {
-  final DayData day;
   const _HomeDayPill({required this.day});
+  final DayData day;
 
   @override
   Widget build(BuildContext context) {
@@ -391,7 +433,7 @@ class _HomeDayPill extends StatelessWidget {
           Text(
             day.abbreviation,
             style: TextStyle(
-              color: day.isToday ? Colors.black : colors.textPrimary,
+              color: day.isToday ? colors.todayPillText : colors.textPrimary,
               fontSize: 15.sp,
               fontWeight: FontWeight.w700,
             ),
@@ -401,7 +443,7 @@ class _HomeDayPill extends StatelessWidget {
           Text(
             '${day.dayNumber}',
             style: TextStyle(
-              color: day.isToday ? Colors.black : colors.textPrimary,
+              color: day.isToday ? colors.todayPillText : colors.textPrimary,
               fontSize: 24.sp,
               fontWeight: FontWeight.w700,
             ),
@@ -420,18 +462,13 @@ class _HomeDayPill extends StatelessWidget {
 // ─────────────────────────────────────────────
 
 class _StatusSection extends ConsumerWidget {
-  final AppLocalizations l10n;
   const _StatusSection({required this.l10n});
+  final AppLocalizations l10n;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final colors = AppColors.of(context);
-    final profile = ref.watch(userProfileProvider);
-    final weightUnit = profile.when(
-      data: (p) => p?.weightUnit ?? 'kg',
-      loading: () => 'kg',
-      error: (_, __) => 'kg',
-    );
+    final unit = ref.watch(weightUnitProvider);
 
     // Fixed height from Figma: 368px
     return SizedBox(
@@ -475,7 +512,7 @@ class _StatusSection extends ConsumerWidget {
                     borderRadius: BorderRadius.circular(24.r),
                     child: _WeeklyProgressCard(
                       l10n: l10n,
-                      weightUnit: weightUnit,
+                      unit: unit,
                     ),
                   ),
                 ),
@@ -491,8 +528,8 @@ class _StatusSection extends ConsumerWidget {
 // ── Healing Card — 193x368, radius 24 ──
 
 class _HealingCard extends ConsumerWidget {
-  final AppLocalizations l10n;
   const _HealingCard({required this.l10n});
+  final AppLocalizations l10n;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -520,38 +557,52 @@ class _HealingCard extends ConsumerWidget {
                         muscleStates: states,
                         height: 280.h,
                         gender: ref.watch(anatomyGenderProvider),
+                        basePngPath: ref.watch(activeSkinPathProvider),
                       ),
-                  loading: () => const SizedBox.shrink(),
+                  loading:
+                      () => ShimmerBox(
+                        width: double.infinity,
+                        height: 280.h,
+                        borderRadius: BorderRadius.circular(12.r),
+                      ),
                   error:
                       (_, __) => AnatomyBody(
                         muscleStates: const [],
                         height: 280.h,
                         gender: ref.watch(anatomyGenderProvider),
+                        basePngPath: ref.watch(activeSkinPathProvider),
                       ),
                 ),
               ),
             ),
             // Text overlay — centered, 32px title per Figma
             Positioned(
-              left: 0,
-              right: 0,
+              left: 8.w,
+              right: 8.w,
               top: 15.h,
               child: Column(
+                mainAxisSize: MainAxisSize.min,
                 children: [
-                  // "Healing..." — 32px w700 centered
-                  Text(
-                    l10n.healingTitle,
-                    textAlign: TextAlign.center,
-                    style: TextStyle(
-                      color: colors.textPrimary,
-                      fontSize: 32.sp,
-                      fontWeight: FontWeight.w700,
+                  // "Healing..." — scales down to stay on one line
+                  FittedBox(
+                    fit: BoxFit.scaleDown,
+                    child: Text(
+                      l10n.healingTitle,
+                      textAlign: TextAlign.center,
+                      maxLines: 1,
+                      style: TextStyle(
+                        color: colors.textPrimary,
+                        fontSize: 32.sp,
+                        fontWeight: FontWeight.w700,
+                      ),
                     ),
                   ),
-                  // "Your body needs some rest" — 10px w400 centered
+                  // "Your body needs some rest" — max 2 lines before ellipsis
                   Text(
                     l10n.healingSubtitle,
                     textAlign: TextAlign.center,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
                     style: TextStyle(
                       color: colors.textPrimary,
                       fontSize: 10.sp,
@@ -571,11 +622,6 @@ class _HealingCard extends ConsumerWidget {
 // ── Small Info Card — 193x64, radius 24 ──
 
 class _SmallInfoCard extends StatelessWidget {
-  final IconData icon;
-  final Color iconColor;
-  final double iconSize;
-  final String label;
-  final String value;
 
   const _SmallInfoCard({
     required this.icon,
@@ -584,6 +630,11 @@ class _SmallInfoCard extends StatelessWidget {
     required this.value,
     this.iconSize = 35,
   });
+  final IconData icon;
+  final Color iconColor;
+  final double iconSize;
+  final String label;
+  final String value;
 
   @override
   Widget build(BuildContext context) {
@@ -635,9 +686,9 @@ class _SmallInfoCard extends StatelessWidget {
 // ── Weekly Progress Card — 193x221, radius 24 ──
 
 class _WeeklyProgressCard extends ConsumerWidget {
+  const _WeeklyProgressCard({required this.l10n, required this.unit});
   final AppLocalizations l10n;
-  final String weightUnit;
-  const _WeeklyProgressCard({required this.l10n, required this.weightUnit});
+  final WeightUnit unit;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -669,9 +720,13 @@ class _WeeklyProgressCard extends ConsumerWidget {
                 // Volume
                 _StatRow(
                   label: l10n.volume,
-                  value: '${s.totalVolume.toInt()}  $weightUnit',
+                  value: formatWeight(
+                    s.totalVolume,
+                    unit,
+                    decimals: 0,
+                    withUnit: true,
+                  ),
                   trend: s.volumeTrend,
-                  isPositiveTrend: true,
                 ),
                 SizedBox(height: 2.h),
                 // Total Duration
@@ -680,7 +735,6 @@ class _WeeklyProgressCard extends ConsumerWidget {
                   value: s.formattedDuration,
                   trend: s.durationTrend,
                   trendSuffix: '%',
-                  isPositiveTrend: true,
                 ),
                 SizedBox(height: 2.h),
                 // Avg Strength
@@ -721,12 +775,6 @@ class _WeeklyProgressCard extends ConsumerWidget {
 }
 
 class _StatRow extends StatelessWidget {
-  final String label;
-  final String value;
-  final double? trend;
-  final String trendPrefix;
-  final String trendSuffix;
-  final bool isPositiveTrend;
 
   const _StatRow({
     required this.label,
@@ -736,6 +784,12 @@ class _StatRow extends StatelessWidget {
     this.trendSuffix = '',
     this.isPositiveTrend = true,
   });
+  final String label;
+  final String value;
+  final double? trend;
+  final String trendPrefix;
+  final String trendSuffix;
+  final bool isPositiveTrend;
 
   @override
   Widget build(BuildContext context) {
@@ -784,7 +838,7 @@ class _StatRow extends StatelessWidget {
         Padding(
           padding: EdgeInsets.only(left: 2.w),
           child: Transform.rotate(
-            angle: isPositiveTrend ? -1.5708 : 0, // -90deg or 0
+            angle: isPositiveTrend ? AppAngles.quarterTurnCcw : 0,
             child: Icon(
               Icons.arrow_forward_rounded,
               color: hasTrend ? trendColor : colors.trendPositive,

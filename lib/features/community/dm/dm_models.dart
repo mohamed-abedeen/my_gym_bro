@@ -1,5 +1,5 @@
 import 'dart:convert';
-import '../../../core/database/app_database.dart';
+import 'package:my_gym_bro/core/database/app_database.dart';
 
 /// The type of a DM message.
 enum DmMessageType { text, image, schedule }
@@ -23,7 +23,7 @@ extension DmMessageHelpers on DmMessage {
     try {
       return SharedSchedule.fromJson(
           jsonDecode(body!) as Map<String, dynamic>);
-    } catch (_) {
+    } on Object {
       return null;
     }
   }
@@ -31,8 +31,6 @@ extension DmMessageHelpers on DmMessage {
 
 /// Payload embedded in a schedule-type message body (JSON).
 class SharedSchedule {
-  final String name;
-  final List<SharedScheduleDay> days;
 
   const SharedSchedule({required this.name, required this.days});
 
@@ -42,6 +40,8 @@ class SharedSchedule {
             .map((d) => SharedScheduleDay.fromJson(d as Map<String, dynamic>))
             .toList(),
       );
+  final String name;
+  final List<SharedScheduleDay> days;
 
   Map<String, dynamic> toJson() => {
         'name': name,
@@ -53,14 +53,10 @@ class SharedSchedule {
 
 /// A single day within a shared schedule payload.
 class SharedScheduleDay {
-  final int dayIndex;
-  final String? label;
-  final bool isRestDay;
 
   const SharedScheduleDay({
     required this.dayIndex,
-    this.label,
-    required this.isRestDay,
+    required this.isRestDay, this.label,
   });
 
   factory SharedScheduleDay.fromJson(Map<String, dynamic> json) =>
@@ -69,6 +65,9 @@ class SharedScheduleDay {
         label: json['label'] as String?,
         isRestDay: json['isRestDay'] as bool? ?? false,
       );
+  final int dayIndex;
+  final String? label;
+  final bool isRestDay;
 
   Map<String, dynamic> toJson() => {
         'dayIndex': dayIndex,
@@ -79,13 +78,6 @@ class SharedScheduleDay {
 
 /// A DM conversation summary (one row in the inbox list).
 class DmConversation {
-  final String id;
-  final String otherUserId;
-  final String otherUserName;
-  final String? otherAvatarUrl;
-  final String? lastMessageText;
-  final DateTime? lastMessageAt;
-  final int unreadCount;
 
   const DmConversation({
     required this.id,
@@ -96,4 +88,11 @@ class DmConversation {
     this.lastMessageAt,
     this.unreadCount = 0,
   });
+  final String id;
+  final String otherUserId;
+  final String otherUserName;
+  final String? otherAvatarUrl;
+  final String? lastMessageText;
+  final DateTime? lastMessageAt;
+  final int unreadCount;
 }

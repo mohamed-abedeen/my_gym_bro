@@ -183,13 +183,13 @@ abstract class AppLocalizations {
   /// No description provided for @sessionLog.
   ///
   /// In en, this message translates to:
-  /// **'Sessions Log'**
+  /// **'Sessions'**
   String get sessionLog;
 
   /// No description provided for @statusLog.
   ///
   /// In en, this message translates to:
-  /// **'Status Log'**
+  /// **'Status'**
   String get statusLog;
 
   /// No description provided for @weeklyProgress.
@@ -822,6 +822,132 @@ abstract class AppLocalizations {
   /// **'Rest complete!'**
   String get restComplete;
 
+  /// No description provided for @restCompleteTitleSupportive.
+  ///
+  /// In en, this message translates to:
+  /// **'Rest complete'**
+  String get restCompleteTitleSupportive;
+
+  /// No description provided for @restCompleteBodySupportive.
+  ///
+  /// In en, this message translates to:
+  /// **'Your muscles are ready whenever you are.'**
+  String get restCompleteBodySupportive;
+
+  /// No description provided for @restCompleteTitleBalanced.
+  ///
+  /// In en, this message translates to:
+  /// **'Rest complete'**
+  String get restCompleteTitleBalanced;
+
+  /// No description provided for @restCompleteBodyBalanced.
+  ///
+  /// In en, this message translates to:
+  /// **'Time to start your next set.'**
+  String get restCompleteBodyBalanced;
+
+  /// No description provided for @restCompleteTitleBold.
+  ///
+  /// In en, this message translates to:
+  /// **'Rest complete'**
+  String get restCompleteTitleBold;
+
+  /// No description provided for @restCompleteBodyBold.
+  ///
+  /// In en, this message translates to:
+  /// **'Get back in. Next set.'**
+  String get restCompleteBodyBold;
+
+  /// No description provided for @restCompleteTitleSavage.
+  ///
+  /// In en, this message translates to:
+  /// **'REST OVER'**
+  String get restCompleteTitleSavage;
+
+  /// No description provided for @restCompleteBodySavage.
+  ///
+  /// In en, this message translates to:
+  /// **'NEXT SET. NOW.'**
+  String get restCompleteBodySavage;
+
+  /// No description provided for @notificationTone.
+  ///
+  /// In en, this message translates to:
+  /// **'Notification tone'**
+  String get notificationTone;
+
+  /// No description provided for @notificationToneSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Pick how your reminders sound'**
+  String get notificationToneSubtitle;
+
+  /// No description provided for @toneSupportive.
+  ///
+  /// In en, this message translates to:
+  /// **'Supportive'**
+  String get toneSupportive;
+
+  /// No description provided for @toneSupportiveDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Gentle, permission-giving reminders.'**
+  String get toneSupportiveDescription;
+
+  /// No description provided for @toneBalanced.
+  ///
+  /// In en, this message translates to:
+  /// **'Balanced'**
+  String get toneBalanced;
+
+  /// No description provided for @toneBalancedDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Neutral, factual reminders.'**
+  String get toneBalancedDescription;
+
+  /// No description provided for @toneBold.
+  ///
+  /// In en, this message translates to:
+  /// **'Bold'**
+  String get toneBold;
+
+  /// No description provided for @toneBoldDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Direct, confident reminders.'**
+  String get toneBoldDescription;
+
+  /// No description provided for @toneSavage.
+  ///
+  /// In en, this message translates to:
+  /// **'Savage'**
+  String get toneSavage;
+
+  /// No description provided for @toneSavageDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'All caps, no-excuses reminders.'**
+  String get toneSavageDescription;
+
+  /// No description provided for @notificationToneOnboardingTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Pick your voice'**
+  String get notificationToneOnboardingTitle;
+
+  /// No description provided for @notificationToneOnboardingSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'How should we talk to you during workouts?'**
+  String get notificationToneOnboardingSubtitle;
+
+  /// No description provided for @notificationToneExampleLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Example'**
+  String get notificationToneExampleLabel;
+
   /// No description provided for @restTimer.
   ///
   /// In en, this message translates to:
@@ -1445,6 +1571,378 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'All Levels'**
   String get allDifficulties;
+
+  /// No description provided for @exerciseSearchHint.
+  ///
+  /// In en, this message translates to:
+  /// **'What are you looking for ?'**
+  String get exerciseSearchHint;
+
+  /// No description provided for @account.
+  ///
+  /// In en, this message translates to:
+  /// **'Account'**
+  String get account;
+
+  /// No description provided for @following.
+  ///
+  /// In en, this message translates to:
+  /// **'Following'**
+  String get following;
+
+  /// No description provided for @followers.
+  ///
+  /// In en, this message translates to:
+  /// **'Followers'**
+  String get followers;
+
+  /// No description provided for @streak.
+  ///
+  /// In en, this message translates to:
+  /// **'Streak'**
+  String get streak;
+
+  /// No description provided for @achievement.
+  ///
+  /// In en, this message translates to:
+  /// **'Achievement'**
+  String get achievement;
+
+  /// No description provided for @posts.
+  ///
+  /// In en, this message translates to:
+  /// **'Posts'**
+  String get posts;
+
+  /// No description provided for @lastSession.
+  ///
+  /// In en, this message translates to:
+  /// **'Last Session'**
+  String get lastSession;
+
+  /// No description provided for @noSessionsYet.
+  ///
+  /// In en, this message translates to:
+  /// **'No sessions yet'**
+  String get noSessionsYet;
+
+  /// No description provided for @retry.
+  ///
+  /// In en, this message translates to:
+  /// **'Retry'**
+  String get retry;
+
+  /// No description provided for @leaderboard.
+  ///
+  /// In en, this message translates to:
+  /// **'Leaderboard'**
+  String get leaderboard;
+
+  /// No description provided for @muscleRecovery.
+  ///
+  /// In en, this message translates to:
+  /// **'Muscle Recovery'**
+  String get muscleRecovery;
+
+  /// No description provided for @sore.
+  ///
+  /// In en, this message translates to:
+  /// **'Sore'**
+  String get sore;
+
+  /// No description provided for @notTrainedYet.
+  ///
+  /// In en, this message translates to:
+  /// **'Not trained yet'**
+  String get notTrainedYet;
+
+  /// No description provided for @fullyRecovered.
+  ///
+  /// In en, this message translates to:
+  /// **'Fully recovered — ready to train'**
+  String get fullyRecovered;
+
+  /// No description provided for @lessThanOneHourRecovery.
+  ///
+  /// In en, this message translates to:
+  /// **'Less than 1 hour to full recovery'**
+  String get lessThanOneHourRecovery;
+
+  /// No description provided for @hoursRestNeeded.
+  ///
+  /// In en, this message translates to:
+  /// **'{hours}h more rest needed'**
+  String hoursRestNeeded(int hours);
+
+  /// No description provided for @daysRestNeeded.
+  ///
+  /// In en, this message translates to:
+  /// **'{days}d more rest needed'**
+  String daysRestNeeded(int days);
+
+  /// No description provided for @daysHoursRestNeeded.
+  ///
+  /// In en, this message translates to:
+  /// **'{days}d {hours}h more rest needed'**
+  String daysHoursRestNeeded(int days, int hours);
+
+  /// No description provided for @nSelected.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} selected'**
+  String nSelected(int count);
+
+  /// No description provided for @clearFilters.
+  ///
+  /// In en, this message translates to:
+  /// **'Clear Filters'**
+  String get clearFilters;
+
+  /// No description provided for @failedToLoadExercises.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to load exercises'**
+  String get failedToLoadExercises;
+
+  /// No description provided for @sortMostUsed.
+  ///
+  /// In en, this message translates to:
+  /// **'Most Used'**
+  String get sortMostUsed;
+
+  /// No description provided for @sortFavorites.
+  ///
+  /// In en, this message translates to:
+  /// **'Favorites'**
+  String get sortFavorites;
+
+  /// No description provided for @sortAZ.
+  ///
+  /// In en, this message translates to:
+  /// **'A–Z'**
+  String get sortAZ;
+
+  /// No description provided for @tabSummary.
+  ///
+  /// In en, this message translates to:
+  /// **'Summary'**
+  String get tabSummary;
+
+  /// No description provided for @tabHistory.
+  ///
+  /// In en, this message translates to:
+  /// **'History'**
+  String get tabHistory;
+
+  /// No description provided for @heaviestWeight.
+  ///
+  /// In en, this message translates to:
+  /// **'Heaviest Weight'**
+  String get heaviestWeight;
+
+  /// No description provided for @oneRepMax.
+  ///
+  /// In en, this message translates to:
+  /// **'One Rep Max'**
+  String get oneRepMax;
+
+  /// No description provided for @bestSetVolumeLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Best Set Volume'**
+  String get bestSetVolumeLabel;
+
+  /// No description provided for @bestSessionVolumeLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Best Session Volume'**
+  String get bestSessionVolumeLabel;
+
+  /// No description provided for @setRecords.
+  ///
+  /// In en, this message translates to:
+  /// **'Set Records'**
+  String get setRecords;
+
+  /// No description provided for @last3Months.
+  ///
+  /// In en, this message translates to:
+  /// **'Last 3 Months'**
+  String get last3Months;
+
+  /// No description provided for @last6Months.
+  ///
+  /// In en, this message translates to:
+  /// **'Last 6 Months'**
+  String get last6Months;
+
+  /// No description provided for @allTime.
+  ///
+  /// In en, this message translates to:
+  /// **'All Time'**
+  String get allTime;
+
+  /// No description provided for @noHistoryYet.
+  ///
+  /// In en, this message translates to:
+  /// **'No history yet'**
+  String get noHistoryYet;
+
+  /// No description provided for @primaryLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Primary'**
+  String get primaryLabel;
+
+  /// No description provided for @secondaryLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Secondary'**
+  String get secondaryLabel;
+
+  /// No description provided for @removeExercise.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove exercise'**
+  String get removeExercise;
+
+  /// No description provided for @discardWorkout.
+  ///
+  /// In en, this message translates to:
+  /// **'Discard this workout?'**
+  String get discardWorkout;
+
+  /// No description provided for @deleteSet.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete Set'**
+  String get deleteSet;
+
+  /// No description provided for @deleteSetConfirm.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete this set?'**
+  String get deleteSetConfirm;
+
+  /// No description provided for @setLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Set'**
+  String get setLabel;
+
+  /// No description provided for @selectSetType.
+  ///
+  /// In en, this message translates to:
+  /// **'Select Set Type'**
+  String get selectSetType;
+
+  /// No description provided for @warmUpSet.
+  ///
+  /// In en, this message translates to:
+  /// **'Warm Up Set'**
+  String get warmUpSet;
+
+  /// No description provided for @normalSet.
+  ///
+  /// In en, this message translates to:
+  /// **'Normal Set'**
+  String get normalSet;
+
+  /// No description provided for @failureSet.
+  ///
+  /// In en, this message translates to:
+  /// **'Failure Set'**
+  String get failureSet;
+
+  /// No description provided for @dropSet.
+  ///
+  /// In en, this message translates to:
+  /// **'Drop Set'**
+  String get dropSet;
+
+  /// No description provided for @removeSet.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove Set'**
+  String get removeSet;
+
+  /// No description provided for @completeSet.
+  ///
+  /// In en, this message translates to:
+  /// **'Complete set'**
+  String get completeSet;
+
+  /// No description provided for @restTime.
+  ///
+  /// In en, this message translates to:
+  /// **'Rest time'**
+  String get restTime;
+
+  /// No description provided for @remaining.
+  ///
+  /// In en, this message translates to:
+  /// **'Remaining'**
+  String get remaining;
+
+  /// No description provided for @restAfterSet.
+  ///
+  /// In en, this message translates to:
+  /// **'You must rest after\nthis set'**
+  String get restAfterSet;
+
+  /// No description provided for @unfinishedSets.
+  ///
+  /// In en, this message translates to:
+  /// **'Unfinished Sets'**
+  String get unfinishedSets;
+
+  /// No description provided for @unfinishedSetsMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'You have unfinished sets. Are you sure you want to end this session?'**
+  String get unfinishedSetsMessage;
+
+  /// No description provided for @confirm.
+  ///
+  /// In en, this message translates to:
+  /// **'Confirm'**
+  String get confirm;
+
+  /// No description provided for @endSession.
+  ///
+  /// In en, this message translates to:
+  /// **'End Session'**
+  String get endSession;
+
+  /// No description provided for @previousExercise.
+  ///
+  /// In en, this message translates to:
+  /// **'Previous'**
+  String get previousExercise;
+
+  /// No description provided for @nextExercise.
+  ///
+  /// In en, this message translates to:
+  /// **'Next'**
+  String get nextExercise;
+
+  /// No description provided for @noInstructions.
+  ///
+  /// In en, this message translates to:
+  /// **'No instructions available'**
+  String get noInstructions;
+
+  /// No description provided for @deleteWorkout.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete Workout'**
+  String get deleteWorkout;
+
+  /// No description provided for @deleteWorkoutConfirm.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete this workout?'**
+  String get deleteWorkoutConfirm;
 }
 
 class _AppLocalizationsDelegate

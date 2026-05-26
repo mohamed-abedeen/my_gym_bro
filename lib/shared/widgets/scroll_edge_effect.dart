@@ -2,19 +2,19 @@ import 'dart:ui';
 
 import 'package:flutter/material.dart';
 
-import '../responsive.dart';
+import 'package:my_gym_bro/shared/responsive.dart';
 
 /// Scroll edge effect applied to ALL sheet screens.
 ///
 /// Creates a frosted glass fade where scrolled content passes under the header,
 /// matching the Figma "Scroll Edge Effect" layers.
 class ScrollEdgeEffect extends StatelessWidget {
-  final Widget child;
 
   const ScrollEdgeEffect({
     required this.child,
     super.key,
   });
+  final Widget child;
 
   @override
   Widget build(BuildContext context) {

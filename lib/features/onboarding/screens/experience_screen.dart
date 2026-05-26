@@ -1,11 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-
-import '../../../l10n/app_localizations.dart';
-import '../../../shared/constants.dart';
-import '../../../shared/responsive.dart';
-import '../onboarding_state.dart';
+import 'package:my_gym_bro/features/onboarding/onboarding_state.dart';
+import 'package:my_gym_bro/l10n/app_localizations.dart';
+import 'package:my_gym_bro/shared/constants.dart';
+import 'package:my_gym_bro/shared/responsive.dart';
 
 /// Figma frames 45-46 — Experience level selection.
 /// Dark background with gym-photo feel.
@@ -70,7 +69,7 @@ class _ExperienceScreenState extends ConsumerState<ExperienceScreen> {
                         color: colors.textPrimary, size: 28.sp),
                   ),
                   SizedBox(width: 8.w),
-                  Expanded(child: _ProgressBar(progress: progress)),
+                  const Expanded(child: _ProgressBar(progress: progress)),
                 ],
               ),
             ),
@@ -115,7 +114,7 @@ class _ExperienceScreenState extends ConsumerState<ExperienceScreen> {
                           fontSize: 72.sp,
                           fontWeight: FontWeight.w900,
                           color: colors.textPrimary,
-                          height: 1.0,
+                          height: 1,
                         ),
                       ),
                       SizedBox(height: 4.h),
@@ -146,7 +145,7 @@ class _ExperienceScreenState extends ConsumerState<ExperienceScreen> {
                   decoration: BoxDecoration(
                     color: i == _currentPage
                         ? colors.accent
-                        : Colors.grey[700],
+                        : AppColors.of(context).avatarPlaceholder,
                     borderRadius: BorderRadius.circular(4.r),
                   ),
                 ),
@@ -188,8 +187,8 @@ class _ExperienceScreenState extends ConsumerState<ExperienceScreen> {
 }
 
 class _ProgressBar extends StatelessWidget {
-  final double progress;
   const _ProgressBar({required this.progress});
+  final double progress;
 
   @override
   Widget build(BuildContext context) {
@@ -197,7 +196,7 @@ class _ProgressBar extends StatelessWidget {
     return Container(
       height: 6.h,
       decoration: BoxDecoration(
-        color: Colors.grey[800],
+        color: AppColors.of(context).avatarPlaceholderDark,
         borderRadius: BorderRadius.circular(3.r),
       ),
       child: FractionallySizedBox(

@@ -1,41 +1,38 @@
+import 'dart:async';
+
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:drift/drift.dart' hide Column;
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-
-import '../../core/database/app_database.dart';
-import '../../core/database/daos/exercise_dao.dart';
-import '../../core/database/daos/schedule_dao.dart';
-import '../../core/providers/providers.dart';
-import '../../l10n/app_localizations.dart';
-import '../../shared/constants.dart';
-import '../../shared/responsive.dart';
-import '../../shared/widgets/liquid_glass_button.dart';
-import '../../shared/widgets/oc_glass_btn.dart';
-import '../exercises/exercise_browser_screen.dart';
-import '../exercises/exercise_detail_screen.dart';
+import 'package:my_gym_bro/core/database/app_database.dart';
+import 'package:my_gym_bro/core/database/daos/exercise_dao.dart';
+import 'package:my_gym_bro/core/database/daos/schedule_dao.dart';
+import 'package:my_gym_bro/core/providers/providers.dart';
+import 'package:my_gym_bro/features/workout/workout_providers.dart';
+import 'package:my_gym_bro/features/exercises/exercise_browser_screen.dart';
+import 'package:my_gym_bro/features/exercises/exercise_detail_screen.dart';
+import 'package:my_gym_bro/l10n/app_localizations.dart';
+import 'package:my_gym_bro/shared/constants.dart';
+import 'package:my_gym_bro/shared/responsive.dart';
+import 'package:my_gym_bro/shared/widgets/liquid_glass_button.dart';
+import 'package:my_gym_bro/shared/widgets/oc_glass_btn.dart';
 
 // ── Local UI Models ──
 
 class _DayModel {
-  String label;
-  String dayOfWeek = ''; // e.g. "Saturday", "Monday"
-  bool isRestDay = false;
-  final List<_ExerciseModel> exercises;
 
   _DayModel({
     required this.label,
     List<_ExerciseModel>? exercises,
   }) : exercises = exercises ?? [];
+  String label;
+  String dayOfWeek = ''; // e.g. "Saturday", "Monday"
+  bool isRestDay = false;
+  final List<_ExerciseModel> exercises;
 }
 
 class _ExerciseModel {
-  final String exerciseId;
-  final String name;
-  final String? gifUrl;
-  final List<_SetModel> sets;
-  bool showSets = false;
 
   _ExerciseModel({
     required this.exerciseId,
@@ -43,12 +40,17 @@ class _ExerciseModel {
     this.gifUrl,
     List<_SetModel>? sets,
   }) : sets = sets ?? [_SetModel(), _SetModel(), _SetModel()];
+  final String exerciseId;
+  final String name;
+  final String? gifUrl;
+  final List<_SetModel> sets;
+  bool showSets = false;
 }
 
 class _SetModel {
+  _SetModel();
   double weight = 60;
   int reps = 10;
-  _SetModel();
 }
 
 // ═══════════════════════════════════════════════════════════════════
@@ -56,9 +58,9 @@ class _SetModel {
 // ═══════════════════════════════════════════════════════════════════
 
 class ScheduleBuilderScreen extends ConsumerStatefulWidget {
-  final int? scheduleId;
 
   const ScheduleBuilderScreen({super.key, this.scheduleId});
+  final int? scheduleId;
 
   @override
   ConsumerState<ScheduleBuilderScreen> createState() =>
@@ -71,8 +73,6 @@ class _ScheduleBuilderScreenState
   final List<_DayModel> _days = [];
   int _expandedDay = -1;
   bool _saving = false;
-  int _restDaysBetween = 1; // rest days between exercise days
-
   bool get _isEditMode => widget.scheduleId != null;
 
   @override
@@ -84,8 +84,8 @@ class _ScheduleBuilderScreenState
   }
 
   Future<void> _loadExistingSchedule() async {
-    final dao = ScheduleDao(ref.read(databaseProvider));
-    final exerciseDao = ExerciseDao(ref.read(databaseProvider));
+    final dao = ref.read(scheduleDaoProvider);
+    final exerciseDao = ref.read(exerciseDaoProvider);
 
     final schedules = await dao.getAll();
     final schedule =
@@ -98,6 +98,8 @@ class _ScheduleBuilderScreenState
     final dayModels = <_DayModel>[];
 
     for (final day in days) {
+      if (day.isRestDay ||
+          (day.label?.toLowerCase().contains('rest') ?? false)) continue;
       final scheduledExercises = await dao.getExercises(day.localId);
       final exerciseIds =
           scheduledExercises.map((se) => se.exerciseId).toList();
@@ -123,7 +125,7 @@ class _ScheduleBuilderScreenState
       dayModels.add(_DayModel(
         label: day.label ?? '',
         exercises: exModels,
-      )..isRestDay = day.isRestDay);
+      ));
     }
 
     if (mounted) {
@@ -177,7 +179,7 @@ class _ScheduleBuilderScreenState
                     ),
                     SizedBox(width: 10.w),
                     // Share — liquid glass
-                    OcGlassBtn(
+                    const OcGlassBtn(
                       type: OcGlassBtnType.share,
                       size: 40,
                     ),
@@ -220,10 +222,6 @@ class _ScheduleBuilderScreenState
                 children: [
                   // ── Schedule Name field ──
                   _buildNameField(),
-                  SizedBox(height: 10.h),
-
-                  // ── Rest Days setting ──
-                  _buildRestDaysField(),
                   SizedBox(height: 10.h),
 
                   // ── Day cards (collapsed or expanded) ──
@@ -289,68 +287,6 @@ class _ScheduleBuilderScreenState
               color: colors.textPrimary, size: 16.sp),
         ],
       ),
-    );
-  }
-
-  // ── Rest Days Between Exercise Days ──
-  Widget _buildRestDaysField() {
-    final colors = AppColors.of(context);
-    return GestureDetector(
-      onTap: () => _showRestDaysPicker(),
-      child: Container(
-        height: 60.h,
-        decoration: BoxDecoration(
-          color: colors.cardElevated,
-          borderRadius: BorderRadius.circular(25.r),
-        ),
-        padding: EdgeInsets.symmetric(horizontal: 16.w),
-        child: Row(
-          children: [
-            Icon(Icons.hotel_rounded,
-                color: colors.accent, size: 20.sp),
-            SizedBox(width: 12.w),
-            Expanded(
-              child: Text(
-                AppLocalizations.of(context).restDaysBetween,
-                style: TextStyle(
-                  color: colors.textPrimary,
-                  fontSize: 18.sp,
-                  fontWeight: FontWeight.w700,
-                ),
-              ),
-            ),
-            Container(
-              padding: EdgeInsets.symmetric(horizontal: 14.w, vertical: 6.h),
-              decoration: BoxDecoration(
-                color: colors.divider,
-                borderRadius: BorderRadius.circular(14.r),
-              ),
-              child: Text(
-                '$_restDaysBetween',
-                style: TextStyle(
-                  color: colors.accent,
-                  fontSize: 16.sp,
-                  fontWeight: FontWeight.w700,
-                ),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  void _showRestDaysPicker() {
-    _showNumberPicker(
-      title: AppLocalizations.of(context).restDaysBetween,
-      initial: _restDaysBetween,
-      min: 0,
-      max: 6,
-      onDone: (value) {
-        setState(() {
-          _restDaysBetween = value;
-        });
-      },
     );
   }
 
@@ -469,12 +405,30 @@ class _ScheduleBuilderScreenState
             _buildTagPills(i),
             SizedBox(height: 16.h),
 
-            // ── Exercises ──
-            ...day.exercises.asMap().entries.map((entry) {
-              final exIdx = entry.key;
-              final ex = entry.value;
-              return _buildExerciseRow(i, exIdx, ex, l10n);
-            }),
+            // ── Exercises (drag-to-reorder) ──
+            // shrinkWrap + NeverScrollableScrollPhysics prevent scroll
+            // conflicts with the outer ListView.
+            ReorderableListView(
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              buildDefaultDragHandles: false,
+              onReorder: (oldIndex, newIndex) {
+                setState(() {
+                  // Standard Flutter reorder correction.
+                  if (newIndex > oldIndex) newIndex -= 1;
+                  final moved = _days[i].exercises.removeAt(oldIndex);
+                  _days[i].exercises.insert(newIndex, moved);
+                });
+              },
+              children: [
+                for (var exIdx = 0; exIdx < day.exercises.length; exIdx++)
+                  _buildExerciseRow(
+                    i, exIdx, day.exercises[exIdx], l10n,
+                    // exerciseId is guaranteed unique within a day.
+                    key: ValueKey(day.exercises[exIdx].exerciseId),
+                  ),
+              ],
+            ),
 
             // Divider before Add Exercise
             if (day.exercises.isNotEmpty) ...[
@@ -574,10 +528,13 @@ class _ScheduleBuilderScreenState
   }
 
   // ── Exercise Row with action buttons and sets ──
+  // [key] is required by ReorderableListView — callers pass ValueKey(ex.exerciseId).
   Widget _buildExerciseRow(
-      int dayIdx, int exIdx, _ExerciseModel ex, AppLocalizations l10n) {
+      int dayIdx, int exIdx, _ExerciseModel ex, AppLocalizations l10n,
+      {Key? key}) {
     final colors = AppColors.of(context);
     return Padding(
+      key: key,
       padding: EdgeInsets.only(bottom: 8.h),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -589,9 +546,21 @@ class _ScheduleBuilderScreenState
             margin: EdgeInsets.only(bottom: 10.h),
           ),
 
-          // Exercise header: GIF + name + action buttons
+          // Exercise header: drag handle + GIF + name + action buttons
           Row(
             children: [
+              // Drag handle — hold to reorder within the day
+              ReorderableDragStartListener(
+                index: exIdx,
+                child: Padding(
+                  padding: EdgeInsets.only(right: 8.w),
+                  child: Icon(
+                    Icons.drag_handle,
+                    color: colors.textSecondary,
+                    size: 22.sp,
+                  ),
+                ),
+              ),
               // Rounded square GIF thumbnail (Figma: 58x58, radius 12)
               ClipRRect(
                 borderRadius: BorderRadius.circular(12.r),
@@ -641,7 +610,7 @@ class _ScheduleBuilderScreenState
     return Container(
       padding: EdgeInsets.symmetric(horizontal: 6.w, vertical: 6.h),
       decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.08),
+        color: AppColors.of(context).white.withValues(alpha: 0.08),
         borderRadius: BorderRadius.circular(24.r),
       ),
       child: Row(
@@ -687,7 +656,7 @@ class _ScheduleBuilderScreenState
         width: 28.w,
         height: 28.h,
         decoration: BoxDecoration(
-          color: Colors.white.withValues(alpha: 0.10),
+          color: AppColors.of(context).white.withValues(alpha: 0.10),
           borderRadius: BorderRadius.circular(14.r),
         ),
         child: Icon(icon, color: colors.textPrimary, size: 16.sp),
@@ -874,7 +843,7 @@ class _ScheduleBuilderScreenState
       'Sunday'
     ];
 
-    showCupertinoModalPopup(
+    showCupertinoModalPopup<void>(
       context: context,
       builder: (_) => Container(
         height: 250.h,
@@ -932,7 +901,7 @@ class _ScheduleBuilderScreenState
   void _editDayLabel(int dayIndex) {
     final colors = AppColors.of(context);
     final controller = TextEditingController(text: _days[dayIndex].label);
-    showDialog(
+    showDialog<void>(
       context: context,
       builder: (ctx) => AlertDialog(
         backgroundColor: colors.panelBackground,
@@ -1016,8 +985,8 @@ class _ScheduleBuilderScreenState
     required ValueChanged<int> onDone,
   }) {
     final colors = AppColors.of(context);
-    int selected = initial;
-    showCupertinoModalPopup(
+    var selected = initial;
+    showCupertinoModalPopup<void>(
       context: context,
       builder: (_) => Container(
         height: 250.h,
@@ -1084,7 +1053,7 @@ class _ScheduleBuilderScreenState
     if (dayIndex >= _days.length) return;
 
     await Navigator.of(context).push(
-      CupertinoPageRoute(
+      CupertinoPageRoute<void>(
         builder: (_) => ExerciseBrowserScreen(
           multiPickMode: true,
           onMultiSelect: (exercises) {
@@ -1115,11 +1084,11 @@ class _ScheduleBuilderScreenState
     final exerciseDao = ExerciseDao(ref.read(databaseProvider));
     final exercises = await exerciseDao.findByExerciseIds([ex.exerciseId]);
     if (exercises.isNotEmpty && mounted) {
-      Navigator.of(context).push(
-        CupertinoPageRoute(
+      unawaited(Navigator.of(context).push(
+        CupertinoPageRoute<void>(
           builder: (_) => ExerciseDetailScreen(exercise: exercises.first),
         ),
-      );
+      ));
     }
   }
 
@@ -1155,8 +1124,7 @@ class _ScheduleBuilderScreenState
         await scheduleDao.setActive(scheduleId);
       }
 
-      // Build flat day list: exercise days interleaved with rest days
-      int dayIndex = 0;
+      var dayIndex = 0;
       for (var d = 0; d < _days.length; d++) {
         final day = _days[d];
         final label = day.label.isNotEmpty
@@ -1189,25 +1157,10 @@ class _ScheduleBuilderScreenState
           );
         }
 
-        // Insert rest days after each exercise day (except the last)
-        if (_restDaysBetween > 0 && d < _days.length - 1) {
-          for (var r = 0; r < _restDaysBetween; r++) {
-            await scheduleDao.addDay(
-              ScheduleDaysCompanion(
-                scheduleId: Value(scheduleId),
-                dayIndex: Value(dayIndex),
-                label: Value(AppLocalizations.of(context).rest),
-                isRestDay: const Value(true),
-                createdAt: Value(DateTime.now()),
-              ),
-            );
-            dayIndex++;
-          }
-        }
       }
 
       if (mounted) Navigator.of(context).pop();
-    } catch (_) {
+    } on Exception catch (_) {
       setState(() => _saving = false);
     }
   }
@@ -1256,7 +1209,7 @@ class _ScheduleBuilderScreenState
 
     if (confirm != true || !mounted) return;
 
-    final dao = ScheduleDao(ref.read(databaseProvider));
+    final dao = ref.read(scheduleDaoProvider);
     await dao.deleteSchedule(widget.scheduleId!);
     if (mounted) Navigator.of(context).pop();
   }

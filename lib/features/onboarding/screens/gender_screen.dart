@@ -1,11 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-
-import '../../../l10n/app_localizations.dart';
-import '../../../shared/constants.dart';
-import '../../../shared/responsive.dart';
-import '../onboarding_state.dart';
+import 'package:my_gym_bro/features/onboarding/onboarding_state.dart';
+import 'package:my_gym_bro/l10n/app_localizations.dart';
+import 'package:my_gym_bro/shared/constants.dart';
+import 'package:my_gym_bro/shared/responsive.dart';
 
 /// Figma frames 31-32 — Gender selection.
 /// "Select Your Gender" title + subtitle.
@@ -42,7 +41,7 @@ class GenderScreen extends ConsumerWidget {
                         color: colors.textPrimary, size: 28.sp),
                   ),
                   SizedBox(width: 8.w),
-                  Expanded(child: _ProgressBar(progress: progress)),
+                  const Expanded(child: _ProgressBar(progress: progress)),
                 ],
               ),
 
@@ -128,10 +127,6 @@ class GenderScreen extends ConsumerWidget {
 }
 
 class _GenderAvatar extends StatelessWidget {
-  final String label;
-  final IconData icon;
-  final bool isSelected;
-  final VoidCallback onTap;
 
   const _GenderAvatar({
     required this.label,
@@ -139,6 +134,10 @@ class _GenderAvatar extends StatelessWidget {
     required this.isSelected,
     required this.onTap,
   });
+  final String label;
+  final IconData icon;
+  final bool isSelected;
+  final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
@@ -150,7 +149,7 @@ class _GenderAvatar extends StatelessWidget {
         width: 140.w,
         height: 240.h,
         decoration: BoxDecoration(
-          color: Colors.grey[900],
+          color: AppColors.of(context).avatarPlaceholderDarker,
           borderRadius: BorderRadius.circular(20.r),
           border: Border.all(
             color: isSelected ? colors.accent : Colors.transparent,
@@ -195,8 +194,8 @@ class _GenderAvatar extends StatelessWidget {
 }
 
 class _ProgressBar extends StatelessWidget {
-  final double progress;
   const _ProgressBar({required this.progress});
+  final double progress;
 
   @override
   Widget build(BuildContext context) {
@@ -204,7 +203,7 @@ class _ProgressBar extends StatelessWidget {
     return Container(
       height: 6.h,
       decoration: BoxDecoration(
-        color: Colors.grey[800],
+        color: AppColors.of(context).avatarPlaceholderDark,
         borderRadius: BorderRadius.circular(3.r),
       ),
       child: FractionallySizedBox(

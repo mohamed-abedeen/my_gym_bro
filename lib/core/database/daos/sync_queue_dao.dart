@@ -1,6 +1,6 @@
 import 'package:drift/drift.dart';
 
-import '../app_database.dart';
+import 'package:my_gym_bro/core/database/app_database.dart';
 
 part 'sync_queue_dao.g.dart';
 

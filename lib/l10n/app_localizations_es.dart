@@ -50,10 +50,10 @@ class AppLocalizationsEs extends AppLocalizations {
   String get nextSession => 'Próxima sesión';
 
   @override
-  String get sessionLog => 'Registro de sesiones';
+  String get sessionLog => 'Sesiones';
 
   @override
-  String get statusLog => 'Registro de estado';
+  String get statusLog => 'Estado';
 
   @override
   String get weeklyProgress => 'Progreso semanal';
@@ -384,6 +384,71 @@ class AppLocalizationsEs extends AppLocalizations {
   String get restComplete => '¡Descanso completado!';
 
   @override
+  String get restCompleteTitleSupportive => 'Descanso completado';
+
+  @override
+  String get restCompleteBodySupportive =>
+      'Tus músculos están listos cuando tú lo estés.';
+
+  @override
+  String get restCompleteTitleBalanced => 'Descanso completado';
+
+  @override
+  String get restCompleteBodyBalanced => 'Hora de empezar tu siguiente serie.';
+
+  @override
+  String get restCompleteTitleBold => 'Descanso completado';
+
+  @override
+  String get restCompleteBodyBold => 'Vuelve a entrar. Siguiente serie.';
+
+  @override
+  String get restCompleteTitleSavage => 'DESCANSO TERMINADO';
+
+  @override
+  String get restCompleteBodySavage => 'SIGUIENTE SERIE. AHORA.';
+
+  @override
+  String get notificationTone => 'Tono de las notificaciones';
+
+  @override
+  String get notificationToneSubtitle => 'Elige el tono de tus recordatorios';
+
+  @override
+  String get toneSupportive => 'Comprensivo';
+
+  @override
+  String get toneSupportiveDescription => 'Recordatorios suaves y alentadores.';
+
+  @override
+  String get toneBalanced => 'Equilibrado';
+
+  @override
+  String get toneBalancedDescription => 'Recordatorios neutros y objetivos.';
+
+  @override
+  String get toneBold => 'Directo';
+
+  @override
+  String get toneBoldDescription => 'Recordatorios directos y firmes.';
+
+  @override
+  String get toneSavage => 'Implacable';
+
+  @override
+  String get toneSavageDescription => 'Todo en mayúsculas, sin excusas.';
+
+  @override
+  String get notificationToneOnboardingTitle => 'Elige tu voz';
+
+  @override
+  String get notificationToneOnboardingSubtitle =>
+      '¿Cómo deberíamos hablarte durante el entrenamiento?';
+
+  @override
+  String get notificationToneExampleLabel => 'Ejemplo';
+
+  @override
   String get restTimer => 'Descanso';
 
   @override
@@ -710,4 +775,199 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get allDifficulties => 'Todos los niveles';
+
+  @override
+  String get exerciseSearchHint => 'What are you looking for ?';
+
+  @override
+  String get account => 'Account';
+
+  @override
+  String get following => 'Following';
+
+  @override
+  String get followers => 'Followers';
+
+  @override
+  String get streak => 'Streak';
+
+  @override
+  String get achievement => 'Achievement';
+
+  @override
+  String get posts => 'Posts';
+
+  @override
+  String get lastSession => 'Last Session';
+
+  @override
+  String get noSessionsYet => 'No sessions yet';
+
+  @override
+  String get retry => 'Reintentar';
+
+  @override
+  String get leaderboard => 'Clasificación';
+
+  @override
+  String get muscleRecovery => 'Recuperación muscular';
+
+  @override
+  String get sore => 'Adolorido';
+
+  @override
+  String get notTrainedYet => 'Aún no entrenado';
+
+  @override
+  String get fullyRecovered => 'Totalmente recuperado — listo para entrenar';
+
+  @override
+  String get lessThanOneHourRecovery => 'Menos de 1 hora para recuperarse';
+
+  @override
+  String hoursRestNeeded(int hours) {
+    return '${hours}h más de descanso';
+  }
+
+  @override
+  String daysRestNeeded(int days) {
+    return '${days}d más de descanso';
+  }
+
+  @override
+  String daysHoursRestNeeded(int days, int hours) {
+    return '${days}d ${hours}h más de descanso';
+  }
+
+  @override
+  String nSelected(int count) {
+    return '$count seleccionado(s)';
+  }
+
+  @override
+  String get clearFilters => 'Borrar filtros';
+
+  @override
+  String get failedToLoadExercises => 'No se pudieron cargar los ejercicios';
+
+  @override
+  String get sortMostUsed => 'Más usados';
+
+  @override
+  String get sortFavorites => 'Favoritos';
+
+  @override
+  String get sortAZ => 'A–Z';
+
+  @override
+  String get tabSummary => 'Summary';
+
+  @override
+  String get tabHistory => 'History';
+
+  @override
+  String get heaviestWeight => 'Heaviest Weight';
+
+  @override
+  String get oneRepMax => 'One Rep Max';
+
+  @override
+  String get bestSetVolumeLabel => 'Best Set Volume';
+
+  @override
+  String get bestSessionVolumeLabel => 'Best Session Volume';
+
+  @override
+  String get setRecords => 'Set Records';
+
+  @override
+  String get last3Months => 'Last 3 Months';
+
+  @override
+  String get last6Months => 'Last 6 Months';
+
+  @override
+  String get allTime => 'All Time';
+
+  @override
+  String get noHistoryYet => 'No history yet';
+
+  @override
+  String get primaryLabel => 'Primary';
+
+  @override
+  String get secondaryLabel => 'Secondary';
+
+  @override
+  String get removeExercise => 'Eliminar ejercicio';
+
+  @override
+  String get discardWorkout => '¿Descartar este entrenamiento?';
+
+  @override
+  String get deleteSet => 'Eliminar serie';
+
+  @override
+  String get deleteSetConfirm => '¿Eliminar esta serie?';
+
+  @override
+  String get setLabel => 'Serie';
+
+  @override
+  String get selectSetType => 'Seleccionar tipo de serie';
+
+  @override
+  String get warmUpSet => 'Serie de calentamiento';
+
+  @override
+  String get normalSet => 'Serie normal';
+
+  @override
+  String get failureSet => 'Serie al fallo';
+
+  @override
+  String get dropSet => 'Serie descendente';
+
+  @override
+  String get removeSet => 'Eliminar serie';
+
+  @override
+  String get completeSet => 'Completar serie';
+
+  @override
+  String get restTime => 'Tiempo de descanso';
+
+  @override
+  String get remaining => 'Restante';
+
+  @override
+  String get restAfterSet => 'Debes descansar\ntras esta serie';
+
+  @override
+  String get unfinishedSets => 'Series incompletas';
+
+  @override
+  String get unfinishedSetsMessage =>
+      'Tienes series incompletas. ¿Estás seguro de que quieres terminar esta sesión?';
+
+  @override
+  String get confirm => 'Confirmar';
+
+  @override
+  String get endSession => 'Terminar sesión';
+
+  @override
+  String get previousExercise => 'Anterior';
+
+  @override
+  String get nextExercise => 'Siguiente';
+
+  @override
+  String get noInstructions => 'Sin instrucciones disponibles';
+
+  @override
+  String get deleteWorkout => 'Eliminar entrenamiento';
+
+  @override
+  String get deleteWorkoutConfirm => '¿Eliminar este entrenamiento?';
 }

@@ -1,6 +1,6 @@
 import 'package:drift/drift.dart';
 
-import '../app_database.dart';
+import 'package:my_gym_bro/core/database/app_database.dart';
 
 part 'exercise_dao.g.dart';
 
@@ -68,4 +68,17 @@ class ExerciseDao extends DatabaseAccessor<AppDatabase>
   Future<void> updateDifficulty(String exerciseId, String difficulty) =>
       (update(exercises)..where((t) => t.exerciseId.equals(exerciseId)))
           .write(ExercisesCompanion(difficulty: Value(difficulty)));
+
+  /// Increment usageCount by 1 for a single exercise.
+  Future<void> incrementUsageCount(String exerciseId) async {
+    await customStatement(
+      'UPDATE exercises SET usage_count = usage_count + 1 WHERE exercise_id = ?',
+      [exerciseId],
+    );
+  }
+
+  /// Set or clear the favorite flag for a single exercise.
+  Future<void> setFavorite(String exerciseId, {required bool isFavorite}) =>
+      (update(exercises)..where((t) => t.exerciseId.equals(exerciseId)))
+          .write(ExercisesCompanion(isFavorite: Value(isFavorite)));
 }

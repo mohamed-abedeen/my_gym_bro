@@ -1,13 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-
-import '../../../core/database/daos/user_profile_dao.dart';
-import '../../../core/providers/providers.dart';
-import '../../../l10n/app_localizations.dart';
-import '../../../shared/constants.dart';
-import '../../../shared/responsive.dart';
-import '../onboarding_state.dart';
+import 'package:my_gym_bro/core/database/daos/user_profile_dao.dart';
+import 'package:my_gym_bro/core/providers/providers.dart';
+import 'package:my_gym_bro/features/onboarding/onboarding_state.dart';
+import 'package:my_gym_bro/l10n/app_localizations.dart';
+import 'package:my_gym_bro/shared/constants.dart';
+import 'package:my_gym_bro/shared/responsive.dart';
 
 /// Screen 5 — Language (/onboarding/language)
 /// 4 language cards with flags. Tap → update localeProvider IMMEDIATELY + save to Drift.
@@ -169,7 +168,7 @@ class LanguageScreen extends ConsumerWidget {
       if (profile != null) {
         await dao.updateLanguage(profile.localId, langCode);
       }
-    } catch (_) {
+    } on Exception {
       // Profile may not exist yet during onboarding — that's fine.
     }
   }

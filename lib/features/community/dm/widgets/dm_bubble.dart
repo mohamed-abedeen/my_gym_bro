@@ -1,16 +1,16 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
-import '../../../../shared/constants.dart';
-import '../../../../shared/responsive.dart';
-import '../../../../core/database/app_database.dart';
-import '../../../../l10n/app_localizations.dart';
-import '../dm_models.dart';
+import 'package:my_gym_bro/core/database/app_database.dart';
+import 'package:my_gym_bro/features/community/dm/dm_models.dart';
+import 'package:my_gym_bro/l10n/app_localizations.dart';
+import 'package:my_gym_bro/shared/constants.dart';
+import 'package:my_gym_bro/shared/responsive.dart';
 
 class DmBubble extends StatelessWidget {
+
+  const DmBubble({required this.message, super.key, this.onSaveSchedule});
   final DmMessage message;
   final VoidCallback? onSaveSchedule;
-
-  const DmBubble({super.key, required this.message, this.onSaveSchedule});
 
   @override
   Widget build(BuildContext context) {
@@ -41,7 +41,7 @@ class DmBubble extends StatelessWidget {
                 ),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.06),
+                    color: AppColors.of(context).black.withValues(alpha: 0.06),
                     blurRadius: 8.w,
                     offset: Offset(0, 2.h),
                   ),
@@ -82,10 +82,10 @@ class DmBubble extends StatelessWidget {
 // ═══════════════════════════════════════════════════════════════════════════
 
 class _BubbleContent extends StatelessWidget {
-  final DmMessage message;
-  final VoidCallback? onSaveSchedule;
 
   const _BubbleContent({required this.message, this.onSaveSchedule});
+  final DmMessage message;
+  final VoidCallback? onSaveSchedule;
 
   @override
   Widget build(BuildContext context) {
@@ -106,16 +106,16 @@ class _BubbleContent extends StatelessWidget {
 // ── Text ────────────────────────────────────────────────────────────────
 
 class _TextContent extends StatelessWidget {
-  final DmMessage message;
   const _TextContent({required this.message});
+  final DmMessage message;
 
   @override
   Widget build(BuildContext context) {
     final colors = AppColors.of(context);
     final isMine = message.isMine;
-    final textColor = isMine ? Colors.black : colors.textPrimary;
+    final textColor = isMine ? AppColors.of(context).black : colors.textPrimary;
     final timeColor = isMine
-        ? Colors.black.withValues(alpha: 0.5)
+        ? AppColors.of(context).black.withValues(alpha: 0.5)
         : colors.textSecondary;
 
     final h = message.createdAt.hour.toString().padLeft(2, '0');
@@ -151,8 +151,8 @@ class _TextContent extends StatelessWidget {
 // ── Image ───────────────────────────────────────────────────────────────
 
 class _ImageContent extends StatelessWidget {
-  final DmMessage message;
   const _ImageContent({required this.message});
+  final DmMessage message;
 
   @override
   Widget build(BuildContext context) {
@@ -224,10 +224,10 @@ class _ImageContent extends StatelessWidget {
 // ── Schedule Card ───────────────────────────────────────────────────────
 
 class _ScheduleContent extends StatelessWidget {
-  final DmMessage message;
-  final VoidCallback? onSave;
 
   const _ScheduleContent({required this.message, this.onSave});
+  final DmMessage message;
+  final VoidCallback? onSave;
 
   @override
   Widget build(BuildContext context) {
@@ -241,17 +241,17 @@ class _ScheduleContent extends StatelessWidget {
         child: Text(
           AppLocalizations.of(context).dmInvalidSchedule,
           style: TextStyle(
-            color: isMine ? Colors.black54 : colors.textSecondary,
+            color: isMine ? AppColors.of(context).black.withValues(alpha: 0.54) : colors.textSecondary,
             fontSize: 13.sp,
           ),
         ),
       );
     }
 
-    final primaryColor = isMine ? Colors.black : colors.textPrimary;
+    final primaryColor = isMine ? AppColors.of(context).black : colors.textPrimary;
     final secondaryColor =
-        isMine ? Colors.black.withValues(alpha: 0.6) : colors.textSecondary;
-    final iconColor = isMine ? Colors.black : colors.accent;
+        isMine ? AppColors.of(context).black.withValues(alpha: 0.6) : colors.textSecondary;
+    final iconColor = isMine ? AppColors.of(context).black : colors.accent;
 
     return Padding(
       padding: EdgeInsets.all(14.w),
@@ -308,7 +308,7 @@ class _ScheduleContent extends StatelessWidget {
           Container(
             height: 1,
             color: isMine
-                ? Colors.black.withValues(alpha: 0.1)
+                ? AppColors.of(context).black.withValues(alpha: 0.1)
                 : colors.separator.withValues(alpha: 0.5),
           ),
 
@@ -367,7 +367,7 @@ class _ScheduleContent extends StatelessWidget {
               child: ElevatedButton.icon(
                 style: ElevatedButton.styleFrom(
                   backgroundColor: colors.accent,
-                  foregroundColor: Colors.black,
+                  foregroundColor: AppColors.of(context).black,
                   elevation: 0,
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(12.r),

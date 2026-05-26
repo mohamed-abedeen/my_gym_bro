@@ -1,6 +1,6 @@
 import 'package:drift/drift.dart';
 
-import '../app_database.dart';
+import 'package:my_gym_bro/core/database/app_database.dart';
 
 part 'user_profile_dao.g.dart';
 
@@ -41,4 +41,14 @@ class UserProfileDao extends DatabaseAccessor<AppDatabase>
   Future<void> updateFcmToken(int localId, String token) =>
       (update(userProfiles)..where((t) => t.localId.equals(localId)))
           .write(UserProfilesCompanion(fcmToken: Value(token)));
+
+  /// Update notification tone ('supportive' | 'balanced' | 'bold' | 'savage').
+  Future<void> updateNotificationTone(int localId, String tone) =>
+      (update(userProfiles)..where((t) => t.localId.equals(localId)))
+          .write(UserProfilesCompanion(notificationTone: Value(tone)));
+
+  /// Update profile banner URL (local file path or null to reset to default).
+  Future<void> updateBannerUrl(int localId, String? url) =>
+      (update(userProfiles)..where((t) => t.localId.equals(localId)))
+          .write(UserProfilesCompanion(bannerUrl: Value(url)));
 }

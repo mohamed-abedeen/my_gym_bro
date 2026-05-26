@@ -1,16 +1,17 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:my_gym_bro/core/providers/providers.dart';
+import 'package:my_gym_bro/shared/constants.dart';
+import 'package:my_gym_bro/shared/responsive.dart';
 import 'package:oc_liquid_glass/oc_liquid_glass.dart';
-
-import '../../core/providers/providers.dart';
-import '../constants.dart';
-import '../responsive.dart';
 
 /// Navigation index provider — shared across bottom nav and scaffold.
 final navIndexProvider = StateProvider<int>((ref) => 0);
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Liquid Glass Bottom Nav Pill  (powered by oc_liquid_glass)
+// Platform-adaptive Bottom Nav
+//   • iOS  → CNTabBar (native iOS 26 Liquid Glass via cupertino_native)
+//   • Other → OCLiquidGlass floating pill
 // ─────────────────────────────────────────────────────────────────────────────
 
 class BottomNavPill extends ConsumerStatefulWidget {
@@ -22,6 +23,7 @@ class BottomNavPill extends ConsumerStatefulWidget {
 
 class _BottomNavPillState extends ConsumerState<BottomNavPill>
     with SingleTickerProviderStateMixin {
+  // ── Android / non-iOS animation state ──
   late final AnimationController _slideCtrl;
   late Animation<double> _slideAnim;
   int _prevIndex = 0;
@@ -63,10 +65,11 @@ class _BottomNavPillState extends ConsumerState<BottomNavPill>
   @override
   Widget build(BuildContext context) {
     final idx = ref.watch(navIndexProvider);
+
+    // ── OCLiquidGlass floating pill ──
     final isDark = ref.watch(themeModeProvider) == ThemeMode.dark;
     final colors = AppColors.of(context);
 
-    // Trigger the liquid slide whenever the tab changes.
     if (idx != _prevIndex) {
       WidgetsBinding.instance.addPostFrameCallback((_) => _animateTo(idx));
     }
@@ -78,8 +81,6 @@ class _BottomNavPillState extends ConsumerState<BottomNavPill>
     final indicatorH = AppSizes.navActiveH.h;
     final indicatorTop = (pillH - indicatorH) / 2;
 
-    // ── Shader settings ──
-    // Tuned for a nav bar: subtle refraction, soft blur, visible specular rim.
     final glassSettings = OCLiquidGlassSettings(
       blendPx: 3,
       refractStrength: isDark ? 0.01 : 0.1,
@@ -88,12 +89,12 @@ class _BottomNavPillState extends ConsumerState<BottomNavPill>
       specAngle: 0.1,
       specStrength: isDark ? -1 : -1.0,
       specPower: 1,
-      specWidth: 3.5,
+      specWidth: 1.7,
       lightbandOffsetPx: 3,
       lightbandWidthPx: 3.5,
       lightbandStrength: isDark ? 0.6 : 0.4,
       lightbandColor:
-          isDark ? const Color.fromARGB(255, 255, 255, 255) : Colors.white,
+          isDark ? const Color.fromARGB(255, 255, 255, 255) : AppColors.of(context).white,
     );
 
     return Positioned(
@@ -116,10 +117,10 @@ class _BottomNavPillState extends ConsumerState<BottomNavPill>
                   borderRadius: pillR,
                   color:
                       isDark
-                          ? Colors.white.withValues(alpha: 0.06)
-                          : Colors.black.withValues(alpha: 0.04),
+                          ? AppColors.of(context).white.withValues(alpha: 0.06)
+                          : AppColors.of(context).black.withValues(alpha: 0.04),
                   shadow: BoxShadow(
-                    color: Colors.black.withValues(alpha: isDark ? 0.30 : 0.15),
+                    color: AppColors.of(context).black.withValues(alpha: isDark ? 0.30 : 0.15),
                     blurRadius: 28.w,
                     offset: Offset(0, 10.h),
                   ),
@@ -146,7 +147,7 @@ class _BottomNavPillState extends ConsumerState<BottomNavPill>
                   },
                 ),
 
-                // ── Tab icons (layered on top of glass) ──
+                // ── Tab icons ──
                 Positioned.fill(
                   child: Row(
                     children: [
@@ -174,15 +175,15 @@ class _BottomNavPillState extends ConsumerState<BottomNavPill>
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Nav Tab Item
+// Nav Tab Item  (Android / non-iOS only)
 // ─────────────────────────────────────────────────────────────────────────────
 
 class _NavTab extends ConsumerWidget {
+  const _NavTab({required this.index, required this.icon, required this.size});
+
   final int index;
   final IconData icon;
   final double size;
-
-  const _NavTab({required this.index, required this.icon, required this.size});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {

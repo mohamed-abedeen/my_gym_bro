@@ -1,6 +1,6 @@
 import 'package:drift/drift.dart';
 
-import '../app_database.dart';
+import 'package:my_gym_bro/core/database/app_database.dart';
 
 part 'schedule_dao.g.dart';
 
@@ -32,7 +32,7 @@ class ScheduleDao extends DatabaseAccessor<AppDatabase>
 
   /// Set a schedule as active (deactivating all others).
   Future<void> setActive(int localId) async {
-    await (update(schedules)).write(
+    await update(schedules).write(
       const SchedulesCompanion(isActive: Value(false)),
     );
     await (update(schedules)..where((t) => t.localId.equals(localId))).write(
@@ -45,6 +45,12 @@ class ScheduleDao extends DatabaseAccessor<AppDatabase>
         ..where((t) => t.scheduleId.equals(scheduleId))
         ..orderBy([(t) => OrderingTerm.asc(t.dayIndex)]))
       .get();
+
+  /// Stream days for a schedule — emits a new list on any insert/update/delete.
+  Stream<List<ScheduleDay>> watchDays(int scheduleId) => (select(scheduleDays)
+        ..where((t) => t.scheduleId.equals(scheduleId))
+        ..orderBy([(t) => OrderingTerm.asc(t.dayIndex)]))
+      .watch();
 
   /// Add a day to a schedule.
   Future<int> addDay(ScheduleDaysCompanion companion) =>

@@ -1,22 +1,24 @@
+import 'dart:async';
 import 'dart:convert';
 
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:drift/drift.dart';
 import 'package:flutter/foundation.dart';
+import 'package:my_gym_bro/core/database/app_database.dart';
+import 'package:my_gym_bro/core/database/daos/sync_queue_dao.dart';
+import 'package:my_gym_bro/core/services/crash_reporter.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-
-import '../database/app_database.dart';
-import '../database/daos/sync_queue_dao.dart';
 
 /// Background sync service — pushes pending changes to Supabase when online.
 class SyncService {
+
+  SyncService(this._db, this._supabase) : _dao = SyncQueueDao(_db);
   final AppDatabase _db;
   final SupabaseClient? _supabase;
+  final SyncQueueDao _dao;
   bool _isSyncing = false;
 
   static const _maxRetries = 3;
-
-  SyncService(this._db, this._supabase);
 
   /// Attempt to sync all pending queue items to Supabase.
   Future<void> syncAll() async {
@@ -31,61 +33,111 @@ class SyncService {
           !connectivityResults.contains(ConnectivityResult.none);
       if (!hasConnection) return;
 
-      final dao = SyncQueueDao(_db);
-      final pending = await dao.getPending();
+      final pending = await _dao.getPending();
 
       for (final item in pending) {
-        bool success = false;
-        for (int attempt = 1; attempt <= _maxRetries; attempt++) {
+        var success = false;
+        for (var attempt = 1; attempt <= _maxRetries; attempt++) {
           try {
-            success = await _syncItem(item);
-            if (success) {
-              await dao.markSynced(item.localId);
-              break;
-            } else {
-              // Operation skipped (e.g., no remoteId) — don't retry
-              debugPrint('Sync: skipped item ${item.localId} (${item.operation} on ${item.syncTableName}) — no remote_id');
-              break;
+            final result = await _syncItem(item);
+            switch (result) {
+              case _SyncResult.synced:
+                success = true;
+                await _dao.markSynced(item.localId);
+                break;
+              case _SyncResult.deferred:
+                // remote_id not yet available — leave in queue for next pass.
+                debugPrint(
+                  'Sync: deferred item ${item.localId} '
+                  '(${item.operation} on ${item.syncTableName}) '
+                  '— remote_id pending, will retry on next sync pass',
+                );
+                success = true; // don't retry this pass, but don't mark synced
+                break;
             }
-          } catch (e) {
-            debugPrint('Sync: attempt $attempt/$_maxRetries failed for item ${item.localId}: $e');
+            if (success) break;
+          } on Exception catch (e) {
+            CrashReporter.recordError(
+                e,
+                stackTrace: StackTrace.current,
+                reason: 'Sync: attempt $attempt/$_maxRetries failed for item ${item.localId}',
+              );
             if (attempt < _maxRetries) {
               // Exponential backoff: 1s, 2s, 4s
-              await Future.delayed(Duration(seconds: 1 << (attempt - 1)));
+              await Future<void>.delayed(Duration(seconds: 1 << (attempt - 1)));
             }
           }
         }
       }
 
       // Clean up synced entries
-      await dao.clearSynced();
+      await _dao.clearSynced();
     } finally {
       _isSyncing = false;
     }
   }
 
-  /// Sync a single queue item. Returns true if synced, false if skipped.
-  Future<bool> _syncItem(SyncQueueData item) async {
+  /// Sync a single queue item.
+  ///
+  /// Returns [_SyncResult.synced] when the Supabase call succeeded, or
+  /// [_SyncResult.deferred] when the row's `remote_id` is not yet available
+  /// (i.e. the initial insert hasn't synced yet) — the item is left in the
+  /// queue so the next [syncAll] pass can pick it up.
+  Future<_SyncResult> _syncItem(SyncQueueData item) async {
     final payload = jsonDecode(item.payload) as Map<String, dynamic>;
     final table = item.syncTableName;
 
     switch (item.operation) {
       case 'insert':
         await _supabase!.from(table).insert(payload);
-        return true;
+        return _SyncResult.synced;
       case 'update':
-        final remoteId = payload['remote_id'] as String?;
-        if (remoteId == null) return false;
+        final remoteId = await _resolveRemoteId(payload, table, item.rowId);
+        if (remoteId == null) return _SyncResult.deferred;
+        payload['remote_id'] = remoteId;
         await _supabase!.from(table).update(payload).eq('id', remoteId);
-        return true;
+        return _SyncResult.synced;
       case 'delete':
-        final remoteId = payload['remote_id'] as String?;
-        if (remoteId == null) return false;
+        final remoteId = await _resolveRemoteId(payload, table, item.rowId);
+        if (remoteId == null) return _SyncResult.deferred;
         await _supabase!.from(table).delete().eq('id', remoteId);
-        return true;
+        return _SyncResult.synced;
       default:
-        debugPrint('Sync: unknown operation "${item.operation}"');
-        return false;
+        CrashReporter.recordError(
+          'Unknown sync operation: "${item.operation}"',
+          reason: 'Sync: unrecognized operation for item ${item.localId}',
+        );
+        return _SyncResult.synced; // discard unknown ops
+    }
+  }
+
+  /// Try to obtain the `remote_id` for a queued update/delete.
+  ///
+  /// 1. Use the value already in the payload if present.
+  /// 2. Otherwise, look up the row in the local DB — the initial insert may
+  ///    have completed and written the `remote_id` back since this queue item
+  ///    was created.
+  /// 3. If the row still has no `remote_id`, return null so the caller can
+  ///    defer the operation.
+  Future<String?> _resolveRemoteId(
+    Map<String, dynamic> payload,
+    String table,
+    int rowId,
+  ) async {
+    // Fast path: already in the payload.
+    final existing = payload['remote_id'] as String?;
+    if (existing != null) return existing;
+
+    // Slow path: query the local DB for the row's current remote_id.
+    try {
+      final row = await _db.customSelect(
+        'SELECT remote_id FROM $table WHERE local_id = ?',
+        variables: [Variable<int>(rowId)],
+      ).getSingleOrNull();
+      return row?.read<String?>('remote_id');
+    } on Exception catch (e) {
+      debugPrint('Sync: failed to resolve remote_id for $table/$rowId: $e');
+      return null;
     }
   }
 
@@ -96,8 +148,7 @@ class SyncService {
     required String operation,
     required Map<String, dynamic> payload,
   }) async {
-    final dao = SyncQueueDao(_db);
-    await dao.enqueue(SyncQueueCompanion(
+    await _dao.enqueue(SyncQueueCompanion(
       syncTableName: Value(table),
       rowId: Value(rowId),
       operation: Value(operation),
@@ -105,7 +156,19 @@ class SyncService {
       createdAt: Value(DateTime.now()),
     ));
 
-    // Attempt immediate sync (properly awaited)
-    await syncAll();
+    // Fire-and-forget: callers await enqueue only to persist the queue row.
+    // Blocking on syncAll here would make UI flows (e.g. finishSession) wait
+    // on a network round-trip before the "Workout complete" screen appears.
+    unawaited(syncAll());
   }
+}
+
+/// Internal result type for [SyncService._syncItem].
+enum _SyncResult {
+  /// The item was successfully pushed to Supabase and should be marked synced.
+  synced,
+
+  /// The item could not be synced because its `remote_id` is not yet available.
+  /// It will be left in the queue for the next sync pass.
+  deferred,
 }

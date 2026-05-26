@@ -1,14 +1,14 @@
 import 'package:flutter/material.dart';
-import '../../../../l10n/app_localizations.dart';
-import '../../../../shared/constants.dart';
-import '../../../../shared/responsive.dart';
-import '../dm_models.dart';
+import 'package:my_gym_bro/features/community/dm/dm_models.dart';
+import 'package:my_gym_bro/l10n/app_localizations.dart';
+import 'package:my_gym_bro/shared/constants.dart';
+import 'package:my_gym_bro/shared/responsive.dart';
 
 class DmConversationTile extends StatelessWidget {
+
+  const DmConversationTile({required this.conversation, required this.onTap, super.key});
   final DmConversation conversation;
   final VoidCallback onTap;
-
-  const DmConversationTile({super.key, required this.conversation, required this.onTap});
 
   @override
   Widget build(BuildContext context) {
@@ -121,8 +121,8 @@ class DmConversationTile extends StatelessWidget {
 }
 
 class _FallbackAvatar extends StatelessWidget {
-  final AppColorsTheme colors;
   const _FallbackAvatar({required this.colors});
+  final AppColorsTheme colors;
 
   @override
   Widget build(BuildContext context) {

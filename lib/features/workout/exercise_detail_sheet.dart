@@ -2,13 +2,13 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
-
-import '../../core/database/app_database.dart';
-import '../../l10n/app_localizations.dart';
-import '../../shared/constants.dart';
-import '../../shared/responsive.dart';
-import '../../shared/widgets/liquid_glass_button.dart';
-import 'workout_providers.dart';
+import 'package:my_gym_bro/core/database/app_database.dart';
+import 'package:my_gym_bro/core/services/units.dart';
+import 'package:my_gym_bro/features/workout/workout_providers.dart';
+import 'package:my_gym_bro/l10n/app_localizations.dart';
+import 'package:my_gym_bro/shared/constants.dart';
+import 'package:my_gym_bro/shared/responsive.dart';
+import 'package:my_gym_bro/shared/widgets/liquid_glass_button.dart';
 
 /// Show exercise detail bottom sheet — Figma "ExerciseStatusAfterFinishing".
 void showExerciseDetailSheet(
@@ -16,7 +16,7 @@ void showExerciseDetailSheet(
   required SessionExerciseDetail exercise,
   required Session session,
 }) {
-  showModalBottomSheet(
+  showModalBottomSheet<void>(
     context: context,
     isScrollControlled: true,
     backgroundColor: Colors.transparent,
@@ -27,38 +27,42 @@ void showExerciseDetailSheet(
   );
 }
 
-
 class _ExerciseDetailSheet extends ConsumerWidget {
-  final SessionExerciseDetail exercise;
-  final Session session;
-
   const _ExerciseDetailSheet({
     required this.exercise,
     required this.session,
   });
 
+  final SessionExerciseDetail exercise;
+  final Session session;
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final colors = AppColors.of(context);
     final l10n = AppLocalizations.of(context);
-    final profile = ref.watch(userProfileProvider);
-    final weightUnit = profile.whenOrNull(data: (p) => p?.weightUnit) ?? 'kg';
+    final unit = ref.watch(weightUnitProvider);
+    final weightUnit = weightUnitLabel(unit);
 
     final timeStr = exercise.startedAt != null
         ? DateFormat('h:mma').format(exercise.startedAt!).toLowerCase()
         : '';
 
-    // Calculate exercise duration (rough estimate from sets)
-    final durationMin = exercise.setDetails.length * 2; // ~2 min per set
+    final durationMin = exercise.setDetails.length * 2;
 
-    // Session-level stats
-    final sessionVolume = session.totalVolume?.toInt() ?? 0;
+    final sessionVolumeStr = formatWeight(
+      session.totalVolume,
+      unit,
+      decimals: 0,
+      withUnit: true,
+    );
     final sessionDurationMin = (session.durationSeconds ?? 0) ~/ 60;
     final sessionHours = sessionDurationMin ~/ 60;
     final sessionMins = sessionDurationMin % 60;
     final durationStr = sessionHours > 0
         ? '${sessionHours}h ${sessionMins}m'
         : '${sessionMins}m';
+
+    final estimatedCal = exercise.setDetails.length * 50;
 
     return DraggableScrollableSheet(
       initialChildSize: 0.85,
@@ -91,14 +95,13 @@ class _ExerciseDetailSheet extends ConsumerWidget {
               ),
               SizedBox(height: 12.h),
 
-              // ── Header: back + share ──
+              // ── Top nav: back + share ──
               Padding(
                 padding: EdgeInsets.symmetric(
                   horizontal: AppSizes.contentPaddingH.w,
                 ),
                 child: Row(
                   children: [
-                    // Back button
                     LiquidGlassButton(
                       width: 48.w,
                       height: 48.h,
@@ -112,7 +115,6 @@ class _ExerciseDetailSheet extends ConsumerWidget {
                       ),
                     ),
                     const Spacer(),
-                    // Share button
                     LiquidGlassButton(
                       width: 48.w,
                       height: 48.h,
@@ -129,14 +131,13 @@ class _ExerciseDetailSheet extends ConsumerWidget {
               ),
               SizedBox(height: 20.h),
 
-              // ── Exercise info: GIF + name + time + duration ──
+              // ── Header: avatar + name/time + duration ──
               Padding(
                 padding: EdgeInsets.symmetric(
                   horizontal: AppSizes.contentPaddingH.w,
                 ),
                 child: Row(
                   children: [
-                    // Circular GIF — 83x82 per Figma
                     ClipOval(
                       child: exercise.gifUrl != null
                           ? CachedNetworkImage(
@@ -172,7 +173,6 @@ class _ExerciseDetailSheet extends ConsumerWidget {
                             ),
                     ),
                     SizedBox(width: 14.w),
-                    // Name + time
                     Expanded(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
@@ -198,7 +198,6 @@ class _ExerciseDetailSheet extends ConsumerWidget {
                         ],
                       ),
                     ),
-                    // Duration
                     Text(
                       '${durationMin}m',
                       style: TextStyle(
@@ -212,7 +211,7 @@ class _ExerciseDetailSheet extends ConsumerWidget {
               ),
               SizedBox(height: 16.h),
 
-              // ── Sets table card ──
+              // ── Main card: table + stats + cal + progress ──
               Padding(
                 padding: EdgeInsets.symmetric(
                   horizontal: AppSizes.contentPaddingH.w,
@@ -225,8 +224,9 @@ class _ExerciseDetailSheet extends ConsumerWidget {
                   ),
                   padding: EdgeInsets.fromLTRB(24.w, 20.h, 24.w, 20.h),
                   child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      // Table header
+                      // Sets table header
                       Row(
                         children: [
                           SizedBox(
@@ -273,11 +273,10 @@ class _ExerciseDetailSheet extends ConsumerWidget {
                       // Set rows
                       ...exercise.setDetails.map((s) {
                         final weightStr = s.weight != null
-                            ? s.weight!.toInt().toString()
+                            ? formatWeight(s.weight, unit, decimals: 0)
                             : '-';
                         final repsStr =
                             s.reps != null ? s.reps.toString() : '-';
-
                         return Padding(
                           padding: EdgeInsets.only(bottom: 8.h),
                           child: Row(
@@ -324,38 +323,33 @@ class _ExerciseDetailSheet extends ConsumerWidget {
                         );
                       }),
 
-                      // Separator
+                      // Divider after table
                       SizedBox(height: 8.h),
-                      Container(
-                        height: 1.h,
-                        color: colors.divider,
-                      ),
+                      Container(height: 1.h, color: colors.divider),
                       SizedBox(height: 16.h),
 
-                      // ── Stats grid: Volume, Avg Strength, Duration, Records ──
+                      // 2x2 Stats grid
                       Row(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          // Left column
                           Expanded(
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 _StatItem(
                                   label: l10n.volume,
-                                  value: '$sessionVolume lbs',
+                                  value: sessionVolumeStr,
+                                  trend: '↗',
                                 ),
                                 SizedBox(height: 12.h),
                                 _StatItem(
                                   label: l10n.totalDuration,
                                   value: durationStr,
-                                  trend: '120%',
-                                  trendPositive: true,
+                                  trend: '120% ↗',
                                 ),
                               ],
                             ),
                           ),
-                          // Right column
                           Expanded(
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
@@ -363,14 +357,13 @@ class _ExerciseDetailSheet extends ConsumerWidget {
                                 _StatItem(
                                   label: l10n.avgStrength,
                                   value: '86',
-                                  trend: '5+',
-                                  trendPositive: true,
+                                  trend: '5+ ↗',
                                 ),
                                 SizedBox(height: 12.h),
-                                _StatItem(
+                                const _StatItem(
                                   label: 'Records',
                                   value: '5',
-                                  trend: '-2',
+                                  trend: '-2 ↘',
                                   trendPositive: false,
                                 ),
                               ],
@@ -379,83 +372,84 @@ class _ExerciseDetailSheet extends ConsumerWidget {
                         ],
                       ),
 
-                      // Separator
+                      // Divider before bottom section
                       SizedBox(height: 16.h),
-                      Container(
-                        height: 1.h,
-                        color: colors.divider,
+                      Container(height: 1.h, color: colors.divider),
+                      SizedBox(height: 16.h),
+
+                      // Cal Burned + Progress (inside card)
+                      Row(
+                        children: [
+                          // Fire + cal info
+                          Row(
+                            children: [
+                              Text(
+                                '\u{1F525}',
+                                style: TextStyle(fontSize: 28.sp),
+                              ),
+                              SizedBox(width: 8.w),
+                              Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    'Cal Burned',
+                                    style: TextStyle(
+                                      color: colors.textSecondary,
+                                      fontSize: 10.sp,
+                                      fontWeight: FontWeight.w400,
+                                    ),
+                                  ),
+                                  SizedBox(height: 2.h),
+                                  Text(
+                                    '$estimatedCal cal',
+                                    style: TextStyle(
+                                      color: colors.textPrimary,
+                                      fontSize: 16.sp,
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ],
+                          ),
+                          const Spacer(),
+                          // Progress mini chart
+                          Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                'PROGRESS',
+                                style: TextStyle(
+                                  color: colors.textPrimary,
+                                  fontSize: 12.sp,
+                                  fontWeight: FontWeight.w700,
+                                  letterSpacing: 0.5,
+                                ),
+                              ),
+                              SizedBox(height: 6.h),
+                              SizedBox(
+                                width: 146.w,
+                                height: 36.h,
+                                child: ref
+                                    .watch(exerciseVolumeHistoryProvider(
+                                      exercise.exerciseId,
+                                    ))
+                                    .whenData(
+                                      (pts) => CustomPaint(
+                                        painter: _MiniChartPainter(points: pts),
+                                      ),
+                                    )
+                                    .valueOrNull ??
+                                    const CustomPaint(
+                                      painter: _MiniChartPainter(),
+                                    ),
+                              ),
+                            ],
+                          ),
+                        ],
                       ),
                     ],
                   ),
-                ),
-              ),
-              SizedBox(height: 16.h),
-
-              // ── Bottom row: Cal Burned + Progress ──
-              Padding(
-                padding: EdgeInsets.symmetric(
-                  horizontal: (AppSizes.contentPaddingH + 4).w,
-                ),
-                child: Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    // Cal Burned
-                    Row(
-                      children: [
-                        Text(
-                          '\u{1F525}',
-                          style: TextStyle(fontSize: 28.sp),
-                        ),
-                        SizedBox(width: 8.w),
-                        Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              'Cal Burned',
-                              style: TextStyle(
-                                color: colors.textPrimary,
-                                fontSize: 10.sp,
-                                fontWeight: FontWeight.w400,
-                              ),
-                            ),
-                            SizedBox(height: 2.h),
-                            Text(
-                              '${exercise.setDetails.length * 50} cal',
-                              style: TextStyle(
-                                color: colors.textPrimary,
-                                fontSize: 16.sp,
-                                fontWeight: FontWeight.w500,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ],
-                    ),
-                    const Spacer(),
-                    // Progress mini chart placeholder
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          'PROGRESS',
-                          style: TextStyle(
-                            color: colors.textPrimary,
-                            fontSize: 12.sp,
-                            fontWeight: FontWeight.w700,
-                          ),
-                        ),
-                        SizedBox(height: 8.h),
-                        // Mini progress chart placeholder
-                        SizedBox(
-                          width: 146.w,
-                          height: 26.h,
-                          child: CustomPaint(
-                            painter: _MiniChartPainter(),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ],
                 ),
               ),
             ],
@@ -466,19 +460,19 @@ class _ExerciseDetailSheet extends ConsumerWidget {
   }
 }
 
-/// Single stat item with optional trend indicator.
+/// Single stat item with optional trend badge.
 class _StatItem extends StatelessWidget {
-  final String label;
-  final String value;
-  final String? trend;
-  final bool trendPositive;
-
   const _StatItem({
     required this.label,
     required this.value,
     this.trend,
     this.trendPositive = true,
   });
+
+  final String label;
+  final String value;
+  final String? trend;
+  final bool trendPositive;
 
   @override
   Widget build(BuildContext context) {
@@ -489,7 +483,7 @@ class _StatItem extends StatelessWidget {
         Text(
           label,
           style: TextStyle(
-            color: colors.textPrimary,
+            color: colors.textSecondary,
             fontSize: 10.sp,
             fontWeight: FontWeight.w400,
           ),
@@ -502,11 +496,11 @@ class _StatItem extends StatelessWidget {
               style: TextStyle(
                 color: colors.textPrimary,
                 fontSize: 20.sp,
-                fontWeight: FontWeight.w400,
+                fontWeight: FontWeight.w600,
               ),
             ),
             if (trend != null) ...[
-              SizedBox(width: 6.w),
+              SizedBox(width: 5.w),
               Text(
                 trend!,
                 style: TextStyle(
@@ -514,18 +508,7 @@ class _StatItem extends StatelessWidget {
                       ? colors.trendPositive
                       : colors.trendNegative,
                   fontSize: 10.sp,
-                  fontWeight: FontWeight.w400,
-                ),
-              ),
-              SizedBox(width: 2.w),
-              Transform.rotate(
-                angle: trendPositive ? -1.5708 : 1.5708,
-                child: Icon(
-                  Icons.arrow_forward_rounded,
-                  color: trendPositive
-                      ? colors.trendPositive
-                      : colors.trendNegative,
-                  size: 18.sp,
+                  fontWeight: FontWeight.w600,
                 ),
               ),
             ],
@@ -536,45 +519,88 @@ class _StatItem extends StatelessWidget {
   }
 }
 
-/// Paints a simple mini progress line chart.
+/// Minimalist sparkline area chart: white line, gradient fill, dashed baseline.
 class _MiniChartPainter extends CustomPainter {
+  const _MiniChartPainter({List<double>? points}) : _raw = points;
+
+  static const _fallback = [0.4, 0.6, 0.3, 0.7, 0.5, 0.8, 0.6, 0.9, 0.7, 0.85];
+  final List<double>? _raw;
+
+  /// Normalise raw volume values to [0, 1]. Falls back to placeholder data.
+  List<double> get _points {
+    final raw = _raw;
+    final src = (raw == null || raw.length < 2) ? _fallback : raw;
+    final minV = src.reduce((a, b) => a < b ? a : b);
+    final maxV = src.reduce((a, b) => a > b ? a : b);
+    if (maxV == minV) return src.map((_) => 0.5).toList();
+    return src.map((v) => (v - minV) / (maxV - minV)).toList();
+  }
+
   @override
   void paint(Canvas canvas, Size size) {
-    final paint = Paint()
-      ..color = Colors.white.withValues(alpha: 0.6)
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 1.5;
-
-    // Simulated progress data points
-    final points = [0.4, 0.6, 0.3, 0.7, 0.5, 0.8, 0.6, 0.9, 0.7, 0.85];
-    final path = Path();
+    final points = _points;
     final stepX = size.width / (points.length - 1);
 
+    // Build line path
+    final linePath = Path();
     for (var i = 0; i < points.length; i++) {
       final x = i * stepX;
       final y = size.height * (1 - points[i]);
       if (i == 0) {
-        path.moveTo(x, y);
+        linePath.moveTo(x, y);
       } else {
-        path.lineTo(x, y);
+        linePath.lineTo(x, y);
       }
     }
 
-    canvas.drawPath(path, paint);
+    // Gradient fill below the line
+    final fillPath = Path()
+      ..addPath(linePath, Offset.zero)
+      ..lineTo(size.width, size.height)
+      ..lineTo(0, size.height)
+      ..close();
 
-    // Dashed line effect
-    final dashPaint = Paint()
-      ..color = Colors.white.withValues(alpha: 0.2)
+    final fillPaint = Paint()
+      ..shader = LinearGradient(
+        begin: Alignment.topCenter,
+        end: Alignment.bottomCenter,
+        colors: [
+          Colors.white.withValues(alpha: 0.25),
+          Colors.white.withValues(alpha: 0),
+        ],
+      ).createShader(Rect.fromLTWH(0, 0, size.width, size.height))
+      ..style = PaintingStyle.fill;
+    canvas.drawPath(fillPath, fillPaint);
+
+    // White line on top
+    final linePaint = Paint()
+      ..color = Colors.white.withValues(alpha: 0.85)
       ..style = PaintingStyle.stroke
-      ..strokeWidth = 0.5;
+      ..strokeWidth = 1.5
+      ..strokeCap = StrokeCap.round
+      ..strokeJoin = StrokeJoin.round;
+    canvas.drawPath(linePath, linePaint);
 
-    canvas.drawLine(
-      Offset(0, size.height * 0.5),
-      Offset(size.width, size.height * 0.5),
-      dashPaint,
-    );
+    // Dashed baseline at bottom
+    final dashPaint = Paint()
+      ..color = Colors.white.withValues(alpha: 0.25)
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 0.8;
+
+    const dashWidth = 4.0;
+    const dashGap = 3.0;
+    var x = 0.0;
+    final baselineY = size.height;
+    while (x < size.width) {
+      canvas.drawLine(
+        Offset(x, baselineY),
+        Offset((x + dashWidth).clamp(0, size.width), baselineY),
+        dashPaint,
+      );
+      x += dashWidth + dashGap;
+    }
   }
 
   @override
-  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
+  bool shouldRepaint(covariant _MiniChartPainter old) => old._raw != _raw;
 }

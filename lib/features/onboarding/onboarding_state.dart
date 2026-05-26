@@ -1,16 +1,9 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import 'package:my_gym_bro/core/services/notification_tone.dart';
+
 /// Holds user selections made during the onboarding flow.
 class OnboardingData {
-  final String? gender;
-  final String? goal;
-  final String? experience;
-  final DateTime? birthday;
-  final double? weightKg;
-  final double? heightCm;
-  final Set<String> targetZones;
-  final bool useMetric;
-  final String? selectedLanguage;
 
   const OnboardingData({
     this.gender,
@@ -22,7 +15,18 @@ class OnboardingData {
     this.targetZones = const {},
     this.useMetric = true,
     this.selectedLanguage,
+    this.notificationTone = NotificationTone.balanced,
   });
+  final String? gender;
+  final String? goal;
+  final String? experience;
+  final DateTime? birthday;
+  final double? weightKg;
+  final double? heightCm;
+  final Set<String> targetZones;
+  final bool useMetric;
+  final String? selectedLanguage;
+  final NotificationTone notificationTone;
 
   OnboardingData copyWith({
     String? gender,
@@ -34,6 +38,7 @@ class OnboardingData {
     Set<String>? targetZones,
     bool? useMetric,
     String? selectedLanguage,
+    NotificationTone? notificationTone,
   }) =>
       OnboardingData(
         gender: gender ?? this.gender,
@@ -45,6 +50,7 @@ class OnboardingData {
         targetZones: targetZones ?? this.targetZones,
         useMetric: useMetric ?? this.useMetric,
         selectedLanguage: selectedLanguage ?? this.selectedLanguage,
+        notificationTone: notificationTone ?? this.notificationTone,
       );
 }
 
@@ -57,7 +63,7 @@ class OnboardingNotifier extends StateNotifier<OnboardingData> {
   void setBirthday(DateTime date) => state = state.copyWith(birthday: date);
   void setWeight(double kg) => state = state.copyWith(weightKg: kg);
   void setHeight(double cm) => state = state.copyWith(heightCm: cm);
-  void setUseMetric(bool metric) => state = state.copyWith(useMetric: metric);
+  void setUseMetric({required bool metric}) => state = state.copyWith(useMetric: metric);
   void toggleTargetZone(String zone) {
     final zones = Set<String>.from(state.targetZones);
     if (zone == 'all') {
@@ -81,6 +87,9 @@ class OnboardingNotifier extends StateNotifier<OnboardingData> {
 
   void setLanguage(String lang) =>
       state = state.copyWith(selectedLanguage: lang);
+
+  void setNotificationTone(NotificationTone tone) =>
+      state = state.copyWith(notificationTone: tone);
 }
 
 final onboardingProvider =

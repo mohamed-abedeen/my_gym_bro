@@ -1,20 +1,20 @@
 import 'package:drift/drift.dart';
 
-import '../database/app_database.dart';
-import '../database/daos/exercise_dao.dart';
-import '../database/daos/schedule_dao.dart';
+import 'package:my_gym_bro/core/database/app_database.dart';
+import 'package:my_gym_bro/core/database/daos/exercise_dao.dart';
+import 'package:my_gym_bro/core/database/daos/schedule_dao.dart';
 
 /// Seeds the database with 3 ready-to-use training programs:
 /// Arnold Split, Bro Split, Push/Pull/Legs.
 ///
 /// Call once at startup (guarded by a check so it doesn't re-seed).
 class ProgramSeeder {
-  final ScheduleDao _scheduleDao;
-  final ExerciseDao _exerciseDao;
 
   ProgramSeeder(AppDatabase db)
       : _scheduleDao = ScheduleDao(db),
         _exerciseDao = ExerciseDao(db);
+  final ScheduleDao _scheduleDao;
+  final ExerciseDao _exerciseDao;
 
   /// Returns true if programs were seeded, false if they already exist.
   Future<bool> seedIfNeeded() async {
@@ -54,7 +54,7 @@ class ProgramSeeder {
     }
 
     // Create custom exercise
-    final customId = 'custom_${key.replaceAll(RegExp(r'[^a-z0-9]'), '_')}';
+    final customId = 'custom_${key.replaceAll(RegExp('[^a-z0-9]'), '_')}';
     await _exerciseDao.upsert(ExercisesCompanion(
       exerciseId: Value(customId),
       name: Value(name),
@@ -191,7 +191,7 @@ class ProgramSeeder {
   // ═══════════════════════════════════════════════════════════════════
 
   Future<void> _seedArnoldSplit() async {
-    final chestBackLegs = _DayDef('Chest, Back & Legs', [
+    const chestBackLegs = _DayDef('Chest, Back & Legs', [
       // Chest
       _Ex('Barbell Bench Press', 5, 8, 'Chest'),
       _Ex('Dumbbell Fly', 5, 8, 'Chest'),
@@ -219,7 +219,7 @@ class ProgramSeeder {
       _Ex('Barbell Reverse Curl', 4, 8, 'Forearms'),
     ]);
 
-    final shouldersArms = _DayDef('Shoulders & Arms', [
+    const shouldersArms = _DayDef('Shoulders & Arms', [
       // Biceps
       _Ex('Barbell Curl', 6, 8, 'Biceps'),
       _Ex('Dumbbell Seated Curl', 6, 8, 'Biceps'),
@@ -252,7 +252,6 @@ class ProgramSeeder {
         shouldersArms,           // Day 4
         chestBackLegs,           // Day 5
         shouldersArms,           // Day 6
-        _DayDef.rest('Rest Day'), // Day 7
       ],
     );
   }
@@ -267,7 +266,7 @@ class ProgramSeeder {
       isActive: false,
       days: [
         // Monday: Chest
-        _DayDef('Chest Day', [
+        const _DayDef('Chest Day', [
           _Ex('Barbell Bench Press', 3, 10, 'Chest'),
           _Ex('Dumbbell Incline Bench Press', 3, 10, 'Chest'),
           _Ex('Dumbbell Decline Hammer Press', 3, 10, 'Chest'),
@@ -275,7 +274,7 @@ class ProgramSeeder {
           _Ex('Push-Up', 3, 10, 'Chest'),
         ]),
         // Tuesday: Legs
-        _DayDef('Leg Day', [
+        const _DayDef('Leg Day', [
           _Ex('Barbell Full Squat', 3, 10, 'Quads'),
           _Ex('Sled Hack Squat', 3, 10, 'Quads'),
           _Ex('Sled 45° Leg Press', 3, 10, 'Quads'),
@@ -284,7 +283,7 @@ class ProgramSeeder {
           _Ex('Lever Standing Calf Raise', 3, 10, 'Calves'),
         ]),
         // Wednesday: Shoulders
-        _DayDef('Shoulder Day', [
+        const _DayDef('Shoulder Day', [
           _Ex('Dumbbell Seated Shoulder Press', 3, 10, 'Shoulders'),
           _Ex('Dumbbell Arnold Press', 3, 10, 'Shoulders'),
           _Ex('Dumbbell Lateral Raise', 3, 10, 'Shoulders'),
@@ -293,7 +292,7 @@ class ProgramSeeder {
           _Ex('Dumbbell Shrug', 3, 10, 'Traps'),
         ]),
         // Thursday: Back
-        _DayDef('Back Day', [
+        const _DayDef('Back Day', [
           _Ex('Barbell Deadlift', 3, 10, 'Lower Back'),
           _Ex('Cable Lat Pulldown Full Range of Motion', 3, 10, 'Lats'),
           _Ex('Hammer Strength Row', 3, 10, 'Upper Back'),
@@ -301,7 +300,7 @@ class ProgramSeeder {
           _Ex('Cable Straight Arm Pulldown', 3, 10, 'Lats'),
         ]),
         // Friday: Arms
-        _DayDef('Arm Day', [
+        const _DayDef('Arm Day', [
           _Ex('Barbell Curl', 3, 10, 'Biceps'),
           _Ex('Barbell Preacher Curl', 3, 10, 'Biceps'),
           _Ex('Dumbbell Incline Curl', 3, 10, 'Biceps'),
@@ -309,9 +308,6 @@ class ProgramSeeder {
           _Ex('Barbell Lying Triceps Extension', 3, 10, 'Triceps'),
           _Ex('Cable Triceps Pushdown', 3, 10, 'Triceps'),
         ]),
-        // Saturday & Sunday
-        _DayDef.rest('Rest Day'),
-        _DayDef.rest('Rest Day'),
       ],
     );
   }
@@ -326,7 +322,7 @@ class ProgramSeeder {
       isActive: false,
       days: [
         // Push Day
-        _DayDef('Push Day', [
+        const _DayDef('Push Day', [
           _Ex('Barbell Seated Overhead Press', 5, 5, 'Shoulders'),
           _Ex('Dumbbell Bench Press', 3, 5, 'Chest'),
           _Ex('Weighted Tricep Dips', 3, 8, 'Triceps'),
@@ -335,7 +331,7 @@ class ProgramSeeder {
           _Ex('Cable Triceps Pushdown', 3, 8, 'Triceps'),
         ]),
         // Pull Day
-        _DayDef('Pull Day', [
+        const _DayDef('Pull Day', [
           _Ex('Pull-Up', 5, 5, 'Lats'),
           _Ex('Barbell Bent Over Row', 3, 5, 'Upper Back'),
           _Ex('Lever Reverse T-Bar Row', 3, 8, 'Lats'),
@@ -344,7 +340,7 @@ class ProgramSeeder {
           _Ex('Dumbbell Hammer Curl', 3, 8, 'Biceps'),
         ]),
         // Leg Day
-        _DayDef('Leg Day', [
+        const _DayDef('Leg Day', [
           _Ex('Barbell Full Squat', 5, 5, 'Quads'),
           _Ex('Barbell Deadlift', 3, 5, 'Lower Back'),
           _Ex('Sled 45° Leg Press', 3, 8, 'Quads'),
@@ -352,8 +348,6 @@ class ProgramSeeder {
           _Ex('Lever Leg Extension', 3, 8, 'Quads'),
           _Ex('Lever Seated Calf Raise', 3, 8, 'Calves'),
         ]),
-        // Rest days
-        _DayDef.rest('Rest Day'),
       ],
     );
   }
@@ -362,21 +356,21 @@ class ProgramSeeder {
 // ─── Data classes ─────────────────────────────────────────────────
 
 class _DayDef {
-  final String label;
-  final List<_Ex> exercises;
-  final bool isRest;
 
   const _DayDef(this.label, this.exercises) : isRest = false;
   const _DayDef.rest(this.label)
       : exercises = const [],
         isRest = true;
+  final String label;
+  final List<_Ex> exercises;
+  final bool isRest;
 }
 
 class _Ex {
+
+  const _Ex(this.name, this.sets, this.reps, [this.muscleGroup]);
   final String name;
   final int sets;
   final int reps;
   final String? muscleGroup;
-
-  const _Ex(this.name, this.sets, this.reps, [this.muscleGroup]);
 }

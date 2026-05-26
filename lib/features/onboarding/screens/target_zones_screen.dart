@@ -1,11 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-
-import '../../../l10n/app_localizations.dart';
-import '../../../shared/constants.dart';
-import '../../../shared/responsive.dart';
-import '../onboarding_state.dart';
+import 'package:my_gym_bro/features/onboarding/onboarding_state.dart';
+import 'package:my_gym_bro/l10n/app_localizations.dart';
+import 'package:my_gym_bro/shared/constants.dart';
+import 'package:my_gym_bro/shared/responsive.dart';
 
 /// Figma frames 49/53/54 — Target zones selection.
 /// "What are your target zones?"
@@ -23,7 +22,7 @@ class TargetZonesScreen extends ConsumerWidget {
     final onboarding = ref.watch(onboardingProvider);
     final notifier = ref.read(onboardingProvider.notifier);
     final selected = onboarding.targetZones;
-    const progress = 8 / 8;
+    const progress = 8 / 9;
 
     final zones = [
       ('arms', l10n.arms),
@@ -52,7 +51,7 @@ class TargetZonesScreen extends ConsumerWidget {
                         color: colors.textPrimary, size: 28.sp),
                   ),
                   SizedBox(width: 8.w),
-                  Expanded(child: _ProgressBar(progress: progress)),
+                  const Expanded(child: _ProgressBar(progress: progress)),
                 ],
               ),
             ),
@@ -82,7 +81,7 @@ class TargetZonesScreen extends ConsumerWidget {
                   Icon(
                     Icons.accessibility_new_rounded,
                     size: 280.sp,
-                    color: Colors.grey[800],
+                    color: AppColors.of(context).avatarPlaceholderDark,
                   ),
 
                   // Zone buttons — positioned around the figure
@@ -156,7 +155,7 @@ class TargetZonesScreen extends ConsumerWidget {
                 height: 56.h,
                 child: ElevatedButton(
                   onPressed: selected.isNotEmpty
-                      ? () => context.go('/onboarding/signup')
+                      ? () => context.go('/onboarding/notification-tone')
                       : null,
                   style: ElevatedButton.styleFrom(
                     backgroundColor: colors.accent,
@@ -185,15 +184,15 @@ class TargetZonesScreen extends ConsumerWidget {
 }
 
 class _ZoneChip extends StatelessWidget {
-  final String label;
-  final bool isSelected;
-  final VoidCallback onTap;
 
   const _ZoneChip({
     required this.label,
     required this.isSelected,
     required this.onTap,
   });
+  final String label;
+  final bool isSelected;
+  final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
@@ -206,10 +205,10 @@ class _ZoneChip extends StatelessWidget {
         decoration: BoxDecoration(
           color: isSelected
               ? colors.accent.withValues(alpha: 0.15)
-              : Colors.grey[850] ?? Colors.grey[800],
+              : AppColors.of(context).avatarPlaceholderDark,
           borderRadius: BorderRadius.circular(20.r),
           border: Border.all(
-            color: isSelected ? colors.accent : Colors.grey[700]!,
+            color: isSelected ? colors.accent : AppColors.of(context).avatarPlaceholder,
             width: 1.5,
           ),
         ),
@@ -228,8 +227,8 @@ class _ZoneChip extends StatelessWidget {
 }
 
 class _ProgressBar extends StatelessWidget {
-  final double progress;
   const _ProgressBar({required this.progress});
+  final double progress;
 
   @override
   Widget build(BuildContext context) {
@@ -237,7 +236,7 @@ class _ProgressBar extends StatelessWidget {
     return Container(
       height: 6.h,
       decoration: BoxDecoration(
-        color: Colors.grey[800],
+        color: AppColors.of(context).avatarPlaceholderDark,
         borderRadius: BorderRadius.circular(3.r),
       ),
       child: FractionallySizedBox(

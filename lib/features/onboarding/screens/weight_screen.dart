@@ -1,11 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-
-import '../../../l10n/app_localizations.dart';
-import '../../../shared/constants.dart';
-import '../../../shared/responsive.dart';
-import '../onboarding_state.dart';
+import 'package:my_gym_bro/features/onboarding/onboarding_state.dart';
+import 'package:my_gym_bro/l10n/app_localizations.dart';
+import 'package:my_gym_bro/shared/constants.dart';
+import 'package:my_gym_bro/shared/responsive.dart';
 
 /// Figma frames 41-42 — Weight picker.
 /// Scroll wheel for whole kg + decimal, kgs/lbs toggle pill.
@@ -42,7 +41,7 @@ class _WeightScreenState extends ConsumerState<WeightScreen> {
     final value = _whole + _decimal * 0.1;
     final kg = _isMetric ? value : value * 0.453592;
     ref.read(onboardingProvider.notifier).setWeight(kg);
-    ref.read(onboardingProvider.notifier).setUseMetric(_isMetric);
+    ref.read(onboardingProvider.notifier).setUseMetric(metric: _isMetric);
   }
 
   @override
@@ -71,7 +70,7 @@ class _WeightScreenState extends ConsumerState<WeightScreen> {
                         color: colors.textPrimary, size: 28.sp),
                   ),
                   SizedBox(width: 8.w),
-                  Expanded(child: _ProgressBar(progress: progress)),
+                  const Expanded(child: _ProgressBar(progress: progress)),
                 ],
               ),
             ),
@@ -131,8 +130,7 @@ class _WeightScreenState extends ConsumerState<WeightScreen> {
                                           horizontal: 16.w, vertical: 4.h),
                                       decoration: BoxDecoration(
                                         border: Border.all(
-                                            color: colors.textSecondary,
-                                            width: 1),
+                                            color: colors.textSecondary),
                                         borderRadius:
                                             BorderRadius.circular(8.r),
                                       ),
@@ -180,8 +178,7 @@ class _WeightScreenState extends ConsumerState<WeightScreen> {
                                           horizontal: 16.w, vertical: 4.h),
                                       decoration: BoxDecoration(
                                         border: Border.all(
-                                            color: colors.textSecondary,
-                                            width: 1),
+                                            color: colors.textSecondary),
                                         borderRadius:
                                             BorderRadius.circular(8.r),
                                       ),
@@ -258,10 +255,6 @@ class _WeightScreenState extends ConsumerState<WeightScreen> {
 }
 
 class _UnitToggle extends StatelessWidget {
-  final String leftLabel;
-  final String rightLabel;
-  final bool isLeftSelected;
-  final ValueChanged<bool> onToggle;
 
   const _UnitToggle({
     required this.leftLabel,
@@ -269,6 +262,10 @@ class _UnitToggle extends StatelessWidget {
     required this.isLeftSelected,
     required this.onToggle,
   });
+  final String leftLabel;
+  final String rightLabel;
+  final bool isLeftSelected;
+  final ValueChanged<bool> onToggle;
 
   @override
   Widget build(BuildContext context) {
@@ -278,7 +275,7 @@ class _UnitToggle extends StatelessWidget {
         width: 220.w,
         height: 52.h,
         decoration: BoxDecoration(
-          color: Colors.grey[850] ?? Colors.grey[800],
+          color: AppColors.of(context).avatarPlaceholderDark,
           borderRadius: BorderRadius.circular(26.r),
         ),
         child: Row(
@@ -341,8 +338,8 @@ class _UnitToggle extends StatelessWidget {
 }
 
 class _ProgressBar extends StatelessWidget {
-  final double progress;
   const _ProgressBar({required this.progress});
+  final double progress;
 
   @override
   Widget build(BuildContext context) {
@@ -350,7 +347,7 @@ class _ProgressBar extends StatelessWidget {
     return Container(
       height: 6.h,
       decoration: BoxDecoration(
-        color: Colors.grey[800],
+        color: AppColors.of(context).avatarPlaceholderDark,
         borderRadius: BorderRadius.circular(3.r),
       ),
       child: FractionallySizedBox(

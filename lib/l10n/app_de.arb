@@ -13,8 +13,8 @@
   "buildYourFlow": "Erstelle deinen Plan oder finde ein Profi-Programm",
   "scheduleRemaining": "Noch {hours}h",
   "nextSession": "Nächste Einheit",
-  "sessionLog": "Einheitenprotokoll",
-  "statusLog": "Statusprotokoll",
+  "sessionLog": "Einheiten",
+  "statusLog": "Status",
   "weeklyProgress": "Wöchentlicher Fortschritt",
   "recovered": "Erholt",
   "recovering": "Erholt sich",
@@ -120,6 +120,27 @@
   "trialDaysLeft": "Test — noch {days} Tage",
   "subscriptionExpired": "Abo abgelaufen",
   "restComplete": "Pause beendet!",
+  "restCompleteTitleSupportive": "Pause beendet",
+  "restCompleteBodySupportive": "Deine Muskeln sind bereit, wann immer du es bist.",
+  "restCompleteTitleBalanced": "Pause beendet",
+  "restCompleteBodyBalanced": "Zeit für den nächsten Satz.",
+  "restCompleteTitleBold": "Pause beendet",
+  "restCompleteBodyBold": "Zurück ans Eisen. Nächster Satz.",
+  "restCompleteTitleSavage": "PAUSE VORBEI",
+  "restCompleteBodySavage": "NÄCHSTER SATZ. JETZT.",
+  "notificationTone": "Ton der Benachrichtigungen",
+  "notificationToneSubtitle": "Wähle den Ton deiner Erinnerungen",
+  "toneSupportive": "Unterstützend",
+  "toneSupportiveDescription": "Sanfte, bestärkende Erinnerungen.",
+  "toneBalanced": "Ausgewogen",
+  "toneBalancedDescription": "Neutrale, sachliche Erinnerungen.",
+  "toneBold": "Direkt",
+  "toneBoldDescription": "Direkte, selbstbewusste Erinnerungen.",
+  "toneSavage": "Knallhart",
+  "toneSavageDescription": "Alles in Großbuchstaben, keine Ausreden.",
+  "notificationToneOnboardingTitle": "Wähle deine Stimme",
+  "notificationToneOnboardingSubtitle": "Wie sollen wir während des Trainings mit dir sprechen?",
+  "notificationToneExampleLabel": "Beispiel",
   "restTimer": "Pause",
   "defaultRestTime": "Standard-Ruhezeit",
   "restTimerSound": "Ruhetimer-Ton",
@@ -190,5 +211,68 @@
   "noExercisesFound": "Keine Übungen für diese Kombination gefunden, Bro!",
   "allMuscles": "Alle Muskeln",
   "allEquipment": "Alle Geräte",
-  "allDifficulties": "Alle Level"
+  "allDifficulties": "Alle Level",
+  "retry": "Erneut versuchen",
+  "leaderboard": "Rangliste",
+
+  "muscleRecovery": "Muskelregeneration",
+  "sore": "Schmerzhaft",
+  "notTrainedYet": "Noch nicht trainiert",
+  "fullyRecovered": "Vollständig erholt — bereit zu trainieren",
+  "lessThanOneHourRecovery": "Weniger als 1 Stunde bis zur Erholung",
+  "hoursRestNeeded": "Noch {hours}h Erholung nötig",
+  "@hoursRestNeeded": {
+    "placeholders": {
+      "hours": { "type": "int" }
+    }
+  },
+  "daysRestNeeded": "Noch {days}T Erholung nötig",
+  "@daysRestNeeded": {
+    "placeholders": {
+      "days": { "type": "int" }
+    }
+  },
+  "daysHoursRestNeeded": "Noch {days}T {hours}h Erholung nötig",
+  "@daysHoursRestNeeded": {
+    "placeholders": {
+      "days": { "type": "int" },
+      "hours": { "type": "int" }
+    }
+  },
+  "nSelected": "{count} ausgewählt",
+  "@nSelected": {
+    "placeholders": {
+      "count": { "type": "int" }
+    }
+  },
+  "clearFilters": "Filter zurücksetzen",
+  "failedToLoadExercises": "Übungen konnten nicht geladen werden",
+  "sortMostUsed": "Am häufigsten",
+  "sortFavorites": "Favoriten",
+  "sortAZ": "A–Z",
+
+  "removeExercise": "Übung entfernen",
+  "discardWorkout": "Dieses Training verwerfen?",
+  "deleteSet": "Satz löschen",
+  "deleteSetConfirm": "Diesen Satz löschen?",
+  "setLabel": "Satz",
+  "selectSetType": "Satzart wählen",
+  "warmUpSet": "Aufwärmsatz",
+  "normalSet": "Normaler Satz",
+  "failureSet": "Versagenssatz",
+  "dropSet": "Dropsatz",
+  "removeSet": "Satz entfernen",
+  "completeSet": "Satz abschließen",
+  "restTime": "Pausenzeit",
+  "remaining": "Verbleibend",
+  "restAfterSet": "Du musst nach\ndiesem Satz ruhen",
+  "unfinishedSets": "Unvollendete Sätze",
+  "unfinishedSetsMessage": "Du hast noch unvollendete Sätze. Möchtest du die Einheit wirklich beenden?",
+  "confirm": "Bestätigen",
+  "endSession": "Einheit beenden",
+  "previousExercise": "Zurück",
+  "nextExercise": "Weiter",
+  "noInstructions": "Keine Anleitung verfügbar",
+  "deleteWorkout": "Training löschen",
+  "deleteWorkoutConfirm": "Dieses Training löschen?"
 }

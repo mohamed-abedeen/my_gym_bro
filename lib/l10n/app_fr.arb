@@ -13,8 +13,8 @@
   "buildYourFlow": "Créez votre programme ou trouvez un plan pro",
   "scheduleRemaining": "{hours}h restantes",
   "nextSession": "Prochaine séance",
-  "sessionLog": "Journal des séances",
-  "statusLog": "Journal de statut",
+  "sessionLog": "Séances",
+  "statusLog": "Statut",
   "weeklyProgress": "Progrès hebdomadaire",
   "recovered": "Récupéré",
   "recovering": "En récupération",
@@ -120,6 +120,27 @@
   "trialDaysLeft": "Essai — {days} jours restants",
   "subscriptionExpired": "Abonnement expiré",
   "restComplete": "Récupération terminée !",
+  "restCompleteTitleSupportive": "Récupération terminée",
+  "restCompleteBodySupportive": "Tes muscles sont prêts quand tu l'es.",
+  "restCompleteTitleBalanced": "Récupération terminée",
+  "restCompleteBodyBalanced": "Il est temps de commencer ta prochaine série.",
+  "restCompleteTitleBold": "Récupération terminée",
+  "restCompleteBodyBold": "On y retourne. Série suivante.",
+  "restCompleteTitleSavage": "PAUSE FINIE",
+  "restCompleteBodySavage": "SÉRIE SUIVANTE. MAINTENANT.",
+  "notificationTone": "Ton des notifications",
+  "notificationToneSubtitle": "Choisis le ton de tes rappels",
+  "toneSupportive": "Bienveillant",
+  "toneSupportiveDescription": "Rappels doux et encourageants.",
+  "toneBalanced": "Équilibré",
+  "toneBalancedDescription": "Rappels neutres et factuels.",
+  "toneBold": "Direct",
+  "toneBoldDescription": "Rappels directs et affirmés.",
+  "toneSavage": "Impitoyable",
+  "toneSavageDescription": "Rappels en majuscules, sans excuses.",
+  "notificationToneOnboardingTitle": "Choisis ta voix",
+  "notificationToneOnboardingSubtitle": "Comment devons-nous te parler pendant tes entraînements ?",
+  "notificationToneExampleLabel": "Exemple",
   "restTimer": "Repos",
   "defaultRestTime": "Temps de repos par défaut",
   "restTimerSound": "Son du minuteur de repos",
@@ -190,5 +211,68 @@
   "noExercisesFound": "Aucun exercice trouvé pour cette combinaison, Bro !",
   "allMuscles": "Tous les muscles",
   "allEquipment": "Tout l'équipement",
-  "allDifficulties": "Tous les niveaux"
+  "allDifficulties": "Tous les niveaux",
+  "retry": "Réessayer",
+  "leaderboard": "Classement",
+
+  "muscleRecovery": "Récupération musculaire",
+  "sore": "Douloureux",
+  "notTrainedYet": "Pas encore entraîné",
+  "fullyRecovered": "Complètement récupéré — prêt à s'entraîner",
+  "lessThanOneHourRecovery": "Moins d'1 heure avant la récupération",
+  "hoursRestNeeded": "Encore {hours}h de repos",
+  "@hoursRestNeeded": {
+    "placeholders": {
+      "hours": { "type": "int" }
+    }
+  },
+  "daysRestNeeded": "Encore {days}j de repos",
+  "@daysRestNeeded": {
+    "placeholders": {
+      "days": { "type": "int" }
+    }
+  },
+  "daysHoursRestNeeded": "Encore {days}j {hours}h de repos",
+  "@daysHoursRestNeeded": {
+    "placeholders": {
+      "days": { "type": "int" },
+      "hours": { "type": "int" }
+    }
+  },
+  "nSelected": "{count} sélectionné(s)",
+  "@nSelected": {
+    "placeholders": {
+      "count": { "type": "int" }
+    }
+  },
+  "clearFilters": "Effacer les filtres",
+  "failedToLoadExercises": "Impossible de charger les exercices",
+  "sortMostUsed": "Les plus utilisés",
+  "sortFavorites": "Favoris",
+  "sortAZ": "A–Z",
+
+  "removeExercise": "Supprimer l'exercice",
+  "discardWorkout": "Abandonner cet entraînement ?",
+  "deleteSet": "Supprimer la série",
+  "deleteSetConfirm": "Supprimer cette série ?",
+  "setLabel": "Série",
+  "selectSetType": "Type de série",
+  "warmUpSet": "Série d'échauffement",
+  "normalSet": "Série normale",
+  "failureSet": "Série à l'échec",
+  "dropSet": "Série dégressive",
+  "removeSet": "Supprimer la série",
+  "completeSet": "Compléter la série",
+  "restTime": "Temps de repos",
+  "remaining": "Restant",
+  "restAfterSet": "Tu dois te reposer\naprès cette série",
+  "unfinishedSets": "Séries inachevées",
+  "unfinishedSetsMessage": "Tu as des séries inachevées. Es-tu sûr de vouloir terminer cette séance ?",
+  "confirm": "Confirmer",
+  "endSession": "Terminer la séance",
+  "previousExercise": "Précédent",
+  "nextExercise": "Suivant",
+  "noInstructions": "Aucune instruction disponible",
+  "deleteWorkout": "Supprimer l'entraînement",
+  "deleteWorkoutConfirm": "Supprimer cet entraînement ?"
 }

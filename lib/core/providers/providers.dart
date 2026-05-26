@@ -1,11 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:my_gym_bro/core/auth/auth_notifier.dart';
+import 'package:my_gym_bro/core/database/app_database.dart';
+import 'package:my_gym_bro/core/services/sync_service.dart';
+import 'package:my_gym_bro/shared/widgets/anatomy_body.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-
-import '../../shared/widgets/anatomy_body.dart';
-import '../auth/auth_notifier.dart';
-import '../database/app_database.dart';
-import '../services/sync_service.dart';
 
 /// Global database provider — overridden at app startup with the real instance.
 final databaseProvider = Provider<AppDatabase>((ref) {
@@ -22,7 +21,9 @@ final themeModeProvider = StateProvider<ThemeMode>((ref) => ThemeMode.dark);
 final supabaseProvider = Provider<SupabaseClient?>((ref) {
   try {
     return Supabase.instance.client;
-  } catch (_) {
+  } catch (_) { // ignore: avoid_catches_without_on_clauses
+    // Catches both Exception and AssertionError (thrown when Supabase is
+    // not initialised — AssertionError is an Error, not an Exception).
     return null;
   }
 });

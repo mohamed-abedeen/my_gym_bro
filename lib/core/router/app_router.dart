@@ -2,29 +2,30 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-
-import '../../shared/constants.dart';
-import '../../features/auth/sign_in_screen.dart';
-import '../../features/exercises/exercise_browser_screen.dart';
-import '../../features/onboarding/screens/birthday_screen.dart';
-import '../../features/onboarding/screens/experience_screen.dart';
-import '../../features/onboarding/screens/gender_screen.dart';
-import '../../features/onboarding/screens/goal_screen.dart';
-import '../../features/onboarding/screens/height_screen.dart';
-import '../../features/onboarding/screens/language_screen.dart';
-import '../../features/onboarding/screens/sign_up_screen.dart';
-import '../../features/onboarding/screens/splash_screen.dart';
-import '../../features/onboarding/screens/target_zones_screen.dart';
-import '../../features/onboarding/screens/trial_screen.dart';
-import '../../features/onboarding/screens/weight_screen.dart';
-import '../../features/onboarding/screens/welcome_screen.dart';
-import '../../features/scaffold/my_gym_bro_scaffold.dart';
-import '../../features/schedule/schedule_builder_screen.dart';
-import '../../features/settings/settings_screen.dart';
-import '../../features/workout/active_session/active_session_screen.dart';
-import '../../features/community/dm/dm_inbox_screen.dart';
-import '../../features/community/dm/dm_chat_screen.dart';
-import '../../features/community/dm/dm_models.dart';
+import 'package:my_gym_bro/features/auth/sign_in_screen.dart';
+import 'package:my_gym_bro/features/community/dm/dm_chat_screen.dart';
+import 'package:my_gym_bro/features/community/dm/dm_inbox_screen.dart';
+import 'package:my_gym_bro/features/community/dm/dm_models.dart';
+import 'package:my_gym_bro/features/exercises/exercise_browser_screen.dart';
+import 'package:my_gym_bro/features/onboarding/screens/birthday_screen.dart';
+import 'package:my_gym_bro/features/onboarding/screens/experience_screen.dart';
+import 'package:my_gym_bro/features/onboarding/screens/gender_screen.dart';
+import 'package:my_gym_bro/features/onboarding/screens/goal_screen.dart';
+import 'package:my_gym_bro/features/onboarding/screens/height_screen.dart';
+import 'package:my_gym_bro/features/onboarding/screens/language_screen.dart';
+import 'package:my_gym_bro/features/onboarding/screens/notification_tone_screen.dart';
+import 'package:my_gym_bro/features/onboarding/screens/sign_up_screen.dart';
+import 'package:my_gym_bro/features/onboarding/screens/splash_screen.dart';
+import 'package:my_gym_bro/features/onboarding/screens/target_zones_screen.dart';
+import 'package:my_gym_bro/features/onboarding/screens/trial_screen.dart';
+import 'package:my_gym_bro/features/onboarding/screens/weight_screen.dart';
+import 'package:my_gym_bro/features/onboarding/screens/welcome_screen.dart';
+import 'package:my_gym_bro/features/paywall/paywall_screen.dart';
+import 'package:my_gym_bro/features/profile/profile_screen.dart';
+import 'package:my_gym_bro/features/scaffold/my_gym_bro_scaffold.dart';
+import 'package:my_gym_bro/features/schedule/schedule_builder_screen.dart';
+import 'package:my_gym_bro/features/settings/settings_screen.dart';
+import 'package:my_gym_bro/features/workout/active_session/active_session_screen.dart';
 
 // ═══════════════════════════════════════════════════════════════════════════
 // ROUTE PATHS
@@ -46,6 +47,7 @@ class AppRoutes {
   static const onboardingWeight = '/onboarding/weight';
   static const onboardingHeight = '/onboarding/height';
   static const onboardingTargetZones = '/onboarding/target-zones';
+  static const onboardingNotificationTone = '/onboarding/notification-tone';
   static const onboardingLanguage = '/onboarding/language';
   static const onboardingSignup = '/onboarding/signup';
   static const onboardingTrial = '/onboarding/trial';
@@ -60,6 +62,9 @@ class AppRoutes {
   static const activeSession = '/session';
   static const scheduleBuilder = '/schedule/build';
   static const paywall = '/paywall';
+
+  // Profile
+  static const profile = '/profile';
 
   // DM
   static const dmInbox = '/dm';
@@ -118,7 +123,6 @@ CustomTransitionPage<T> _slideUpPage<T>({
       child: child,
       transitionDuration: duration,
       reverseTransitionDuration: duration,
-      barrierDismissible: false,
       transitionsBuilder: (context, animation, secondaryAnimation, child) {
         final curved = CurvedAnimation(
           parent: animation,
@@ -193,6 +197,11 @@ final routerProvider = Provider<GoRouter>((ref) {
             _cupertinoPage(child: const TargetZonesScreen(), state: state),
       ),
       GoRoute(
+        path: AppRoutes.onboardingNotificationTone,
+        pageBuilder: (context, state) => _cupertinoPage(
+            child: const NotificationToneScreen(), state: state),
+      ),
+      GoRoute(
         path: AppRoutes.onboardingLanguage,
         pageBuilder: (context, state) =>
             _cupertinoPage(child: const LanguageScreen(), state: state),
@@ -232,8 +241,10 @@ final routerProvider = Provider<GoRouter>((ref) {
       ),
       GoRoute(
         path: AppRoutes.exerciseBrowser,
-        pageBuilder: (context, state) =>
-            _cupertinoPage(child: const ExerciseBrowserScreen(), state: state),
+        pageBuilder: (context, state) => _cupertinoPage(
+          child: const ExerciseBrowserScreen(pickMode: true),
+          state: state,
+        ),
       ),
       GoRoute(
         path: AppRoutes.activeSession,
@@ -257,21 +268,19 @@ final routerProvider = Provider<GoRouter>((ref) {
       ),
       GoRoute(
         path: AppRoutes.paywall,
-        pageBuilder: (context, state) {
-          final colors = AppColors.of(context);
-          return _slideUpPage(
-            child: Scaffold(
-              backgroundColor: colors.background,
-              body: Center(
-                child: Text(
-                  'Paywall',
-                  style: TextStyle(color: colors.textPrimary),
-                ),
-              ),
-            ),
-            state: state,
-          );
-        },
+        pageBuilder: (context, state) => _slideUpPage(
+          child: const PaywallScreen(),
+          state: state,
+        ),
+      ),
+
+      // ────────────────────────────────────────────────────────────────────
+      // PROFILE
+      // ────────────────────────────────────────────────────────────────────
+      GoRoute(
+        path: AppRoutes.profile,
+        pageBuilder: (context, state) =>
+            _cupertinoPage(child: const ProfileScreen(), state: state),
       ),
 
       // ────────────────────────────────────────────────────────────────────

@@ -18,6 +18,7 @@ class UserProfiles extends Table {
 
   TextColumn get displayName => text().nullable()();
   TextColumn get avatarUrl => text().nullable()();
+  TextColumn get bannerUrl => text().nullable()();
   TextColumn get goal => text().nullable()();
   TextColumn get experience => text().nullable()();
   TextColumn get gender => text().nullable()(); // 'male' | 'female'
@@ -31,6 +32,9 @@ class UserProfiles extends Table {
   IntColumn get defaultRestSeconds =>
       integer().withDefault(const Constant(90))();
   TextColumn get fcmToken => text().nullable()();
+  /// 'supportive' | 'balanced' | 'bold' | 'savage'
+  TextColumn get notificationTone =>
+      text().withDefault(const Constant('balanced'))();
 }
 
 /// Bundled + custom exercises.
@@ -55,6 +59,8 @@ class Exercises extends Table {
   /// 'beginner' | 'intermediate' | 'advanced'
   TextColumn get difficulty => text().nullable()();
   BoolColumn get isCustom => boolean().withDefault(const Constant(false))();
+  IntColumn get usageCount => integer().withDefault(const Constant(0))();
+  BoolColumn get isFavorite => boolean().withDefault(const Constant(false))();
 }
 
 /// Training schedules (user-created programs).
@@ -99,6 +105,9 @@ class ScheduledExercises extends Table {
   IntColumn get orderIndex => integer()();
   IntColumn get targetSets => integer().withDefault(const Constant(3))();
   IntColumn get targetReps => integer().withDefault(const Constant(10))();
+  // Cardio planning
+  IntColumn get targetDurationSeconds => integer().nullable()();
+  RealColumn get targetDistance => real().nullable()();
 }
 
 /// Workout sessions (completed or in-progress).
@@ -149,7 +158,13 @@ class WorkoutSets extends Table {
   IntColumn get reps => integer().nullable()();
   BoolColumn get isWarmup => boolean().withDefault(const Constant(false))();
   BoolColumn get isDropset => boolean().withDefault(const Constant(false))();
+  BoolColumn get isFailure => boolean().withDefault(const Constant(false))();
   IntColumn get rpe => integer().nullable()();
+  // Cardio tracking
+  IntColumn get durationSeconds => integer().nullable()();
+  RealColumn get distance => real().nullable()();
+  RealColumn get speed => real().nullable()();
+  RealColumn get incline => real().nullable()();
 }
 
 /// Offline sync queue for pending changes.
@@ -207,8 +222,14 @@ class DmMessages extends Table {
 class AppDatabase extends _$AppDatabase {
   AppDatabase(super.e);
 
+  /// Factory constructor that opens a Drift database.
+  factory AppDatabase.create() {
+    final queryExecutor = driftDatabase(name: 'my_gym_bro');
+    return AppDatabase(queryExecutor);
+  }
+
   @override
-  int get schemaVersion => 5;
+  int get schemaVersion => 10;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -231,6 +252,49 @@ class AppDatabase extends _$AppDatabase {
       if (from < 5) {
         await customStatement(
           'ALTER TABLE exercises ADD COLUMN difficulty TEXT',
+        );
+      }
+      if (from < 6) {
+        await customStatement(
+          "ALTER TABLE user_profiles ADD COLUMN notification_tone TEXT NOT NULL DEFAULT 'balanced'",
+        );
+      }
+      if (from < 7) {
+        await customStatement(
+          'ALTER TABLE workout_sets ADD COLUMN duration_seconds INTEGER',
+        );
+        await customStatement(
+          'ALTER TABLE workout_sets ADD COLUMN distance REAL',
+        );
+        await customStatement(
+          'ALTER TABLE workout_sets ADD COLUMN speed REAL',
+        );
+        await customStatement(
+          'ALTER TABLE workout_sets ADD COLUMN incline REAL',
+        );
+        await customStatement(
+          'ALTER TABLE scheduled_exercises ADD COLUMN target_duration_seconds INTEGER',
+        );
+        await customStatement(
+          'ALTER TABLE scheduled_exercises ADD COLUMN target_distance REAL',
+        );
+      }
+      if (from < 8) {
+        await customStatement(
+          'ALTER TABLE user_profiles ADD COLUMN banner_url TEXT',
+        );
+      }
+      if (from < 9) {
+        await customStatement(
+          'ALTER TABLE exercises ADD COLUMN usage_count INTEGER NOT NULL DEFAULT 0',
+        );
+        await customStatement(
+          'ALTER TABLE exercises ADD COLUMN is_favorite INTEGER NOT NULL DEFAULT 0',
+        );
+      }
+      if (from < 10) {
+        await customStatement(
+          'ALTER TABLE workout_sets ADD COLUMN is_failure INTEGER NOT NULL DEFAULT 0',
         );
       }
     },
@@ -269,11 +333,5 @@ class AppDatabase extends _$AppDatabase {
     await customStatement(
       'CREATE INDEX IF NOT EXISTS idx_scheduled_exercises_day_id ON scheduled_exercises (schedule_day_id)',
     );
-  }
-
-  /// Factory that opens a Drift database.
-  static AppDatabase create() {
-    final queryExecutor = driftDatabase(name: 'my_gym_bro');
-    return AppDatabase(queryExecutor);
   }
 }

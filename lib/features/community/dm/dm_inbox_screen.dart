@@ -1,14 +1,17 @@
 import 'dart:ui';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import '../../../core/router/app_router.dart';
-import '../../../l10n/app_localizations.dart';
-import '../../../shared/constants.dart';
-import '../../../shared/responsive.dart';
-import '../../../shared/widgets/glass_card.dart';
-import 'dm_providers.dart';
-import 'widgets/dm_conversation_tile.dart';
+import 'package:my_gym_bro/core/router/app_router.dart';
+import 'package:my_gym_bro/features/community/dm/dm_mock_data.dart';
+import 'package:my_gym_bro/features/community/dm/dm_models.dart';
+import 'package:my_gym_bro/features/community/dm/dm_providers.dart';
+import 'package:my_gym_bro/features/community/dm/widgets/dm_conversation_tile.dart';
+import 'package:my_gym_bro/l10n/app_localizations.dart';
+import 'package:my_gym_bro/shared/constants.dart';
+import 'package:my_gym_bro/shared/responsive.dart';
+import 'package:my_gym_bro/shared/widgets/glass_card.dart';
 
 class DmInboxScreen extends ConsumerWidget {
   const DmInboxScreen({super.key});
@@ -17,7 +20,11 @@ class DmInboxScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     Responsive.init(context);
     final colors = AppColors.of(context);
-    final convosAsync = ref.watch(dmConversationsProvider);
+    // TODO(dev): flip to false before shipping
+    const kUseMockDm = true;
+    final AsyncValue<List<DmConversation>> convosAsync = kUseMockDm
+        ? AsyncValue.data(mockDmConversations)
+        : ref.watch(dmConversationsProvider);
 
     return Scaffold(
       backgroundColor: colors.background,
@@ -97,12 +104,15 @@ class _Header extends StatelessWidget {
             onPressed: () => context.pop(),
           ),
           SizedBox(width: 8.w),
-          Text(
-            AppLocalizations.of(context).dmMessages,
-            style: TextStyle(
-              color: colors.textPrimary,
-              fontSize: 28.sp,
-              fontWeight: FontWeight.w700,
+          Flexible(
+            child: Text(
+              AppLocalizations.of(context).dmMessages,
+              style: TextStyle(
+                color: colors.textPrimary,
+                fontSize: 28.sp,
+                fontWeight: FontWeight.w700,
+              ),
+              overflow: TextOverflow.ellipsis,
             ),
           ),
           const Spacer(),
@@ -141,9 +151,9 @@ class _SearchBar extends StatelessWidget {
           child: Container(
             height: 44.h,
             decoration: BoxDecoration(
-              color: Colors.white.withValues(alpha: 0.08),
+              color: AppColors.of(context).white.withValues(alpha: 0.08),
               borderRadius: BorderRadius.circular(24.r),
-              border: Border.all(color: Colors.white.withValues(alpha: 0.05)),
+              border: Border.all(color: AppColors.of(context).white.withValues(alpha: 0.05)),
             ),
             padding: EdgeInsets.symmetric(horizontal: 16.w),
             child: Row(

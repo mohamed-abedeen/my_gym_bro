@@ -1,15 +1,11 @@
 import 'package:flutter/material.dart';
-
-import '../../../l10n/app_localizations.dart';
-import '../../../shared/constants.dart';
-import '../../../shared/responsive.dart';
-import '../../../shared/widgets/liquid_glass_button.dart';
-import 'rest_timer_service.dart';
+import 'package:my_gym_bro/features/workout/active_session/rest_timer_service.dart';
+import 'package:my_gym_bro/l10n/app_localizations.dart';
+import 'package:my_gym_bro/shared/constants.dart';
+import 'package:my_gym_bro/shared/responsive.dart';
+import 'package:my_gym_bro/shared/widgets/liquid_glass_button.dart';
 
 class RestTimerWidget extends StatefulWidget {
-  final RestTimerService timerService;
-  final bool visible;
-  final VoidCallback onDismiss;
 
   const RestTimerWidget({
     required this.timerService,
@@ -17,6 +13,9 @@ class RestTimerWidget extends StatefulWidget {
     required this.onDismiss,
     super.key,
   });
+  final RestTimerService timerService;
+  final bool visible;
+  final VoidCallback onDismiss;
 
   @override
   State<RestTimerWidget> createState() => _RestTimerWidgetState();
@@ -48,7 +47,7 @@ class _RestTimerWidgetState extends State<RestTimerWidget> {
                         l10n.restComplete,
                         style: TextStyle(
                           color:
-                              _completed ? Colors.black : colors.textPrimary,
+                              _completed ? AppColors.of(context).black : colors.textPrimary,
                           fontSize: 20.sp,
                           fontWeight: FontWeight.w700,
                         ),

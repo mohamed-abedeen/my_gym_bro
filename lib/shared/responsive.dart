@@ -6,46 +6,67 @@ import 'package:flutter/widgets.dart';
 /// Figma design is 440×956 (iPhone 17 Pro Max).
 /// All pixel values from Figma are scaled proportionally to the actual device.
 ///
-/// Usage:
-///   Responsive.init(context);  // call once per build (scaffold level)
-///   20.w   // width-scaled (horizontal sizes, padding, margins, radius)
-///   20.h   // height-scaled (vertical sizes)
-///   16.sp  // font-size scaled (uses width factor, clamped for readability)
+/// Usage (in a widget's build method):
+///   final r = Responsive.of(context);
+///   SizedBox(width: r.w(194), height: r.h(179))
+///   Text('Hello', style: TextStyle(fontSize: r.sp(24)))
+///
+/// Or via the convenient num extensions (require calling Responsive.init once):
+///   20.w   // width-scaled
+///   20.h   // height-scaled
+///   16.sp  // font-size scaled
 class Responsive {
-  Responsive._();
+  const Responsive._({required this.sw, required this.sh});
 
-  static const double designWidth = 440.0;
-  static const double designHeight = 956.0;
+  static const double _designWidth = 440; // iPhone 17 Pro Max
+  static const double _designHeight = 956;
 
-  static double _sw = 1.0;
-  static double _sh = 1.0;
+  final double sw;
+  final double sh;
 
-  /// Call once from a widget that has access to [BuildContext].
-  /// Typically in the scaffold or top-level screen.
-  static void init(BuildContext context) {
+  /// Returns a [Responsive] instance computed fresh from [context].
+  /// Safe to call from any widget build — reads MediaQuery, no shared state.
+  static Responsive of(BuildContext context) {
     final size = MediaQuery.sizeOf(context);
-    _sw = size.width / designWidth;
-    _sh = size.height / designHeight;
+    return Responsive._(
+      sw: size.width / _designWidth,
+      sh: size.height / _designHeight,
+    );
   }
-
-  static double get sw => _sw;
-  static double get sh => _sh;
 
   /// Scale a value by width ratio.
-  static double w(double v) => v * _sw;
+  double w(double v) => v * sw;
 
   /// Scale a value by height ratio.
-  static double h(double v) => v * _sh;
+  double h(double v) => v * sh;
 
-  /// Scale a font size — uses width factor, clamped so text never
-  /// becomes unreadably small or oversized on extreme screens.
-  static double sp(double v) {
-    final scale = min(_sw, _sh);
-    return v * scale;
+  /// Scale a font size — uses min(sw, sh) so text never becomes unreadably
+  /// small or oversized on extreme screens.
+  double sp(double v) => v * min(sw, sh);
+
+  // ── Legacy static API ─────────────────────────────────────────────────────
+  // Kept for backwards compatibility with existing `.w` / `.h` / `.sp` call
+  // sites. Call [init] once from the outermost scaffold build before using the
+  // extensions. New code should prefer [Responsive.of(context)].
+
+  static double _sw = 1;
+  static double _sh = 1;
+
+  /// Initialise the legacy static scale factors from [context].
+  /// Must be called before using the num extension getters below.
+  static void init(BuildContext context) {
+    final size = MediaQuery.sizeOf(context);
+    _sw = size.width / _designWidth;
+    _sh = size.height / _designHeight;
   }
+
+  static double wStatic(double v) => v * _sw;
+  static double hStatic(double v) => v * _sh;
+  static double spStatic(double v) => v * min(_sw, _sh);
 }
 
 /// Extension on [num] for concise responsive values.
+/// Requires [Responsive.init] to have been called in the current build context.
 ///
 /// ```dart
 /// SizedBox(width: 194.w, height: 179.h)
@@ -53,15 +74,8 @@ class Responsive {
 /// BorderRadius.circular(25.r)
 /// ```
 extension ResponsiveNum on num {
-  /// Width-scaled value (horizontal dimensions, padding, margins).
-  double get w => Responsive.w(toDouble());
-
-  /// Height-scaled value (vertical dimensions).
-  double get h => Responsive.h(toDouble());
-
-  /// Font-size scaled value.
-  double get sp => Responsive.sp(toDouble());
-
-  /// Radius-scaled value (same as width-scaled).
-  double get r => Responsive.w(toDouble());
+  double get w => Responsive.wStatic(toDouble());
+  double get h => Responsive.hStatic(toDouble());
+  double get sp => Responsive.spStatic(toDouble());
+  double get r => Responsive.wStatic(toDouble());
 }
