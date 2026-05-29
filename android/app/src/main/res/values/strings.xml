@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  String resources used by the Android AppWidget. Kept separate from the
+  app's Flutter-side `.arb` localisation files because Android widget
+  metadata must resolve via the platform's resource system at install
+  time, not via the Flutter engine which isn't running.
+-->
+<resources>
+    <string name="mgb_widget_description">Streak + next training focus</string>
+</resources>

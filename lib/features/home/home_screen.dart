@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:my_gym_bro/core/providers/providers.dart';
 import 'package:my_gym_bro/core/services/units.dart';
+import 'package:my_gym_bro/features/leaderboard/leaderboard_screen.dart';
 import 'package:my_gym_bro/features/settings/settings_screen.dart';
 import 'package:my_gym_bro/features/settings/skin_provider.dart';
 import 'package:my_gym_bro/features/workout/muscle_detail_sheet.dart';
@@ -29,10 +30,18 @@ class HomeScreen extends ConsumerWidget {
         _Header(l10n: l10n),
         SizedBox(height: 16.h),
 
-        // Leaderboard card
+        // Leaderboard card — taps push the full Leaderboard screen
         Padding(
           padding: EdgeInsets.symmetric(horizontal: AppSizes.contentPaddingH.w),
-          child: _LeaderboardCard(l10n: l10n),
+          child: GestureDetector(
+            behavior: HitTestBehavior.opaque,
+            onTap: () => Navigator.of(context).push(
+              CupertinoPageRoute<void>(
+                builder: (_) => const LeaderboardScreen(),
+              ),
+            ),
+            child: _LeaderboardCard(l10n: l10n),
+          ),
         ),
         SizedBox(height: 10.h),
 

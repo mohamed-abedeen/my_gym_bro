@@ -1,9 +1,11 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:go_router/go_router.dart';
-import 'package:my_gym_bro/core/router/app_router.dart';
+import 'package:my_gym_bro/core/services/subscription_sync_service.dart';
 import 'package:my_gym_bro/features/community/community_screen.dart';
 import 'package:my_gym_bro/features/home/home_screen.dart';
+import 'package:my_gym_bro/features/workout/active_session/active_session_notifier.dart';
 import 'package:my_gym_bro/features/workout/workout_providers.dart';
 import 'package:my_gym_bro/features/workout/workout_screen.dart';
 import 'package:my_gym_bro/shared/constants.dart';
@@ -29,8 +31,6 @@ class _MyGymBroScaffoldState extends ConsumerState<MyGymBroScaffold>
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
-    // Check on first load (after first frame so context is ready).
-    WidgetsBinding.instance.addPostFrameCallback((_) => _checkTrial());
   }
 
   @override
@@ -41,22 +41,20 @@ class _MyGymBroScaffoldState extends ConsumerState<MyGymBroScaffold>
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
-    if (state == AppLifecycleState.resumed) _checkTrial();
-  }
-
-  void _checkTrial() {
-    if (!mounted) return;
-    final profile = ref.read(userProfileProvider).valueOrNull;
-    if (profile == null) return;
-
-    final isTrialExpired = profile.subscriptionStatus == 'trial' &&
-        profile.subscriptionExpiresAt != null &&
-        DateTime.now().isAfter(profile.subscriptionExpiresAt!);
-
-    final isExpired = profile.subscriptionStatus == 'expired';
-
-    if (isTrialExpired || isExpired) {
-      context.push(AppRoutes.paywall);
+    if (state == AppLifecycleState.resumed) {
+      // Re-reconcile RevenueCat entitlements into the local profile so the
+      // paywall gate (`subscriptionLockedProvider`) reflects renewals,
+      // cancellations, and trial elapse the moment the app comes forward.
+      // Best-effort — no-ops when RevenueCat isn't configured.
+      unawaited(
+        SubscriptionSyncService.syncNow(ref.read(userProfileDaoProvider)),
+      );
+      // Option A — rebuild any stale active-workout notification whose
+      // buttons would otherwise point at a dead isolate. See
+      // `docs/notification-recovery.md`.
+      unawaited(
+        ref.read(activeSessionProvider.notifier).resyncActiveNotification(),
+      );
     }
   }
 
@@ -71,6 +69,10 @@ class _MyGymBroScaffoldState extends ConsumerState<MyGymBroScaffold>
     Responsive.init(context);
     final colors = AppColors.of(context);
     final idx = ref.watch(navIndexProvider);
+
+    // Activate the home-widget mirror listens. Pure side-effect provider —
+    // ref.read is enough; we never need its (void) value.
+    ref.read(widgetSyncProvider);
 
     // Track direction for slide animation
     final goingForward = idx >= _previousIndex;

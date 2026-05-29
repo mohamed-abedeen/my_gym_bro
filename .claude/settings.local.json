@@ -118,7 +118,10 @@
       "Bash(sed -n '1200,1204p' /c/Users/abede/my_gym_bro/lib/features/exercises/exercise_detail_screen.dart)",
       "Bash(rm -f analysis_errors.txt analysis_errors_2.txt analysis_errors_3.txt analysis_final.txt analysis_final_2.txt analysis_output.txt analysis_output2.txt analyze_output.txt temp_analyze.log)",
       "Bash(ls *.txt *.log)",
-      "Bash(flutter test *)"
+      "Bash(flutter test *)",
+      "mcp__plugin_figma_figma__get_metadata",
+      "mcp__plugin_figma_figma__get_screenshot",
+      "Bash(curl -s -o /tmp/figma_screenshot.png \"https://www.figma.com/api/mcp/asset/b0fd1611-589b-48ba-91ab-01bc46bd462e\")"
     ]
   }
 }

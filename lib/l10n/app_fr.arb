@@ -1,6 +1,12 @@
 {
   "@@locale": "fr",
   "appName": "My Gym Bro",
+  "trialDaysLeft": "{days} jours restants",
+  "@trialDaysLeft": {
+    "placeholders": {
+      "days": { "type": "int" }
+    }
+  },
   "tabHome": "Accueil",
   "tabWorkout": "Entraînement",
   "tabLog": "Journal",
@@ -86,6 +92,8 @@
   "biometricPrompt": "Déverrouiller My Gym Bro",
   "language": "Langue",
   "weightUnit": "Unité de poids",
+  "bodyWeight": "Poids corporel",
+  "notSet": "Non défini",
   "biometricLock": "Verrouillage biométrique",
   "manageSubscription": "Gérer l'abonnement",
   "exportData": "Exporter mes données",
@@ -274,5 +282,54 @@
   "nextExercise": "Suivant",
   "noInstructions": "Aucune instruction disponible",
   "deleteWorkout": "Supprimer l'entraînement",
-  "deleteWorkoutConfirm": "Supprimer cet entraînement ?"
+  "deleteWorkoutConfirm": "Supprimer cet entraînement ?",
+
+  "leaderboardTab": "Classement",
+  "challengesTab": "Défis",
+  "currentLeague": "LIGUE ACTUELLE",
+  "yourPlace": "Ta place",
+  "placeNumber": "{n} Place",
+  "@placeNumber": {
+    "placeholders": {
+      "n": { "type": "int" }
+    }
+  },
+  "leagueElite": "L'Élite",
+  "leagueMaster": "Le Maître",
+  "leagueStanding": "Stable",
+  "leagueMovingUp": "En progression",
+  "leagueWorkHarder": "Pousse plus fort",
+  "scopeRivals": "Rivaux",
+  "scopeGlobal": "Global",
+  "scopeFriends": "Amis",
+  "volumeLabel": "Volume",
+  "percentDone": "{percent}% fait",
+  "@percentDone": {
+    "placeholders": {
+      "percent": { "type": "int" }
+    }
+  },
+  "rankNumber": "Rang #{rank}",
+  "@rankNumber": {
+    "placeholders": {
+      "rank": { "type": "int" }
+    }
+  },
+  "startChallenge": "démarrer",
+  "endInDays": "Finit dans {days}j",
+  "@endInDays": {
+    "placeholders": {
+      "days": { "type": "int" }
+    }
+  },
+  "leagueMasterTitle": "Maître",
+  "noChallengesYet": "Aucun défi actif",
+  "widgetStreakStart": "Démarrer une série",
+  "widgetStreakOneDay": "Série de 1 jour",
+  "widgetStreakDays": "Série de {days} jours",
+  "@widgetStreakDays": {
+    "placeholders": {
+      "days": { "type": "int" }
+    }
+  }
 }

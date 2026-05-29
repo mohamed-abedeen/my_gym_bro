@@ -14,111 +14,158 @@ import 'package:my_gym_bro/core/database/daos/user_profile_dao.dart';
 import 'package:my_gym_bro/core/providers/providers.dart';
 import 'package:my_gym_bro/core/security/secure_storage.dart';
 import 'package:my_gym_bro/core/services/crash_reporter.dart';
-import 'package:my_gym_bro/core/services/notification_service.dart';
 import 'package:my_gym_bro/core/services/exercise_local_service.dart';
+import 'package:my_gym_bro/core/services/notification_service.dart';
 import 'package:my_gym_bro/core/services/program_seeder.dart';
+import 'package:my_gym_bro/core/services/subscription_sync_service.dart';
 import 'package:my_gym_bro/features/workout/workout_providers.dart';
 import 'package:my_gym_bro/shared/app_constants.dart';
 import 'package:purchases_flutter/purchases_flutter.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 void main() {
-  runZonedGuarded(() async {
+  runZonedGuarded<void>(() async {
     WidgetsFlutterBinding.ensureInitialized();
+    await _bootstrap();
+  }, (error, stack) {
+    CrashReporter.recordError(
+      error,
+      stackTrace: stack,
+      reason: 'Uncaught zone error',
+      fatal: true,
+    );
+  });
+}
 
-    // Lock to portrait
-    await SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]);
+Future<void> _bootstrap() async {
+  final stopwatch = Stopwatch()..start();
+  void mark(String step) =>
+      debugPrint('[bootstrap] $step (+${stopwatch.elapsedMilliseconds}ms)');
 
-    // Firebase — skipped if not yet configured
+  mark('start');
+  await SystemChrome.setPreferredOrientations([
+    DeviceOrientation.portraitUp,
+    DeviceOrientation.portraitDown,
+  ]);
+  mark('orientation set');
+
+  // Firebase + crash handlers — fast, local init.
+  // No Firebase config (google-services.json / firebase_options.dart) means
+  // initializeApp() throws; that's non-fatal, the app runs without Firebase.
+  // We log only a one-liner — dumping the full native stacktrace floods
+  // debugPrint's throttle and swallows later logs.
+  try {
+    mark('firebase init begin');
+    await Firebase.initializeApp();
+    mark('firebase init done');
+    if (!kDebugMode) {
+      FlutterError.onError =
+          FirebaseCrashlytics.instance.recordFlutterFatalError;
+      PlatformDispatcher.instance.onError = (error, stack) {
+        FirebaseCrashlytics.instance.recordError(error, stack, fatal: true);
+        return true;
+      };
+    }
+  } on Object catch (_) {
+    // Catch everything: an unconfigured Firebase throws an Error, not only an
+    // Exception. Non-fatal — the app runs without Firebase.
+    mark('firebase init skipped (not configured)');
+  }
+
+  // Supabase — bounded so a slow/absent network can't stall startup.
+  const supabaseUrl = String.fromEnvironment('SUPABASE_URL');
+  const supabaseKey = String.fromEnvironment('SUPABASE_ANON_KEY');
+  if (supabaseUrl.isNotEmpty && supabaseKey.isNotEmpty) {
     try {
-      await Firebase.initializeApp();
-      if (!kDebugMode) {
-        FlutterError.onError =
-            FirebaseCrashlytics.instance.recordFlutterFatalError;
-        PlatformDispatcher.instance.onError = (error, stack) {
-          FirebaseCrashlytics.instance.recordError(error, stack, fatal: true);
-          return true;
-        };
-      }
-    } on Exception catch (e) {
-      if (kDebugMode) debugPrint('[Firebase] Init failed: $e');
-      // Non-debug: Firebase misconfigured — Crashlytics won't be available
+      mark('supabase init begin');
+      await Supabase.initialize(url: supabaseUrl, anonKey: supabaseKey)
+          .timeout(const Duration(seconds: 10));
+      mark('supabase init done');
+    } on Exception catch (_) {
+      // Unreachable or timed out — app runs in local/offline mode.
     }
+  }
 
-    // Supabase — secrets from .env via --dart-define-from-file=.env
-    const supabaseUrl = String.fromEnvironment('SUPABASE_URL');
-    const supabaseKey = String.fromEnvironment('SUPABASE_ANON_KEY');
-    if (supabaseUrl.isNotEmpty && supabaseKey.isNotEmpty) {
-      try {
-        await Supabase.initialize(url: supabaseUrl, anonKey: supabaseKey)
-            .timeout(const Duration(seconds: 10));
-      } on Exception catch (_) {
-        // Supabase not reachable or timed out — app works offline
-      }
+  // RevenueCat — skipped on placeholder keys.
+  final rcKey = Platform.isIOS
+      ? const String.fromEnvironment('REVENUECAT_IOS_KEY')
+      : const String.fromEnvironment('REVENUECAT_ANDROID_KEY');
+  if (rcKey.isNotEmpty && !rcKey.startsWith('your-')) {
+    try {
+      mark('revenuecat configure begin');
+      await Purchases.configure(PurchasesConfiguration(rcKey));
+      mark('revenuecat configure done');
+    } on Exception catch (_) {
+      // RevenueCat not configured yet.
     }
+  }
 
-    // RevenueCat — skipped if keys are placeholders
-    final rcKey = Platform.isIOS
-        ? const String.fromEnvironment('REVENUECAT_IOS_KEY')
-        : const String.fromEnvironment('REVENUECAT_ANDROID_KEY');
-    if (rcKey.isNotEmpty && !rcKey.startsWith('your-')) {
-      try {
-        await Purchases.configure(PurchasesConfiguration(rcKey));
-      } on Exception catch (_) {
-        // RevenueCat not configured yet
-      }
-    }
+  // ── Fast local reads needed before the first frame ──
+  // Wrapped so a DB-open / migration / secure-storage failure degrades to
+  // defaults instead of throwing out of _bootstrap() and freezing the splash.
+  final secureStorage = SecureStorage();
+  mark('db create begin');
+  final db = AppDatabase.create();
 
-    // Initialise local notifications and request OS permissions.
-    // Done before runApp so channels exist before any session is started.
-    await NotificationService.initialise();
-
-    // ── Fast reads — needed before first frame ──────────────────────────────
-    final secureStorage = SecureStorage();
-    final db = AppDatabase.create();
-
-    final userProfileDao = UserProfileDao(db);
-    final profile = await userProfileDao.getFirst();
-    Locale? savedLocale;
+  Locale? savedLocale;
+  ThemeMode? savedTheme;
+  int? lastScheduleId;
+  try {
+    final profile = await UserProfileDao(db).getFirst();
+    mark('profile read done');
     if (profile != null && profile.preferredLanguage != 'system') {
       savedLocale = Locale(profile.preferredLanguage);
     }
 
     final themeStr = await secureStorage.read('theme_mode');
-    ThemeMode? savedTheme;
+    mark('theme read done');
     if (themeStr == 'ThemeMode.light') {
       savedTheme = ThemeMode.light;
     } else if (themeStr == 'ThemeMode.dark') {
       savedTheme = ThemeMode.dark;
     }
 
-    final lastScheduleStr = await secureStorage.read('last_selected_schedule_id');
-    final lastScheduleId = lastScheduleStr != null ? int.tryParse(lastScheduleStr) : null;
+    final lastScheduleStr =
+        await secureStorage.read('last_selected_schedule_id');
+    lastScheduleId =
+        lastScheduleStr != null ? int.tryParse(lastScheduleStr) : null;
+  } on Object catch (error, stack) {
+    CrashReporter.recordError(error, stackTrace: stack, reason: 'Startup reads failed');
+  }
+  mark('reads done -- calling runApp');
 
-    // ── Start the app — splash is visible from this point ──────────────────
-    runApp(
-      ProviderScope(
-        overrides: [
-          databaseProvider.overrideWithValue(db),
-          localeProvider.overrideWith((ref) => savedLocale),
-          if (savedTheme != null)
-            themeModeProvider.overrideWith((ref) => savedTheme!),
-          if (lastScheduleId != null)
-            workoutCardStateProvider.overrideWith((ref) => WorkoutCardState(selectedScheduleId: lastScheduleId)),
-        ],
-        child: const MyGymBroApp(),
-      ),
-    );
+  // ── Render immediately — splash is visible from this point ──
+  runApp(
+    ProviderScope(
+      overrides: [
+        databaseProvider.overrideWithValue(db),
+        localeProvider.overrideWith((ref) => savedLocale),
+        if (savedTheme != null)
+          themeModeProvider.overrideWith((ref) => savedTheme!),
+        if (lastScheduleId != null)
+          workoutCardStateProvider.overrideWith(
+            (ref) => WorkoutCardState(selectedScheduleId: lastScheduleId),
+          ),
+      ],
+      child: const MyGymBroApp(),
+    ),
+  );
 
-    // ── Heavy DB work runs AFTER the app is visible ─────────────────────────
-    // Fire-and-forget: the splash screen's 1.5s delay gives these time to
-    // complete before the user reaches any data-driven screen.
-    unawaited(_backgroundDbInit(db, secureStorage));
-  }, (error, stack) {
-    if (Firebase.apps.isNotEmpty) {
-      FirebaseCrashlytics.instance.recordError(error, stack, fatal: true);
-    }
-  });
+  // ── Network- and permission-bound work runs AFTER the first frame ──
+  // Notification init triggers FCM getToken() and OS permission prompts,
+  // which can block indefinitely on a slow/absent network. Awaiting it
+  // before runApp() froze the splash, so it is now fire-and-forget.
+  unawaited(NotificationService.initialise());
+  unawaited(_backgroundDbInit(db, secureStorage));
+
+  // Reconcile RevenueCat entitlements into the local profile on launch, and
+  // keep them in sync as renewals/cancellations arrive. Best-effort — both
+  // no-op when RevenueCat isn't configured.
+  final profileDao = UserProfileDao(db);
+  SubscriptionSyncService.listen(profileDao);
+  unawaited(SubscriptionSyncService.syncNow(profileDao));
+
+  mark('runApp returned -- bootstrap complete');
 }
 
 /// Seeds and migrates the database after [runApp] so the main thread is never
@@ -126,28 +173,22 @@ void main() {
 Future<void> _backgroundDbInit(
     AppDatabase db, SecureStorage secureStorage) async {
   try {
-    // Seed exercises on first install
     final exerciseDao = ExerciseDao(db);
     final count = await exerciseDao.count();
     if (count == 0) {
       await ExerciseLocalService.seedFromAssets(db);
     }
 
-    // One-time migrations — version-gated
     final lastMigration = await secureStorage.read('db_migration_version');
     if (lastMigration != AppConstants.dbMigrationVersion) {
       await ExerciseLocalService.remapMuscleGroups(db);
       await ExerciseLocalService.backfillDifficulty(db);
-      await secureStorage.write('db_migration_version', AppConstants.dbMigrationVersion);
+      await secureStorage.write(
+          'db_migration_version', AppConstants.dbMigrationVersion);
     }
 
-    // Seed training programs once
     await ProgramSeeder(db).seedIfNeeded();
   } on Exception catch (e, stack) {
-    if (kDebugMode) {
-      debugPrint('Background DB init failed: $e');
-    } else {
-      CrashReporter.recordError(e, stackTrace: stack, reason: 'Background DB init failed');
-    }
+    CrashReporter.recordError(e, stackTrace: stack, reason: 'Background DB init failed');
   }
 }

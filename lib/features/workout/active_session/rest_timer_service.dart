@@ -184,7 +184,10 @@ class RestTimerService {
 
   void addTime(int seconds) {
     _remaining = (_remaining + seconds).clamp(0, 600);
-    _total = _total + seconds > 0 ? _total + seconds : _total;
+    // Keep _total >= _remaining so the progress ring (remaining/total) stays
+    // bounded. Don't let _total grow past the clamp ceiling, and don't let
+    // it dip below current remaining (would draw an over-full ring).
+    _total = _remaining > _total ? _remaining : _total;
     _controller?.add(_remaining);
   }
 
@@ -248,6 +251,30 @@ class RestTimerService {
     } on Exception catch (e) {
       debugPrint('Audio ducking error: $e');
     }
+  }
+
+  /// Whether a timer is currently counting down. False when stopped,
+  /// completed, or paused via [pause].
+  bool get isRunning => _timer != null;
+
+  /// Whether a timer is paused — counting is suspended but [_remaining]
+  /// and [_total] still hold valid values for display.
+  bool get isPaused => _timer == null && _remaining > 0;
+
+  /// Suspend ticking without losing remaining time. The persisted deadline
+  /// is cleared so a kill+restore doesn't keep counting through pause.
+  void pause() {
+    if (_timer == null) return;
+    _timer?.cancel();
+    _timer = null;
+    unawaited(_clearPersistedState());
+  }
+
+  /// Resume after [pause]. No-op if not paused or already finished.
+  void resume() {
+    if (_timer != null || _remaining <= 0) return;
+    unawaited(_persistState());
+    _startTicking();
   }
 
   void cancel() {

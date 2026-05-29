@@ -46,6 +46,23 @@
         <meta-data
             android:name="flutterEmbedding"
             android:value="2" />
+
+        <!-- ── Home-screen AppWidget ───────────────────────────────────────
+             Provider that renders the streak + next-focus widget. Data
+             arrives via SharedPreferences from the `home_widget` Flutter
+             plugin (see lib/core/services/widget_sync_service.dart).
+        -->
+        <receiver
+            android:name=".MgbAppWidgetProvider"
+            android:exported="true"
+            android:label="MyGymBro">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/mgb_widget_info" />
+        </receiver>
     </application>
     <!-- Required to query activities that can process text, see:
          https://developer.android.com/training/package-visibility and

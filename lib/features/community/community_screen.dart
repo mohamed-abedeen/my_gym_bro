@@ -134,20 +134,6 @@ class _Header extends StatelessWidget {
             color: colors.textPrimary,
             size: 24.sp,
           ),
-          SizedBox(width: 14.w),
-
-          // Comment icon (DMs)
-          GestureDetector(
-            onTap: () {
-              // using GoRouter's context.push so shell hides bottom nav
-              GoRouter.of(context).push('/dm');
-            },
-            child: Icon(
-              Icons.chat_bubble_outline,
-              color: colors.textPrimary,
-              size: 24.sp,
-            ),
-          ),
           SizedBox(width: 16.w),
 
           // Profile avatar in glass circle — 48x48 per Figma

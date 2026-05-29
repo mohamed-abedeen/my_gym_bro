@@ -274,6 +274,12 @@ class AppLocalizationsFr extends AppLocalizations {
   String get weightUnit => 'Unité de poids';
 
   @override
+  String get bodyWeight => 'Poids corporel';
+
+  @override
+  String get notSet => 'Non défini';
+
+  @override
   String get biometricLock => 'Verrouillage biométrique';
 
   @override
@@ -795,6 +801,17 @@ class AppLocalizationsFr extends AppLocalizations {
   String get streak => 'Streak';
 
   @override
+  String get widgetStreakStart => 'Démarrer une série';
+
+  @override
+  String get widgetStreakOneDay => 'Série de 1 jour';
+
+  @override
+  String widgetStreakDays(int days) {
+    return 'Série de $days jours';
+  }
+
+  @override
   String get achievement => 'Achievement';
 
   @override
@@ -974,4 +991,72 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String get deleteWorkoutConfirm => 'Supprimer cet entraînement ?';
+
+  @override
+  String get leaderboardTab => 'Classement';
+
+  @override
+  String get challengesTab => 'Défis';
+
+  @override
+  String get currentLeague => 'LIGUE ACTUELLE';
+
+  @override
+  String get yourPlace => 'Ta place';
+
+  @override
+  String placeNumber(int n) {
+    return '$n Place';
+  }
+
+  @override
+  String get leagueElite => 'L\'Élite';
+
+  @override
+  String get leagueMaster => 'Le Maître';
+
+  @override
+  String get leagueStanding => 'Stable';
+
+  @override
+  String get leagueMovingUp => 'En progression';
+
+  @override
+  String get leagueWorkHarder => 'Pousse plus fort';
+
+  @override
+  String get scopeRivals => 'Rivaux';
+
+  @override
+  String get scopeGlobal => 'Global';
+
+  @override
+  String get scopeFriends => 'Amis';
+
+  @override
+  String get volumeLabel => 'Volume';
+
+  @override
+  String percentDone(int percent) {
+    return '$percent% fait';
+  }
+
+  @override
+  String rankNumber(int rank) {
+    return 'Rang #$rank';
+  }
+
+  @override
+  String get startChallenge => 'démarrer';
+
+  @override
+  String endInDays(int days) {
+    return 'Finit dans ${days}j';
+  }
+
+  @override
+  String get leagueMasterTitle => 'Maître';
+
+  @override
+  String get noChallengesYet => 'Aucun défi actif';
 }

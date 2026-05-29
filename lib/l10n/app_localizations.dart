@@ -618,6 +618,18 @@ abstract class AppLocalizations {
   /// **'Weight Unit'**
   String get weightUnit;
 
+  /// No description provided for @bodyWeight.
+  ///
+  /// In en, this message translates to:
+  /// **'Body Weight'**
+  String get bodyWeight;
+
+  /// No description provided for @notSet.
+  ///
+  /// In en, this message translates to:
+  /// **'Not set'**
+  String get notSet;
+
   /// No description provided for @biometricLock.
   ///
   /// In en, this message translates to:
@@ -807,7 +819,7 @@ abstract class AppLocalizations {
   /// No description provided for @trialDaysLeft.
   ///
   /// In en, this message translates to:
-  /// **'Trial — {days} days left'**
+  /// **'{days} days left'**
   String trialDaysLeft(int days);
 
   /// No description provided for @subscriptionExpired.
@@ -1602,6 +1614,24 @@ abstract class AppLocalizations {
   /// **'Streak'**
   String get streak;
 
+  /// No description provided for @widgetStreakStart.
+  ///
+  /// In en, this message translates to:
+  /// **'Start a streak'**
+  String get widgetStreakStart;
+
+  /// No description provided for @widgetStreakOneDay.
+  ///
+  /// In en, this message translates to:
+  /// **'1-day streak'**
+  String get widgetStreakOneDay;
+
+  /// No description provided for @widgetStreakDays.
+  ///
+  /// In en, this message translates to:
+  /// **'{days}-day streak'**
+  String widgetStreakDays(int days);
+
   /// No description provided for @achievement.
   ///
   /// In en, this message translates to:
@@ -1943,6 +1973,126 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Delete this workout?'**
   String get deleteWorkoutConfirm;
+
+  /// No description provided for @leaderboardTab.
+  ///
+  /// In en, this message translates to:
+  /// **'Leaderboard'**
+  String get leaderboardTab;
+
+  /// No description provided for @challengesTab.
+  ///
+  /// In en, this message translates to:
+  /// **'Challenges'**
+  String get challengesTab;
+
+  /// No description provided for @currentLeague.
+  ///
+  /// In en, this message translates to:
+  /// **'CURRENT LEAGUE'**
+  String get currentLeague;
+
+  /// No description provided for @yourPlace.
+  ///
+  /// In en, this message translates to:
+  /// **'Your place'**
+  String get yourPlace;
+
+  /// No description provided for @placeNumber.
+  ///
+  /// In en, this message translates to:
+  /// **'{n} Place'**
+  String placeNumber(int n);
+
+  /// No description provided for @leagueElite.
+  ///
+  /// In en, this message translates to:
+  /// **'The Elite'**
+  String get leagueElite;
+
+  /// No description provided for @leagueMaster.
+  ///
+  /// In en, this message translates to:
+  /// **'The Master'**
+  String get leagueMaster;
+
+  /// No description provided for @leagueStanding.
+  ///
+  /// In en, this message translates to:
+  /// **'Standing'**
+  String get leagueStanding;
+
+  /// No description provided for @leagueMovingUp.
+  ///
+  /// In en, this message translates to:
+  /// **'Moving up'**
+  String get leagueMovingUp;
+
+  /// No description provided for @leagueWorkHarder.
+  ///
+  /// In en, this message translates to:
+  /// **'Work harder'**
+  String get leagueWorkHarder;
+
+  /// No description provided for @scopeRivals.
+  ///
+  /// In en, this message translates to:
+  /// **'Rivals'**
+  String get scopeRivals;
+
+  /// No description provided for @scopeGlobal.
+  ///
+  /// In en, this message translates to:
+  /// **'Global'**
+  String get scopeGlobal;
+
+  /// No description provided for @scopeFriends.
+  ///
+  /// In en, this message translates to:
+  /// **'Friends'**
+  String get scopeFriends;
+
+  /// No description provided for @volumeLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Volume'**
+  String get volumeLabel;
+
+  /// No description provided for @percentDone.
+  ///
+  /// In en, this message translates to:
+  /// **'{percent}% done'**
+  String percentDone(int percent);
+
+  /// No description provided for @rankNumber.
+  ///
+  /// In en, this message translates to:
+  /// **'Rank #{rank}'**
+  String rankNumber(int rank);
+
+  /// No description provided for @startChallenge.
+  ///
+  /// In en, this message translates to:
+  /// **'start'**
+  String get startChallenge;
+
+  /// No description provided for @endInDays.
+  ///
+  /// In en, this message translates to:
+  /// **'End in {days}d'**
+  String endInDays(int days);
+
+  /// No description provided for @leagueMasterTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Master'**
+  String get leagueMasterTitle;
+
+  /// No description provided for @noChallengesYet.
+  ///
+  /// In en, this message translates to:
+  /// **'No active challenges yet'**
+  String get noChallengesYet;
 }
 
 class _AppLocalizationsDelegate

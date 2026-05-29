@@ -731,7 +731,17 @@ class _ProfileSessionCardState extends ConsumerState<_ProfileSessionCard>
     if (confirmed != true || !mounted) return;
 
     await ref.read(sessionDaoProvider).deleteSession(sessionId);
-    ref.invalidate(enrichedAllSessionsProvider);
+    ref
+      ..invalidate(enrichedAllSessionsProvider)
+      ..invalidate(enrichedRecentSessionsProvider)
+      ..invalidate(recentSessionsProvider)
+      ..invalidate(weeklyStatsProvider)
+      ..invalidate(lifetimeStatsProvider)
+      ..invalidate(activityStatsProvider)
+      ..invalidate(streakProvider)
+      ..invalidate(muscleRecoveryProvider)
+      ..invalidate(recordsProvider)
+      ..invalidate(consecutiveRestDaysProvider);
   }
 
   @override

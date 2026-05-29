@@ -4,6 +4,7 @@ import 'package:my_gym_bro/core/auth/auth_notifier.dart';
 import 'package:my_gym_bro/core/database/app_database.dart';
 import 'package:my_gym_bro/core/services/sync_service.dart';
 import 'package:my_gym_bro/shared/widgets/anatomy_body.dart';
+import 'package:package_info_plus/package_info_plus.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 /// Global database provider — overridden at app startup with the real instance.
@@ -50,3 +51,9 @@ final isSupabaseAvailableProvider = Provider<bool>((ref) {
 });
 
 final anatomyGenderProvider = StateProvider<AnatomyGender>((ref) => AnatomyGender.male);
+
+/// Reads the bundled app version + build number once at startup. Cached
+/// after the first read, so it's safe to watch from any screen footer.
+final packageInfoProvider = FutureProvider<PackageInfo>((ref) {
+  return PackageInfo.fromPlatform();
+});

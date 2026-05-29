@@ -177,33 +177,52 @@ class SettingsScreen extends ConsumerWidget {
 
                         SizedBox(height: 12.h),
 
-                        // Subscription row
-                        Row(
-                          children: [
-                            Icon(
-                              Icons.workspace_premium_rounded,
-                              color: colors.textPrimary,
-                              size: 21.sp,
-                            ),
-                            SizedBox(width: 10.w),
-                            Text(
-                              l10n.manageSubscription,
-                              style: TextStyle(
-                                fontSize: 13.sp,
-                                fontWeight: FontWeight.w700,
+                        // Subscription row — tappable, opens the paywall
+                        // (which hosts Restore Purchases). Trailing text shows
+                        // the trial countdown when applicable.
+                        GestureDetector(
+                          behavior: HitTestBehavior.opaque,
+                          onTap: () => context.push(AppRoutes.paywall),
+                          child: Row(
+                            children: [
+                              Icon(
+                                Icons.workspace_premium_rounded,
                                 color: colors.textPrimary,
+                                size: 21.sp,
                               ),
-                            ),
-                            const Spacer(),
-                            Text(
-                              l10n.freeTrial,
-                              style: TextStyle(
-                                fontSize: 12.sp,
-                                fontWeight: FontWeight.w700,
+                              SizedBox(width: 10.w),
+                              Text(
+                                l10n.manageSubscription,
+                                style: TextStyle(
+                                  fontSize: 13.sp,
+                                  fontWeight: FontWeight.w700,
+                                  color: colors.textPrimary,
+                                ),
+                              ),
+                              const Spacer(),
+                              Builder(builder: (context) {
+                                final daysLeft =
+                                    ref.watch(trialDaysLeftProvider);
+                                final label = daysLeft != null
+                                    ? l10n.trialDaysLeft(daysLeft)
+                                    : l10n.freeTrial;
+                                return Text(
+                                  label,
+                                  style: TextStyle(
+                                    fontSize: 12.sp,
+                                    fontWeight: FontWeight.w700,
+                                    color: colors.subtitleText,
+                                  ),
+                                );
+                              }),
+                              SizedBox(width: 6.w),
+                              Icon(
+                                Icons.chevron_right_rounded,
                                 color: colors.subtitleText,
+                                size: 18.sp,
                               ),
-                            ),
-                          ],
+                            ],
+                          ),
                         ),
                       ],
                     ),
@@ -353,6 +372,23 @@ class SettingsScreen extends ConsumerWidget {
                           onTap: () => _WeightUnitSheet.show(context),
                         ),
                         _settingsDivider(colors),
+                        // Body Weight — feeds the calorie estimator.
+                        _SettingsRow(
+                          icon: Icons.monitor_weight_outlined,
+                          label: l10n.bodyWeight,
+                          subtitle: () {
+                            final p = profile.valueOrNull;
+                            final kg = p?.bodyWeightKg;
+                            if (kg == null) return l10n.notSet;
+                            final unit = p?.weightUnit ?? 'kg';
+                            return unit == 'lbs'
+                                ? '${(kg * 2.20462).round()} lbs'
+                                : '${kg.round()} kg';
+                          }(),
+                          colors: colors,
+                          onTap: () => _BodyWeightSheet.show(context),
+                        ),
+                        _settingsDivider(colors),
                         // Default Rest Time
                         _SettingsRow(
                           icon: Icons.timer_outlined,
@@ -470,15 +506,28 @@ class SettingsScreen extends ConsumerWidget {
 
                   SizedBox(height: 24.h),
 
-                  // Version
+                  // Version footer — reads the real bundled version+build
+                  // from PackageInfo via `packageInfoProvider` instead of
+                  // a hardcoded string, so a release that bumps the
+                  // version in pubspec.yaml is reflected automatically.
                   Center(
-                    child: Text(
-                      l10n.appVersion('1.0.0'),
-                      style: TextStyle(
-                        color: colors.subtitleText,
-                        fontSize: 12.sp,
-                      ),
-                    ),
+                    child: ref.watch(packageInfoProvider).when(
+                          data: (info) => Text(
+                            '${l10n.appVersion(info.version)} (${info.buildNumber})',
+                            style: TextStyle(
+                              color: colors.subtitleText,
+                              fontSize: 12.sp,
+                            ),
+                          ),
+                          loading: () => Text(
+                            l10n.appVersion('…'),
+                            style: TextStyle(
+                              color: colors.subtitleText,
+                              fontSize: 12.sp,
+                            ),
+                          ),
+                          error: (_, __) => const SizedBox.shrink(),
+                        ),
                   ),
                   SizedBox(height: 40.h),
                 ],
@@ -738,9 +787,18 @@ class SettingsScreen extends ConsumerWidget {
           TextButton(
             onPressed: () async {
               Navigator.of(ctx).pop();
-              await ref.read(authNotifierProvider.notifier).signOut();
-              if (context.mounted) {
+              final ok = await ref
+                  .read(authNotifierProvider.notifier)
+                  .deleteAccount();
+              if (!context.mounted) return;
+              if (ok) {
                 Navigator.of(context).pop();
+              } else {
+                _showSnack(
+                  context,
+                  'Could not delete account. Please try again.',
+                  colors,
+                );
               }
             },
             child: Text(
@@ -1042,6 +1100,167 @@ class _WeightUnitSheet extends ConsumerWidget {
                 },
               );
             }).toList(),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Body weight bottom sheet — numeric input, respects user's weight unit
+// ─────────────────────────────────────────────────────────────────────────────
+
+class _BodyWeightSheet extends ConsumerStatefulWidget {
+  const _BodyWeightSheet();
+
+  static void show(BuildContext context) {
+    showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (_) => const _BodyWeightSheet(),
+    );
+  }
+
+  @override
+  ConsumerState<_BodyWeightSheet> createState() => _BodyWeightSheetState();
+}
+
+class _BodyWeightSheetState extends ConsumerState<_BodyWeightSheet> {
+  late final TextEditingController _ctrl;
+
+  @override
+  void initState() {
+    super.initState();
+    final profile = ref.read(userProfileProvider).valueOrNull;
+    final kg = profile?.bodyWeightKg;
+    final unit = profile?.weightUnit ?? 'kg';
+    final initial = kg == null
+        ? ''
+        : (unit == 'lbs'
+            ? (kg * 2.20462).round().toString()
+            : kg.round().toString());
+    _ctrl = TextEditingController(text: initial);
+  }
+
+  @override
+  void dispose() {
+    _ctrl.dispose();
+    super.dispose();
+  }
+
+  Future<void> _save() async {
+    final raw = _ctrl.text.trim();
+    final profile = ref.read(userProfileProvider).valueOrNull;
+    final dao = ref.read(userProfileDaoProvider);
+    final unit = profile?.weightUnit ?? 'kg';
+
+    double? kg;
+    if (raw.isNotEmpty) {
+      final parsed = double.tryParse(raw.replaceAll(',', '.'));
+      // Clamp to plausible adult range to avoid garbage input poisoning
+      // the calorie estimator. Anything outside this clamp is treated as
+      // "clear" (null) — the next save attempt can correct it.
+      if (parsed != null && parsed > 0) {
+        final asKg = unit == 'lbs' ? parsed / 2.20462 : parsed;
+        if (asKg >= 20 && asKg <= 300) kg = asKg;
+      }
+    }
+
+    if (profile == null) {
+      await dao.upsert(UserProfilesCompanion(bodyWeightKg: Value(kg)));
+    } else {
+      await dao.updateBodyWeight(profile.localId, kg);
+    }
+    ref
+      ..invalidate(userProfileProvider)
+      ..invalidate(activityStatsProvider);
+    if (mounted) Navigator.of(context).pop();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = AppColors.of(context);
+    final l10n = AppLocalizations.of(context);
+    final profile = ref.watch(userProfileProvider).valueOrNull;
+    final unit = profile?.weightUnit ?? 'kg';
+    final bottomInset = MediaQuery.of(context).viewInsets.bottom;
+
+    return Padding(
+      padding: EdgeInsets.only(bottom: bottomInset),
+      child: Container(
+        decoration: BoxDecoration(
+          color: colors.cardElevated,
+          borderRadius: BorderRadius.vertical(top: Radius.circular(25.r)),
+        ),
+        child: SafeArea(
+          child: Padding(
+            padding: EdgeInsets.fromLTRB(20.w, 20.h, 20.w, 20.h),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Text(
+                  l10n.bodyWeight,
+                  style: TextStyle(
+                    color: colors.textPrimary,
+                    fontSize: 18.sp,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+                SizedBox(height: 16.h),
+                TextField(
+                  controller: _ctrl,
+                  autofocus: true,
+                  keyboardType:
+                      const TextInputType.numberWithOptions(decimal: true),
+                  style: TextStyle(
+                    color: colors.textPrimary,
+                    fontSize: 18.sp,
+                    fontWeight: FontWeight.w700,
+                  ),
+                  decoration: InputDecoration(
+                    suffixText: unit,
+                    suffixStyle: TextStyle(
+                      color: colors.textSecondary,
+                      fontSize: 14.sp,
+                    ),
+                    enabledBorder: UnderlineInputBorder(
+                      borderSide: BorderSide(color: colors.divider),
+                    ),
+                    focusedBorder: UnderlineInputBorder(
+                      borderSide: BorderSide(color: colors.accent, width: 2),
+                    ),
+                  ),
+                  onSubmitted: (_) => _save(),
+                ),
+                SizedBox(height: 20.h),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.end,
+                  children: [
+                    TextButton(
+                      onPressed: () => Navigator.of(context).pop(),
+                      child: Text(
+                        l10n.cancel,
+                        style: TextStyle(color: colors.textSecondary),
+                      ),
+                    ),
+                    SizedBox(width: 8.w),
+                    TextButton(
+                      onPressed: _save,
+                      child: Text(
+                        l10n.save,
+                        style: TextStyle(
+                          color: colors.accent,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
           ),
         ),
       ),

@@ -2,29 +2,67 @@ import 'dart:io';
 import 'dart:isolate';
 import 'dart:ui';
 
-
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/foundation.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 
+import 'package:my_gym_bro/core/router/app_router.dart';
 import 'package:my_gym_bro/features/workout/active_session/rest_timer_service.dart';
 
+// ─────────────────────────────────────────────────────────────────────────────
+// Action constants — shared between Android `AndroidNotificationAction.id`
+// and the iOS `DarwinNotificationAction.identifier`. Keeping them in one place
+// means the cross-platform dispatch in [_handleAction] stays trivial.
+// ─────────────────────────────────────────────────────────────────────────────
+
+const String _kActionCompleteSet = 'complete_set';
+const String _kActionSkip = 'skip';
+const String _kActionAdd15 = 'add15';
+const String _kActionSub15 = 'sub15';
+
+/// Payload set on the *body* of the active-session notification. Tapping
+/// anywhere outside an action button dispatches this and we deep-link to
+/// the active-session screen.
+const String _kActionOpenSession = 'open_session';
+
+/// iOS notification category identifier — must be registered at init time
+/// AND referenced from [DarwinNotificationDetails.categoryIdentifier] so
+/// the actions actually surface on iOS.
+const String _kActiveWorkoutCategoryId = 'mgb.activeWorkout';
+
 void _handleAction(String action) {
+  // Quick haptic so the user gets immediate physical feedback when an
+  // action button is tapped from the notification shade. iOS users feel
+  // this on the device that produced the tap; Android users get the same.
+  // Fire-and-forget — if the platform channel isn't ready we still process
+  // the action.
+  HapticFeedback.lightImpact();
+
+  // ── Deep-link tap (notification body, not an action button) ──
+  if (action == _kActionOpenSession) {
+    final router = globalRouter;
+    if (router != null) {
+      router.push('/session');
+    }
+    return;
+  }
+
   final timer = RestTimerService.activeInstance;
   if (timer == null) return;
 
   switch (action) {
-    case 'complete_set':
+    case _kActionCompleteSet:
       timer.completeSetFromNotification?.call();
       break;
-    case 'skip':
+    case _kActionSkip:
       timer.cancel();
       timer.onCompleteCallback?.call();
       break;
-    case 'add15':
+    case _kActionAdd15:
       timer.addTime(15);
       break;
-    case 'sub15':
+    case _kActionSub15:
       timer.addTime(-15);
       break;
   }
@@ -73,9 +111,9 @@ class NotificationService {
 
   // Active workout persistent notification channel
   static const _activeWorkoutChannelId = 'workout_active';
-  static const _activeWorkoutChannelName = 'Active Workout';
+  static const _activeWorkoutChannelName = 'MyGymBro Session';
   static const _activeWorkoutChannelDesc =
-      'Shows your ongoing workout progress';
+      'Live status while a workout is in progress';
 
   /// Initialise local notifications and Firebase Cloud Messaging.
   /// Call once from main() before runApp().
@@ -95,12 +133,13 @@ class NotificationService {
 
     // ── Local notifications ──────────────────────────────────────────────────
     const androidInit = AndroidInitializationSettings('@mipmap/ic_launcher');
-    const iosInit = DarwinInitializationSettings(
+    final iosInit = DarwinInitializationSettings(
       requestAlertPermission: true,
       requestSoundPermission: true,
       requestBadgePermission: true,
+      notificationCategories: _iosCategories(),
     );
-    const initSettings =
+    final initSettings =
         InitializationSettings(android: androidInit, iOS: iosInit);
 
     await _localPlugin.initialize(
@@ -163,6 +202,41 @@ class NotificationService {
     }
   }
 
+  // ── iOS category definitions ───────────────────────────────────────────────
+
+  /// iOS doesn't support per-notification action lists the way Android does
+  /// — actions are declared upfront via a *category* registered at init.
+  /// The notification then references the category by id and iOS draws the
+  /// matching actions.
+  static List<DarwinNotificationCategory> _iosCategories() {
+    return [
+      DarwinNotificationCategory(
+        _kActiveWorkoutCategoryId,
+        actions: <DarwinNotificationAction>[
+          DarwinNotificationAction.plain(
+            _kActionCompleteSet,
+            'Complete Set',
+            options: <DarwinNotificationActionOption>{
+              DarwinNotificationActionOption.foreground,
+            },
+          ),
+          DarwinNotificationAction.plain(_kActionSub15, '-15s'),
+          DarwinNotificationAction.plain(_kActionAdd15, '+15s'),
+          DarwinNotificationAction.plain(
+            _kActionSkip,
+            'Skip',
+            options: <DarwinNotificationActionOption>{
+              DarwinNotificationActionOption.destructive,
+            },
+          ),
+        ],
+        options: <DarwinNotificationCategoryOption>{
+          DarwinNotificationCategoryOption.hiddenPreviewShowTitle,
+        },
+      ),
+    ];
+  }
+
   // ── Rest timer ─────────────────────────────────────────────────────────────
 
   /// Show a local notification when rest is complete.
@@ -194,16 +268,30 @@ class NotificationService {
 
   /// Show the "active set" notification (State A — no rest timer running).
   ///
-  /// Displays the current exercise name as the title, set progress + weight
-  /// info as the body, and a "Complete Set" action button.
+  /// Renders with:
+  ///   • the live session chronometer in the status bar (anchored to
+  ///     [sessionStartedAt] so Android updates the elapsed time on its own)
+  ///   • the exercise image as `largeIcon` when [exerciseImagePath] is given
+  ///   • the user's tone-aware tagline as the second body line
+  ///   • a "Complete Set" action that mirrors the iOS category
+  ///   • tap-anywhere-else deep-links to the active-session screen via the
+  ///     [_kActionOpenSession] payload.
   static Future<void> showActiveSet({
     required String exerciseName,
     required int currentSet,
     required int totalSets,
     required String weight,
     required int reps,
+    required DateTime sessionStartedAt,
+    String? tagline,
+    String? exerciseImagePath,
   }) async {
-    final body = 'Set $currentSet/$totalSets · $weight × $reps reps';
+    final headline = 'Set $currentSet/$totalSets · $weight × $reps reps';
+    final body = tagline == null ? headline : '$headline\n$tagline';
+
+    final largeIcon = exerciseImagePath != null
+        ? FilePathAndroidBitmap(exerciseImagePath)
+        : null;
 
     final androidDetails = AndroidNotificationDetails(
       _activeWorkoutChannelId,
@@ -213,13 +301,19 @@ class NotificationService {
       priority: Priority.low,
       ongoing: true,
       autoCancel: false,
-      showWhen: false,
+      // Keep the session chronometer visible across all states so the user
+      // never loses their running session time when they look at the lock
+      // screen / status bar.
+      usesChronometer: true,
+      when: sessionStartedAt.millisecondsSinceEpoch,
+      showWhen: true,
       category: AndroidNotificationCategory.status,
       visibility: NotificationVisibility.public,
+      largeIcon: largeIcon,
       styleInformation: BigTextStyleInformation(body),
       actions: <AndroidNotificationAction>[
         const AndroidNotificationAction(
-          'complete_set',
+          _kActionCompleteSet,
           'Complete Set',
           showsUserInterface: false,
         ),
@@ -227,6 +321,7 @@ class NotificationService {
     );
     const iosDetails = DarwinNotificationDetails(
       presentBanner: false,
+      categoryIdentifier: _kActiveWorkoutCategoryId,
     );
     final details =
         NotificationDetails(android: androidDetails, iOS: iosDetails);
@@ -236,27 +331,44 @@ class NotificationService {
       exerciseName,
       body,
       details,
-      payload: 'complete_set',
+      // Tap-anywhere payload — actions provide their own actionId, so the
+      // body payload only fires when the user taps the notification itself.
+      payload: _kActionOpenSession,
     );
   }
 
   /// Update the rest-timer notification (State B — rest timer running).
   ///
-  /// Shows the current exercise name as the title, next set info as the body,
-  /// a progress bar for remaining rest time, and Skip / -15s / +15s buttons.
+  /// Same chronometer + tap-deep-link guarantees as [showActiveSet]; adds a
+  /// progress bar on Android and tone-flavoured copy. If [nextSet] is null
+  /// (final set just finished), shows a "Final set complete" line instead
+  /// of the nonsensical "0 reps" the old impl produced.
   static Future<void> updateRestTimer({
     required String exerciseName,
-    required int nextSet,
+    required int? nextSet,
     required int totalSets,
     required String weight,
     required int reps,
     required int remaining,
     required int totalSeconds,
+    required DateTime sessionStartedAt,
+    String? tagline,
+    String? exerciseImagePath,
   }) async {
     final minutes = (remaining ~/ 60).toString().padLeft(2, '0');
     final seconds = (remaining % 60).toString().padLeft(2, '0');
-    final body =
-        'Next: Set $nextSet/$totalSets ($weight × $reps)\nRest $minutes:$seconds';
+
+    final headline = nextSet == null
+        ? 'Final set complete'
+        : 'Next: Set $nextSet/$totalSets ($weight × $reps)';
+    final restLine = 'Rest $minutes:$seconds';
+    final body = tagline == null
+        ? '$headline\n$restLine'
+        : '$headline\n$restLine — $tagline';
+
+    final largeIcon = exerciseImagePath != null
+        ? FilePathAndroidBitmap(exerciseImagePath)
+        : null;
 
     final androidDetails = AndroidNotificationDetails(
       _activeWorkoutChannelId,
@@ -266,26 +378,29 @@ class NotificationService {
       priority: Priority.low,
       ongoing: true,
       autoCancel: false,
-      showWhen: false,
+      usesChronometer: true,
+      when: sessionStartedAt.millisecondsSinceEpoch,
+      showWhen: true,
       category: AndroidNotificationCategory.status,
       visibility: NotificationVisibility.public,
       showProgress: true,
       maxProgress: totalSeconds,
       progress: remaining,
+      largeIcon: largeIcon,
       styleInformation: BigTextStyleInformation(body),
       actions: <AndroidNotificationAction>[
         const AndroidNotificationAction(
-          'skip',
+          _kActionSkip,
           'Skip',
           showsUserInterface: false,
         ),
         const AndroidNotificationAction(
-          'sub15',
+          _kActionSub15,
           '-15s',
           showsUserInterface: false,
         ),
         const AndroidNotificationAction(
-          'add15',
+          _kActionAdd15,
           '+15s',
           showsUserInterface: false,
         ),
@@ -293,6 +408,7 @@ class NotificationService {
     );
     const iosDetails = DarwinNotificationDetails(
       presentBanner: false,
+      categoryIdentifier: _kActiveWorkoutCategoryId,
     );
     final details =
         NotificationDetails(android: androidDetails, iOS: iosDetails);
@@ -302,20 +418,25 @@ class NotificationService {
       exerciseName,
       body,
       details,
-      payload: 'skip',
+      payload: _kActionOpenSession,
     );
   }
 
   /// Show a persistent ongoing notification for an active workout.
   ///
-  /// On Android the notification uses a chronometer anchored to [startedAt],
-  /// so the elapsed-time counter updates live without any Dart-side ticking.
-  /// The notification is `ongoing` (non-dismissible) until explicitly cancelled.
+  /// Used at session start before the first exercise is loaded. Once any
+  /// exercise is active, the notifier upgrades to [showActiveSet] which
+  /// includes the exercise name + actions.
   static Future<void> showActiveWorkout({
     required String title,
     required String body,
     required DateTime startedAt,
+    String? exerciseImagePath,
   }) async {
+    final largeIcon = exerciseImagePath != null
+        ? FilePathAndroidBitmap(exerciseImagePath)
+        : null;
+
     final androidDetails = AndroidNotificationDetails(
       _activeWorkoutChannelId,
       _activeWorkoutChannelName,
@@ -329,12 +450,23 @@ class NotificationService {
       showWhen: true,
       category: AndroidNotificationCategory.status,
       visibility: NotificationVisibility.public,
+      largeIcon: largeIcon,
+      styleInformation: BigTextStyleInformation(body),
     );
-    const iosDetails = DarwinNotificationDetails();
+    const iosDetails = DarwinNotificationDetails(
+      presentBanner: false,
+      categoryIdentifier: _kActiveWorkoutCategoryId,
+    );
     final details =
         NotificationDetails(android: androidDetails, iOS: iosDetails);
 
-    await _localPlugin.show(_activeWorkoutId, title, body, details);
+    await _localPlugin.show(
+      _activeWorkoutId,
+      title,
+      body,
+      details,
+      payload: _kActionOpenSession,
+    );
   }
 
   /// Cancel the persistent active-workout notification.

@@ -272,6 +272,12 @@ class AppLocalizationsEn extends AppLocalizations {
   String get weightUnit => 'Weight Unit';
 
   @override
+  String get bodyWeight => 'Body Weight';
+
+  @override
+  String get notSet => 'Not set';
+
+  @override
   String get biometricLock => 'Biometric Lock';
 
   @override
@@ -373,7 +379,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String trialDaysLeft(int days) {
-    return 'Trial — $days days left';
+    return '$days days left';
   }
 
   @override
@@ -791,6 +797,17 @@ class AppLocalizationsEn extends AppLocalizations {
   String get streak => 'Streak';
 
   @override
+  String get widgetStreakStart => 'Start a streak';
+
+  @override
+  String get widgetStreakOneDay => '1-day streak';
+
+  @override
+  String widgetStreakDays(int days) {
+    return '$days-day streak';
+  }
+
+  @override
   String get achievement => 'Achievement';
 
   @override
@@ -969,4 +986,72 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get deleteWorkoutConfirm => 'Delete this workout?';
+
+  @override
+  String get leaderboardTab => 'Leaderboard';
+
+  @override
+  String get challengesTab => 'Challenges';
+
+  @override
+  String get currentLeague => 'CURRENT LEAGUE';
+
+  @override
+  String get yourPlace => 'Your place';
+
+  @override
+  String placeNumber(int n) {
+    return '$n Place';
+  }
+
+  @override
+  String get leagueElite => 'The Elite';
+
+  @override
+  String get leagueMaster => 'The Master';
+
+  @override
+  String get leagueStanding => 'Standing';
+
+  @override
+  String get leagueMovingUp => 'Moving up';
+
+  @override
+  String get leagueWorkHarder => 'Work harder';
+
+  @override
+  String get scopeRivals => 'Rivals';
+
+  @override
+  String get scopeGlobal => 'Global';
+
+  @override
+  String get scopeFriends => 'Friends';
+
+  @override
+  String get volumeLabel => 'Volume';
+
+  @override
+  String percentDone(int percent) {
+    return '$percent% done';
+  }
+
+  @override
+  String rankNumber(int rank) {
+    return 'Rank #$rank';
+  }
+
+  @override
+  String get startChallenge => 'start';
+
+  @override
+  String endInDays(int days) {
+    return 'End in ${days}d';
+  }
+
+  @override
+  String get leagueMasterTitle => 'Master';
+
+  @override
+  String get noChallengesYet => 'No active challenges yet';
 }

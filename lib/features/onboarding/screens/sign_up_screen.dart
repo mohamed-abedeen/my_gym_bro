@@ -89,6 +89,8 @@ class _SignUpScreenState extends ConsumerState<SignUpScreen> {
       goal: onboarding.goal,
       experience: onboarding.experience,
       gender: onboarding.gender,
+      bodyWeightKg: onboarding.weightKg,
+      heightCm: onboarding.heightCm,
       notificationTone: onboarding.notificationTone.wireValue,
     );
 

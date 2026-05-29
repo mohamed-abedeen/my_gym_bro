@@ -3,9 +3,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:my_gym_bro/features/auth/sign_in_screen.dart';
-import 'package:my_gym_bro/features/community/dm/dm_chat_screen.dart';
-import 'package:my_gym_bro/features/community/dm/dm_inbox_screen.dart';
-import 'package:my_gym_bro/features/community/dm/dm_models.dart';
 import 'package:my_gym_bro/features/exercises/exercise_browser_screen.dart';
 import 'package:my_gym_bro/features/onboarding/screens/birthday_screen.dart';
 import 'package:my_gym_bro/features/onboarding/screens/experience_screen.dart';
@@ -26,6 +23,7 @@ import 'package:my_gym_bro/features/scaffold/my_gym_bro_scaffold.dart';
 import 'package:my_gym_bro/features/schedule/schedule_builder_screen.dart';
 import 'package:my_gym_bro/features/settings/settings_screen.dart';
 import 'package:my_gym_bro/features/workout/active_session/active_session_screen.dart';
+import 'package:my_gym_bro/features/workout/workout_providers.dart';
 
 // ═══════════════════════════════════════════════════════════════════════════
 // ROUTE PATHS
@@ -65,10 +63,6 @@ class AppRoutes {
 
   // Profile
   static const profile = '/profile';
-
-  // DM
-  static const dmInbox = '/dm';
-  static const dmChat = '/dm/:conversationId';
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -143,10 +137,29 @@ CustomTransitionPage<T> _slideUpPage<T>({
 // ROUTER PROVIDER
 // ═══════════════════════════════════════════════════════════════════════════
 
+/// Global handle to the live GoRouter — populated by [routerProvider] the
+/// first time it's built and cleared on app teardown. Used by code paths
+/// that don't have access to a `BuildContext` (notification handlers,
+/// background isolate dispatches) to deep-link into the app.
+///
+/// Prefer `context.go(...)` / `ref.read(routerProvider).go(...)` from
+/// widget code — this exists only as an escape hatch for background flows.
+GoRouter? globalRouter;
+
 /// GoRouter provider.
 final routerProvider = Provider<GoRouter>((ref) {
-  return GoRouter(
+  // Bridges the Riverpod lock state into a Listenable so GoRouter re-runs its
+  // redirect when the trial elapses or a purchase/restore unlocks access.
+  final lockNotifier =
+      ValueNotifier<bool>(ref.read(subscriptionLockedProvider));
+  ref.listen<bool>(subscriptionLockedProvider, (_, next) {
+    lockNotifier.value = next;
+  });
+  ref.onDispose(lockNotifier.dispose);
+
+  final router = GoRouter(
     initialLocation: AppRoutes.splash,
+    refreshListenable: lockNotifier,
     routes: [
       // ────────────────────────────────────────────────────────────────────
       // ONBOARDING — fade transitions (they're a linear wizard, not a stack)
@@ -282,31 +295,29 @@ final routerProvider = Provider<GoRouter>((ref) {
         pageBuilder: (context, state) =>
             _cupertinoPage(child: const ProfileScreen(), state: state),
       ),
-
-      // ────────────────────────────────────────────────────────────────────
-      // DIRECT MESSAGING — iOS slide
-      // ────────────────────────────────────────────────────────────────────
-      GoRoute(
-        path: AppRoutes.dmInbox,
-        pageBuilder: (context, state) =>
-            _cupertinoPage(child: const DmInboxScreen(), state: state),
-      ),
-      GoRoute(
-        path: AppRoutes.dmChat,
-        pageBuilder: (context, state) {
-          final extra = state.extra;
-          if (extra is DmConversation) {
-            return _cupertinoPage(
-              child: DmChatScreen(conversation: extra),
-              state: state,
-            );
-          }
-          return _cupertinoPage(
-            child: const DmInboxScreen(),
-            state: state,
-          );
-        },
-      ),
     ],
+    // ──────────────────────────────────────────────────────────────────────
+    // PAYWALL GATE — single source of truth. When the trial has elapsed or
+    // the subscription is expired, every route except the paywall itself and
+    // the pre-auth/onboarding flow is redirected to the paywall, so the app
+    // cannot be used until the user subscribes or restores.
+    // ──────────────────────────────────────────────────────────────────────
+    redirect: (context, state) {
+      final locked = ref.read(subscriptionLockedProvider);
+      if (!locked) return null;
+      final loc = state.matchedLocation;
+      final exempt = loc == AppRoutes.paywall ||
+          loc == AppRoutes.splash ||
+          loc.startsWith('/auth') ||
+          loc.startsWith('/onboarding');
+      return exempt ? null : AppRoutes.paywall;
+    },
   );
+
+  // Publish for background callers (notification taps, isolate handlers).
+  globalRouter = router;
+  ref.onDispose(() {
+    if (identical(globalRouter, router)) globalRouter = null;
+  });
+  return router;
 });

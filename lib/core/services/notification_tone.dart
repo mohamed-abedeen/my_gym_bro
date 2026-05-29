@@ -207,3 +207,47 @@ String toneExampleSentence(NotificationTone tone) {
       return 'NO EXCUSES. CHEST DAY. NOW.';
   }
 }
+
+/// A single tone-flavoured tagline appended to the **active-set** notification
+/// body. Kept very short — Android shows ~2 lines before collapsing.
+String activeSetTaglineForTone(NotificationTone tone) {
+  switch (tone) {
+    case NotificationTone.supportive:
+      return "You've got this. Steady form.";
+    case NotificationTone.balanced:
+      return 'Lock in. One set at a time.';
+    case NotificationTone.bold:
+      return 'Own this set.';
+    case NotificationTone.savage:
+      return 'NO HALF REPS.';
+  }
+}
+
+/// Tone-flavoured tagline shown alongside the **rest** countdown.
+String restCountdownTaglineForTone(NotificationTone tone) {
+  switch (tone) {
+    case NotificationTone.supportive:
+      return 'Breathe. Recover.';
+    case NotificationTone.balanced:
+      return 'Reset. Next set incoming.';
+    case NotificationTone.bold:
+      return "Don't cool off.";
+    case NotificationTone.savage:
+      return 'CLOCK IS TICKING.';
+  }
+}
+
+/// One-liner shown on the *generic* "workout in progress" notification
+/// before any exercise has been loaded.
+String workoutInProgressBodyForTone(NotificationTone tone) {
+  switch (tone) {
+    case NotificationTone.supportive:
+      return 'Session live. Tap to jump back in.';
+    case NotificationTone.balanced:
+      return 'Workout in progress. Tap to open.';
+    case NotificationTone.bold:
+      return 'Session live. Get to work.';
+    case NotificationTone.savage:
+      return 'SESSION LIVE. STAY ON IT.';
+  }
+}

@@ -172,8 +172,10 @@ class MuscleRecoveryService {
   };
 
   /// The "trained & retained" window. After full recovery, the muscle stays
-  /// green for this long before fading to untrained (grey).
-  static const _retentionHours = 240.0; // 10 days
+  /// green for this long before fading to untrained (grey). 168h = 7 days
+  /// — matches the lifecycle docstring at the top of this file and the
+  /// research-backed "use it or lose it" detraining window.
+  static const _retentionHours = 168.0; // 7 days
 
   // ── Public API ──────────────────────────────────────────────────────────
 

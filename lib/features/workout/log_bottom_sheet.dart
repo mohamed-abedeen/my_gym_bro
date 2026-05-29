@@ -239,7 +239,20 @@ class _SessionCardState extends ConsumerState<_SessionCard>
     if (confirmed != true || !mounted) return;
 
     await ref.read(sessionDaoProvider).deleteSession(sessionId);
-    ref.invalidate(enrichedAllSessionsProvider);
+    // Refresh every downstream view that derives from session history.
+    // Without these the Status card, streak, weekly stats, and home
+    // dashboards keep showing the deleted session's contribution.
+    ref
+      ..invalidate(enrichedAllSessionsProvider)
+      ..invalidate(enrichedRecentSessionsProvider)
+      ..invalidate(recentSessionsProvider)
+      ..invalidate(weeklyStatsProvider)
+      ..invalidate(lifetimeStatsProvider)
+      ..invalidate(activityStatsProvider)
+      ..invalidate(streakProvider)
+      ..invalidate(muscleRecoveryProvider)
+      ..invalidate(recordsProvider)
+      ..invalidate(consecutiveRestDaysProvider);
   }
 
   @override

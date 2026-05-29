@@ -142,6 +142,28 @@ class $UserProfilesTable extends UserProfiles
     type: DriftSqlType.string,
     requiredDuringInsert: false,
   );
+  static const VerificationMeta _bodyWeightKgMeta = const VerificationMeta(
+    'bodyWeightKg',
+  );
+  @override
+  late final GeneratedColumn<double> bodyWeightKg = GeneratedColumn<double>(
+    'body_weight_kg',
+    aliasedName,
+    true,
+    type: DriftSqlType.double,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _heightCmMeta = const VerificationMeta(
+    'heightCm',
+  );
+  @override
+  late final GeneratedColumn<double> heightCm = GeneratedColumn<double>(
+    'height_cm',
+    aliasedName,
+    true,
+    type: DriftSqlType.double,
+    requiredDuringInsert: false,
+  );
   static const VerificationMeta _weightUnitMeta = const VerificationMeta(
     'weightUnit',
   );
@@ -250,6 +272,8 @@ class $UserProfilesTable extends UserProfiles
     goal,
     experience,
     gender,
+    bodyWeightKg,
+    heightCm,
     weightUnit,
     preferredLanguage,
     trialStartedAt,
@@ -344,6 +368,21 @@ class $UserProfilesTable extends UserProfiles
       context.handle(
         _genderMeta,
         gender.isAcceptableOrUnknown(data['gender']!, _genderMeta),
+      );
+    }
+    if (data.containsKey('body_weight_kg')) {
+      context.handle(
+        _bodyWeightKgMeta,
+        bodyWeightKg.isAcceptableOrUnknown(
+          data['body_weight_kg']!,
+          _bodyWeightKgMeta,
+        ),
+      );
+    }
+    if (data.containsKey('height_cm')) {
+      context.handle(
+        _heightCmMeta,
+        heightCm.isAcceptableOrUnknown(data['height_cm']!, _heightCmMeta),
       );
     }
     if (data.containsKey('weight_unit')) {
@@ -471,6 +510,14 @@ class $UserProfilesTable extends UserProfiles
         DriftSqlType.string,
         data['${effectivePrefix}gender'],
       ),
+      bodyWeightKg: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}body_weight_kg'],
+      ),
+      heightCm: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}height_cm'],
+      ),
       weightUnit:
           attachedDatabase.typeMapping.read(
             DriftSqlType.string,
@@ -530,6 +577,14 @@ class UserProfile extends DataClass implements Insertable<UserProfile> {
   final String? goal;
   final String? experience;
   final String? gender;
+
+  /// Self-reported body weight in kilograms. Optional — calorie estimates
+  /// fall back to a 70kg default when null.
+  final double? bodyWeightKg;
+
+  /// Self-reported height in centimetres. Optional — kept alongside body
+  /// weight for future BMI / TDEE features.
+  final double? heightCm;
   final String weightUnit;
   final String preferredLanguage;
   final DateTime? trialStartedAt;
@@ -553,6 +608,8 @@ class UserProfile extends DataClass implements Insertable<UserProfile> {
     this.goal,
     this.experience,
     this.gender,
+    this.bodyWeightKg,
+    this.heightCm,
     required this.weightUnit,
     required this.preferredLanguage,
     this.trialStartedAt,
@@ -596,6 +653,12 @@ class UserProfile extends DataClass implements Insertable<UserProfile> {
     }
     if (!nullToAbsent || gender != null) {
       map['gender'] = Variable<String>(gender);
+    }
+    if (!nullToAbsent || bodyWeightKg != null) {
+      map['body_weight_kg'] = Variable<double>(bodyWeightKg);
+    }
+    if (!nullToAbsent || heightCm != null) {
+      map['height_cm'] = Variable<double>(heightCm);
     }
     map['weight_unit'] = Variable<String>(weightUnit);
     map['preferred_language'] = Variable<String>(preferredLanguage);
@@ -655,6 +718,14 @@ class UserProfile extends DataClass implements Insertable<UserProfile> {
               : Value(experience),
       gender:
           gender == null && nullToAbsent ? const Value.absent() : Value(gender),
+      bodyWeightKg:
+          bodyWeightKg == null && nullToAbsent
+              ? const Value.absent()
+              : Value(bodyWeightKg),
+      heightCm:
+          heightCm == null && nullToAbsent
+              ? const Value.absent()
+              : Value(heightCm),
       weightUnit: Value(weightUnit),
       preferredLanguage: Value(preferredLanguage),
       trialStartedAt:
@@ -693,6 +764,8 @@ class UserProfile extends DataClass implements Insertable<UserProfile> {
       goal: serializer.fromJson<String?>(json['goal']),
       experience: serializer.fromJson<String?>(json['experience']),
       gender: serializer.fromJson<String?>(json['gender']),
+      bodyWeightKg: serializer.fromJson<double?>(json['bodyWeightKg']),
+      heightCm: serializer.fromJson<double?>(json['heightCm']),
       weightUnit: serializer.fromJson<String>(json['weightUnit']),
       preferredLanguage: serializer.fromJson<String>(json['preferredLanguage']),
       trialStartedAt: serializer.fromJson<DateTime?>(json['trialStartedAt']),
@@ -723,6 +796,8 @@ class UserProfile extends DataClass implements Insertable<UserProfile> {
       'goal': serializer.toJson<String?>(goal),
       'experience': serializer.toJson<String?>(experience),
       'gender': serializer.toJson<String?>(gender),
+      'bodyWeightKg': serializer.toJson<double?>(bodyWeightKg),
+      'heightCm': serializer.toJson<double?>(heightCm),
       'weightUnit': serializer.toJson<String>(weightUnit),
       'preferredLanguage': serializer.toJson<String>(preferredLanguage),
       'trialStartedAt': serializer.toJson<DateTime?>(trialStartedAt),
@@ -749,6 +824,8 @@ class UserProfile extends DataClass implements Insertable<UserProfile> {
     Value<String?> goal = const Value.absent(),
     Value<String?> experience = const Value.absent(),
     Value<String?> gender = const Value.absent(),
+    Value<double?> bodyWeightKg = const Value.absent(),
+    Value<double?> heightCm = const Value.absent(),
     String? weightUnit,
     String? preferredLanguage,
     Value<DateTime?> trialStartedAt = const Value.absent(),
@@ -770,6 +847,8 @@ class UserProfile extends DataClass implements Insertable<UserProfile> {
     goal: goal.present ? goal.value : this.goal,
     experience: experience.present ? experience.value : this.experience,
     gender: gender.present ? gender.value : this.gender,
+    bodyWeightKg: bodyWeightKg.present ? bodyWeightKg.value : this.bodyWeightKg,
+    heightCm: heightCm.present ? heightCm.value : this.heightCm,
     weightUnit: weightUnit ?? this.weightUnit,
     preferredLanguage: preferredLanguage ?? this.preferredLanguage,
     trialStartedAt:
@@ -800,6 +879,11 @@ class UserProfile extends DataClass implements Insertable<UserProfile> {
       experience:
           data.experience.present ? data.experience.value : this.experience,
       gender: data.gender.present ? data.gender.value : this.gender,
+      bodyWeightKg:
+          data.bodyWeightKg.present
+              ? data.bodyWeightKg.value
+              : this.bodyWeightKg,
+      heightCm: data.heightCm.present ? data.heightCm.value : this.heightCm,
       weightUnit:
           data.weightUnit.present ? data.weightUnit.value : this.weightUnit,
       preferredLanguage:
@@ -845,6 +929,8 @@ class UserProfile extends DataClass implements Insertable<UserProfile> {
           ..write('goal: $goal, ')
           ..write('experience: $experience, ')
           ..write('gender: $gender, ')
+          ..write('bodyWeightKg: $bodyWeightKg, ')
+          ..write('heightCm: $heightCm, ')
           ..write('weightUnit: $weightUnit, ')
           ..write('preferredLanguage: $preferredLanguage, ')
           ..write('trialStartedAt: $trialStartedAt, ')
@@ -858,7 +944,7 @@ class UserProfile extends DataClass implements Insertable<UserProfile> {
   }
 
   @override
-  int get hashCode => Object.hash(
+  int get hashCode => Object.hashAll([
     localId,
     remoteId,
     syncStatus,
@@ -871,6 +957,8 @@ class UserProfile extends DataClass implements Insertable<UserProfile> {
     goal,
     experience,
     gender,
+    bodyWeightKg,
+    heightCm,
     weightUnit,
     preferredLanguage,
     trialStartedAt,
@@ -879,7 +967,7 @@ class UserProfile extends DataClass implements Insertable<UserProfile> {
     defaultRestSeconds,
     fcmToken,
     notificationTone,
-  );
+  ]);
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
@@ -896,6 +984,8 @@ class UserProfile extends DataClass implements Insertable<UserProfile> {
           other.goal == this.goal &&
           other.experience == this.experience &&
           other.gender == this.gender &&
+          other.bodyWeightKg == this.bodyWeightKg &&
+          other.heightCm == this.heightCm &&
           other.weightUnit == this.weightUnit &&
           other.preferredLanguage == this.preferredLanguage &&
           other.trialStartedAt == this.trialStartedAt &&
@@ -919,6 +1009,8 @@ class UserProfilesCompanion extends UpdateCompanion<UserProfile> {
   final Value<String?> goal;
   final Value<String?> experience;
   final Value<String?> gender;
+  final Value<double?> bodyWeightKg;
+  final Value<double?> heightCm;
   final Value<String> weightUnit;
   final Value<String> preferredLanguage;
   final Value<DateTime?> trialStartedAt;
@@ -940,6 +1032,8 @@ class UserProfilesCompanion extends UpdateCompanion<UserProfile> {
     this.goal = const Value.absent(),
     this.experience = const Value.absent(),
     this.gender = const Value.absent(),
+    this.bodyWeightKg = const Value.absent(),
+    this.heightCm = const Value.absent(),
     this.weightUnit = const Value.absent(),
     this.preferredLanguage = const Value.absent(),
     this.trialStartedAt = const Value.absent(),
@@ -962,6 +1056,8 @@ class UserProfilesCompanion extends UpdateCompanion<UserProfile> {
     this.goal = const Value.absent(),
     this.experience = const Value.absent(),
     this.gender = const Value.absent(),
+    this.bodyWeightKg = const Value.absent(),
+    this.heightCm = const Value.absent(),
     this.weightUnit = const Value.absent(),
     this.preferredLanguage = const Value.absent(),
     this.trialStartedAt = const Value.absent(),
@@ -984,6 +1080,8 @@ class UserProfilesCompanion extends UpdateCompanion<UserProfile> {
     Expression<String>? goal,
     Expression<String>? experience,
     Expression<String>? gender,
+    Expression<double>? bodyWeightKg,
+    Expression<double>? heightCm,
     Expression<String>? weightUnit,
     Expression<String>? preferredLanguage,
     Expression<DateTime>? trialStartedAt,
@@ -1006,6 +1104,8 @@ class UserProfilesCompanion extends UpdateCompanion<UserProfile> {
       if (goal != null) 'goal': goal,
       if (experience != null) 'experience': experience,
       if (gender != null) 'gender': gender,
+      if (bodyWeightKg != null) 'body_weight_kg': bodyWeightKg,
+      if (heightCm != null) 'height_cm': heightCm,
       if (weightUnit != null) 'weight_unit': weightUnit,
       if (preferredLanguage != null) 'preferred_language': preferredLanguage,
       if (trialStartedAt != null) 'trial_started_at': trialStartedAt,
@@ -1032,6 +1132,8 @@ class UserProfilesCompanion extends UpdateCompanion<UserProfile> {
     Value<String?>? goal,
     Value<String?>? experience,
     Value<String?>? gender,
+    Value<double?>? bodyWeightKg,
+    Value<double?>? heightCm,
     Value<String>? weightUnit,
     Value<String>? preferredLanguage,
     Value<DateTime?>? trialStartedAt,
@@ -1054,6 +1156,8 @@ class UserProfilesCompanion extends UpdateCompanion<UserProfile> {
       goal: goal ?? this.goal,
       experience: experience ?? this.experience,
       gender: gender ?? this.gender,
+      bodyWeightKg: bodyWeightKg ?? this.bodyWeightKg,
+      heightCm: heightCm ?? this.heightCm,
       weightUnit: weightUnit ?? this.weightUnit,
       preferredLanguage: preferredLanguage ?? this.preferredLanguage,
       trialStartedAt: trialStartedAt ?? this.trialStartedAt,
@@ -1105,6 +1209,12 @@ class UserProfilesCompanion extends UpdateCompanion<UserProfile> {
     if (gender.present) {
       map['gender'] = Variable<String>(gender.value);
     }
+    if (bodyWeightKg.present) {
+      map['body_weight_kg'] = Variable<double>(bodyWeightKg.value);
+    }
+    if (heightCm.present) {
+      map['height_cm'] = Variable<double>(heightCm.value);
+    }
     if (weightUnit.present) {
       map['weight_unit'] = Variable<String>(weightUnit.value);
     }
@@ -1149,6 +1259,8 @@ class UserProfilesCompanion extends UpdateCompanion<UserProfile> {
           ..write('goal: $goal, ')
           ..write('experience: $experience, ')
           ..write('gender: $gender, ')
+          ..write('bodyWeightKg: $bodyWeightKg, ')
+          ..write('heightCm: $heightCm, ')
           ..write('weightUnit: $weightUnit, ')
           ..write('preferredLanguage: $preferredLanguage, ')
           ..write('trialStartedAt: $trialStartedAt, ')
@@ -5710,6 +5822,21 @@ class $WorkoutSetsTable extends WorkoutSets
     ),
     defaultValue: const Constant(false),
   );
+  static const VerificationMeta _isCompletedMeta = const VerificationMeta(
+    'isCompleted',
+  );
+  @override
+  late final GeneratedColumn<bool> isCompleted = GeneratedColumn<bool>(
+    'is_completed',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("is_completed" IN (0, 1))',
+    ),
+    defaultValue: const Constant(false),
+  );
   static const VerificationMeta _rpeMeta = const VerificationMeta('rpe');
   @override
   late final GeneratedColumn<int> rpe = GeneratedColumn<int>(
@@ -5776,6 +5903,7 @@ class $WorkoutSetsTable extends WorkoutSets
     isWarmup,
     isDropset,
     isFailure,
+    isCompleted,
     rpe,
     durationSeconds,
     distance,
@@ -5879,6 +6007,15 @@ class $WorkoutSetsTable extends WorkoutSets
         isFailure.isAcceptableOrUnknown(data['is_failure']!, _isFailureMeta),
       );
     }
+    if (data.containsKey('is_completed')) {
+      context.handle(
+        _isCompletedMeta,
+        isCompleted.isAcceptableOrUnknown(
+          data['is_completed']!,
+          _isCompletedMeta,
+        ),
+      );
+    }
     if (data.containsKey('rpe')) {
       context.handle(
         _rpeMeta,
@@ -5980,6 +6117,11 @@ class $WorkoutSetsTable extends WorkoutSets
             DriftSqlType.bool,
             data['${effectivePrefix}is_failure'],
           )!,
+      isCompleted:
+          attachedDatabase.typeMapping.read(
+            DriftSqlType.bool,
+            data['${effectivePrefix}is_completed'],
+          )!,
       rpe: attachedDatabase.typeMapping.read(
         DriftSqlType.int,
         data['${effectivePrefix}rpe'],
@@ -6023,6 +6165,7 @@ class WorkoutSet extends DataClass implements Insertable<WorkoutSet> {
   final bool isWarmup;
   final bool isDropset;
   final bool isFailure;
+  final bool isCompleted;
   final int? rpe;
   final int? durationSeconds;
   final double? distance;
@@ -6042,6 +6185,7 @@ class WorkoutSet extends DataClass implements Insertable<WorkoutSet> {
     required this.isWarmup,
     required this.isDropset,
     required this.isFailure,
+    required this.isCompleted,
     this.rpe,
     this.durationSeconds,
     this.distance,
@@ -6076,6 +6220,7 @@ class WorkoutSet extends DataClass implements Insertable<WorkoutSet> {
     map['is_warmup'] = Variable<bool>(isWarmup);
     map['is_dropset'] = Variable<bool>(isDropset);
     map['is_failure'] = Variable<bool>(isFailure);
+    map['is_completed'] = Variable<bool>(isCompleted);
     if (!nullToAbsent || rpe != null) {
       map['rpe'] = Variable<int>(rpe);
     }
@@ -6122,6 +6267,7 @@ class WorkoutSet extends DataClass implements Insertable<WorkoutSet> {
       isWarmup: Value(isWarmup),
       isDropset: Value(isDropset),
       isFailure: Value(isFailure),
+      isCompleted: Value(isCompleted),
       rpe: rpe == null && nullToAbsent ? const Value.absent() : Value(rpe),
       durationSeconds:
           durationSeconds == null && nullToAbsent
@@ -6159,6 +6305,7 @@ class WorkoutSet extends DataClass implements Insertable<WorkoutSet> {
       isWarmup: serializer.fromJson<bool>(json['isWarmup']),
       isDropset: serializer.fromJson<bool>(json['isDropset']),
       isFailure: serializer.fromJson<bool>(json['isFailure']),
+      isCompleted: serializer.fromJson<bool>(json['isCompleted']),
       rpe: serializer.fromJson<int?>(json['rpe']),
       durationSeconds: serializer.fromJson<int?>(json['durationSeconds']),
       distance: serializer.fromJson<double?>(json['distance']),
@@ -6183,6 +6330,7 @@ class WorkoutSet extends DataClass implements Insertable<WorkoutSet> {
       'isWarmup': serializer.toJson<bool>(isWarmup),
       'isDropset': serializer.toJson<bool>(isDropset),
       'isFailure': serializer.toJson<bool>(isFailure),
+      'isCompleted': serializer.toJson<bool>(isCompleted),
       'rpe': serializer.toJson<int?>(rpe),
       'durationSeconds': serializer.toJson<int?>(durationSeconds),
       'distance': serializer.toJson<double?>(distance),
@@ -6205,6 +6353,7 @@ class WorkoutSet extends DataClass implements Insertable<WorkoutSet> {
     bool? isWarmup,
     bool? isDropset,
     bool? isFailure,
+    bool? isCompleted,
     Value<int?> rpe = const Value.absent(),
     Value<int?> durationSeconds = const Value.absent(),
     Value<double?> distance = const Value.absent(),
@@ -6224,6 +6373,7 @@ class WorkoutSet extends DataClass implements Insertable<WorkoutSet> {
     isWarmup: isWarmup ?? this.isWarmup,
     isDropset: isDropset ?? this.isDropset,
     isFailure: isFailure ?? this.isFailure,
+    isCompleted: isCompleted ?? this.isCompleted,
     rpe: rpe.present ? rpe.value : this.rpe,
     durationSeconds:
         durationSeconds.present ? durationSeconds.value : this.durationSeconds,
@@ -6250,6 +6400,8 @@ class WorkoutSet extends DataClass implements Insertable<WorkoutSet> {
       isWarmup: data.isWarmup.present ? data.isWarmup.value : this.isWarmup,
       isDropset: data.isDropset.present ? data.isDropset.value : this.isDropset,
       isFailure: data.isFailure.present ? data.isFailure.value : this.isFailure,
+      isCompleted:
+          data.isCompleted.present ? data.isCompleted.value : this.isCompleted,
       rpe: data.rpe.present ? data.rpe.value : this.rpe,
       durationSeconds:
           data.durationSeconds.present
@@ -6277,6 +6429,7 @@ class WorkoutSet extends DataClass implements Insertable<WorkoutSet> {
           ..write('isWarmup: $isWarmup, ')
           ..write('isDropset: $isDropset, ')
           ..write('isFailure: $isFailure, ')
+          ..write('isCompleted: $isCompleted, ')
           ..write('rpe: $rpe, ')
           ..write('durationSeconds: $durationSeconds, ')
           ..write('distance: $distance, ')
@@ -6301,6 +6454,7 @@ class WorkoutSet extends DataClass implements Insertable<WorkoutSet> {
     isWarmup,
     isDropset,
     isFailure,
+    isCompleted,
     rpe,
     durationSeconds,
     distance,
@@ -6324,6 +6478,7 @@ class WorkoutSet extends DataClass implements Insertable<WorkoutSet> {
           other.isWarmup == this.isWarmup &&
           other.isDropset == this.isDropset &&
           other.isFailure == this.isFailure &&
+          other.isCompleted == this.isCompleted &&
           other.rpe == this.rpe &&
           other.durationSeconds == this.durationSeconds &&
           other.distance == this.distance &&
@@ -6345,6 +6500,7 @@ class WorkoutSetsCompanion extends UpdateCompanion<WorkoutSet> {
   final Value<bool> isWarmup;
   final Value<bool> isDropset;
   final Value<bool> isFailure;
+  final Value<bool> isCompleted;
   final Value<int?> rpe;
   final Value<int?> durationSeconds;
   final Value<double?> distance;
@@ -6364,6 +6520,7 @@ class WorkoutSetsCompanion extends UpdateCompanion<WorkoutSet> {
     this.isWarmup = const Value.absent(),
     this.isDropset = const Value.absent(),
     this.isFailure = const Value.absent(),
+    this.isCompleted = const Value.absent(),
     this.rpe = const Value.absent(),
     this.durationSeconds = const Value.absent(),
     this.distance = const Value.absent(),
@@ -6384,6 +6541,7 @@ class WorkoutSetsCompanion extends UpdateCompanion<WorkoutSet> {
     this.isWarmup = const Value.absent(),
     this.isDropset = const Value.absent(),
     this.isFailure = const Value.absent(),
+    this.isCompleted = const Value.absent(),
     this.rpe = const Value.absent(),
     this.durationSeconds = const Value.absent(),
     this.distance = const Value.absent(),
@@ -6405,6 +6563,7 @@ class WorkoutSetsCompanion extends UpdateCompanion<WorkoutSet> {
     Expression<bool>? isWarmup,
     Expression<bool>? isDropset,
     Expression<bool>? isFailure,
+    Expression<bool>? isCompleted,
     Expression<int>? rpe,
     Expression<int>? durationSeconds,
     Expression<double>? distance,
@@ -6425,6 +6584,7 @@ class WorkoutSetsCompanion extends UpdateCompanion<WorkoutSet> {
       if (isWarmup != null) 'is_warmup': isWarmup,
       if (isDropset != null) 'is_dropset': isDropset,
       if (isFailure != null) 'is_failure': isFailure,
+      if (isCompleted != null) 'is_completed': isCompleted,
       if (rpe != null) 'rpe': rpe,
       if (durationSeconds != null) 'duration_seconds': durationSeconds,
       if (distance != null) 'distance': distance,
@@ -6447,6 +6607,7 @@ class WorkoutSetsCompanion extends UpdateCompanion<WorkoutSet> {
     Value<bool>? isWarmup,
     Value<bool>? isDropset,
     Value<bool>? isFailure,
+    Value<bool>? isCompleted,
     Value<int?>? rpe,
     Value<int?>? durationSeconds,
     Value<double?>? distance,
@@ -6467,6 +6628,7 @@ class WorkoutSetsCompanion extends UpdateCompanion<WorkoutSet> {
       isWarmup: isWarmup ?? this.isWarmup,
       isDropset: isDropset ?? this.isDropset,
       isFailure: isFailure ?? this.isFailure,
+      isCompleted: isCompleted ?? this.isCompleted,
       rpe: rpe ?? this.rpe,
       durationSeconds: durationSeconds ?? this.durationSeconds,
       distance: distance ?? this.distance,
@@ -6517,6 +6679,9 @@ class WorkoutSetsCompanion extends UpdateCompanion<WorkoutSet> {
     if (isFailure.present) {
       map['is_failure'] = Variable<bool>(isFailure.value);
     }
+    if (isCompleted.present) {
+      map['is_completed'] = Variable<bool>(isCompleted.value);
+    }
     if (rpe.present) {
       map['rpe'] = Variable<int>(rpe.value);
     }
@@ -6551,6 +6716,7 @@ class WorkoutSetsCompanion extends UpdateCompanion<WorkoutSet> {
           ..write('isWarmup: $isWarmup, ')
           ..write('isDropset: $isDropset, ')
           ..write('isFailure: $isFailure, ')
+          ..write('isCompleted: $isCompleted, ')
           ..write('rpe: $rpe, ')
           ..write('durationSeconds: $durationSeconds, ')
           ..write('distance: $distance, ')
@@ -7032,582 +7198,6 @@ class SyncQueueCompanion extends UpdateCompanion<SyncQueueData> {
   }
 }
 
-class $DmMessagesTable extends DmMessages
-    with TableInfo<$DmMessagesTable, DmMessage> {
-  @override
-  final GeneratedDatabase attachedDatabase;
-  final String? _alias;
-  $DmMessagesTable(this.attachedDatabase, [this._alias]);
-  static const VerificationMeta _idMeta = const VerificationMeta('id');
-  @override
-  late final GeneratedColumn<String> id = GeneratedColumn<String>(
-    'id',
-    aliasedName,
-    false,
-    type: DriftSqlType.string,
-    requiredDuringInsert: true,
-  );
-  static const VerificationMeta _conversationIdMeta = const VerificationMeta(
-    'conversationId',
-  );
-  @override
-  late final GeneratedColumn<String> conversationId = GeneratedColumn<String>(
-    'conversation_id',
-    aliasedName,
-    false,
-    type: DriftSqlType.string,
-    requiredDuringInsert: true,
-  );
-  static const VerificationMeta _senderIdMeta = const VerificationMeta(
-    'senderId',
-  );
-  @override
-  late final GeneratedColumn<String> senderId = GeneratedColumn<String>(
-    'sender_id',
-    aliasedName,
-    false,
-    type: DriftSqlType.string,
-    requiredDuringInsert: true,
-  );
-  static const VerificationMeta _typeMeta = const VerificationMeta('type');
-  @override
-  late final GeneratedColumn<String> type = GeneratedColumn<String>(
-    'type',
-    aliasedName,
-    false,
-    type: DriftSqlType.string,
-    requiredDuringInsert: false,
-    defaultValue: const Constant('text'),
-  );
-  static const VerificationMeta _bodyMeta = const VerificationMeta('body');
-  @override
-  late final GeneratedColumn<String> body = GeneratedColumn<String>(
-    'body',
-    aliasedName,
-    true,
-    type: DriftSqlType.string,
-    requiredDuringInsert: false,
-  );
-  static const VerificationMeta _imageUrlMeta = const VerificationMeta(
-    'imageUrl',
-  );
-  @override
-  late final GeneratedColumn<String> imageUrl = GeneratedColumn<String>(
-    'image_url',
-    aliasedName,
-    true,
-    type: DriftSqlType.string,
-    requiredDuringInsert: false,
-  );
-  static const VerificationMeta _createdAtMeta = const VerificationMeta(
-    'createdAt',
-  );
-  @override
-  late final GeneratedColumn<DateTime> createdAt = GeneratedColumn<DateTime>(
-    'created_at',
-    aliasedName,
-    false,
-    type: DriftSqlType.dateTime,
-    requiredDuringInsert: true,
-  );
-  static const VerificationMeta _isMineMeta = const VerificationMeta('isMine');
-  @override
-  late final GeneratedColumn<bool> isMine = GeneratedColumn<bool>(
-    'is_mine',
-    aliasedName,
-    false,
-    type: DriftSqlType.bool,
-    requiredDuringInsert: false,
-    defaultConstraints: GeneratedColumn.constraintIsAlways(
-      'CHECK ("is_mine" IN (0, 1))',
-    ),
-    defaultValue: const Constant(false),
-  );
-  static const VerificationMeta _isOptimisticMeta = const VerificationMeta(
-    'isOptimistic',
-  );
-  @override
-  late final GeneratedColumn<bool> isOptimistic = GeneratedColumn<bool>(
-    'is_optimistic',
-    aliasedName,
-    false,
-    type: DriftSqlType.bool,
-    requiredDuringInsert: false,
-    defaultConstraints: GeneratedColumn.constraintIsAlways(
-      'CHECK ("is_optimistic" IN (0, 1))',
-    ),
-    defaultValue: const Constant(false),
-  );
-  @override
-  List<GeneratedColumn> get $columns => [
-    id,
-    conversationId,
-    senderId,
-    type,
-    body,
-    imageUrl,
-    createdAt,
-    isMine,
-    isOptimistic,
-  ];
-  @override
-  String get aliasedName => _alias ?? actualTableName;
-  @override
-  String get actualTableName => $name;
-  static const String $name = 'dm_messages';
-  @override
-  VerificationContext validateIntegrity(
-    Insertable<DmMessage> instance, {
-    bool isInserting = false,
-  }) {
-    final context = VerificationContext();
-    final data = instance.toColumns(true);
-    if (data.containsKey('id')) {
-      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
-    } else if (isInserting) {
-      context.missing(_idMeta);
-    }
-    if (data.containsKey('conversation_id')) {
-      context.handle(
-        _conversationIdMeta,
-        conversationId.isAcceptableOrUnknown(
-          data['conversation_id']!,
-          _conversationIdMeta,
-        ),
-      );
-    } else if (isInserting) {
-      context.missing(_conversationIdMeta);
-    }
-    if (data.containsKey('sender_id')) {
-      context.handle(
-        _senderIdMeta,
-        senderId.isAcceptableOrUnknown(data['sender_id']!, _senderIdMeta),
-      );
-    } else if (isInserting) {
-      context.missing(_senderIdMeta);
-    }
-    if (data.containsKey('type')) {
-      context.handle(
-        _typeMeta,
-        type.isAcceptableOrUnknown(data['type']!, _typeMeta),
-      );
-    }
-    if (data.containsKey('body')) {
-      context.handle(
-        _bodyMeta,
-        body.isAcceptableOrUnknown(data['body']!, _bodyMeta),
-      );
-    }
-    if (data.containsKey('image_url')) {
-      context.handle(
-        _imageUrlMeta,
-        imageUrl.isAcceptableOrUnknown(data['image_url']!, _imageUrlMeta),
-      );
-    }
-    if (data.containsKey('created_at')) {
-      context.handle(
-        _createdAtMeta,
-        createdAt.isAcceptableOrUnknown(data['created_at']!, _createdAtMeta),
-      );
-    } else if (isInserting) {
-      context.missing(_createdAtMeta);
-    }
-    if (data.containsKey('is_mine')) {
-      context.handle(
-        _isMineMeta,
-        isMine.isAcceptableOrUnknown(data['is_mine']!, _isMineMeta),
-      );
-    }
-    if (data.containsKey('is_optimistic')) {
-      context.handle(
-        _isOptimisticMeta,
-        isOptimistic.isAcceptableOrUnknown(
-          data['is_optimistic']!,
-          _isOptimisticMeta,
-        ),
-      );
-    }
-    return context;
-  }
-
-  @override
-  Set<GeneratedColumn> get $primaryKey => {id};
-  @override
-  DmMessage map(Map<String, dynamic> data, {String? tablePrefix}) {
-    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
-    return DmMessage(
-      id:
-          attachedDatabase.typeMapping.read(
-            DriftSqlType.string,
-            data['${effectivePrefix}id'],
-          )!,
-      conversationId:
-          attachedDatabase.typeMapping.read(
-            DriftSqlType.string,
-            data['${effectivePrefix}conversation_id'],
-          )!,
-      senderId:
-          attachedDatabase.typeMapping.read(
-            DriftSqlType.string,
-            data['${effectivePrefix}sender_id'],
-          )!,
-      type:
-          attachedDatabase.typeMapping.read(
-            DriftSqlType.string,
-            data['${effectivePrefix}type'],
-          )!,
-      body: attachedDatabase.typeMapping.read(
-        DriftSqlType.string,
-        data['${effectivePrefix}body'],
-      ),
-      imageUrl: attachedDatabase.typeMapping.read(
-        DriftSqlType.string,
-        data['${effectivePrefix}image_url'],
-      ),
-      createdAt:
-          attachedDatabase.typeMapping.read(
-            DriftSqlType.dateTime,
-            data['${effectivePrefix}created_at'],
-          )!,
-      isMine:
-          attachedDatabase.typeMapping.read(
-            DriftSqlType.bool,
-            data['${effectivePrefix}is_mine'],
-          )!,
-      isOptimistic:
-          attachedDatabase.typeMapping.read(
-            DriftSqlType.bool,
-            data['${effectivePrefix}is_optimistic'],
-          )!,
-    );
-  }
-
-  @override
-  $DmMessagesTable createAlias(String alias) {
-    return $DmMessagesTable(attachedDatabase, alias);
-  }
-}
-
-class DmMessage extends DataClass implements Insertable<DmMessage> {
-  final String id;
-  final String conversationId;
-  final String senderId;
-  final String type;
-  final String? body;
-  final String? imageUrl;
-  final DateTime createdAt;
-  final bool isMine;
-
-  /// true while the row has not yet been confirmed by Supabase
-  final bool isOptimistic;
-  const DmMessage({
-    required this.id,
-    required this.conversationId,
-    required this.senderId,
-    required this.type,
-    this.body,
-    this.imageUrl,
-    required this.createdAt,
-    required this.isMine,
-    required this.isOptimistic,
-  });
-  @override
-  Map<String, Expression> toColumns(bool nullToAbsent) {
-    final map = <String, Expression>{};
-    map['id'] = Variable<String>(id);
-    map['conversation_id'] = Variable<String>(conversationId);
-    map['sender_id'] = Variable<String>(senderId);
-    map['type'] = Variable<String>(type);
-    if (!nullToAbsent || body != null) {
-      map['body'] = Variable<String>(body);
-    }
-    if (!nullToAbsent || imageUrl != null) {
-      map['image_url'] = Variable<String>(imageUrl);
-    }
-    map['created_at'] = Variable<DateTime>(createdAt);
-    map['is_mine'] = Variable<bool>(isMine);
-    map['is_optimistic'] = Variable<bool>(isOptimistic);
-    return map;
-  }
-
-  DmMessagesCompanion toCompanion(bool nullToAbsent) {
-    return DmMessagesCompanion(
-      id: Value(id),
-      conversationId: Value(conversationId),
-      senderId: Value(senderId),
-      type: Value(type),
-      body: body == null && nullToAbsent ? const Value.absent() : Value(body),
-      imageUrl:
-          imageUrl == null && nullToAbsent
-              ? const Value.absent()
-              : Value(imageUrl),
-      createdAt: Value(createdAt),
-      isMine: Value(isMine),
-      isOptimistic: Value(isOptimistic),
-    );
-  }
-
-  factory DmMessage.fromJson(
-    Map<String, dynamic> json, {
-    ValueSerializer? serializer,
-  }) {
-    serializer ??= driftRuntimeOptions.defaultSerializer;
-    return DmMessage(
-      id: serializer.fromJson<String>(json['id']),
-      conversationId: serializer.fromJson<String>(json['conversationId']),
-      senderId: serializer.fromJson<String>(json['senderId']),
-      type: serializer.fromJson<String>(json['type']),
-      body: serializer.fromJson<String?>(json['body']),
-      imageUrl: serializer.fromJson<String?>(json['imageUrl']),
-      createdAt: serializer.fromJson<DateTime>(json['createdAt']),
-      isMine: serializer.fromJson<bool>(json['isMine']),
-      isOptimistic: serializer.fromJson<bool>(json['isOptimistic']),
-    );
-  }
-  @override
-  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
-    serializer ??= driftRuntimeOptions.defaultSerializer;
-    return <String, dynamic>{
-      'id': serializer.toJson<String>(id),
-      'conversationId': serializer.toJson<String>(conversationId),
-      'senderId': serializer.toJson<String>(senderId),
-      'type': serializer.toJson<String>(type),
-      'body': serializer.toJson<String?>(body),
-      'imageUrl': serializer.toJson<String?>(imageUrl),
-      'createdAt': serializer.toJson<DateTime>(createdAt),
-      'isMine': serializer.toJson<bool>(isMine),
-      'isOptimistic': serializer.toJson<bool>(isOptimistic),
-    };
-  }
-
-  DmMessage copyWith({
-    String? id,
-    String? conversationId,
-    String? senderId,
-    String? type,
-    Value<String?> body = const Value.absent(),
-    Value<String?> imageUrl = const Value.absent(),
-    DateTime? createdAt,
-    bool? isMine,
-    bool? isOptimistic,
-  }) => DmMessage(
-    id: id ?? this.id,
-    conversationId: conversationId ?? this.conversationId,
-    senderId: senderId ?? this.senderId,
-    type: type ?? this.type,
-    body: body.present ? body.value : this.body,
-    imageUrl: imageUrl.present ? imageUrl.value : this.imageUrl,
-    createdAt: createdAt ?? this.createdAt,
-    isMine: isMine ?? this.isMine,
-    isOptimistic: isOptimistic ?? this.isOptimistic,
-  );
-  DmMessage copyWithCompanion(DmMessagesCompanion data) {
-    return DmMessage(
-      id: data.id.present ? data.id.value : this.id,
-      conversationId:
-          data.conversationId.present
-              ? data.conversationId.value
-              : this.conversationId,
-      senderId: data.senderId.present ? data.senderId.value : this.senderId,
-      type: data.type.present ? data.type.value : this.type,
-      body: data.body.present ? data.body.value : this.body,
-      imageUrl: data.imageUrl.present ? data.imageUrl.value : this.imageUrl,
-      createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
-      isMine: data.isMine.present ? data.isMine.value : this.isMine,
-      isOptimistic:
-          data.isOptimistic.present
-              ? data.isOptimistic.value
-              : this.isOptimistic,
-    );
-  }
-
-  @override
-  String toString() {
-    return (StringBuffer('DmMessage(')
-          ..write('id: $id, ')
-          ..write('conversationId: $conversationId, ')
-          ..write('senderId: $senderId, ')
-          ..write('type: $type, ')
-          ..write('body: $body, ')
-          ..write('imageUrl: $imageUrl, ')
-          ..write('createdAt: $createdAt, ')
-          ..write('isMine: $isMine, ')
-          ..write('isOptimistic: $isOptimistic')
-          ..write(')'))
-        .toString();
-  }
-
-  @override
-  int get hashCode => Object.hash(
-    id,
-    conversationId,
-    senderId,
-    type,
-    body,
-    imageUrl,
-    createdAt,
-    isMine,
-    isOptimistic,
-  );
-  @override
-  bool operator ==(Object other) =>
-      identical(this, other) ||
-      (other is DmMessage &&
-          other.id == this.id &&
-          other.conversationId == this.conversationId &&
-          other.senderId == this.senderId &&
-          other.type == this.type &&
-          other.body == this.body &&
-          other.imageUrl == this.imageUrl &&
-          other.createdAt == this.createdAt &&
-          other.isMine == this.isMine &&
-          other.isOptimistic == this.isOptimistic);
-}
-
-class DmMessagesCompanion extends UpdateCompanion<DmMessage> {
-  final Value<String> id;
-  final Value<String> conversationId;
-  final Value<String> senderId;
-  final Value<String> type;
-  final Value<String?> body;
-  final Value<String?> imageUrl;
-  final Value<DateTime> createdAt;
-  final Value<bool> isMine;
-  final Value<bool> isOptimistic;
-  final Value<int> rowid;
-  const DmMessagesCompanion({
-    this.id = const Value.absent(),
-    this.conversationId = const Value.absent(),
-    this.senderId = const Value.absent(),
-    this.type = const Value.absent(),
-    this.body = const Value.absent(),
-    this.imageUrl = const Value.absent(),
-    this.createdAt = const Value.absent(),
-    this.isMine = const Value.absent(),
-    this.isOptimistic = const Value.absent(),
-    this.rowid = const Value.absent(),
-  });
-  DmMessagesCompanion.insert({
-    required String id,
-    required String conversationId,
-    required String senderId,
-    this.type = const Value.absent(),
-    this.body = const Value.absent(),
-    this.imageUrl = const Value.absent(),
-    required DateTime createdAt,
-    this.isMine = const Value.absent(),
-    this.isOptimistic = const Value.absent(),
-    this.rowid = const Value.absent(),
-  }) : id = Value(id),
-       conversationId = Value(conversationId),
-       senderId = Value(senderId),
-       createdAt = Value(createdAt);
-  static Insertable<DmMessage> custom({
-    Expression<String>? id,
-    Expression<String>? conversationId,
-    Expression<String>? senderId,
-    Expression<String>? type,
-    Expression<String>? body,
-    Expression<String>? imageUrl,
-    Expression<DateTime>? createdAt,
-    Expression<bool>? isMine,
-    Expression<bool>? isOptimistic,
-    Expression<int>? rowid,
-  }) {
-    return RawValuesInsertable({
-      if (id != null) 'id': id,
-      if (conversationId != null) 'conversation_id': conversationId,
-      if (senderId != null) 'sender_id': senderId,
-      if (type != null) 'type': type,
-      if (body != null) 'body': body,
-      if (imageUrl != null) 'image_url': imageUrl,
-      if (createdAt != null) 'created_at': createdAt,
-      if (isMine != null) 'is_mine': isMine,
-      if (isOptimistic != null) 'is_optimistic': isOptimistic,
-      if (rowid != null) 'rowid': rowid,
-    });
-  }
-
-  DmMessagesCompanion copyWith({
-    Value<String>? id,
-    Value<String>? conversationId,
-    Value<String>? senderId,
-    Value<String>? type,
-    Value<String?>? body,
-    Value<String?>? imageUrl,
-    Value<DateTime>? createdAt,
-    Value<bool>? isMine,
-    Value<bool>? isOptimistic,
-    Value<int>? rowid,
-  }) {
-    return DmMessagesCompanion(
-      id: id ?? this.id,
-      conversationId: conversationId ?? this.conversationId,
-      senderId: senderId ?? this.senderId,
-      type: type ?? this.type,
-      body: body ?? this.body,
-      imageUrl: imageUrl ?? this.imageUrl,
-      createdAt: createdAt ?? this.createdAt,
-      isMine: isMine ?? this.isMine,
-      isOptimistic: isOptimistic ?? this.isOptimistic,
-      rowid: rowid ?? this.rowid,
-    );
-  }
-
-  @override
-  Map<String, Expression> toColumns(bool nullToAbsent) {
-    final map = <String, Expression>{};
-    if (id.present) {
-      map['id'] = Variable<String>(id.value);
-    }
-    if (conversationId.present) {
-      map['conversation_id'] = Variable<String>(conversationId.value);
-    }
-    if (senderId.present) {
-      map['sender_id'] = Variable<String>(senderId.value);
-    }
-    if (type.present) {
-      map['type'] = Variable<String>(type.value);
-    }
-    if (body.present) {
-      map['body'] = Variable<String>(body.value);
-    }
-    if (imageUrl.present) {
-      map['image_url'] = Variable<String>(imageUrl.value);
-    }
-    if (createdAt.present) {
-      map['created_at'] = Variable<DateTime>(createdAt.value);
-    }
-    if (isMine.present) {
-      map['is_mine'] = Variable<bool>(isMine.value);
-    }
-    if (isOptimistic.present) {
-      map['is_optimistic'] = Variable<bool>(isOptimistic.value);
-    }
-    if (rowid.present) {
-      map['rowid'] = Variable<int>(rowid.value);
-    }
-    return map;
-  }
-
-  @override
-  String toString() {
-    return (StringBuffer('DmMessagesCompanion(')
-          ..write('id: $id, ')
-          ..write('conversationId: $conversationId, ')
-          ..write('senderId: $senderId, ')
-          ..write('type: $type, ')
-          ..write('body: $body, ')
-          ..write('imageUrl: $imageUrl, ')
-          ..write('createdAt: $createdAt, ')
-          ..write('isMine: $isMine, ')
-          ..write('isOptimistic: $isOptimistic, ')
-          ..write('rowid: $rowid')
-          ..write(')'))
-        .toString();
-  }
-}
-
 abstract class _$AppDatabase extends GeneratedDatabase {
   _$AppDatabase(QueryExecutor e) : super(e);
   $AppDatabaseManager get managers => $AppDatabaseManager(this);
@@ -7623,7 +7213,6 @@ abstract class _$AppDatabase extends GeneratedDatabase {
   );
   late final $WorkoutSetsTable workoutSets = $WorkoutSetsTable(this);
   late final $SyncQueueTable syncQueue = $SyncQueueTable(this);
-  late final $DmMessagesTable dmMessages = $DmMessagesTable(this);
   @override
   Iterable<TableInfo<Table, Object?>> get allTables =>
       allSchemaEntities.whereType<TableInfo<Table, Object?>>();
@@ -7638,7 +7227,6 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     sessionExercises,
     workoutSets,
     syncQueue,
-    dmMessages,
   ];
 }
 
@@ -7656,6 +7244,8 @@ typedef $$UserProfilesTableCreateCompanionBuilder =
       Value<String?> goal,
       Value<String?> experience,
       Value<String?> gender,
+      Value<double?> bodyWeightKg,
+      Value<double?> heightCm,
       Value<String> weightUnit,
       Value<String> preferredLanguage,
       Value<DateTime?> trialStartedAt,
@@ -7679,6 +7269,8 @@ typedef $$UserProfilesTableUpdateCompanionBuilder =
       Value<String?> goal,
       Value<String?> experience,
       Value<String?> gender,
+      Value<double?> bodyWeightKg,
+      Value<double?> heightCm,
       Value<String> weightUnit,
       Value<String> preferredLanguage,
       Value<DateTime?> trialStartedAt,
@@ -7755,6 +7347,16 @@ class $$UserProfilesTableFilterComposer
 
   ColumnFilters<String> get gender => $composableBuilder(
     column: $table.gender,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get bodyWeightKg => $composableBuilder(
+    column: $table.bodyWeightKg,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get heightCm => $composableBuilder(
+    column: $table.heightCm,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -7868,6 +7470,16 @@ class $$UserProfilesTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<double> get bodyWeightKg => $composableBuilder(
+    column: $table.bodyWeightKg,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<double> get heightCm => $composableBuilder(
+    column: $table.heightCm,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<String> get weightUnit => $composableBuilder(
     column: $table.weightUnit,
     builder: (column) => ColumnOrderings(column),
@@ -7960,6 +7572,14 @@ class $$UserProfilesTableAnnotationComposer
   GeneratedColumn<String> get gender =>
       $composableBuilder(column: $table.gender, builder: (column) => column);
 
+  GeneratedColumn<double> get bodyWeightKg => $composableBuilder(
+    column: $table.bodyWeightKg,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<double> get heightCm =>
+      $composableBuilder(column: $table.heightCm, builder: (column) => column);
+
   GeneratedColumn<String> get weightUnit => $composableBuilder(
     column: $table.weightUnit,
     builder: (column) => column,
@@ -8043,6 +7663,8 @@ class $$UserProfilesTableTableManager
                 Value<String?> goal = const Value.absent(),
                 Value<String?> experience = const Value.absent(),
                 Value<String?> gender = const Value.absent(),
+                Value<double?> bodyWeightKg = const Value.absent(),
+                Value<double?> heightCm = const Value.absent(),
                 Value<String> weightUnit = const Value.absent(),
                 Value<String> preferredLanguage = const Value.absent(),
                 Value<DateTime?> trialStartedAt = const Value.absent(),
@@ -8064,6 +7686,8 @@ class $$UserProfilesTableTableManager
                 goal: goal,
                 experience: experience,
                 gender: gender,
+                bodyWeightKg: bodyWeightKg,
+                heightCm: heightCm,
                 weightUnit: weightUnit,
                 preferredLanguage: preferredLanguage,
                 trialStartedAt: trialStartedAt,
@@ -8087,6 +7711,8 @@ class $$UserProfilesTableTableManager
                 Value<String?> goal = const Value.absent(),
                 Value<String?> experience = const Value.absent(),
                 Value<String?> gender = const Value.absent(),
+                Value<double?> bodyWeightKg = const Value.absent(),
+                Value<double?> heightCm = const Value.absent(),
                 Value<String> weightUnit = const Value.absent(),
                 Value<String> preferredLanguage = const Value.absent(),
                 Value<DateTime?> trialStartedAt = const Value.absent(),
@@ -8108,6 +7734,8 @@ class $$UserProfilesTableTableManager
                 goal: goal,
                 experience: experience,
                 gender: gender,
+                bodyWeightKg: bodyWeightKg,
+                heightCm: heightCm,
                 weightUnit: weightUnit,
                 preferredLanguage: preferredLanguage,
                 trialStartedAt: trialStartedAt,
@@ -11224,6 +10852,7 @@ typedef $$WorkoutSetsTableCreateCompanionBuilder =
       Value<bool> isWarmup,
       Value<bool> isDropset,
       Value<bool> isFailure,
+      Value<bool> isCompleted,
       Value<int?> rpe,
       Value<int?> durationSeconds,
       Value<double?> distance,
@@ -11245,6 +10874,7 @@ typedef $$WorkoutSetsTableUpdateCompanionBuilder =
       Value<bool> isWarmup,
       Value<bool> isDropset,
       Value<bool> isFailure,
+      Value<bool> isCompleted,
       Value<int?> rpe,
       Value<int?> durationSeconds,
       Value<double?> distance,
@@ -11345,6 +10975,11 @@ class $$WorkoutSetsTableFilterComposer
 
   ColumnFilters<bool> get isFailure => $composableBuilder(
     column: $table.isFailure,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get isCompleted => $composableBuilder(
+    column: $table.isCompleted,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -11466,6 +11101,11 @@ class $$WorkoutSetsTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<bool> get isCompleted => $composableBuilder(
+    column: $table.isCompleted,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<int> get rpe => $composableBuilder(
     column: $table.rpe,
     builder: (column) => ColumnOrderings(column),
@@ -11562,6 +11202,11 @@ class $$WorkoutSetsTableAnnotationComposer
   GeneratedColumn<bool> get isFailure =>
       $composableBuilder(column: $table.isFailure, builder: (column) => column);
 
+  GeneratedColumn<bool> get isCompleted => $composableBuilder(
+    column: $table.isCompleted,
+    builder: (column) => column,
+  );
+
   GeneratedColumn<int> get rpe =>
       $composableBuilder(column: $table.rpe, builder: (column) => column);
 
@@ -11645,6 +11290,7 @@ class $$WorkoutSetsTableTableManager
                 Value<bool> isWarmup = const Value.absent(),
                 Value<bool> isDropset = const Value.absent(),
                 Value<bool> isFailure = const Value.absent(),
+                Value<bool> isCompleted = const Value.absent(),
                 Value<int?> rpe = const Value.absent(),
                 Value<int?> durationSeconds = const Value.absent(),
                 Value<double?> distance = const Value.absent(),
@@ -11664,6 +11310,7 @@ class $$WorkoutSetsTableTableManager
                 isWarmup: isWarmup,
                 isDropset: isDropset,
                 isFailure: isFailure,
+                isCompleted: isCompleted,
                 rpe: rpe,
                 durationSeconds: durationSeconds,
                 distance: distance,
@@ -11685,6 +11332,7 @@ class $$WorkoutSetsTableTableManager
                 Value<bool> isWarmup = const Value.absent(),
                 Value<bool> isDropset = const Value.absent(),
                 Value<bool> isFailure = const Value.absent(),
+                Value<bool> isCompleted = const Value.absent(),
                 Value<int?> rpe = const Value.absent(),
                 Value<int?> durationSeconds = const Value.absent(),
                 Value<double?> distance = const Value.absent(),
@@ -11704,6 +11352,7 @@ class $$WorkoutSetsTableTableManager
                 isWarmup: isWarmup,
                 isDropset: isDropset,
                 isFailure: isFailure,
+                isCompleted: isCompleted,
                 rpe: rpe,
                 durationSeconds: durationSeconds,
                 distance: distance,
@@ -12020,290 +11669,6 @@ typedef $$SyncQueueTableProcessedTableManager =
       SyncQueueData,
       PrefetchHooks Function()
     >;
-typedef $$DmMessagesTableCreateCompanionBuilder =
-    DmMessagesCompanion Function({
-      required String id,
-      required String conversationId,
-      required String senderId,
-      Value<String> type,
-      Value<String?> body,
-      Value<String?> imageUrl,
-      required DateTime createdAt,
-      Value<bool> isMine,
-      Value<bool> isOptimistic,
-      Value<int> rowid,
-    });
-typedef $$DmMessagesTableUpdateCompanionBuilder =
-    DmMessagesCompanion Function({
-      Value<String> id,
-      Value<String> conversationId,
-      Value<String> senderId,
-      Value<String> type,
-      Value<String?> body,
-      Value<String?> imageUrl,
-      Value<DateTime> createdAt,
-      Value<bool> isMine,
-      Value<bool> isOptimistic,
-      Value<int> rowid,
-    });
-
-class $$DmMessagesTableFilterComposer
-    extends Composer<_$AppDatabase, $DmMessagesTable> {
-  $$DmMessagesTableFilterComposer({
-    required super.$db,
-    required super.$table,
-    super.joinBuilder,
-    super.$addJoinBuilderToRootComposer,
-    super.$removeJoinBuilderFromRootComposer,
-  });
-  ColumnFilters<String> get id => $composableBuilder(
-    column: $table.id,
-    builder: (column) => ColumnFilters(column),
-  );
-
-  ColumnFilters<String> get conversationId => $composableBuilder(
-    column: $table.conversationId,
-    builder: (column) => ColumnFilters(column),
-  );
-
-  ColumnFilters<String> get senderId => $composableBuilder(
-    column: $table.senderId,
-    builder: (column) => ColumnFilters(column),
-  );
-
-  ColumnFilters<String> get type => $composableBuilder(
-    column: $table.type,
-    builder: (column) => ColumnFilters(column),
-  );
-
-  ColumnFilters<String> get body => $composableBuilder(
-    column: $table.body,
-    builder: (column) => ColumnFilters(column),
-  );
-
-  ColumnFilters<String> get imageUrl => $composableBuilder(
-    column: $table.imageUrl,
-    builder: (column) => ColumnFilters(column),
-  );
-
-  ColumnFilters<DateTime> get createdAt => $composableBuilder(
-    column: $table.createdAt,
-    builder: (column) => ColumnFilters(column),
-  );
-
-  ColumnFilters<bool> get isMine => $composableBuilder(
-    column: $table.isMine,
-    builder: (column) => ColumnFilters(column),
-  );
-
-  ColumnFilters<bool> get isOptimistic => $composableBuilder(
-    column: $table.isOptimistic,
-    builder: (column) => ColumnFilters(column),
-  );
-}
-
-class $$DmMessagesTableOrderingComposer
-    extends Composer<_$AppDatabase, $DmMessagesTable> {
-  $$DmMessagesTableOrderingComposer({
-    required super.$db,
-    required super.$table,
-    super.joinBuilder,
-    super.$addJoinBuilderToRootComposer,
-    super.$removeJoinBuilderFromRootComposer,
-  });
-  ColumnOrderings<String> get id => $composableBuilder(
-    column: $table.id,
-    builder: (column) => ColumnOrderings(column),
-  );
-
-  ColumnOrderings<String> get conversationId => $composableBuilder(
-    column: $table.conversationId,
-    builder: (column) => ColumnOrderings(column),
-  );
-
-  ColumnOrderings<String> get senderId => $composableBuilder(
-    column: $table.senderId,
-    builder: (column) => ColumnOrderings(column),
-  );
-
-  ColumnOrderings<String> get type => $composableBuilder(
-    column: $table.type,
-    builder: (column) => ColumnOrderings(column),
-  );
-
-  ColumnOrderings<String> get body => $composableBuilder(
-    column: $table.body,
-    builder: (column) => ColumnOrderings(column),
-  );
-
-  ColumnOrderings<String> get imageUrl => $composableBuilder(
-    column: $table.imageUrl,
-    builder: (column) => ColumnOrderings(column),
-  );
-
-  ColumnOrderings<DateTime> get createdAt => $composableBuilder(
-    column: $table.createdAt,
-    builder: (column) => ColumnOrderings(column),
-  );
-
-  ColumnOrderings<bool> get isMine => $composableBuilder(
-    column: $table.isMine,
-    builder: (column) => ColumnOrderings(column),
-  );
-
-  ColumnOrderings<bool> get isOptimistic => $composableBuilder(
-    column: $table.isOptimistic,
-    builder: (column) => ColumnOrderings(column),
-  );
-}
-
-class $$DmMessagesTableAnnotationComposer
-    extends Composer<_$AppDatabase, $DmMessagesTable> {
-  $$DmMessagesTableAnnotationComposer({
-    required super.$db,
-    required super.$table,
-    super.joinBuilder,
-    super.$addJoinBuilderToRootComposer,
-    super.$removeJoinBuilderFromRootComposer,
-  });
-  GeneratedColumn<String> get id =>
-      $composableBuilder(column: $table.id, builder: (column) => column);
-
-  GeneratedColumn<String> get conversationId => $composableBuilder(
-    column: $table.conversationId,
-    builder: (column) => column,
-  );
-
-  GeneratedColumn<String> get senderId =>
-      $composableBuilder(column: $table.senderId, builder: (column) => column);
-
-  GeneratedColumn<String> get type =>
-      $composableBuilder(column: $table.type, builder: (column) => column);
-
-  GeneratedColumn<String> get body =>
-      $composableBuilder(column: $table.body, builder: (column) => column);
-
-  GeneratedColumn<String> get imageUrl =>
-      $composableBuilder(column: $table.imageUrl, builder: (column) => column);
-
-  GeneratedColumn<DateTime> get createdAt =>
-      $composableBuilder(column: $table.createdAt, builder: (column) => column);
-
-  GeneratedColumn<bool> get isMine =>
-      $composableBuilder(column: $table.isMine, builder: (column) => column);
-
-  GeneratedColumn<bool> get isOptimistic => $composableBuilder(
-    column: $table.isOptimistic,
-    builder: (column) => column,
-  );
-}
-
-class $$DmMessagesTableTableManager
-    extends
-        RootTableManager<
-          _$AppDatabase,
-          $DmMessagesTable,
-          DmMessage,
-          $$DmMessagesTableFilterComposer,
-          $$DmMessagesTableOrderingComposer,
-          $$DmMessagesTableAnnotationComposer,
-          $$DmMessagesTableCreateCompanionBuilder,
-          $$DmMessagesTableUpdateCompanionBuilder,
-          (
-            DmMessage,
-            BaseReferences<_$AppDatabase, $DmMessagesTable, DmMessage>,
-          ),
-          DmMessage,
-          PrefetchHooks Function()
-        > {
-  $$DmMessagesTableTableManager(_$AppDatabase db, $DmMessagesTable table)
-    : super(
-        TableManagerState(
-          db: db,
-          table: table,
-          createFilteringComposer:
-              () => $$DmMessagesTableFilterComposer($db: db, $table: table),
-          createOrderingComposer:
-              () => $$DmMessagesTableOrderingComposer($db: db, $table: table),
-          createComputedFieldComposer:
-              () => $$DmMessagesTableAnnotationComposer($db: db, $table: table),
-          updateCompanionCallback:
-              ({
-                Value<String> id = const Value.absent(),
-                Value<String> conversationId = const Value.absent(),
-                Value<String> senderId = const Value.absent(),
-                Value<String> type = const Value.absent(),
-                Value<String?> body = const Value.absent(),
-                Value<String?> imageUrl = const Value.absent(),
-                Value<DateTime> createdAt = const Value.absent(),
-                Value<bool> isMine = const Value.absent(),
-                Value<bool> isOptimistic = const Value.absent(),
-                Value<int> rowid = const Value.absent(),
-              }) => DmMessagesCompanion(
-                id: id,
-                conversationId: conversationId,
-                senderId: senderId,
-                type: type,
-                body: body,
-                imageUrl: imageUrl,
-                createdAt: createdAt,
-                isMine: isMine,
-                isOptimistic: isOptimistic,
-                rowid: rowid,
-              ),
-          createCompanionCallback:
-              ({
-                required String id,
-                required String conversationId,
-                required String senderId,
-                Value<String> type = const Value.absent(),
-                Value<String?> body = const Value.absent(),
-                Value<String?> imageUrl = const Value.absent(),
-                required DateTime createdAt,
-                Value<bool> isMine = const Value.absent(),
-                Value<bool> isOptimistic = const Value.absent(),
-                Value<int> rowid = const Value.absent(),
-              }) => DmMessagesCompanion.insert(
-                id: id,
-                conversationId: conversationId,
-                senderId: senderId,
-                type: type,
-                body: body,
-                imageUrl: imageUrl,
-                createdAt: createdAt,
-                isMine: isMine,
-                isOptimistic: isOptimistic,
-                rowid: rowid,
-              ),
-          withReferenceMapper:
-              (p0) =>
-                  p0
-                      .map(
-                        (e) => (
-                          e.readTable(table),
-                          BaseReferences(db, table, e),
-                        ),
-                      )
-                      .toList(),
-          prefetchHooksCallback: null,
-        ),
-      );
-}
-
-typedef $$DmMessagesTableProcessedTableManager =
-    ProcessedTableManager<
-      _$AppDatabase,
-      $DmMessagesTable,
-      DmMessage,
-      $$DmMessagesTableFilterComposer,
-      $$DmMessagesTableOrderingComposer,
-      $$DmMessagesTableAnnotationComposer,
-      $$DmMessagesTableCreateCompanionBuilder,
-      $$DmMessagesTableUpdateCompanionBuilder,
-      (DmMessage, BaseReferences<_$AppDatabase, $DmMessagesTable, DmMessage>),
-      DmMessage,
-      PrefetchHooks Function()
-    >;
 
 class $AppDatabaseManager {
   final _$AppDatabase _db;
@@ -12326,6 +11691,4 @@ class $AppDatabaseManager {
       $$WorkoutSetsTableTableManager(_db, _db.workoutSets);
   $$SyncQueueTableTableManager get syncQueue =>
       $$SyncQueueTableTableManager(_db, _db.syncQueue);
-  $$DmMessagesTableTableManager get dmMessages =>
-      $$DmMessagesTableTableManager(_db, _db.dmMessages);
 }

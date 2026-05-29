@@ -22,6 +22,12 @@ class UserProfiles extends Table {
   TextColumn get goal => text().nullable()();
   TextColumn get experience => text().nullable()();
   TextColumn get gender => text().nullable()(); // 'male' | 'female'
+  /// Self-reported body weight in kilograms. Optional — calorie estimates
+  /// fall back to a 70kg default when null.
+  RealColumn get bodyWeightKg => real().nullable()();
+  /// Self-reported height in centimetres. Optional — kept alongside body
+  /// weight for future BMI / TDEE features.
+  RealColumn get heightCm => real().nullable()();
   TextColumn get weightUnit => text().withDefault(const Constant('kg'))();
   TextColumn get preferredLanguage =>
       text().withDefault(const Constant('system'))();
@@ -159,6 +165,7 @@ class WorkoutSets extends Table {
   BoolColumn get isWarmup => boolean().withDefault(const Constant(false))();
   BoolColumn get isDropset => boolean().withDefault(const Constant(false))();
   BoolColumn get isFailure => boolean().withDefault(const Constant(false))();
+  BoolColumn get isCompleted => boolean().withDefault(const Constant(false))();
   IntColumn get rpe => integer().nullable()();
   // Cardio tracking
   IntColumn get durationSeconds => integer().nullable()();
@@ -179,28 +186,6 @@ class SyncQueue extends Table {
   BoolColumn get isSynced => boolean().withDefault(const Constant(false))();
 }
 
-/// Local cache for DM messages (mirrors Supabase dm_messages).
-/// Used for optimistic sends and brief offline resilience.
-class DmMessages extends Table {
-  // UUID from Supabase (or a temp client-generated UUID while optimistic)
-  TextColumn get id => text()();
-  TextColumn get conversationId => text()();
-  TextColumn get senderId => text()();
-  // 'text' | 'image' | 'schedule'
-  TextColumn get type => text().withDefault(const Constant('text'))();
-  // text content, or JSON payload for schedule type
-  TextColumn get body => text().nullable()();
-  TextColumn get imageUrl => text().nullable()();
-  DateTimeColumn get createdAt => dateTime()();
-  BoolColumn get isMine => boolean().withDefault(const Constant(false))();
-
-  /// true while the row has not yet been confirmed by Supabase
-  BoolColumn get isOptimistic => boolean().withDefault(const Constant(false))();
-
-  @override
-  Set<Column> get primaryKey => {id};
-}
-
 // ─────────────────────────────────────────────
 // D A T A B A S E
 // ─────────────────────────────────────────────
@@ -216,7 +201,6 @@ class DmMessages extends Table {
     SessionExercises,
     WorkoutSets,
     SyncQueue,
-    DmMessages,
   ],
 )
 class AppDatabase extends _$AppDatabase {
@@ -229,7 +213,7 @@ class AppDatabase extends _$AppDatabase {
   }
 
   @override
-  int get schemaVersion => 10;
+  int get schemaVersion => 13;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -246,9 +230,8 @@ class AppDatabase extends _$AppDatabase {
           'ALTER TABLE user_profiles ADD COLUMN gender TEXT',
         );
       }
-      if (from < 4) {
-        await m.createTable(dmMessages);
-      }
+      // (v4 previously created the dm_messages table; DMs were removed in v13,
+      //  so the table is no longer created here and is dropped below.)
       if (from < 5) {
         await customStatement(
           'ALTER TABLE exercises ADD COLUMN difficulty TEXT',
@@ -297,8 +280,48 @@ class AppDatabase extends _$AppDatabase {
           'ALTER TABLE workout_sets ADD COLUMN is_failure INTEGER NOT NULL DEFAULT 0',
         );
       }
+      if (from < 11) {
+        // Persist set completion so crash-recovery + cardio volume math
+        // stop inferring "complete" from `weight != null && reps != null`,
+        // which mis-classifies warm-ups and cardio without weight.
+        // Existing rows: mark completed when they have either weight+reps
+        // or any cardio signal — best-effort backfill of inferred state.
+        await customStatement(
+          'ALTER TABLE workout_sets ADD COLUMN is_completed INTEGER NOT NULL DEFAULT 0',
+        );
+        await customStatement(
+          'UPDATE workout_sets SET is_completed = 1 WHERE '
+          '(weight IS NOT NULL AND reps IS NOT NULL) '
+          'OR duration_seconds IS NOT NULL '
+          'OR distance IS NOT NULL',
+        );
+      }
+      if (from < 12) {
+        // Body weight + height — feed the calorie estimator. Onboarding
+        // already collects these but they were dropped on signup before.
+        await _addColumnIfMissing('user_profiles', 'body_weight_kg', 'REAL');
+        await _addColumnIfMissing('user_profiles', 'height_cm', 'REAL');
+      }
+      if (from < 13) {
+        // DMs removed — drop the local cache table if it exists.
+        await customStatement('DROP TABLE IF EXISTS dm_messages');
+      }
     },
   );
+
+  /// True if [table] already has [column]. Keeps `ADD COLUMN` migrations
+  /// idempotent — a database that acquired a column before its migration was
+  /// written would otherwise crash with "duplicate column".
+  Future<bool> _hasColumn(String table, String column) async {
+    final rows = await customSelect('PRAGMA table_info($table)').get();
+    return rows.any((row) => row.read<String>('name') == column);
+  }
+
+  Future<void> _addColumnIfMissing(
+      String table, String column, String definition) async {
+    if (await _hasColumn(table, column)) return;
+    await customStatement('ALTER TABLE $table ADD COLUMN $column $definition');
+  }
 
   Future<void> _createIndexes(Migrator m) async {
     // SessionExercises.sessionId — queried every time we load a session's exercises

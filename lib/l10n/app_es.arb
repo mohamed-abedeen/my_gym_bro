@@ -1,6 +1,12 @@
 {
   "@@locale": "es",
   "appName": "My Gym Bro",
+  "trialDaysLeft": "{days} días restantes",
+  "@trialDaysLeft": {
+    "placeholders": {
+      "days": { "type": "int" }
+    }
+  },
   "tabHome": "Inicio",
   "tabWorkout": "Entrenamiento",
   "tabLog": "Registro",
@@ -86,6 +92,8 @@
   "biometricPrompt": "Desbloquear My Gym Bro",
   "language": "Idioma",
   "weightUnit": "Unidad de peso",
+  "bodyWeight": "Peso corporal",
+  "notSet": "Sin definir",
   "biometricLock": "Bloqueo biométrico",
   "manageSubscription": "Gestionar suscripción",
   "exportData": "Exportar mis datos",
@@ -274,5 +282,54 @@
   "nextExercise": "Siguiente",
   "noInstructions": "Sin instrucciones disponibles",
   "deleteWorkout": "Eliminar entrenamiento",
-  "deleteWorkoutConfirm": "¿Eliminar este entrenamiento?"
+  "deleteWorkoutConfirm": "¿Eliminar este entrenamiento?",
+
+  "leaderboardTab": "Clasificación",
+  "challengesTab": "Retos",
+  "currentLeague": "LIGA ACTUAL",
+  "yourPlace": "Tu lugar",
+  "placeNumber": "{n} Lugar",
+  "@placeNumber": {
+    "placeholders": {
+      "n": { "type": "int" }
+    }
+  },
+  "leagueElite": "La Élite",
+  "leagueMaster": "El Maestro",
+  "leagueStanding": "Estable",
+  "leagueMovingUp": "Subiendo",
+  "leagueWorkHarder": "Trabaja más",
+  "scopeRivals": "Rivales",
+  "scopeGlobal": "Global",
+  "scopeFriends": "Amigos",
+  "volumeLabel": "Volumen",
+  "percentDone": "{percent}% hecho",
+  "@percentDone": {
+    "placeholders": {
+      "percent": { "type": "int" }
+    }
+  },
+  "rankNumber": "Rango #{rank}",
+  "@rankNumber": {
+    "placeholders": {
+      "rank": { "type": "int" }
+    }
+  },
+  "startChallenge": "iniciar",
+  "endInDays": "Termina en {days}d",
+  "@endInDays": {
+    "placeholders": {
+      "days": { "type": "int" }
+    }
+  },
+  "leagueMasterTitle": "Maestro",
+  "noChallengesYet": "No hay retos activos",
+  "widgetStreakStart": "Empieza una racha",
+  "widgetStreakOneDay": "Racha de 1 día",
+  "widgetStreakDays": "Racha de {days} días",
+  "@widgetStreakDays": {
+    "placeholders": {
+      "days": { "type": "int" }
+    }
+  }
 }

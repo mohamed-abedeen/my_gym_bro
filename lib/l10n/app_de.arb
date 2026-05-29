@@ -1,6 +1,12 @@
 {
   "@@locale": "de",
   "appName": "My Gym Bro",
+  "trialDaysLeft": "Noch {days} Tage",
+  "@trialDaysLeft": {
+    "placeholders": {
+      "days": { "type": "int" }
+    }
+  },
   "tabHome": "Startseite",
   "tabWorkout": "Training",
   "tabLog": "Protokoll",
@@ -86,6 +92,8 @@
   "biometricPrompt": "My Gym Bro entsperren",
   "language": "Sprache",
   "weightUnit": "Gewichtseinheit",
+  "bodyWeight": "Körpergewicht",
+  "notSet": "Nicht festgelegt",
   "biometricLock": "Biometrische Sperre",
   "manageSubscription": "Abo verwalten",
   "exportData": "Daten exportieren",
@@ -274,5 +282,54 @@
   "nextExercise": "Weiter",
   "noInstructions": "Keine Anleitung verfügbar",
   "deleteWorkout": "Training löschen",
-  "deleteWorkoutConfirm": "Dieses Training löschen?"
+  "deleteWorkoutConfirm": "Dieses Training löschen?",
+
+  "leaderboardTab": "Rangliste",
+  "challengesTab": "Challenges",
+  "currentLeague": "AKTUELLE LIGA",
+  "yourPlace": "Dein Platz",
+  "placeNumber": "{n} Platz",
+  "@placeNumber": {
+    "placeholders": {
+      "n": { "type": "int" }
+    }
+  },
+  "leagueElite": "Die Elite",
+  "leagueMaster": "Der Meister",
+  "leagueStanding": "Stabil",
+  "leagueMovingUp": "Im Aufstieg",
+  "leagueWorkHarder": "Streng dich an",
+  "scopeRivals": "Rivalen",
+  "scopeGlobal": "Global",
+  "scopeFriends": "Freunde",
+  "volumeLabel": "Volumen",
+  "percentDone": "{percent}% erledigt",
+  "@percentDone": {
+    "placeholders": {
+      "percent": { "type": "int" }
+    }
+  },
+  "rankNumber": "Rang #{rank}",
+  "@rankNumber": {
+    "placeholders": {
+      "rank": { "type": "int" }
+    }
+  },
+  "startChallenge": "starten",
+  "endInDays": "Endet in {days}T",
+  "@endInDays": {
+    "placeholders": {
+      "days": { "type": "int" }
+    }
+  },
+  "leagueMasterTitle": "Meister",
+  "noChallengesYet": "Keine aktiven Challenges",
+  "widgetStreakStart": "Streak starten",
+  "widgetStreakOneDay": "1-Tage-Streak",
+  "widgetStreakDays": "{days}-Tage-Streak",
+  "@widgetStreakDays": {
+    "placeholders": {
+      "days": { "type": "int" }
+    }
+  }
 }

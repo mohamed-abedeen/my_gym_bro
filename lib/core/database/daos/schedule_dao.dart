@@ -46,6 +46,11 @@ class ScheduleDao extends DatabaseAccessor<AppDatabase>
         ..orderBy([(t) => OrderingTerm.asc(t.dayIndex)]))
       .get();
 
+  /// Get a single schedule day by its local ID, or null if not found.
+  Future<ScheduleDay?> getDayById(int dayLocalId) =>
+      (select(scheduleDays)..where((t) => t.localId.equals(dayLocalId)))
+          .getSingleOrNull();
+
   /// Stream days for a schedule — emits a new list on any insert/update/delete.
   Stream<List<ScheduleDay>> watchDays(int scheduleId) => (select(scheduleDays)
         ..where((t) => t.scheduleId.equals(scheduleId))

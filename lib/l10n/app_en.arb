@@ -97,6 +97,8 @@
   "biometricPrompt": "Unlock My Gym Bro",
   "language": "Language",
   "weightUnit": "Weight Unit",
+  "bodyWeight": "Body Weight",
+  "notSet": "Not set",
   "biometricLock": "Biometric Lock",
   "manageSubscription": "Manage Subscription",
   "exportData": "Export My Data",
@@ -247,6 +249,12 @@
   "cm": "cm",
   "ft": "ft",
   "freeTrial": "Free Trial",
+  "trialDaysLeft": "{days} days left",
+  "@trialDaysLeft": {
+    "placeholders": {
+      "days": { "type": "int" }
+    }
+  },
   "yearly": "Yearly",
   "monthly": "Monthly",
 
@@ -315,6 +323,14 @@
   "following": "Following",
   "followers": "Followers",
   "streak": "Streak",
+  "widgetStreakStart": "Start a streak",
+  "widgetStreakOneDay": "1-day streak",
+  "widgetStreakDays": "{days}-day streak",
+  "@widgetStreakDays": {
+    "placeholders": {
+      "days": {"type": "int"}
+    }
+  },
   "achievement": "Achievement",
   "posts": "Posts",
   "lastSession": "Last Session",
@@ -394,5 +410,46 @@
   "nextExercise": "Next",
   "noInstructions": "No instructions available",
   "deleteWorkout": "Delete Workout",
-  "deleteWorkoutConfirm": "Delete this workout?"
+  "deleteWorkoutConfirm": "Delete this workout?",
+
+  "leaderboardTab": "Leaderboard",
+  "challengesTab": "Challenges",
+  "currentLeague": "CURRENT LEAGUE",
+  "yourPlace": "Your place",
+  "placeNumber": "{n} Place",
+  "@placeNumber": {
+    "placeholders": {
+      "n": { "type": "int" }
+    }
+  },
+  "leagueElite": "The Elite",
+  "leagueMaster": "The Master",
+  "leagueStanding": "Standing",
+  "leagueMovingUp": "Moving up",
+  "leagueWorkHarder": "Work harder",
+  "scopeRivals": "Rivals",
+  "scopeGlobal": "Global",
+  "scopeFriends": "Friends",
+  "volumeLabel": "Volume",
+  "percentDone": "{percent}% done",
+  "@percentDone": {
+    "placeholders": {
+      "percent": { "type": "int" }
+    }
+  },
+  "rankNumber": "Rank #{rank}",
+  "@rankNumber": {
+    "placeholders": {
+      "rank": { "type": "int" }
+    }
+  },
+  "startChallenge": "start",
+  "endInDays": "End in {days}d",
+  "@endInDays": {
+    "placeholders": {
+      "days": { "type": "int" }
+    }
+  },
+  "leagueMasterTitle": "Master",
+  "noChallengesYet": "No active challenges yet"
 }

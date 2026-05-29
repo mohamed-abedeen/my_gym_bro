@@ -3,7 +3,11 @@ import 'dart:async';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:my_gym_bro/core/security/input_sanitiser.dart';
+import 'package:my_gym_bro/core/services/live_activity_service.dart';
+import 'package:my_gym_bro/core/services/notification_image_cache.dart';
 import 'package:my_gym_bro/core/services/notification_service.dart';
+import 'package:my_gym_bro/core/services/notification_tone.dart';
+import 'package:my_gym_bro/core/services/widget_sync_service.dart';
 import 'package:my_gym_bro/features/workout/active_session/rest_timer_service.dart';
 import 'package:my_gym_bro/features/workout/workout_log_repository.dart';
 import 'package:my_gym_bro/features/workout/workout_providers.dart';
@@ -116,6 +120,8 @@ class ActiveSessionState {
     this.startedAt,
     this.showRestTimer = false,
     this.isFinishing = false,
+    this.pausedAt,
+    this.accumulatedPausedSeconds = 0,
   });
   final int? sessionId;
   final List<ActiveExercise> exercises;
@@ -124,6 +130,18 @@ class ActiveSessionState {
   final bool showRestTimer;
   final bool isFinishing;
 
+  /// Wall-clock time the user pressed pause. `null` when the session is
+  /// active. The elapsed clock and Live Activity reads this to freeze.
+  final DateTime? pausedAt;
+
+  /// Total seconds the user has spent paused across the session so far.
+  /// On resume, the in-flight pause delta is added here and `pausedAt`
+  /// is cleared. `finishSession` subtracts this from total wall-time to
+  /// get the user-facing duration.
+  final int accumulatedPausedSeconds;
+
+  bool get isPaused => pausedAt != null;
+
   ActiveSessionState copyWith({
     int? sessionId,
     List<ActiveExercise>? exercises,
@@ -131,6 +149,9 @@ class ActiveSessionState {
     DateTime? startedAt,
     bool? showRestTimer,
     bool? isFinishing,
+    DateTime? pausedAt,
+    int? accumulatedPausedSeconds,
+    bool clearPausedAt = false,
   }) =>
       ActiveSessionState(
         sessionId: sessionId ?? this.sessionId,
@@ -140,6 +161,9 @@ class ActiveSessionState {
         startedAt: startedAt ?? this.startedAt,
         showRestTimer: showRestTimer ?? this.showRestTimer,
         isFinishing: isFinishing ?? this.isFinishing,
+        pausedAt: clearPausedAt ? null : (pausedAt ?? this.pausedAt),
+        accumulatedPausedSeconds:
+            accumulatedPausedSeconds ?? this.accumulatedPausedSeconds,
       );
 
   ActiveExercise? get currentExercise =>
@@ -183,13 +207,18 @@ class ActiveSessionNotifier extends StateNotifier<ActiveSessionState> {
     String weightUnit = 'kg',
     String restNotificationTitle = 'Rest complete!',
     String restNotificationBody = 'Time to start your next set.',
+    Future<int> Function()? getStreak,
   })  : _repository = repository,
         _defaultRestSeconds = defaultRestSeconds,
         _weightUnit = weightUnit,
         _restNotificationTitle = restNotificationTitle,
         _restNotificationBody = restNotificationBody,
+        _getStreak = getStreak,
         super(const ActiveSessionState());
   final WorkoutLogRepository _repository;
+  /// Refresh-and-read the streak. Invalidates the cached value first so the
+  /// just-finished session is included. Provided by the provider builder.
+  final Future<int> Function()? _getStreak;
   final RestTimerService restTimerService = RestTimerService();
 
   /// Subscription to the rest-timer tick stream for updating the
@@ -206,6 +235,22 @@ class ActiveSessionNotifier extends StateNotifier<ActiveSessionState> {
   String _workoutReminderTitle = 'Workout day';
   String _workoutReminderBody = 'Keep your streak going. Let\'s train.';
 
+  /// User-selected notification voice — drives tone-aware copy in the
+  /// ongoing-session notification (active-set tagline + rest tagline +
+  /// generic "session live" body). Defaults to balanced so we never ship
+  /// silent strings if the screen forgets to push the current tone.
+  NotificationTone _notificationTone = NotificationTone.balanced;
+
+  /// Cached local file path of the current exercise's GIF/thumbnail. Used
+  /// as `largeIcon` on the Android notification. Resolved lazily — the
+  /// notification renders without an icon if the download/cache misses
+  /// inside the (short) timeout in [NotificationImageCache].
+  String? _currentExerciseImagePath;
+
+  /// The gifUrl whose path is currently cached in [_currentExerciseImagePath].
+  /// Kept so we don't re-fetch the same asset every set.
+  String? _cachedImageGifUrl;
+
   /// Called by the workout screen whenever the active locale or the
   /// user's `notificationTone` changes — keeps the rest-complete
   /// notification copy in sync with the user's current preferences.
@@ -214,10 +259,55 @@ class ActiveSessionNotifier extends StateNotifier<ActiveSessionState> {
     _restNotificationBody = body;
   }
 
+  /// Build the "Set 2 of 4" label for the current exercise. Used by the
+  /// iOS Live Activity / Dynamic Island. Returns "" when there's no
+  /// current exercise.
+  String _setProgressLabel() {
+    final ex = state.currentExercise;
+    if (ex == null || ex.sets.isEmpty) return '';
+    final completed = ex.sets.where((s) => s.isCompleted).length;
+    return 'Set ${completed.clamp(1, ex.sets.length)} of ${ex.sets.length}';
+  }
+
+  String _liveActivityExerciseName() =>
+      state.currentExercise?.name ?? 'Workout';
+
   /// Called by the screen each build with tone- and rest-day-aware copy.
   void setWorkoutReminderStrings(String title, String body) {
     _workoutReminderTitle = title;
     _workoutReminderBody = body;
+  }
+
+  /// Push the user's chosen notification voice down to the notifier so the
+  /// active-session notification can use tone-aware taglines (active-set,
+  /// resting, generic). Called from the screen alongside the existing
+  /// `setRestNotificationStrings` so all tone state stays in sync.
+  void setNotificationTone(NotificationTone tone) {
+    _notificationTone = tone;
+  }
+
+  /// Resolve the current exercise's image into a local file path used as
+  /// the Android notification largeIcon. Fire-and-forget; the notification
+  /// is updated *after* the image lands so the first frame doesn't block
+  /// the rest-timer push.
+  Future<void> _refreshExerciseImage() async {
+    final url = state.currentExercise?.gifUrl;
+    if (url == _cachedImageGifUrl) return; // already cached
+    _cachedImageGifUrl = url;
+    if (url == null || url.isEmpty) {
+      _currentExerciseImagePath = null;
+      return;
+    }
+    _currentExerciseImagePath = await NotificationImageCache.filePathFor(url);
+    // Re-push whichever notification we're currently showing so the new
+    // largeIcon takes effect. If state has changed by the time the cache
+    // resolves, the next state-driven update will pick it up naturally.
+    if (state.sessionId == null) return;
+    if (state.showRestTimer) {
+      _updateRestTimerNotification(restTimerService.remaining);
+    } else {
+      _updateActiveSetNotification();
+    }
   }
 
   /// Attempt to restore a rest timer that was persisted before the OS killed
@@ -244,14 +334,53 @@ class ActiveSessionNotifier extends StateNotifier<ActiveSessionState> {
     _restTickSub?.cancel();
     _restTickSub =
         restTimerService.stream?.listen(_updateRestTimerNotification);
+
+    // The previous app instance owned a now-orphaned ongoing notification
+    // whose +15s / Skip / Complete buttons point at a dead isolate. Tear
+    // it down and rebuild from this notifier's current state.
+    await resyncActiveNotification();
+  }
+
+  /// Option A from `docs/notification-recovery.md`.
+  ///
+  /// When the app returns from background (or relaunches after force-kill),
+  /// the ongoing "MyGymBro Session" notification can be a stale ghost —
+  /// the visible card is right but its action buttons are wired to a dead
+  /// isolate that can't dispatch them. The fix is to cancel it and re-fire
+  /// the appropriate notification from the live notifier so the buttons
+  /// route through *this* process's `_handleAction`.
+  ///
+  /// Cheap: ~1 plugin cancel + 1 plugin show. Safe to call repeatedly —
+  /// the rebuilt notification reuses the same id so it replaces in place
+  /// without flicker on Android, and is a no-op when there's no active
+  /// session.
+  Future<void> resyncActiveNotification() async {
+    if (state.sessionId == null) {
+      // No live session — but tear down any lingering stale notification
+      // anyway. Could exist if the previous app instance left one behind
+      // and we resumed without restoring its state.
+      await NotificationService.cancelActiveWorkout();
+      return;
+    }
+    await NotificationService.cancelActiveWorkout();
+    if (state.showRestTimer) {
+      _updateRestTimerNotification(restTimerService.remaining);
+    } else {
+      _updateActiveSetNotification();
+    }
   }
 
   /// Start a new workout session, optionally pre-loading exercises from a
   /// schedule day.
   Future<void> startSession({int? scheduleDayId}) async {
     final now = DateTime.now();
+    // Resolve the parent schedule for this day so countBySchedule /
+    // getLastForSchedule / day-rotation logic can find the finished session.
+    final scheduleId = scheduleDayId == null
+        ? null
+        : await _repository.getScheduleIdForDay(scheduleDayId);
     final id = await _repository.createSession(
-      CreateSessionParams(startedAt: now),
+      CreateSessionParams(startedAt: now, scheduleId: scheduleId),
     );
 
     state = state.copyWith(
@@ -262,10 +391,22 @@ class ActiveSessionNotifier extends StateNotifier<ActiveSessionState> {
 
     // Show a persistent ongoing notification in the status bar so the user
     // can see the elapsed workout time even when the app is backgrounded.
+    // This is the *generic* state — _loadScheduleExercises (or addExercise)
+    // will replace it with the named-exercise notification once content
+    // lands. Tone-aware body so the voice is consistent app-wide.
     unawaited(NotificationService.showActiveWorkout(
-      title: 'Workout in progress',
-      body: 'Tap to return to your session.',
+      title: 'MyGymBro · Session live',
+      body: workoutInProgressBodyForTone(_notificationTone),
       startedAt: now,
+    ));
+
+    // iOS Live Activity — lock-screen + Dynamic Island. No-op everywhere
+    // else (Android, simulator without widget target, Live Activities
+    // disabled in Settings).
+    unawaited(LiveActivityService.start(
+      exerciseName: _liveActivityExerciseName(),
+      setProgress: _setProgressLabel(),
+      sessionStartedAt: now,
     ));
 
     // Allow the notification "Complete Set" action to call completeNextSet()
@@ -352,6 +493,12 @@ class ActiveSessionNotifier extends StateNotifier<ActiveSessionState> {
     // Select the first exercise
     if (state.exercises.isNotEmpty) {
       state = state.copyWith(currentExerciseIndex: 0);
+      // Bug fix: with exercises now loaded, immediately upgrade the
+      // generic "Workout in progress" notification fired at session start
+      // to the named "Exercise · Set 1/N" view so the user doesn't see a
+      // stale generic notification while their session is set up.
+      unawaited(_refreshExerciseImage());
+      _updateActiveSetNotification();
     }
   }
 
@@ -479,6 +626,9 @@ class ActiveSessionNotifier extends StateNotifier<ActiveSessionState> {
       break;
     }
     await _repository.deleteSet(setLocalId);
+    // "Set X of N" in the ongoing notification needs to reflect the new
+    // total so it doesn't lie about progress.
+    if (!state.showRestTimer) _updateActiveSetNotification();
   }
 
   /// Complete the first incomplete set in the current exercise.
@@ -520,9 +670,19 @@ class ActiveSessionNotifier extends StateNotifier<ActiveSessionState> {
     );
     final updatedEx = ex.copyWith(sets: [...ex.sets, newSet]);
     _updateExercise(updatedEx);
+    // Refresh "Set X of N" so the ongoing notification reflects the new
+    // total. Skip while a rest timer is showing — that notification has
+    // its own progress bar.
+    if (!state.showRestTimer) _updateActiveSetNotification();
   }
 
   /// Update a set's fields (strength or cardio).
+  ///
+  /// Each `*Str` parameter follows this contract:
+  ///   - `null` → field unchanged (caller didn't touch it)
+  ///   - non-null (including `""`) → field was edited; the parsed value
+  ///     (which may itself be `null`) is the new value, **including a null
+  ///     value clearing the field**.
   Future<void> updateSet(
     int setLocalId, {
     String? weightStr,
@@ -535,55 +695,70 @@ class ActiveSessionNotifier extends StateNotifier<ActiveSessionState> {
     final ex = state.currentExercise;
     if (ex == null) return;
 
-    double? weight;
-    int? reps;
-    int? durationSeconds;
-    double? distance;
-    double? speed;
-    double? incline;
+    Patch<double?> weight = const Patch.unchanged();
+    Patch<int?> reps = const Patch.unchanged();
+    Patch<int?> durationSeconds = const Patch.unchanged();
+    Patch<double?> distance = const Patch.unchanged();
+    Patch<double?> speed = const Patch.unchanged();
+    Patch<double?> incline = const Patch.unchanged();
 
     if (weightStr != null) {
-      weight = InputSanitiser.parseWeight(weightStr);
-      if (_weightUnit == 'lbs' && weight != null) weight = weight / _kLbsPerKg;
+      var parsed = InputSanitiser.parseWeight(weightStr);
+      if (_weightUnit == 'lbs' && parsed != null) parsed = parsed / _kLbsPerKg;
+      weight = Patch.set(parsed);
     }
-    if (repsStr != null) reps = InputSanitiser.parseReps(repsStr);
+    if (repsStr != null) {
+      reps = Patch.set(InputSanitiser.parseReps(repsStr));
+    }
     if (durationStr != null) {
-      final minutes = double.tryParse(durationStr.replaceAll(RegExp('[^0-9.]'), ''));
-      if (minutes != null && minutes >= 0 && minutes <= 999) {
-        durationSeconds = (minutes * 60).round();
-      }
+      final minutes =
+          double.tryParse(durationStr.replaceAll(RegExp('[^0-9.]'), ''));
+      durationSeconds = Patch.set(
+        (minutes != null && minutes >= 0 && minutes <= 999)
+            ? (minutes * 60).round()
+            : null,
+      );
     }
     if (distanceStr != null) {
-      distance = double.tryParse(distanceStr.replaceAll(RegExp('[^0-9.]'), ''));
-      if (distance != null && (distance < 0 || distance > 9999)) distance = null;
+      var d = double.tryParse(distanceStr.replaceAll(RegExp('[^0-9.]'), ''));
+      if (d != null && (d < 0 || d > 9999)) d = null;
+      distance = Patch.set(d);
     }
     if (speedStr != null) {
-      speed = double.tryParse(speedStr.replaceAll(RegExp('[^0-9.]'), ''));
-      if (speed != null && (speed < 0 || speed > 9999)) speed = null;
+      var sp = double.tryParse(speedStr.replaceAll(RegExp('[^0-9.]'), ''));
+      if (sp != null && (sp < 0 || sp > 9999)) sp = null;
+      speed = Patch.set(sp);
     }
     if (inclineStr != null) {
-      incline = double.tryParse(inclineStr.replaceAll(RegExp('[^0-9.]'), ''));
-      if (incline != null && (incline < 0 || incline > 90)) incline = null;
+      var inc = double.tryParse(inclineStr.replaceAll(RegExp('[^0-9.]'), ''));
+      if (inc != null && (inc < 0 || inc > 90)) inc = null;
+      incline = Patch.set(inc);
     }
 
+    // Build the new in-memory ActiveSet by hand so cleared (Patch.set(null))
+    // fields actually clear rather than fall back to the prior value (which
+    // is what `?? s.weight` would do).
     final updatedSets = ex.sets.map((s) {
-      if (s.localId == setLocalId) {
-        return s.copyWith(
-          weight: weight ?? s.weight,
-          reps: reps ?? s.reps,
-          durationSeconds: durationSeconds ?? s.durationSeconds,
-          distance: distance ?? s.distance,
-          speed: speed ?? s.speed,
-          incline: incline ?? s.incline,
-        );
-      }
-      return s;
+      if (s.localId != setLocalId) return s;
+      return ActiveSet(
+        localId: s.localId,
+        setIndex: s.setIndex,
+        isWarmup: s.isWarmup,
+        isDropset: s.isDropset,
+        isFailure: s.isFailure,
+        isCompleted: s.isCompleted,
+        weight: weight.present ? weight.value : s.weight,
+        reps: reps.present ? reps.value : s.reps,
+        durationSeconds:
+            durationSeconds.present ? durationSeconds.value : s.durationSeconds,
+        distance: distance.present ? distance.value : s.distance,
+        speed: speed.present ? speed.value : s.speed,
+        incline: incline.present ? incline.value : s.incline,
+      );
     }).toList();
 
-    final updatedEx = ex.copyWith(sets: updatedSets);
-    _updateExercise(updatedEx);
+    _updateExercise(ex.copyWith(sets: updatedSets));
 
-    // Persist to DB
     await _repository.updateSet(UpdateSetParams(
       sessionExerciseId: ex.sessionExerciseId,
       setLocalId: setLocalId,
@@ -594,6 +769,12 @@ class ActiveSessionNotifier extends StateNotifier<ActiveSessionState> {
       speed: speed,
       incline: incline,
     ));
+    // If the user edited the next-active set's weight/reps, the ongoing
+    // notification's "Xkg · Y reps" line is now stale.
+    if (!state.showRestTimer &&
+        (weight.present || reps.present)) {
+      _updateActiveSetNotification();
+    }
   }
 
   /// Change the type of a set (warm-up / normal / failure / drop-set).
@@ -638,6 +819,13 @@ class ActiveSessionNotifier extends StateNotifier<ActiveSessionState> {
     final updatedEx = ex.copyWith(sets: updatedSets);
     _updateExercise(updatedEx);
 
+    // Persist completion so a process kill mid-session doesn't lose ticks.
+    unawaited(_repository.setCompletion(
+      sessionExerciseId: ex.sessionExerciseId,
+      setLocalId: setLocalId,
+      isCompleted: true,
+    ));
+
     // Haptic
     unawaited(HapticFeedback.mediumImpact());
 
@@ -650,6 +838,15 @@ class ActiveSessionNotifier extends StateNotifier<ActiveSessionState> {
       notificationBody: _restNotificationBody,
     );
 
+    // Push the iOS Live Activity into "resting" mode with a countdown that
+    // expires at the same moment the rest timer does. SwiftUI ticks the
+    // countdown on-device so we don't need per-second updates here.
+    unawaited(LiveActivityService.updateRest(
+      exerciseName: _liveActivityExerciseName(),
+      setProgress: _setProgressLabel(),
+      restEndsAt: DateTime.now().add(Duration(seconds: _defaultRestSeconds)),
+    ));
+
     // Subscribe to the tick stream so the notification updates every second.
     _restTickSub?.cancel();
     _restTickSub = restTimerService.stream?.listen(_updateRestTimerNotification);
@@ -661,6 +858,59 @@ class ActiveSessionNotifier extends StateNotifier<ActiveSessionState> {
     state = state.copyWith(showRestTimer: false);
     // Switch the notification back to the "active set" state.
     _updateActiveSetNotification();
+    // Flip the Live Activity back to "active" so the lock screen stops
+    // counting down and shows session elapsed time again.
+    unawaited(LiveActivityService.updateActive(
+      exerciseName: _liveActivityExerciseName(),
+      setProgress: _setProgressLabel(),
+    ));
+  }
+
+  /// Pause the entire session. Halts the rest timer (if running), tracks
+  /// the pause start so finishSession can subtract paused time, and
+  /// cancels the ongoing notification + Live Activity so they don't keep
+  /// counting through the pause.
+  void pause() {
+    if (state.isPaused) return;
+    if (restTimerService.isRunning) {
+      restTimerService.pause();
+    }
+    unawaited(NotificationService.cancelActiveWorkout());
+    unawaited(LiveActivityService.end());
+    state = state.copyWith(pausedAt: DateTime.now());
+  }
+
+  /// Resume a paused session. Restores the rest timer, the ongoing
+  /// notification, and Live Activity. Pause duration is folded into
+  /// `accumulatedPausedSeconds`.
+  void resume() {
+    final pausedAt = state.pausedAt;
+    if (pausedAt == null) return;
+    final pausedSeconds =
+        DateTime.now().difference(pausedAt).inSeconds.clamp(0, 1 << 30);
+    state = state.copyWith(
+      clearPausedAt: true,
+      accumulatedPausedSeconds:
+          state.accumulatedPausedSeconds + pausedSeconds,
+    );
+    if (restTimerService.isPaused) {
+      restTimerService.resume();
+    }
+    // Rebuild the ongoing notification + Live Activity in their current
+    // logical state (rest vs. active).
+    if (state.showRestTimer) {
+      _updateRestTimerNotification(restTimerService.remaining);
+    } else {
+      _updateActiveSetNotification();
+    }
+    final startedAt = state.startedAt;
+    if (startedAt != null) {
+      unawaited(LiveActivityService.start(
+        exerciseName: _liveActivityExerciseName(),
+        setProgress: _setProgressLabel(),
+        sessionStartedAt: startedAt,
+      ));
+    }
   }
 
   void hideRestTimer() {
@@ -670,12 +920,28 @@ class ActiveSessionNotifier extends StateNotifier<ActiveSessionState> {
     state = state.copyWith(showRestTimer: false);
     // Switch the notification back to the "active set" state.
     _updateActiveSetNotification();
+    unawaited(LiveActivityService.updateActive(
+      exerciseName: _liveActivityExerciseName(),
+      setProgress: _setProgressLabel(),
+    ));
   }
 
   /// Switch to a different exercise.
   void selectExercise(int index) {
     if (index >= 0 && index < state.exercises.length) {
       state = state.copyWith(currentExerciseIndex: index);
+      // Refresh the cached notification largeIcon for the new exercise.
+      unawaited(_refreshExerciseImage());
+      // Keep the lock-screen exercise name in sync. Only refresh when
+      // we're NOT mid-rest; the rest countdown owns the activity until
+      // it completes.
+      if (!state.showRestTimer) {
+        _updateActiveSetNotification();
+        unawaited(LiveActivityService.updateActive(
+          exerciseName: _liveActivityExerciseName(),
+          setProgress: _setProgressLabel(),
+        ));
+      }
     }
   }
 
@@ -685,7 +951,17 @@ class ActiveSessionNotifier extends StateNotifier<ActiveSessionState> {
     state = state.copyWith(isFinishing: true);
 
     final now = DateTime.now();
-    final durationSecs = now.difference(state.startedAt!).inSeconds;
+    // Subtract paused time from total wall-clock duration. If the user is
+    // mid-pause when finishing, fold the in-flight pause delta in too so
+    // the persisted duration matches what the UI was showing.
+    final wallClock = now.difference(state.startedAt!).inSeconds;
+    final inFlightPause = state.pausedAt == null
+        ? 0
+        : now.difference(state.pausedAt!).inSeconds;
+    final durationSecs = (wallClock -
+            state.accumulatedPausedSeconds -
+            inFlightPause)
+        .clamp(0, wallClock);
 
     await _repository.finishSession(FinishSessionParams(
       sessionId: state.sessionId!,
@@ -700,6 +976,9 @@ class ActiveSessionNotifier extends StateNotifier<ActiveSessionState> {
 
     // Remove the persistent workout-in-progress notification.
     unawaited(NotificationService.cancelActiveWorkout());
+    // Dismiss the lock-screen Live Activity. Safe no-op everywhere except
+    // iOS 16.1+ with the widget extension installed.
+    unawaited(LiveActivityService.end());
 
     // Schedule a daily workout reminder for tomorrow using rest-day-aware copy.
     unawaited(NotificationService.scheduleWorkoutReminder(
@@ -707,18 +986,47 @@ class ActiveSessionNotifier extends StateNotifier<ActiveSessionState> {
       body: _workoutReminderBody,
     ));
 
+    // Nudge the home-screen widget so today's session shows up
+    // immediately rather than waiting for the next provider refresh.
+    // Read the live streak (now includes today's just-finished session)
+    // so the widget shows the correct count immediately.
+    var streakDays = 0;
+    if (_getStreak != null) {
+      try {
+        streakDays = await _getStreak();
+      } catch (_) {
+        // Fall back to 0; the ambient widgetSyncProvider listener will
+        // overwrite once Drift re-reads.
+      }
+    }
+    unawaited(WidgetSyncService.pushAll(
+      streakDays: streakDays,
+      nextCta: 'Workout logged. See you next session.',
+    ));
+
     // Reset state so a subsequent session starts clean.
     _lastLoggedCache.clear();
     state = const ActiveSessionState();
   }
 
-  /// Discard the session.
+  /// Discard the session. Deletes the orphan DB row + all its session
+  /// exercises and sets so nothing is left behind for history/stats.
   Future<void> discardSession() async {
     _restTickSub?.cancel();
     _restTickSub = null;
     restTimerService.dispose();
     _lastLoggedCache.clear();
+    final sessionId = state.sessionId;
+    if (sessionId != null) {
+      try {
+        await _repository.deleteSession(sessionId);
+      } catch (_) {
+        // Swallow — even if delete fails the orphan row is harmless
+        // (finishedAt is null so it's filtered out of history/streak).
+      }
+    }
     unawaited(NotificationService.cancelActiveWorkout());
+    unawaited(LiveActivityService.end());
     state = const ActiveSessionState();
   }
 
@@ -783,6 +1091,8 @@ class ActiveSessionNotifier extends StateNotifier<ActiveSessionState> {
   void _updateActiveSetNotification() {
     final ex = state.currentExercise;
     if (ex == null) return;
+    final startedAt = state.startedAt;
+    if (startedAt == null) return;
 
     final nextSet = ex.sets.where((s) => !s.isCompleted).firstOrNull;
     if (nextSet == null) return;
@@ -799,6 +1109,9 @@ class ActiveSessionNotifier extends StateNotifier<ActiveSessionState> {
       totalSets: totalSets,
       weight: '$weight$unit',
       reps: reps,
+      sessionStartedAt: startedAt,
+      tagline: activeSetTaglineForTone(_notificationTone),
+      exerciseImagePath: _currentExerciseImagePath,
     ));
   }
 
@@ -806,9 +1119,14 @@ class ActiveSessionNotifier extends StateNotifier<ActiveSessionState> {
   void _updateRestTimerNotification(int remaining) {
     final ex = state.currentExercise;
     if (ex == null) return;
+    final startedAt = state.startedAt;
+    if (startedAt == null) return;
 
     final nextSet = ex.sets.where((s) => !s.isCompleted).firstOrNull;
-    final nextNum = nextSet != null ? nextSet.setIndex + 1 : ex.sets.length;
+    // When this is the final set, [nextSet] is null. Pass null through so
+    // the notification body shows "Final set complete" instead of the
+    // misleading "Set N/N (… × 0 reps)" we used to ship.
+    final nextNum = nextSet != null ? nextSet.setIndex + 1 : null;
     final totalSets = ex.sets.length;
     final weight = displayWeight(nextSet?.weight);
     final unit = _weightUnit;
@@ -822,6 +1140,9 @@ class ActiveSessionNotifier extends StateNotifier<ActiveSessionState> {
       reps: reps,
       remaining: remaining,
       totalSeconds: restTimerService.total,
+      sessionStartedAt: startedAt,
+      tagline: restCountdownTaglineForTone(_notificationTone),
+      exerciseImagePath: _currentExerciseImagePath,
     ));
   }
 
@@ -847,6 +1168,12 @@ final activeSessionProvider =
     repository: repository,
     defaultRestSeconds: profile?.defaultRestSeconds ?? 90,
     weightUnit: profile?.weightUnit ?? 'kg',
+    getStreak: () {
+      // Invalidate the cached streak so the just-finished session counts,
+      // then read the fresh value.
+      ref.invalidate(streakProvider);
+      return ref.read(streakProvider.future);
+    },
   );
 
   // Keep rest-time / weight-unit in sync without recreating the notifier.

@@ -146,13 +146,15 @@ class _StatusSheet extends ConsumerWidget {
 // Rows: Today/250cal, Last week/1250cal, Last Month/5125cal
 // ═══════════════════════════════════════════════════════════════════
 
-class _BodyStatusCard extends StatelessWidget {
+class _BodyStatusCard extends ConsumerWidget {
   const _BodyStatusCard({required this.l10n});
   final AppLocalizations l10n;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final colors = AppColors.of(context);
+    final activity = ref.watch(activityStatsProvider);
+
     return Container(
       width: double.infinity,
       decoration: BoxDecoration(
@@ -172,21 +174,54 @@ class _BodyStatusCard extends StatelessWidget {
             ),
           ),
           SizedBox(height: 16.h),
-          _CalRow(label: l10n.today, value: '250 cal'),
-          SizedBox(height: 10.h),
-          _CalRow(label: l10n.lastWeek, value: '1250 cal'),
-          SizedBox(height: 10.h),
-          _CalRow(label: l10n.lastMonth, value: '5125 cal'),
+          activity.when(
+            data: (a) => Column(
+              children: [
+                _ActivityRow(
+                  label: l10n.today,
+                  value: '${a.todayCalories} cal',
+                  positive: a.todayCalories > 0,
+                ),
+                SizedBox(height: 10.h),
+                _ActivityRow(
+                  label: l10n.lastWeek,
+                  value: '${a.weekCalories} cal',
+                  positive: a.weekCalories > 0,
+                ),
+                SizedBox(height: 10.h),
+                _ActivityRow(
+                  label: l10n.lastMonth,
+                  value: '${a.monthCalories} cal',
+                  positive: a.monthCalories > 0,
+                ),
+              ],
+            ),
+            loading: () => SizedBox(
+              height: 120.h,
+              child: Center(
+                child: CircularProgressIndicator(
+                  color: colors.accent,
+                  strokeWidth: 2.w,
+                ),
+              ),
+            ),
+            error: (_, __) => SizedBox(height: 120.h),
+          ),
         ],
       ),
     );
   }
 }
 
-class _CalRow extends StatelessWidget {
-  const _CalRow({required this.label, required this.value});
+class _ActivityRow extends StatelessWidget {
+  const _ActivityRow({
+    required this.label,
+    required this.value,
+    required this.positive,
+  });
   final String label;
   final String value;
+  final bool positive;
 
   @override
   Widget build(BuildContext context) {
@@ -217,15 +252,17 @@ class _CalRow extends StatelessWidget {
             ],
           ),
         ),
-        // Trend arrow (up-right)
-        Transform.rotate(
-          angle: AppAngles.quarterTurnCcw,
-          child: Icon(
-            Icons.arrow_forward_rounded,
-            color: colors.trendPositive,
-            size: 24.sp,
+        // Only draw an up-arrow when there's activity in the period —
+        // an empty period shouldn't look like a positive trend.
+        if (positive)
+          Transform.rotate(
+            angle: AppAngles.quarterTurnCcw,
+            child: Icon(
+              Icons.arrow_forward_rounded,
+              color: colors.trendPositive,
+              size: 24.sp,
+            ),
           ),
-        ),
       ],
     );
   }
@@ -245,7 +282,10 @@ class _WorkoutStatusCard extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final colors = AppColors.of(context);
-    final stats = ref.watch(weeklyStatsProvider);
+    // Show lifetime totals (not just this week) so the user sees the
+    // accumulated effort from every finished session.
+    final stats = ref.watch(lifetimeStatsProvider);
+    final records = ref.watch(recordsProvider);
     final unit = ref.watch(weightUnitProvider);
 
     return Container(
@@ -278,26 +318,27 @@ class _WorkoutStatusCard extends ConsumerWidget {
                     decimals: 0,
                     withUnit: true,
                   ),
-                  trend: s.volumeTrend,
                 ),
                 SizedBox(height: 10.h),
                 _WorkoutStatRow(
                   label: l10n.totalDuration,
                   value: s.formattedDuration,
-                  trend: s.durationTrend,
-                  trendSuffix: '%',
                 ),
                 SizedBox(height: 10.h),
                 _WorkoutStatRow(
                   label: l10n.avgStrength,
-                  value: '${s.avgStrength.toInt()}',
-                  trend: s.strengthTrend,
+                  value: formatWeight(
+                    s.avgStrength,
+                    unit,
+                    decimals: 0,
+                    withUnit: true,
+                  ),
                 ),
                 SizedBox(height: 10.h),
                 _WorkoutStatRow(
                   label: l10n.records,
-                  value: '5',
-                  trend: -2,
+                  value: '${records.asData?.value.count ?? 0}',
+                  trend: records.asData?.value.trend?.toDouble(),
                 ),
               ],
             ),
@@ -324,12 +365,10 @@ class _WorkoutStatRow extends StatelessWidget {
     required this.label,
     required this.value,
     this.trend,
-    this.trendSuffix = '',
   });
   final String label;
   final String value;
   final double? trend;
-  final String trendSuffix;
 
   @override
   Widget build(BuildContext context) {
@@ -362,9 +401,9 @@ class _WorkoutStatRow extends StatelessWidget {
             ],
           ),
         ),
-        if (trend != null) ...[
+        if (trend != null && trend != 0) ...[
           Text(
-            '${trend! >= 0 ? '' : ''}${trend!.toInt()}$trendSuffix',
+            '${trend! >= 0 ? '+' : ''}${trend!.toInt()}',
             style: TextStyle(
               color: isPositive
                   ? colors.trendPositive
@@ -382,6 +421,17 @@ class _WorkoutStatRow extends StatelessWidget {
                   ? colors.trendPositive
                   : colors.trendNegative,
               size: 24.sp,
+            ),
+          ),
+        ] else if (trend == 0) ...[
+          // Show a neutral indicator instead of suppressing the row entirely,
+          // so the column stays aligned across rows with mixed trend states.
+          Text(
+            '0',
+            style: TextStyle(
+              color: colors.textSecondary,
+              fontSize: 10.sp,
+              fontWeight: FontWeight.w400,
             ),
           ),
         ],

@@ -273,6 +273,12 @@ class AppLocalizationsEs extends AppLocalizations {
   String get weightUnit => 'Unidad de peso';
 
   @override
+  String get bodyWeight => 'Peso corporal';
+
+  @override
+  String get notSet => 'Sin definir';
+
+  @override
   String get biometricLock => 'Bloqueo biométrico';
 
   @override
@@ -792,6 +798,17 @@ class AppLocalizationsEs extends AppLocalizations {
   String get streak => 'Streak';
 
   @override
+  String get widgetStreakStart => 'Empieza una racha';
+
+  @override
+  String get widgetStreakOneDay => 'Racha de 1 día';
+
+  @override
+  String widgetStreakDays(int days) {
+    return 'Racha de $days días';
+  }
+
+  @override
   String get achievement => 'Achievement';
 
   @override
@@ -970,4 +987,72 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get deleteWorkoutConfirm => '¿Eliminar este entrenamiento?';
+
+  @override
+  String get leaderboardTab => 'Clasificación';
+
+  @override
+  String get challengesTab => 'Retos';
+
+  @override
+  String get currentLeague => 'LIGA ACTUAL';
+
+  @override
+  String get yourPlace => 'Tu lugar';
+
+  @override
+  String placeNumber(int n) {
+    return '$n Lugar';
+  }
+
+  @override
+  String get leagueElite => 'La Élite';
+
+  @override
+  String get leagueMaster => 'El Maestro';
+
+  @override
+  String get leagueStanding => 'Estable';
+
+  @override
+  String get leagueMovingUp => 'Subiendo';
+
+  @override
+  String get leagueWorkHarder => 'Trabaja más';
+
+  @override
+  String get scopeRivals => 'Rivales';
+
+  @override
+  String get scopeGlobal => 'Global';
+
+  @override
+  String get scopeFriends => 'Amigos';
+
+  @override
+  String get volumeLabel => 'Volumen';
+
+  @override
+  String percentDone(int percent) {
+    return '$percent% hecho';
+  }
+
+  @override
+  String rankNumber(int rank) {
+    return 'Rango #$rank';
+  }
+
+  @override
+  String get startChallenge => 'iniciar';
+
+  @override
+  String endInDays(int days) {
+    return 'Termina en ${days}d';
+  }
+
+  @override
+  String get leagueMasterTitle => 'Maestro';
+
+  @override
+  String get noChallengesYet => 'No hay retos activos';
 }

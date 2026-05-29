@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:my_gym_bro/core/router/app_router.dart';
 import 'package:my_gym_bro/core/services/crash_reporter.dart';
+import 'package:my_gym_bro/core/services/subscription_sync_service.dart';
+import 'package:my_gym_bro/features/workout/workout_providers.dart';
 import 'package:my_gym_bro/l10n/app_localizations.dart';
 import 'package:my_gym_bro/shared/constants.dart';
 import 'package:my_gym_bro/shared/responsive.dart';
@@ -33,6 +36,11 @@ class _PaywallScreenState extends ConsumerState<PaywallScreen> {
     final colors = AppColors.of(context);
     final l10n = AppLocalizations.of(context);
 
+    // When the gate is active (trial elapsed / expired) the paywall is the
+    // only way forward — it must not be dismissible by back gesture or a
+    // close button. When opened voluntarily (e.g. from Settings) it is.
+    final locked = ref.watch(subscriptionLockedProvider);
+
     final features = [
       (Icons.fitness_center_rounded, l10n.trialFeature1),
       (Icons.library_books_rounded, l10n.trialFeature2),
@@ -40,23 +48,26 @@ class _PaywallScreenState extends ConsumerState<PaywallScreen> {
       (Icons.insights_rounded, l10n.trialFeature4),
     ];
 
-    return Scaffold(
+    return PopScope(
+      canPop: !locked,
+      child: Scaffold(
       backgroundColor: colors.background,
       body: SafeArea(
         child: Column(
           children: [
-            // ── Close button
-            Align(
-              alignment: Alignment.topRight,
-              child: Padding(
-                padding: EdgeInsets.only(top: 8.h, right: 16.w),
-                child: IconButton(
-                  icon: Icon(Icons.close_rounded,
-                      color: colors.textSecondary, size: 24.sp),
-                  onPressed: () => context.pop(),
+            // ── Close button — hidden while the gate is active
+            if (!locked)
+              Align(
+                alignment: Alignment.topRight,
+                child: Padding(
+                  padding: EdgeInsets.only(top: 8.h, right: 16.w),
+                  child: IconButton(
+                    icon: Icon(Icons.close_rounded,
+                        color: colors.textSecondary, size: 24.sp),
+                    onPressed: () => context.pop(),
+                  ),
                 ),
               ),
-            ),
 
             Expanded(
               child: SingleChildScrollView(
@@ -240,7 +251,19 @@ class _PaywallScreenState extends ConsumerState<PaywallScreen> {
           ],
         ),
       ),
+      ),
     );
+  }
+
+  /// Leave the paywall after a successful purchase/restore. If it was pushed
+  /// on top of a stack (voluntary open) pop back; if it was reached via the
+  /// gate redirect (nothing beneath it) go to home instead.
+  void _dismiss() {
+    if (context.canPop()) {
+      context.pop();
+    } else {
+      context.go(AppRoutes.home);
+    }
   }
 
   Future<void> _purchase() async {
@@ -266,7 +289,10 @@ class _PaywallScreenState extends ConsumerState<PaywallScreen> {
       );
 
       await Purchases.purchasePackage(package);
-      if (mounted) context.pop();
+      // Reconcile entitlement → local profile so the paywall gate
+      // (`subscriptionLockedProvider`) releases.
+      await SubscriptionSyncService.syncNow(ref.read(userProfileDaoProvider));
+      if (mounted) _dismiss();
     } on PurchasesErrorCode catch (e) {
       if (e == PurchasesErrorCode.purchaseCancelledError) {
         setState(() => _error = null);
@@ -289,7 +315,8 @@ class _PaywallScreenState extends ConsumerState<PaywallScreen> {
     });
     try {
       await Purchases.restorePurchases();
-      if (mounted) context.pop();
+      await SubscriptionSyncService.syncNow(ref.read(userProfileDaoProvider));
+      if (mounted) _dismiss();
     } on Exception catch (e) {
       setState(() => _error = 'Could not restore purchases. Please try again.');
       CrashReporter.recordError(e, reason: 'Paywall restore failed');

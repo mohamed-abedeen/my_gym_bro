@@ -104,6 +104,8 @@ class AuthNotifier extends StateNotifier<AppAuthState> {
     String? goal,
     String? experience,
     String? gender,
+    double? bodyWeightKg,
+    double? heightCm,
     String notificationTone = AppConstants.defaultNotificationTone,
   }) async {
     if (_supabase == null) {
@@ -139,6 +141,8 @@ class AuthNotifier extends StateNotifier<AppAuthState> {
         goal: Value(goal),
         experience: Value(experience),
         gender: Value(gender),
+        bodyWeightKg: Value(bodyWeightKg),
+        heightCm: Value(heightCm),
         notificationTone: Value(notificationTone),
         trialStartedAt: Value(now),
         subscriptionStatus: const Value('trial'),
@@ -269,6 +273,66 @@ class AuthNotifier extends StateNotifier<AppAuthState> {
     } on Exception catch (e) {
       state = state.copyWith(
           status: AuthStatus.error, errorMessage: e.toString());
+    }
+  }
+
+  // ──────────────────────────────────────────────
+  // Delete Account (Apple §5.1.1(v) compliance)
+  // ──────────────────────────────────────────────
+  /// Invokes the `delete-account` Supabase edge function, which cascades a
+  /// soft-delete across the user's rows and hard-deletes the auth.users
+  /// record. On success, also wipes the local profile and signs out so the
+  /// next sign-up on this device starts clean.
+  ///
+  /// Returns true on success. On any failure returns false WITHOUT signing
+  /// the user out, so they can retry without losing local state.
+  Future<bool> deleteAccount() async {
+    final sb = _supabase;
+    if (sb == null) {
+      state = state.copyWith(
+        status: AuthStatus.error,
+        errorMessage: 'Not connected to server',
+      );
+      return false;
+    }
+    state = state.copyWith(status: AuthStatus.loading);
+    try {
+      final response = await sb.functions.invoke('delete-account');
+      if (response.status >= 400) {
+        CrashReporter.recordError(
+          Exception('delete-account returned status ${response.status}'),
+          reason: 'Account deletion failed',
+        );
+        state = state.copyWith(
+          status: AuthStatus.error,
+          errorMessage: 'Could not delete account. Please try again.',
+        );
+        return false;
+      }
+
+      // Wipe local profile so the next sign-up doesn't inherit the old user.
+      try {
+        await UserProfileDao(_db).clearAll();
+      } on Exception catch (e) {
+        CrashReporter.recordError(e, reason: 'Local profile wipe failed');
+      }
+
+      try {
+        await Purchases.logOut();
+      } on Exception catch (e) {
+        CrashReporter.recordError(e, reason: 'RevenueCat logOut failed');
+      }
+      await sb.auth.signOut();
+      await SecureStorage().clearTokens();
+      state = const AppAuthState(status: AuthStatus.unauthenticated);
+      return true;
+    } on Exception catch (e) {
+      CrashReporter.recordError(e, reason: 'deleteAccount exception');
+      state = state.copyWith(
+        status: AuthStatus.error,
+        errorMessage: 'Could not delete account. Please try again.',
+      );
+      return false;
     }
   }
 

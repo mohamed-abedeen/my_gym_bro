@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Widget metadata for the MyGymBro home-screen widget.
+
+  Sizing strategy:
+    - `minWidth/minHeight` is the *default* drop size — sized so the
+      widget snaps to ~2 cells tall × 4 wide on most launchers.
+    - `minResizeWidth/minResizeHeight` is how SMALL the user can shrink
+      it to (down to ~1 cell), so the user can drag it to any size.
+    - `targetCellWidth/Height` was removed — it requires API 31+ and
+      caused "Couldn't add widget" on older OEM launchers.
+    - `previewImage` is the picker thumbnail. Falls back to the
+      launcher icon, which is fine for v1.
+-->
+<appwidget-provider
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:minWidth="250dp"
+    android:minHeight="110dp"
+    android:minResizeWidth="110dp"
+    android:minResizeHeight="50dp"
+    android:updatePeriodMillis="0"
+    android:initialLayout="@layout/mgb_widget_layout"
+    android:resizeMode="horizontal|vertical"
+    android:widgetCategory="home_screen"
+    android:previewImage="@mipmap/ic_launcher"
+    android:description="@string/mgb_widget_description" />

@@ -1,0 +1,114 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Visual layout for the MyGymBro home-screen widget.
+
+  Two-column layout:
+    LEFT  — flame icon + big streak number, on a dark rounded card.
+    RIGHT — next training focus + tone-aware call-to-action.
+
+  Tapping anywhere routes through `MgbAppWidgetProvider#onUpdate` via a
+  PendingIntent → MainActivity, which the GoRouter shell handles as a
+  deep-link to /session (or home if no session queued).
+
+  Colours match the in-app accent (#D2FF00) so the widget feels native
+  to the app instead of a generic launcher tile.
+
+  RemoteViews compatibility notes:
+    - `layout_marginStart` / `layout_marginEnd` (API 17+) used instead
+      of `layout_marginHorizontal` (API 26+) so the layout inflates on
+      pre-Android-8 launchers too.
+    - All attributes here are RemoteViews-safe.
+-->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/widget_root"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="horizontal"
+    android:background="@drawable/mgb_widget_background"
+    android:padding="14dp"
+    android:gravity="center_vertical">
+
+    <!-- LEFT: streak block -->
+    <LinearLayout
+        android:layout_width="0dp"
+        android:layout_height="match_parent"
+        android:layout_weight="1"
+        android:orientation="vertical"
+        android:gravity="center_vertical|start">
+
+        <TextView
+            android:id="@+id/streak_flame"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="🔥"
+            android:textSize="22sp"
+            android:textColor="#FFFFFF" />
+
+        <TextView
+            android:id="@+id/streak_label"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="2dp"
+            android:text="—"
+            android:textSize="18sp"
+            android:textStyle="bold"
+            android:textColor="#D2FF00"
+            android:maxLines="1"
+            android:ellipsize="end" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="2dp"
+            android:text="MyGymBro"
+            android:textSize="10sp"
+            android:textColor="#AAAAAA" />
+    </LinearLayout>
+
+    <!-- Divider -->
+    <View
+        android:layout_width="1dp"
+        android:layout_height="match_parent"
+        android:layout_marginStart="12dp"
+        android:layout_marginEnd="12dp"
+        android:background="#33FFFFFF" />
+
+    <!-- RIGHT: next training block -->
+    <LinearLayout
+        android:layout_width="0dp"
+        android:layout_height="match_parent"
+        android:layout_weight="1"
+        android:orientation="vertical"
+        android:gravity="center_vertical|start">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="NEXT"
+            android:textSize="10sp"
+            android:textColor="#AAAAAA" />
+
+        <TextView
+            android:id="@+id/next_focus"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="2dp"
+            android:text="Ready when you are"
+            android:textSize="16sp"
+            android:textStyle="bold"
+            android:textColor="#FFFFFF"
+            android:maxLines="1"
+            android:ellipsize="end" />
+
+        <TextView
+            android:id="@+id/next_cta"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="2dp"
+            android:text="Tap to open"
+            android:textSize="12sp"
+            android:textColor="#D2FF00"
+            android:maxLines="2"
+            android:ellipsize="end" />
+    </LinearLayout>
+</LinearLayout>

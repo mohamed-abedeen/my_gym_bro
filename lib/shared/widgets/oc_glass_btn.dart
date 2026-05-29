@@ -5,6 +5,7 @@ import 'package:my_gym_bro/shared/constants.dart';
 import 'package:my_gym_bro/shared/responsive.dart';
 import 'package:my_gym_bro/shared/widgets/bottom_nav_pill.dart'
     show BottomNavPill;
+import 'package:my_gym_bro/shared/widgets/glass_decoration.dart';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // OC Liquid Glass Button — iOS 26 style refractive glass icon buttons
@@ -71,13 +72,7 @@ class OcGlassBtn extends ConsumerWidget {
         decoration: BoxDecoration(
           color: bgColor,
           borderRadius: BorderRadius.circular(radius),
-          boxShadow: [
-            BoxShadow(
-              color: AppColors.of(context).black.withValues(alpha: isDark ? 0.30 : 0.15),
-              blurRadius: 10.w,
-              offset: Offset(0, 4.h),
-            ),
-          ],
+          boxShadow: [GlassDecoration.shadow(isDark: isDark)],
         ),
         child: Center(
           child:

@@ -35,7 +35,9 @@ class ActiveSessionScreen extends ConsumerStatefulWidget {
 
 class _ActiveSessionScreenState extends ConsumerState<ActiveSessionScreen> {
   Timer? _durationTimer;
-  int _elapsedSeconds = 0;
+  // Elapsed-seconds as a ValueNotifier so only the duration text rebuilds
+  // every tick — not the whole _SetsTable / GIF / rest-timer subtree.
+  final ValueNotifier<int> _elapsed = ValueNotifier<int>(0);
   bool _isPaused = false;
   ProviderContainer? _container;
 
@@ -44,12 +46,22 @@ class _ActiveSessionScreenState extends ConsumerState<ActiveSessionScreen> {
     super.initState();
     WakelockPlus.enable();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      ref
-          .read(activeSessionProvider.notifier)
-          .startSession(scheduleDayId: widget.scheduleDayId);
+      // If a session is already live (the user got here by tapping the
+      // ongoing notification, or by returning to this screen from
+      // backgrounded state) DON'T call startSession — that would create
+      // a duplicate session row in Drift and overwrite the live state.
+      // Instead, run Option A's resync so any stale notification gets
+      // rebuilt against this isolate's handlers.
+      final notifier = ref.read(activeSessionProvider.notifier);
+      final existing = ref.read(activeSessionProvider).sessionId;
+      if (existing == null) {
+        notifier.startSession(scheduleDayId: widget.scheduleDayId);
+      } else {
+        unawaited(notifier.resyncActiveNotification());
+      }
     });
     _durationTimer = Timer.periodic(const Duration(seconds: 1), (_) {
-      if (mounted && !_isPaused) setState(() => _elapsedSeconds++);
+      if (!_isPaused) _elapsed.value++;
     });
   }
 
@@ -57,11 +69,34 @@ class _ActiveSessionScreenState extends ConsumerState<ActiveSessionScreen> {
   void didChangeDependencies() {
     super.didChangeDependencies();
     _container ??= ProviderScope.containerOf(context);
+    // Sync notification strings once per locale change. didChangeDependencies
+    // fires on locale change because AppLocalizations is an InheritedWidget.
+    _syncNotificationStrings();
+  }
+
+  void _syncNotificationStrings() {
+    if (!mounted) return;
+    final l10n = AppLocalizations.of(context);
+    final notifier = ref.read(activeSessionProvider.notifier);
+    final profile = ref.read(userProfileProvider).valueOrNull;
+    final tone = notificationToneFromString(profile?.notificationTone);
+    final restDays =
+        ref.read(consecutiveRestDaysProvider).valueOrNull ?? 0;
+    notifier.setRestNotificationStrings(
+      restCompleteTitleForTone(tone, l10n),
+      restCompleteBodyForTone(tone, l10n),
+    );
+    notifier.setNotificationTone(tone);
+    notifier.setWorkoutReminderStrings(
+      workoutReminderTitleForRestDays(tone, restDays),
+      workoutReminderBodyForRestDays(tone, restDays),
+    );
   }
 
   @override
   void dispose() {
     _durationTimer?.cancel();
+    _elapsed.dispose();
     WakelockPlus.disable();
     // Invalidate providers so the workout/home screens refresh after session ends
     if (_container != null) {
@@ -69,13 +104,25 @@ class _ActiveSessionScreenState extends ConsumerState<ActiveSessionScreen> {
         ..invalidate(muscleRecoveryProvider)
         ..invalidate(enrichedRecentSessionsProvider)
         ..invalidate(weeklyStatsProvider)
+        ..invalidate(lifetimeStatsProvider)
+        ..invalidate(activityStatsProvider)
         ..invalidate(recentSessionsProvider)
         ..invalidate(consecutiveRestDaysProvider);
     }
     super.dispose();
   }
 
-  void _togglePause() => setState(() => _isPaused = !_isPaused);
+  void _togglePause() {
+    final notifier = ref.read(activeSessionProvider.notifier);
+    setState(() {
+      if (_isPaused) {
+        notifier.resume();
+      } else {
+        notifier.pause();
+      }
+      _isPaused = !_isPaused;
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -86,21 +133,14 @@ class _ActiveSessionScreenState extends ConsumerState<ActiveSessionScreen> {
     final notifier = ref.read(activeSessionProvider.notifier);
     final exercise = session.currentExercise;
 
-    // Keep the rest-complete notification copy in sync with the user's
-    // current locale and chosen notification tone. Cheap (two field
-    // writes) so running it on every build is fine.
-    final profile = ref.watch(userProfileProvider).valueOrNull;
-    final tone = notificationToneFromString(profile?.notificationTone);
-    notifier.setRestNotificationStrings(
-      restCompleteTitleForTone(tone, l10n),
-      restCompleteBodyForTone(tone, l10n),
+    // Re-sync notification strings only when the underlying values change.
+    // (Locale changes flow through didChangeDependencies instead.)
+    ref.listen(userProfileProvider, (_, __) => _syncNotificationStrings());
+    ref.listen(
+      consecutiveRestDaysProvider,
+      (_, __) => _syncNotificationStrings(),
     );
-    final restDays =
-        ref.watch(consecutiveRestDaysProvider).valueOrNull ?? 0;
-    notifier.setWorkoutReminderStrings(
-      workoutReminderTitleForRestDays(tone, restDays),
-      workoutReminderBodyForRestDays(tone, restDays),
-    );
+
     final bottomPad = MediaQuery.of(context).padding.bottom;
 
     return Scaffold(
@@ -188,7 +228,7 @@ class _ActiveSessionScreenState extends ConsumerState<ActiveSessionScreen> {
               child: _BottomPanel(
                 session: session,
                 notifier: notifier,
-                elapsedSeconds: _elapsedSeconds,
+                elapsed: _elapsed,
                 bottomPadding: bottomPad,
                 l10n: l10n,
                 onHowTo: () => _showHowToSheet(exercise),
@@ -204,6 +244,7 @@ class _ActiveSessionScreenState extends ConsumerState<ActiveSessionScreen> {
               bottomPadding: bottomPad,
               l10n: l10n,
               onResume: _togglePause,
+              onHowTo: () => _showHowToSheet(exercise),
             ),
         ],
       ),
@@ -259,40 +300,6 @@ class _ActiveSessionScreenState extends ConsumerState<ActiveSessionScreen> {
             SizedBox(height: 16.h),
           ],
         ),
-      ),
-    );
-  }
-
-  void _showDiscardDialog(
-      BuildContext context, ActiveSessionNotifier notifier) {
-    final colors = AppColors.of(context);
-    final l10n = AppLocalizations.of(context);
-    showDialog<void>(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        backgroundColor: colors.card,
-        title: Text(l10n.cancel,
-            style: TextStyle(color: colors.textPrimary)),
-        content: Text(
-          l10n.discardWorkout,
-          style: TextStyle(color: colors.textSecondary),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx),
-            child: Text(l10n.cancel,
-                style: TextStyle(color: colors.textSecondary)),
-          ),
-          TextButton(
-            onPressed: () {
-              Navigator.pop(ctx);
-              notifier.discardSession();
-              context.pop();
-            },
-            child: Text(l10n.delete,
-                style: TextStyle(color: colors.danger)),
-          ),
-        ],
       ),
     );
   }
@@ -498,84 +505,94 @@ class _SetsTable extends StatelessWidget {
     final colors = AppColors.of(context);
     final unit = notifier.weightUnit;
 
-    return ListView(
+    final sets = exercise.sets;
+    // ListView.builder so only visible rows build (and rebuild) — important
+    // for long workouts where the old `ListView(children: ...map)` rebuilt
+    // every row on any setState in the parent.
+    return ListView.builder(
       padding: EdgeInsets.only(bottom: bottomPadding),
-      children: [
-        // Set rows — each row has inline labels: "1 Set  ⇅60 Kg  ⇅10 Reps  ✓"
-        ...exercise.sets.map((s) {
-          return Column(
-            key: ValueKey('set_col_${s.localId}'),
-            children: [
-              Dismissible(
-                key: ValueKey(s.localId),
-                direction: DismissDirection.endToStart,
-                background: Container(
-                  alignment: Alignment.centerRight,
-                  padding: EdgeInsets.only(right: 28.w),
-                  color: AppColors.of(context).danger,
-                  child: Icon(Icons.delete_outline_rounded,
-                      color: AppColors.of(context).white),
-                ),
-                confirmDismiss: (_) async {
-                  return showDialog<bool>(
-                    context: context,
-                    builder: (ctx) => AlertDialog(
-                      backgroundColor: AppColors.of(context).card,
-                      title: Text(
-                        l10n.deleteSet,
-                        style: TextStyle(
-                            color: AppColors.of(context).textPrimary),
-                      ),
-                      content: Text(
-                        l10n.deleteSetConfirm,
-                        style: TextStyle(
-                            color: AppColors.of(context).textSecondary),
-                      ),
-                      actions: [
-                        TextButton(
-                          onPressed: () => Navigator.pop(ctx, false),
-                          child: Text(
-                            l10n.cancel,
-                            style: TextStyle(
-                                color: AppColors.of(context).textSecondary),
-                          ),
-                        ),
-                        TextButton(
-                          onPressed: () => Navigator.pop(ctx, true),
-                          child: Text(
-                            l10n.delete,
-                            style: TextStyle(
-                                color: AppColors.of(context).danger),
-                          ),
-                        ),
-                      ],
-                    ),
-                  );
-                },
-                onDismissed: (_) => notifier.deleteSet(s.localId),
-                child: _SetRow(
-                  set: s,
-                  exercise: exercise,
-                  notifier: notifier,
-                  unit: unit,
-                ),
-              ),
-              // Divider after each row
-              Padding(
-                padding: EdgeInsets.symmetric(horizontal: 28.w),
-                child: Container(
-                  height: 1,
-                  color: colors.separator.withValues(alpha: 0.3),
-                ),
-              ),
-            ],
+      itemCount: sets.length + 1, // +1 for the trailing Add Set button
+      itemBuilder: (context, i) {
+        if (i == sets.length) {
+          return Padding(
+            padding: EdgeInsets.only(top: 8.h),
+            child: _buildAddSetButton(context),
           );
-        }),
+        }
+        final s = sets[i];
+        return Column(
+          key: ValueKey('set_col_${s.localId}'),
+          children: [
+            Dismissible(
+              key: ValueKey(s.localId),
+              direction: DismissDirection.endToStart,
+              background: Container(
+                alignment: Alignment.centerRight,
+                padding: EdgeInsets.only(right: 28.w),
+                color: AppColors.of(context).danger,
+                child: Icon(Icons.delete_outline_rounded,
+                    color: AppColors.of(context).white),
+              ),
+              confirmDismiss: (_) async {
+                return showDialog<bool>(
+                  context: context,
+                  builder: (ctx) => AlertDialog(
+                    backgroundColor: AppColors.of(context).card,
+                    title: Text(
+                      l10n.deleteSet,
+                      style: TextStyle(
+                          color: AppColors.of(context).textPrimary),
+                    ),
+                    content: Text(
+                      l10n.deleteSetConfirm,
+                      style: TextStyle(
+                          color: AppColors.of(context).textSecondary),
+                    ),
+                    actions: [
+                      TextButton(
+                        onPressed: () => Navigator.pop(ctx, false),
+                        child: Text(
+                          l10n.cancel,
+                          style: TextStyle(
+                              color: AppColors.of(context).textSecondary),
+                        ),
+                      ),
+                      TextButton(
+                        onPressed: () => Navigator.pop(ctx, true),
+                        child: Text(
+                          l10n.delete,
+                          style: TextStyle(
+                              color: AppColors.of(context).danger),
+                        ),
+                      ),
+                    ],
+                  ),
+                );
+              },
+              onDismissed: (_) => notifier.deleteSet(s.localId),
+              child: _SetRow(
+                set: s,
+                exercise: exercise,
+                notifier: notifier,
+                unit: unit,
+              ),
+            ),
+            // Divider after each row
+            Padding(
+              padding: EdgeInsets.symmetric(horizontal: 28.w),
+              child: Container(
+                height: 1,
+                color: colors.separator.withValues(alpha: 0.3),
+              ),
+            ),
+          ],
+        );
+      },
+    );
+  }
 
-        SizedBox(height: 8.h),
-
-        // Add set button
-        Padding(
+  Widget _buildAddSetButton(BuildContext context) {
+    return Padding(
           padding: EdgeInsets.symmetric(horizontal: 28.w),
           child: LayoutBuilder(
             builder: (context, constraints) {
@@ -647,9 +664,7 @@ class _SetsTable extends StatelessWidget {
               );
             },
           ),
-        ),
-      ],
-    );
+        );
   }
 }
 
@@ -1094,7 +1109,7 @@ class _BottomPanel extends StatelessWidget {
   const _BottomPanel({
     required this.session,
     required this.notifier,
-    required this.elapsedSeconds,
+    required this.elapsed,
     required this.bottomPadding,
     required this.l10n,
     required this.onPause,
@@ -1102,7 +1117,7 @@ class _BottomPanel extends StatelessWidget {
   });
   final ActiveSessionState session;
   final ActiveSessionNotifier notifier;
-  final int elapsedSeconds;
+  final ValueNotifier<int> elapsed;
   final double bottomPadding;
   final AppLocalizations l10n;
   final VoidCallback onPause;
@@ -1111,10 +1126,6 @@ class _BottomPanel extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final colors = AppColors.of(context);
-    final minutes = elapsedSeconds ~/ 60;
-    final seconds = elapsedSeconds % 60;
-    final timeStr =
-        '${minutes.toString().padLeft(2, '0')}:${seconds.toString().padLeft(2, '0')}m';
 
     return Container(
       decoration: BoxDecoration(
@@ -1160,13 +1171,20 @@ class _BottomPanel extends StatelessWidget {
                           ),
                         ),
                         SizedBox(height: 2.h),
-                        Text(
-                          timeStr,
-                          style: TextStyle(
-                            color: colors.textPrimary,
-                            fontSize: 14.sp,
-                            fontWeight: FontWeight.w700,
-                          ),
+                        ValueListenableBuilder<int>(
+                          valueListenable: elapsed,
+                          builder: (_, seconds, __) {
+                            final m = seconds ~/ 60;
+                            final s = seconds % 60;
+                            return Text(
+                              '${m.toString().padLeft(2, '0')}:${s.toString().padLeft(2, '0')}m',
+                              style: TextStyle(
+                                color: colors.textPrimary,
+                                fontSize: 14.sp,
+                                fontWeight: FontWeight.w700,
+                              ),
+                            );
+                          },
                         ),
                       ],
                     ),
@@ -1519,12 +1537,14 @@ class _PauseOverlay extends StatelessWidget {
     required this.bottomPadding,
     required this.l10n,
     required this.onResume,
+    required this.onHowTo,
   });
   final ActiveSessionState session;
   final ActiveSessionNotifier notifier;
   final double bottomPadding;
   final AppLocalizations l10n;
   final VoidCallback onResume;
+  final VoidCallback onHowTo;
 
   @override
   Widget build(BuildContext context) {
@@ -1771,9 +1791,10 @@ class _PauseOverlay extends StatelessWidget {
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   // Hint — liquid glass
-                  const OcGlassBtn(
+                  OcGlassBtn(
                     type: OcGlassBtnType.hint,
                     size: 66,
+                    onTap: onHowTo,
                   ),
 
                   // Resume / play button

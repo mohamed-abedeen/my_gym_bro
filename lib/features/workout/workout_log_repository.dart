@@ -12,10 +12,26 @@ import 'package:my_gym_bro/core/services/sync_service.dart';
 // types (Value, Companion, etc.), ensuring the notifier never constructs
 // data-layer objects directly.
 
+/// A patch value for partial updates. Distinguishes "field not provided"
+/// (`Patch.unchanged()`) from "field explicitly set to null" (`Patch.set(null)`).
+/// Mirrors Drift's `Value<T>` without leaking it into the UI layer.
+class Patch<T> {
+  const Patch.unchanged()
+      : present = false,
+        _value = null;
+  const Patch.set(T value)
+      : present = true,
+        _value = value;
+  final bool present;
+  final T? _value;
+  T? get value => _value;
+}
+
 /// Parameters needed to create a new workout session.
 class CreateSessionParams {
-  const CreateSessionParams({required this.startedAt});
+  const CreateSessionParams({required this.startedAt, this.scheduleId});
   final DateTime startedAt;
+  final int? scheduleId;
 }
 
 /// Parameters needed to add an exercise to an active session.
@@ -52,26 +68,27 @@ class AddSetParams {
   final double? incline;
 }
 
-/// Parameters needed to update fields on an existing set.
+/// Parameters needed to update fields on an existing set. Each field uses
+/// [Patch] so callers can distinguish "leave alone" from "clear to null".
 class UpdateSetParams {
   const UpdateSetParams({
     required this.sessionExerciseId,
     required this.setLocalId,
-    this.weight,
-    this.reps,
-    this.durationSeconds,
-    this.distance,
-    this.speed,
-    this.incline,
+    this.weight = const Patch.unchanged(),
+    this.reps = const Patch.unchanged(),
+    this.durationSeconds = const Patch.unchanged(),
+    this.distance = const Patch.unchanged(),
+    this.speed = const Patch.unchanged(),
+    this.incline = const Patch.unchanged(),
   });
   final int sessionExerciseId;
   final int setLocalId;
-  final double? weight;
-  final int? reps;
-  final int? durationSeconds;
-  final double? distance;
-  final double? speed;
-  final double? incline;
+  final Patch<double?> weight;
+  final Patch<int?> reps;
+  final Patch<int?> durationSeconds;
+  final Patch<double?> distance;
+  final Patch<double?> speed;
+  final Patch<double?> incline;
 }
 
 /// Parameters for updating the set type flags.
@@ -180,7 +197,16 @@ class WorkoutLogRepository {
     return _sessionDao.createSession(SessionsCompanion(
       startedAt: Value(params.startedAt),
       createdAt: Value(params.startedAt),
+      scheduleId: params.scheduleId == null
+          ? const Value.absent()
+          : Value(params.scheduleId),
     ));
+  }
+
+  /// Look up a schedule day to find its parent schedule ID.
+  Future<int?> getScheduleIdForDay(int scheduleDayId) async {
+    final day = await _scheduleDao.getDayById(scheduleDayId);
+    return day?.scheduleId;
   }
 
   /// Finish a session, persist summary data, and enqueue for sync.
@@ -232,6 +258,11 @@ class WorkoutLogRepository {
     return _sessionDao.deleteSessionExercise(sessionExerciseId);
   }
 
+  /// Delete an entire session and cascade to its exercises and sets.
+  Future<void> deleteSession(int sessionId) {
+    return _sessionDao.deleteSession(sessionId);
+  }
+
   // ── Sets ────────────────────────────────────────────────────────────────
 
   /// Add a workout set and return its local ID.
@@ -249,18 +280,30 @@ class WorkoutLogRepository {
     ));
   }
 
-  /// Update strength/cardio fields on a set.
+  /// Update strength/cardio fields on a set. Only fields whose [Patch] is
+  /// `present` are written; absent patches leave the column unchanged.
   Future<void> updateSet(UpdateSetParams params) async {
     final sets = await _sessionDao.getSets(params.sessionExerciseId);
     final dbSet = sets.firstWhere((s) => s.localId == params.setLocalId);
     await _sessionDao.updateSet(dbSet.copyWith(
-      weight: Value(params.weight ?? dbSet.weight),
-      reps: Value(params.reps ?? dbSet.reps),
-      durationSeconds:
-          Value(params.durationSeconds ?? dbSet.durationSeconds),
-      distance: Value(params.distance ?? dbSet.distance),
-      speed: Value(params.speed ?? dbSet.speed),
-      incline: Value(params.incline ?? dbSet.incline),
+      weight: params.weight.present
+          ? Value(params.weight.value)
+          : const Value.absent(),
+      reps: params.reps.present
+          ? Value(params.reps.value)
+          : const Value.absent(),
+      durationSeconds: params.durationSeconds.present
+          ? Value(params.durationSeconds.value)
+          : const Value.absent(),
+      distance: params.distance.present
+          ? Value(params.distance.value)
+          : const Value.absent(),
+      speed: params.speed.present
+          ? Value(params.speed.value)
+          : const Value.absent(),
+      incline: params.incline.present
+          ? Value(params.incline.value)
+          : const Value.absent(),
     ));
   }
 
@@ -273,6 +316,18 @@ class WorkoutLogRepository {
       isDropset: params.isDropset,
       isFailure: params.isFailure,
     ));
+  }
+
+  /// Mark a set as completed (or un-completed) and persist immediately so
+  /// the state survives a process kill.
+  Future<void> setCompletion({
+    required int sessionExerciseId,
+    required int setLocalId,
+    required bool isCompleted,
+  }) async {
+    final sets = await _sessionDao.getSets(sessionExerciseId);
+    final dbSet = sets.firstWhere((s) => s.localId == setLocalId);
+    await _sessionDao.updateSet(dbSet.copyWith(isCompleted: isCompleted));
   }
 
   /// Delete a single set.

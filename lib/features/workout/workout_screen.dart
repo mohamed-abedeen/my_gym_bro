@@ -90,13 +90,14 @@ class WorkoutScreen extends ConsumerWidget {
 // ═══════════════════════════════════════════════════════════════════
 // Header: "Workout" + fire streak + glass menu button
 // ═══════════════════════════════════════════════════════════════════
-class _Header extends StatelessWidget {
+class _Header extends ConsumerWidget {
   const _Header({required this.l10n});
   final AppLocalizations l10n;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final colors = AppColors.of(context);
+    final streak = ref.watch(streakProvider).asData?.value ?? 0;
 
     return Padding(
       padding: EdgeInsets.only(
@@ -121,7 +122,7 @@ class _Header extends StatelessWidget {
           Icon(Icons.local_fire_department, color: colors.accent, size: 26.sp),
           SizedBox(width: 2.w),
           Text(
-            '2',
+            '$streak',
             style: TextStyle(
               color: colors.textPrimary,
               fontSize: 24.sp,
@@ -573,15 +574,7 @@ class _ScheduleCardState extends ConsumerState<_ScheduleCard> {
     final daysAsync = ref.watch(scheduleDaysProvider(selected.localId));
     final allDays = daysAsync.valueOrNull ?? [];
     // Filter out rest days for the card swiper — rest days don't need play/edit.
-    // Also check label as fallback for legacy data where isRestDay may not be set.
-    final trainingDays =
-        allDays
-            .where(
-              (d) =>
-                  !d.isRestDay &&
-                  !(d.label?.toLowerCase().contains('rest') ?? false),
-            )
-            .toList();
+    final trainingDays = allDays.where((d) => !d.isRestDay).toList();
 
     // Total pages: training days + "Add Day" card at the end
     final totalPages = trainingDays.length + 1;
@@ -1063,7 +1056,7 @@ Future<void> _showProgramPicker(
       offset.dx + 220.w,
       0,
     ),
-    color: const Color(0xF2FAFAFA),
+    color: colors.card.withValues(alpha: 0.95),
     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20.r)),
     elevation: 8,
     items: items,

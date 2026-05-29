@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
-import 'package:my_gym_bro/shared/constants.dart';
-import 'package:my_gym_bro/shared/responsive.dart';
 
-/// Flat button replacing the previous refractive liquid glass style.
+import 'package:my_gym_bro/shared/constants.dart';
+import 'package:my_gym_bro/shared/widgets/glass_decoration.dart';
+
+/// Flat frosted-glass button. Shares its visual language (tint + shadow)
+/// with the other glass surfaces via [GlassDecoration].
 class LiquidGlassButton extends StatelessWidget {
   const LiquidGlassButton({
     required this.child,
@@ -32,17 +34,9 @@ class LiquidGlassButton extends StatelessWidget {
         width: width,
         height: height,
         decoration: BoxDecoration(
-          color: isDark
-              ? AppColors.of(context).white.withValues(alpha: opacity * 0.26)
-              : AppColors.of(context).black.withValues(alpha: opacity * 0.17),
+          color: GlassDecoration.tint(isDark: isDark, opacity: opacity),
           borderRadius: BorderRadius.circular(radius),
-          boxShadow: [
-            BoxShadow(
-              color: AppColors.of(context).black.withValues(alpha: isDark ? 0.30 : 0.15),
-              blurRadius: 10.w,
-              offset: Offset(0, 4.h),
-            ),
-          ],
+          boxShadow: [GlassDecoration.shadow(isDark: isDark)],
         ),
         child: Center(child: child),
       ),

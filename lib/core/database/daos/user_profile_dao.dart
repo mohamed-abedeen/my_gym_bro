@@ -37,6 +37,11 @@ class UserProfileDao extends DatabaseAccessor<AppDatabase>
       (update(userProfiles)..where((t) => t.localId.equals(localId)))
           .write(UserProfilesCompanion(weightUnit: Value(unit)));
 
+  /// Update self-reported body weight in kilograms.
+  Future<void> updateBodyWeight(int localId, double? kg) =>
+      (update(userProfiles)..where((t) => t.localId.equals(localId)))
+          .write(UserProfilesCompanion(bodyWeightKg: Value(kg)));
+
   /// Update FCM token.
   Future<void> updateFcmToken(int localId, String token) =>
       (update(userProfiles)..where((t) => t.localId.equals(localId)))
@@ -51,4 +56,23 @@ class UserProfileDao extends DatabaseAccessor<AppDatabase>
   Future<void> updateBannerUrl(int localId, String? url) =>
       (update(userProfiles)..where((t) => t.localId.equals(localId)))
           .write(UserProfilesCompanion(bannerUrl: Value(url)));
+
+  /// Delete every profile row on this device. Used by the account-deletion
+  /// flow so the next sign-up on the same device starts with a clean slate.
+  Future<int> clearAll() => delete(userProfiles).go();
+
+  /// Update subscription status + expiry from a RevenueCat customer info
+  /// reconciliation. `expiresAt` may be null for lifetime entitlements or
+  /// when there's no active entitlement (status='expired').
+  Future<void> updateSubscription(
+    int localId, {
+    required String status,
+    DateTime? expiresAt,
+  }) =>
+      (update(userProfiles)..where((t) => t.localId.equals(localId))).write(
+        UserProfilesCompanion(
+          subscriptionStatus: Value(status),
+          subscriptionExpiresAt: Value(expiresAt),
+        ),
+      );
 }

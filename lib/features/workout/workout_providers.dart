@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/foundation.dart' show compute, immutable;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -9,6 +11,7 @@ import 'package:my_gym_bro/core/database/daos/schedule_dao.dart';
 import 'package:my_gym_bro/core/database/daos/session_dao.dart';
 import 'package:my_gym_bro/core/database/daos/user_profile_dao.dart';
 import 'package:my_gym_bro/core/providers/providers.dart';
+import 'package:my_gym_bro/core/services/widget_sync_service.dart';
 import 'package:my_gym_bro/features/workout/muscle_recovery_service.dart';
 import 'package:my_gym_bro/features/workout/workout_log_repository.dart';
 
@@ -329,6 +332,41 @@ final userProfileProvider = StreamProvider<UserProfile?>((ref) {
   return ref.watch(userProfileDaoProvider).watchProfile();
 });
 
+/// Whole-app paywall gate. True when access must be blocked: the trial window
+/// has elapsed, or the subscription is expired. Returns false while the
+/// profile is loading or absent (pre-onboarding) so we never lock a user we
+/// don't yet know about. This is the single source of truth for gating —
+/// the router redirect and the paywall both read it.
+final subscriptionLockedProvider = Provider<bool>((ref) {
+  final profile = ref.watch(userProfileProvider).valueOrNull;
+  if (profile == null) return false;
+  switch (profile.subscriptionStatus) {
+    case 'active':
+      return false;
+    case 'expired':
+      return true;
+    case 'trial':
+      final end = profile.subscriptionExpiresAt;
+      return end != null && DateTime.now().isAfter(end);
+    default:
+      // 'grace_period' or any unknown status → don't lock.
+      return false;
+  }
+});
+
+/// Whole days left in the free trial, rounded up. Null when the user isn't in
+/// a trial (active/expired) or there's no known trial window. 0 means the
+/// trial has just elapsed.
+final trialDaysLeftProvider = Provider<int?>((ref) {
+  final profile = ref.watch(userProfileProvider).valueOrNull;
+  if (profile == null || profile.subscriptionStatus != 'trial') return null;
+  final end = profile.subscriptionExpiresAt;
+  if (end == null) return null;
+  final minutes = end.difference(DateTime.now()).inMinutes;
+  if (minutes <= 0) return 0;
+  return (minutes / (60 * 24)).ceil();
+});
+
 /// Gender from user profile — defaults to 'male' if not set.
 final userGenderProvider = Provider<String>((ref) {
   final profile = ref.watch(userProfileProvider);
@@ -459,14 +497,154 @@ final weeklyStatsProvider = FutureProvider<WeeklyStats>((ref) async {
   final avgStr = thisWeek.isNotEmpty ? totalVol / thisWeek.length : 0.0;
   final lastAvgStr = lastWeek.isNotEmpty ? lastVol / lastWeek.length : 0.0;
 
+  // Suppress trends when the user hasn't trained yet this week — it's
+  // misleading to show "-100%" because they opened the app on Monday.
+  // Trends are also suppressed when this week's contribution to a given
+  // metric is zero (e.g. a still-empty session): there's nothing to
+  // compare yet.
+  final hasThisWeek = thisWeek.isNotEmpty;
   return WeeklyStats(
     totalVolume: totalVol,
     totalDurationSeconds: totalDur,
     avgStrength: avgStr,
-    volumeTrend: lastVol > 0 ? ((totalVol - lastVol) / lastVol * 100) : null,
-    durationTrend: lastDur > 0 ? ((totalDur - lastDur) / lastDur * 100) : null,
-    strengthTrend:
-        lastAvgStr > 0 ? (avgStr - lastAvgStr).roundToDouble() : null,
+    volumeTrend: (hasThisWeek && totalVol > 0 && lastVol > 0)
+        ? ((totalVol - lastVol) / lastVol * 100)
+        : null,
+    durationTrend: (hasThisWeek && totalDur > 0 && lastDur > 0)
+        ? ((totalDur - lastDur) / lastDur * 100)
+        : null,
+    strengthTrend: (hasThisWeek && avgStr > 0 && lastAvgStr > 0)
+        ? (avgStr - lastAvgStr).roundToDouble()
+        : null,
+  );
+});
+
+// ── Lifetime + activity aggregates (used by the Status bottom sheet) ──
+
+class LifetimeStats {
+  const LifetimeStats({
+    this.totalVolume = 0,
+    this.totalDurationSeconds = 0,
+    this.avgStrength = 0,
+    this.sessionCount = 0,
+  });
+  final double totalVolume;
+  final int totalDurationSeconds;
+  final double avgStrength;
+  final int sessionCount;
+
+  String get formattedDuration {
+    final hours = totalDurationSeconds ~/ 3600;
+    final minutes = (totalDurationSeconds % 3600) ~/ 60;
+    if (hours > 0) return '${hours}h ${minutes}m';
+    return '${minutes}m';
+  }
+}
+
+/// All-time totals across every finished session — used by the Status
+/// sheet so the user sees their full history, not just this week.
+final lifetimeStatsProvider = FutureProvider<LifetimeStats>((ref) async {
+  final sessionDao = ref.watch(sessionDaoProvider);
+  final all = (await sessionDao.getAll())
+      .where((s) => s.finishedAt != null)
+      .toList(growable: false);
+  if (all.isEmpty) return const LifetimeStats();
+
+  double totalVol = 0;
+  var totalDur = 0;
+  for (final s in all) {
+    totalVol += s.totalVolume ?? 0;
+    totalDur += s.durationSeconds ?? 0;
+  }
+  return LifetimeStats(
+    totalVolume: totalVol,
+    totalDurationSeconds: totalDur,
+    avgStrength: totalVol / all.length,
+    sessionCount: all.length,
+  );
+});
+
+class ActivityStats {
+  const ActivityStats({
+    this.todayVolume = 0,
+    this.weekVolume = 0,
+    this.monthVolume = 0,
+    this.todayCalories = 0,
+    this.weekCalories = 0,
+    this.monthCalories = 0,
+  });
+  final double todayVolume;
+  final double weekVolume;
+  final double monthVolume;
+  final int todayCalories;
+  final int weekCalories;
+  final int monthCalories;
+}
+
+/// Default MET for mixed strength + cardio training. ACSM tables put
+/// moderate weight training around 3.5–6.0 MET; 5.0 is a reasonable
+/// midpoint for an attentive session with short rests. Tune per-exercise
+/// later if we add MET metadata to the Exercises table.
+const double _kDefaultMet = 5.0;
+
+/// Fallback body weight (kg) when the user hasn't set theirs yet. Picked
+/// to roughly match the global adult mean so calorie estimates are
+/// directionally right rather than zero. Visible cue to set weight is up
+/// to the UI.
+const double _kFallbackBodyWeightKg = 70;
+
+/// ACSM-style calorie estimate for one finished session.
+///   kcal = MET × bodyWeight(kg) × hours
+int caloriesForSession(double bodyWeightKg, int durationSeconds) {
+  if (durationSeconds <= 0) return 0;
+  final hours = durationSeconds / 3600.0;
+  return (_kDefaultMet * bodyWeightKg * hours).round();
+}
+
+/// Volume + calories rolled up over today, the last 7 days, and the last
+/// 30 days. Powers the "Body Status" card in the Status sheet.
+final activityStatsProvider = FutureProvider<ActivityStats>((ref) async {
+  final sessionDao = ref.watch(sessionDaoProvider);
+  final profile = await ref.watch(userProfileProvider.future);
+  final bodyWeight =
+      profile?.bodyWeightKg ?? _kFallbackBodyWeightKg;
+
+  final now = DateTime.now();
+  final today = DateTime(now.year, now.month, now.day);
+  final tomorrow = today.add(const Duration(days: 1));
+  final weekStart = today.subtract(const Duration(days: 7));
+  final monthStart = today.subtract(const Duration(days: 30));
+
+  final monthSessions = await sessionDao.getInRange(monthStart, tomorrow);
+
+  double todayVol = 0;
+  double weekVol = 0;
+  double monthVol = 0;
+  var todayCal = 0;
+  var weekCal = 0;
+  var monthCal = 0;
+  for (final s in monthSessions) {
+    if (s.finishedAt == null) continue;
+    final v = s.totalVolume ?? 0;
+    final c = caloriesForSession(bodyWeight, s.durationSeconds ?? 0);
+    monthVol += v;
+    monthCal += c;
+    if (s.startedAt.isAfter(weekStart)) {
+      weekVol += v;
+      weekCal += c;
+    }
+    if (s.startedAt.isAfter(today)) {
+      todayVol += v;
+      todayCal += c;
+    }
+  }
+  return ActivityStats(
+    todayVolume: todayVol,
+    weekVolume: weekVol,
+    monthVolume: monthVol,
+    todayCalories: todayCal,
+    weekCalories: weekCal,
+    monthCalories: monthCal,
   );
 });
 
@@ -566,9 +744,10 @@ List<EnrichedSession> _enrichSessionsIsolate(_EnrichInput input) {
       double vol = 0;
       var completedSets = 0;
       for (final s in sets) {
+        if (!s.isCompleted) continue;
+        completedSets++;
         if (s.weight != null && s.reps != null) {
           vol += s.weight! * s.reps!;
-          completedSets++;
         }
       }
 
@@ -691,13 +870,72 @@ final consecutiveRestDaysProvider = FutureProvider<int>((ref) async {
       DateTime(days.first.year, days.first.month, days.first.day);
   final now = DateTime.now();
   final today = DateTime(now.year, now.month, now.day);
-  final diff = today.difference(lastWorkout).inDays;
+  // Round hours/24 instead of using inDays so a DST transition (a 23h or
+  // 25h local day) still counts as one calendar day apart.
+  final diff = (today.difference(lastWorkout).inHours / 24).round();
   return diff > 0 ? diff : 0;
+});
+
+// ── Home-screen widget sync ──────────────────
+//
+// A pure side-effect provider. Reading it once at app boot wires up
+// listens that mirror `streakProvider` + `muscleRecoveryProvider` into
+// the `home_widget` shared storage so the always-on Android AppWidget
+// (and the planned iOS WidgetKit widget) reflects the latest state.
+//
+// Why a provider and not a top-level service: this scopes the listens
+// to the ProviderContainer's lifetime, so hot-reload and integration
+// tests behave cleanly. The empty `void` return is intentional — call
+// sites just need to `ref.read` it to activate the side-effects.
+final widgetSyncProvider = Provider<void>((ref) {
+  ref.listen<AsyncValue<int>>(streakProvider, (_, next) {
+    final days = next.valueOrNull;
+    if (days != null) {
+      WidgetSyncService.updateStreak(days);
+    }
+  });
+
+  ref.listen<AsyncValue<List<MuscleStateInfo>>>(muscleRecoveryProvider,
+      (_, next) {
+    final states = next.valueOrNull;
+    if (states == null) return;
+    // Pick the highest-priority under-trained muscle group as "next focus".
+    // Falls back to the most-recovered if everything is fresh.
+    final underTrained = states
+        .where((s) => s.state == MuscleState.undertrained)
+        .map((s) => s.muscleGroup)
+        .where((g) => g != 'Cardio')
+        .toList();
+    final focus = underTrained.isNotEmpty
+        ? underTrained.first
+        : states
+            .firstWhere(
+              (s) => s.state == MuscleState.recovered,
+              orElse: () => const MuscleStateInfo(
+                muscleGroup: '',
+                state: MuscleState.undertrained,
+              ),
+            )
+            .muscleGroup;
+    WidgetSyncService.updateNextFocus(
+      muscleGroup: focus.isEmpty ? null : focus,
+      cta: focus.isEmpty ? 'Tap to open MyGymBro' : 'Open the app to start',
+    );
+  });
 });
 
 // ── Streak count ─────────────────────────────
 
 final streakProvider = FutureProvider<int>((ref) async {
+  // Auto-invalidate at next local midnight so the streak rolls over even
+  // when the app stays foregrounded across the day boundary. Re-runs of
+  // this provider reschedule the timer.
+  final now = DateTime.now();
+  final nextMidnight = DateTime(now.year, now.month, now.day + 1);
+  final midnightTimer =
+      Timer(nextMidnight.difference(now), ref.invalidateSelf);
+  ref.onDispose(midnightTimer.cancel);
+
   final sessionDao = ref.watch(sessionDaoProvider);
   // One SQL round-trip: distinct local calendar days (newest first) with at
   // least one completed session. Replaces the previous 365 sequential
@@ -706,7 +944,6 @@ final streakProvider = FutureProvider<int>((ref) async {
   final days = await sessionDao.getDistinctSessionDatesDescending();
   if (days.isEmpty) return 0;
 
-  final now = DateTime.now();
   final today = DateTime(now.year, now.month, now.day);
   final daySet = <int>{
     for (final d in days)
@@ -715,7 +952,9 @@ final streakProvider = FutureProvider<int>((ref) async {
 
   var streak = 0;
   for (var i = 0; i <= days.length; i++) {
-    final day = today.subtract(Duration(days: i));
+    // Subtract calendar days at local midnight rather than fixed 24h
+    // Durations so a DST transition can't shift the lookup off the day.
+    final day = DateTime(today.year, today.month, today.day - i);
     if (daySet.contains(day.millisecondsSinceEpoch)) {
       streak++;
     } else if (i > 0) {
@@ -760,7 +999,7 @@ final recordsProvider = FutureProvider<RecordsData>((ref) async {
   // In-memory join: track personal bests per exercise (max volume = weight × reps)
   final personalBests = <String, double>{};
   for (final s in allSets) {
-    if (s.weight != null && s.reps != null) {
+    if (s.isCompleted && s.weight != null && s.reps != null) {
       final vol = s.weight! * s.reps!;
       final exerciseId = exerciseIdBySEId[s.sessionExerciseId];
       if (exerciseId == null) continue;
@@ -776,9 +1015,26 @@ final recordsProvider = FutureProvider<RecordsData>((ref) async {
 
 // ── Calories estimate ────────────────────────
 
+/// Total calories burned across *last* week's completed sessions (Monday
+/// 00:00 through the following Monday 00:00, exclusive). Uses the user's
+/// real body weight when set, falling back to [_kFallbackBodyWeightKg].
 final weeklyCaloriesProvider = FutureProvider<int>((ref) async {
-  final stats = await ref.watch(weeklyStatsProvider.future);
-  // Rough estimate: ~6 cal per minute of strength training
-  final minutes = stats.totalDurationSeconds / 60;
-  return (minutes * 6).round();
+  final sessionDao = ref.watch(sessionDaoProvider);
+  final profile = await ref.watch(userProfileProvider.future);
+  final bodyWeight = profile?.bodyWeightKg ?? _kFallbackBodyWeightKg;
+
+  final now = DateTime.now();
+  final monday = DateTime(now.year, now.month, now.day)
+      .subtract(Duration(days: now.weekday - 1));
+  final weekStart = DateTime(monday.year, monday.month, monday.day);
+  final lastWeekStart = weekStart.subtract(const Duration(days: 7));
+
+  final lastWeek = await sessionDao.getInRange(lastWeekStart, weekStart);
+
+  var total = 0;
+  for (final s in lastWeek) {
+    if (s.finishedAt == null) continue;
+    total += caloriesForSession(bodyWeight, s.durationSeconds ?? 0);
+  }
+  return total;
 });
