@@ -208,7 +208,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase(super.e);
 
   @override
-  int get schemaVersion => 5;
+  int get schemaVersion => 6;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -232,6 +232,14 @@ class AppDatabase extends _$AppDatabase {
         await customStatement(
           'ALTER TABLE exercises ADD COLUMN difficulty TEXT',
         );
+      }
+      if (from < 6) {
+        // v6: exercises are no longer seeded from the bundled 1.5MB JSON —
+        // they come from the WorkoutX API and are cached on demand. Wipe the
+        // old bundled rows so the new id scheme / mapping takes over cleanly.
+        // Schedules/sessions reference exercises by string id, so any rows the
+        // user actually uses are re-cached on next browse/log.
+        await customStatement('DELETE FROM exercises');
       }
     },
   );

@@ -1,25 +1,49 @@
+import 'dart:convert';
+
 import 'package:drift/drift.dart';
+import 'package:flutter/services.dart';
 
 import '../database/app_database.dart';
 import '../database/daos/exercise_dao.dart';
 import '../database/daos/schedule_dao.dart';
+import 'exercise_repository.dart';
+import 'workoutx_exercise.dart';
 
 /// Seeds the database with 3 ready-to-use training programs:
 /// Arnold Split, Bro Split, Push/Pull/Legs.
+///
+/// Exercises are resolved by NAME (not hard-coded ids, which used to come from
+/// the bundled JSON). Resolution order per name:
+///   1. in-memory cache (within this seed run),
+///   2. local exercise cache — the bundled starter set + anything already
+///      cached (works fully offline),
+///   3. the WorkoutX API search-by-name (Pro/Ultra; gated on free), which the
+///      repository caches,
+///   4. a custom, name-only exercise as a last resort.
 ///
 /// Call once at startup (guarded by a check so it doesn't re-seed).
 class ProgramSeeder {
   final ScheduleDao _scheduleDao;
   final ExerciseDao _exerciseDao;
+  final ExerciseRepository _repo;
 
-  ProgramSeeder(AppDatabase db)
+  ProgramSeeder(AppDatabase db, this._repo)
       : _scheduleDao = ScheduleDao(db),
         _exerciseDao = ExerciseDao(db);
+
+  /// Bundled starter dataset: a tiny set of real WorkoutX exercises shipped in
+  /// the app so the default program resolves to rich data (gif + muscle group)
+  /// even on the very first launch with no network.
+  static const _starterAsset = 'assets/exercises_starter.json';
 
   /// Returns true if programs were seeded, false if they already exist.
   Future<bool> seedIfNeeded() async {
     final existing = await _scheduleDao.getAll();
     if (existing.isNotEmpty) return false;
+
+    // Make sure the bundled starter set is in the cache before resolving names
+    // so the default program works offline on first launch.
+    await ensureStarterCached();
 
     await _seedArnoldSplit();
     await _seedBroSplit();
@@ -27,125 +51,74 @@ class ProgramSeeder {
     return true;
   }
 
+  /// Loads the bundled starter set into the local cache (idempotent).
+  /// Safe to call on every launch; [ExerciseDao.cacheAll] upserts by id.
+  Future<void> ensureStarterCached() async {
+    try {
+      final raw = await rootBundle.loadString(_starterAsset);
+      final list = (jsonDecode(raw) as List).whereType<Map<String, dynamic>>();
+      final companions = list
+          .map((j) => WorkoutXExercise.fromJson(j).toCompanion())
+          .toList();
+      await _exerciseDao.cacheAll(companions);
+    } catch (_) {
+      // Missing/invalid asset must never crash startup — names will simply
+      // resolve via the API (online) or fall back to custom exercises.
+    }
+  }
+
   // ─── Exercise lookup / creation ───────────────────────────────────
 
   final Map<String, String> _cache = {};
 
-  /// Returns exerciseId for a given name. Searches the DB first,
-  /// creates a custom exercise if not found.
-  Future<String> _resolve(String name, {String? muscleGroup}) async {
-    final key = name.toLowerCase();
-    if (_cache.containsKey(key)) return _cache[key]!;
+  String _remember(String key, String id) {
+    _cache[key] = id;
+    return id;
+  }
 
-    // Try exact match first
-    final results = await _exerciseDao.searchByName(name);
+  /// Picks the best name match: exact (case-insensitive) first, otherwise the
+  /// shortest name that contains the term.
+  Exercise? _pickByName(List<Exercise> results, String name) {
+    if (results.isEmpty) return null;
+    final key = name.toLowerCase();
     for (final e in results) {
-      if (e.name.toLowerCase() == key) {
-        _cache[key] = e.exerciseId;
-        return e.exerciseId;
+      if (e.name.toLowerCase() == key) return e;
+    }
+    final sorted = [...results]
+      ..sort((a, b) => a.name.length.compareTo(b.name.length));
+    return sorted.first;
+  }
+
+  /// Resolves a program exercise name to an exerciseId.
+  Future<String> _id(String name, {String? muscleGroup}) async {
+    final key = name.toLowerCase();
+    final cached = _cache[key];
+    if (cached != null) return cached;
+
+    // 2. Local cache (bundled starter + previously cached) — no network.
+    final local = _pickByName(await _exerciseDao.searchByName(name), name);
+    if (local != null) return _remember(key, local.exerciseId);
+
+    // 3. API search by name (Pro/Ultra). Skipped when no key or known gated.
+    if (_repo.isOnlineCapable && !_repo.isSearchPlanGated) {
+      try {
+        final page = await _repo.searchByName(name, limit: 10);
+        final match = _pickByName(page.items, name);
+        if (match != null) return _remember(key, match.exerciseId);
+      } catch (_) {
+        // fall through to custom
       }
     }
 
-    // Try partial match — pick the shortest name that contains our term
-    if (results.isNotEmpty) {
-      results.sort((a, b) => a.name.length.compareTo(b.name.length));
-      _cache[key] = results.first.exerciseId;
-      return results.first.exerciseId;
-    }
-
-    // Create custom exercise
+    // 4. Custom, name-only fallback.
     final customId = 'custom_${key.replaceAll(RegExp(r'[^a-z0-9]'), '_')}';
-    await _exerciseDao.upsert(ExercisesCompanion(
+    await _exerciseDao.cacheOne(ExercisesCompanion(
       exerciseId: Value(customId),
       name: Value(name),
       muscleGroup: Value(muscleGroup),
       isCustom: const Value(true),
     ));
-    _cache[key] = customId;
-    return customId;
-  }
-
-  // ─── Known exercise IDs (from exercises.json seed) ────────────────
-
-  // Pre-mapped IDs to avoid DB lookups for known exercises.
-  static const _known = <String, String>{
-    // Chest
-    'Barbell Bench Press': 'EIeI8Vf',
-    'Dumbbell Fly': 'yz9nUhF',
-    'Barbell Incline Bench Press': '3TZduzM',
-    'Cable Cross-Over': '0CXGHya',
-    'Chest Dip': '9WTm7dq',
-    'Dumbbell Pullover': '9XjtHvS',
-    'Dumbbell Incline Bench Press': 'ns0SIbU',
-    'Dumbbell Bench Press': 'SpYC0Kp',
-    'Barbell Decline Bench Press': 'GrO65fd',
-    'Push-Up': 'I4hDWkc',
-
-    // Back
-    'Wide Grip Pull-Up': 'Qqi7bko',
-    'Pull-Up': 'lBDjFxJ',
-    'Lever Reverse T-Bar Row': 'BgljGjd',
-    'Cable Seated Row': 'fUBheHs',
-    'Barbell Straight Leg Deadlift': 'hrVQWvE',
-    'Barbell Bent Over Row': 'eZyBC3j',
-    'Barbell Deadlift': 'ila4NZS',
-    'Cable Straight Arm Pulldown': 'x69MAlq',
-    'Cable Lat Pulldown Full Range of Motion': 'LEprlgG',
-
-    // Legs
-    'Barbell Full Squat': 'qXTaZnJ',
-    'Sled 45° Leg Press': '2Qh2J1e',
-    'Lever Leg Extension': 'my33uHU',
-    'Lever Lying Leg Curl': '17lJ1kr',
-    'Barbell Lunge': 't8iSghb',
-    'Sled Hack Squat': 'Qa55kX1',
-    'Lever Seated Calf Raise': 'bOOdeyc',
-    'Lever Standing Calf Raise': 'ykUOVze',
-    'Lever Seated Leg Curl': 'Zg3XY7P',
-
-    // Shoulders
-    'Barbell Seated Overhead Press': 'kTbSH9h',
-    'Dumbbell Lateral Raise': 'DsgkuIt',
-    'Dumbbell Rear Delt Raise': 'mu5Guxt',
-    'Cable Lateral Raise': 'goJ6ezq',
-    'Dumbbell Arnold Press': 'Xy4jlWA',
-    'Barbell Upright Row': 'UDlhcO8',
-    'Dumbbell Seated Shoulder Press': 'znQUdHY',
-    'Dumbbell Shrug': 'NJzBsGJ',
-    'Barbell Shrug': 'dG7tG5y',
-    'Barbell Clean and Press': 'SGY8Zui',
-
-    // Arms
-    'Barbell Curl': '25GPyDY',
-    'Dumbbell Seated Curl': 'TiaZTxx',
-    'Dumbbell Concentration Curl': 'gvsWLQw',
-    'Barbell Close-Grip Bench Press': 'J6Dx1Mu',
-    'Cable Triceps Pushdown': 'gAwDzB3',
-    'Barbell Wrist Curl': '82LxxkW',
-    'Barbell Reverse Curl': 'xNrS20v',
-    'Wrist Rollerer': 'bd5b860',
-    'Barbell Preacher Curl': 'qOgPVf6',
-    'Dumbbell Incline Curl': 'ae9UoXQ',
-    'Barbell Lying Triceps Extension': 'iZop9xO',
-    'Weighted Tricep Dips': 'bZq4bwK',
-    'Dumbbell Hammer Curl': 'slDvUAU',
-    'Dumbbell Lying Triceps Extension': 'mpKZGWz',
-    'Cable Overhead Triceps Extension': '2IxROQ1',
-
-    // Other
-    'Barbell Good Morning': 'XlZ4lAC',
-    'Reverse Crunch': 'nCU1Ekp',
-    'Barbell Standing Overhead Triceps Extension': 'dZl9Q27',
-    'Dumbbell Decline Hammer Press': '1qrWgZ2',
-  };
-
-  /// Resolve using known map first, then DB search, then create custom.
-  Future<String> _id(String name, {String? muscleGroup}) async {
-    if (_known.containsKey(name)) {
-      _cache[name.toLowerCase()] = _known[name]!;
-      return _known[name]!;
-    }
-    return _resolve(name, muscleGroup: muscleGroup);
+    return _remember(key, customId);
   }
 
   // ─── Helper to build a schedule ───────────────────────────────────

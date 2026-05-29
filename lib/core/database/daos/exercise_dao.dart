@@ -44,12 +44,46 @@ class ExerciseDao extends DatabaseAccessor<AppDatabase>
             ..orderBy([(t) => OrderingTerm.asc(t.name)]))
           .get();
 
-  /// Bulk insert exercises (for seeding from JSON).
+  /// Bulk insert exercises, ignoring rows whose `exerciseId` already exists.
   Future<void> bulkInsert(List<ExercisesCompanion> companions) async {
     await batch((b) {
       b.insertAll(exercises, companions, mode: InsertMode.insertOrIgnore);
     });
   }
+
+  /// Page through cached exercises by name. Used as the offline fallback for
+  /// online browse.
+  Future<List<Exercise>> getPaged({
+    required int limit,
+    required int offset,
+  }) =>
+      (select(exercises)
+            ..orderBy([(t) => OrderingTerm.asc(t.name)])
+            ..limit(limit, offset: offset))
+          .get();
+
+  /// Cache (insert-or-update keyed on `exerciseId`) a batch of exercises
+  /// fetched from the API. Unlike [bulkInsert] this refreshes existing rows
+  /// rather than ignoring them.
+  Future<void> cacheAll(List<ExercisesCompanion> companions) async {
+    if (companions.isEmpty) return;
+    await batch((b) {
+      for (final c in companions) {
+        b.insert(
+          exercises,
+          c,
+          onConflict: DoUpdate((_) => c, target: [exercises.exerciseId]),
+        );
+      }
+    });
+  }
+
+  /// Cache a single exercise (insert-or-update keyed on `exerciseId`).
+  Future<void> cacheOne(ExercisesCompanion companion) => into(exercises).insert(
+        companion,
+        onConflict:
+            DoUpdate((_) => companion, target: [exercises.exerciseId]),
+      );
 
   /// Find multiple exercises by their exerciseId strings in one query.
   Future<List<Exercise>> findByExerciseIds(List<String> exerciseIds) =>

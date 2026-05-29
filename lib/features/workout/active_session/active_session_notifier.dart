@@ -9,6 +9,7 @@ import '../../../core/database/daos/schedule_dao.dart';
 import '../../../core/database/daos/session_dao.dart';
 import '../../../core/database/daos/sync_queue_dao.dart';
 import '../../../core/security/input_sanitiser.dart';
+import '../../../core/services/exercise_repository.dart';
 import '../../../core/services/sync_service.dart';
 import '../../../core/providers/providers.dart';
 import '../workout_providers.dart';
@@ -150,6 +151,7 @@ class ActiveSessionNotifier extends StateNotifier<ActiveSessionState> {
   final ScheduleDao _scheduleDao;
   final SyncQueueDao _syncQueueDao;
   final SyncService _syncService;
+  final ExerciseRepository _exerciseRepo;
   final RestTimerService restTimerService = RestTimerService();
 
   int _defaultRestSeconds;
@@ -161,6 +163,7 @@ class ActiveSessionNotifier extends StateNotifier<ActiveSessionState> {
     required ScheduleDao scheduleDao,
     required SyncQueueDao syncQueueDao,
     required SyncService syncService,
+    required ExerciseRepository exerciseRepository,
     int defaultRestSeconds = 90,
     String weightUnit = 'kg',
   })  : _sessionDao = sessionDao,
@@ -168,6 +171,7 @@ class ActiveSessionNotifier extends StateNotifier<ActiveSessionState> {
         _scheduleDao = scheduleDao,
         _syncQueueDao = syncQueueDao,
         _syncService = syncService,
+        _exerciseRepo = exerciseRepository,
         _defaultRestSeconds = defaultRestSeconds,
         _weightUnit = weightUnit,
         super(const ActiveSessionState());
@@ -405,6 +409,16 @@ class ActiveSessionNotifier extends StateNotifier<ActiveSessionState> {
       state.totalVolume,
     );
 
+    // Cache-on-log: guarantee every logged exercise is in the local cache so
+    // history enrichment and muscle-recovery (which read via findByExerciseIds)
+    // always resolve. Best-effort — never blocks finishing on the network.
+    try {
+      await _exerciseRepo
+          .ensureCached(state.exercises.map((e) => e.exerciseId));
+    } catch (_) {
+      // ignore — cache stays as-is
+    }
+
     // Queue for sync
     await _syncQueueDao.enqueue(SyncQueueCompanion(
       syncTableName: const Value('sessions'),
@@ -472,6 +486,7 @@ final activeSessionProvider =
   final scheduleDao = ref.watch(scheduleDaoProvider);
   final syncQueueDao = SyncQueueDao(ref.watch(databaseProvider));
   final syncService = ref.watch(syncServiceProvider);
+  final exerciseRepository = ref.watch(exerciseRepositoryProvider);
 
   final profile = ref.watch(userProfileProvider).valueOrNull;
 
@@ -481,6 +496,7 @@ final activeSessionProvider =
     scheduleDao: scheduleDao,
     syncQueueDao: syncQueueDao,
     syncService: syncService,
+    exerciseRepository: exerciseRepository,
     defaultRestSeconds: profile?.defaultRestSeconds ?? 90,
     weightUnit: profile?.weightUnit ?? 'kg',
   );

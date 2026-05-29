@@ -1206,6 +1206,15 @@ class _ScheduleBuilderScreenState
         }
       }
 
+      // Cache-on-save: ensure every referenced exercise is in the local cache
+      // so muscle-recovery and history resolve — covers ids that arrived via an
+      // imported/shared schedule rather than the (already-cached) browser.
+      final savedIds = <String>[
+        for (final d in _days)
+          for (final ex in d.exercises) ex.exerciseId,
+      ];
+      await ref.read(exerciseRepositoryProvider).ensureCached(savedIds);
+
       if (mounted) Navigator.of(context).pop();
     } catch (_) {
       setState(() => _saving = false);

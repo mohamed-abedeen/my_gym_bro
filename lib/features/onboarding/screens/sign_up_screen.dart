@@ -1,6 +1,5 @@
 import 'dart:io';
 
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -8,7 +7,7 @@ import 'package:go_router/go_router.dart';
 import '../../../core/auth/auth_notifier.dart';
 import '../../../core/providers/providers.dart';
 import '../../../core/security/secure_storage.dart';
-import '../../../core/services/exercise_local_service.dart';
+import '../../../core/services/program_seeder.dart';
 import '../../../l10n/app_localizations.dart';
 import '../../../shared/constants.dart';
 import '../../../shared/responsive.dart';
@@ -112,28 +111,18 @@ class _SignUpScreenState extends ConsumerState<SignUpScreen> {
   }
 
   Future<void> _seedExercisesIfNeeded() async {
-    final needsSeed =
-        await SecureStorage().read('needs_exercise_seed') == 'true';
-    if (!needsSeed) {
-      if (mounted) context.go('/onboarding/trial');
-      return;
-    }
+    // Exercises are no longer bundled/seeded in bulk — they come from the
+    // WorkoutX API and are cached on demand. We only ensure the tiny bundled
+    // starter set is cached so the default program has rich offline data.
+    await SecureStorage().delete('needs_exercise_seed');
 
     setState(() => _seeding = true);
-
     try {
       final db = ref.read(databaseProvider);
-      await compute(
-        (_) async => ExerciseLocalService.seedFromAssets(db),
-        null,
-      ).catchError((_) async {
-        // Fallback: run on main isolate if compute fails (db can't cross isolates)
-        await ExerciseLocalService.seedFromAssets(db);
-      });
-      await SecureStorage().delete('needs_exercise_seed');
-    } catch (e) {
-      if (kDebugMode) print('Exercise seeding failed: $e');
-      // Still proceed even if seeding fails
+      final repo = ref.read(exerciseRepositoryProvider);
+      await ProgramSeeder(db, repo).ensureStarterCached();
+    } catch (_) {
+      // Non-fatal — proceed regardless.
     }
 
     if (mounted) {

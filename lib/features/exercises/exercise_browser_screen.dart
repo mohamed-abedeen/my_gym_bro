@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 
 import 'package:cached_network_image/cached_network_image.dart';
@@ -8,120 +9,243 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/database/app_database.dart';
 import '../../core/database/daos/exercise_dao.dart';
 import '../../core/providers/providers.dart';
+import '../../core/services/exercise_repository.dart';
 import '../../l10n/app_localizations.dart';
 import '../../shared/constants.dart';
 import '../../shared/responsive.dart';
 import '../../shared/widgets/liquid_glass_button.dart';
 import 'exercise_detail_screen.dart';
 
-// ── Providers ──
+// ── Browser state + controller ─────────────────────────────────────────────
 
-final _exerciseDaoProvider = Provider<ExerciseDao>((ref) {
-  return ExerciseDao(ref.watch(databaseProvider));
+/// Immutable state for the online, paginated exercise browser.
+class ExerciseBrowserState {
+  /// Exercises loaded so far (across pages), in API order.
+  final List<Exercise> items;
+  final String query;
+
+  /// Loading the first page (initial load or after a query change).
+  final bool loading;
+
+  /// Loading a subsequent page (infinite scroll).
+  final bool loadingMore;
+
+  /// Whether more browse pages are available.
+  final bool hasMore;
+
+  /// True when results were served from the local cache (offline, rate-limited,
+  /// or free-plan search gating) rather than the network.
+  final bool fromCache;
+
+  /// Set only when loading failed AND there was nothing to show.
+  final Object? error;
+
+  const ExerciseBrowserState({
+    this.items = const [],
+    this.query = '',
+    this.loading = true,
+    this.loadingMore = false,
+    this.hasMore = true,
+    this.fromCache = false,
+    this.error,
+  });
+
+  ExerciseBrowserState copyWith({
+    List<Exercise>? items,
+    String? query,
+    bool? loading,
+    bool? loadingMore,
+    bool? hasMore,
+    bool? fromCache,
+    Object? error,
+    bool clearError = false,
+  }) {
+    return ExerciseBrowserState(
+      items: items ?? this.items,
+      query: query ?? this.query,
+      loading: loading ?? this.loading,
+      loadingMore: loadingMore ?? this.loadingMore,
+      hasMore: hasMore ?? this.hasMore,
+      fromCache: fromCache ?? this.fromCache,
+      error: clearError ? null : (error ?? this.error),
+    );
+  }
+}
+
+/// Drives online paginated browse + debounced search via [ExerciseRepository].
+/// The repository already degrades to the local cache on offline / plan-gated
+/// / rate-limited errors, so this controller rarely surfaces a hard error.
+class ExerciseBrowserController extends StateNotifier<ExerciseBrowserState> {
+  ExerciseBrowserController(this._repo) : super(const ExerciseBrowserState()) {
+    unawaited(_loadPage(reset: true));
+  }
+
+  final ExerciseRepository _repo;
+
+  /// Requested page size. The free plan caps responses to 10, which simply
+  /// yields more, smaller pages — pagination still works.
+  static const int _pageSize = 20;
+
+  Timer? _debounce;
+
+  @override
+  void dispose() {
+    _debounce?.cancel();
+    super.dispose();
+  }
+
+  /// Debounced search entry point (350ms).
+  void onQueryChanged(String raw) {
+    _debounce?.cancel();
+    _debounce = Timer(const Duration(milliseconds: 350), () {
+      final q = raw.trim();
+      if (q == state.query) return;
+      state = state.copyWith(query: q);
+      unawaited(_loadPage(reset: true));
+    });
+  }
+
+  /// Pull-to-retry / manual refresh.
+  Future<void> refresh() => _loadPage(reset: true);
+
+  /// Load the next browse page (no-op while searching — search is single-page).
+  Future<void> loadMore() async {
+    if (state.loading || state.loadingMore || !state.hasMore) return;
+    if (state.query.isNotEmpty) return;
+    await _loadPage(reset: false);
+  }
+
+  Future<void> _loadPage({required bool reset}) async {
+    if (reset) {
+      state = state.copyWith(loading: true, loadingMore: false, clearError: true);
+    } else {
+      state = state.copyWith(loadingMore: true);
+    }
+
+    final offset = reset ? 0 : state.items.length;
+    try {
+      final page = state.query.isEmpty
+          ? await _repo.browse(offset: offset, limit: _pageSize)
+          : await _repo.searchByName(state.query, limit: _pageSize);
+
+      final items = reset ? page.items : [...state.items, ...page.items];
+
+      // Browse paginates by offset; search returns a single (possibly capped)
+      // result set, so there is never a "next page" for a search.
+      final hasMore = state.query.isEmpty &&
+          page.items.isNotEmpty &&
+          items.length < page.total;
+
+      state = state.copyWith(
+        items: items,
+        loading: false,
+        loadingMore: false,
+        hasMore: hasMore,
+        fromCache: page.fromCache,
+        clearError: true,
+      );
+    } catch (e) {
+      // Repository normally falls back to cache; this is a true unexpected
+      // failure. Keep any already-loaded items.
+      state = state.copyWith(
+        loading: false,
+        loadingMore: false,
+        hasMore: false,
+        error: state.items.isEmpty ? e : null,
+      );
+    }
+  }
+}
+
+final _browserControllerProvider = StateNotifierProvider.autoDispose<
+    ExerciseBrowserController, ExerciseBrowserState>((ref) {
+  return ExerciseBrowserController(ref.watch(exerciseRepositoryProvider));
 });
 
-final _allExercisesProvider = FutureProvider<List<Exercise>>((ref) {
-  return ref.watch(_exerciseDaoProvider).getAll();
+// ── Filters (client-side over loaded items) ──────────────────────────────────
+
+final _muscleFilterProvider = StateProvider.autoDispose<String?>((ref) => null);
+final _equipmentFilterProvider =
+    StateProvider.autoDispose<String?>((ref) => null);
+final _difficultyFilterProvider =
+    StateProvider.autoDispose<String?>((ref) => null);
+
+/// Cached exercises — the source for filter dropdown vocabularies. The catalogue
+/// has no vocab endpoints, so we derive options from whatever is cached locally
+/// (the bundled starter set plus anything browsed so far).
+final _cachedExercisesProvider = FutureProvider<List<Exercise>>((ref) {
+  return ExerciseDao(ref.watch(databaseProvider)).getAll();
 });
 
-final _searchQueryProvider = StateProvider<String>((ref) => '');
-final _muscleFilterProvider = StateProvider<String?>((ref) => null);
-final _equipmentFilterProvider = StateProvider<String?>((ref) => null);
-final _difficultyFilterProvider = StateProvider<String?>((ref) => null);
-
-/// Combined AND filter: muscle + equipment + difficulty + search text.
-final _filteredExercisesProvider = FutureProvider<List<Exercise>>((ref) {
-  final query = ref.watch(_searchQueryProvider);
-  final muscleFilter = ref.watch(_muscleFilterProvider);
-  final equipmentFilter = ref.watch(_equipmentFilterProvider);
-  final difficultyFilter = ref.watch(_difficultyFilterProvider);
-  final allAsync = ref.watch(_allExercisesProvider);
-
-  return allAsync.when(
-    data: (all) {
-      var list = all;
-
-      // 1. Muscle group filter
-      if (muscleFilter != null) {
-        list = list.where((e) => e.muscleGroup == muscleFilter).toList();
-      }
-
-      // 2. Equipment filter (stored as JSON array, e.g. '["barbell","body weight"]')
-      if (equipmentFilter != null) {
-        final eqLower = equipmentFilter.toLowerCase();
-        list = list.where((e) {
-          if (e.equipments == null) return false;
-          try {
-            final equips = (jsonDecode(e.equipments!) as List).cast<String>();
-            return equips.any((eq) => eq.toLowerCase() == eqLower);
-          } catch (_) {
-            return false;
-          }
-        }).toList();
-      }
-
-      // 3. Difficulty filter
-      if (difficultyFilter != null) {
-        list = list.where((e) => e.difficulty == difficultyFilter).toList();
-      }
-
-      // 4. Search text
-      if (query.isNotEmpty) {
-        final q = query.toLowerCase();
-        list = list.where((e) => e.name.toLowerCase().contains(q)).toList();
-      }
-
-      return list;
-    },
-    loading: () => [],
-    error: (_, __) => [],
-  );
-});
-
-/// Unique muscle groups extracted from all exercises.
+/// Unique muscle groups from cached exercises.
 final _muscleGroupsProvider = FutureProvider<List<String>>((ref) async {
-  final all = await ref.watch(_allExercisesProvider.future);
+  final all = await ref.watch(_cachedExercisesProvider.future);
   final groups = <String>{};
   for (final e in all) {
     if (e.muscleGroup != null && e.muscleGroup!.isNotEmpty) {
       groups.add(e.muscleGroup!);
     }
   }
-  final sorted = groups.toList()..sort();
-  return sorted;
+  return groups.toList()..sort();
 });
 
-/// Unique equipment values extracted from all exercises.
+/// Unique equipment values from cached exercises.
 final _equipmentTypesProvider = FutureProvider<List<String>>((ref) async {
-  final all = await ref.watch(_allExercisesProvider.future);
+  final all = await ref.watch(_cachedExercisesProvider.future);
   final equips = <String>{};
   for (final e in all) {
-    if (e.equipments != null) {
-      try {
-        final list = (jsonDecode(e.equipments!) as List).cast<String>();
-        for (final eq in list) {
-          if (eq.isNotEmpty) equips.add(eq);
-        }
-      } catch (_) {}
+    for (final eq in _decodeList(e.equipments)) {
+      if (eq.isNotEmpty) equips.add(eq);
     }
   }
-  final sorted = equips.toList()..sort();
-  return sorted;
+  return equips.toList()..sort();
 });
 
-/// Unique difficulty levels extracted from all exercises.
+/// Unique difficulty levels from cached exercises (fixed canonical order).
 final _difficultyLevelsProvider = FutureProvider<List<String>>((ref) async {
-  final all = await ref.watch(_allExercisesProvider.future);
+  final all = await ref.watch(_cachedExercisesProvider.future);
   final levels = <String>{};
   for (final e in all) {
     if (e.difficulty != null && e.difficulty!.isNotEmpty) {
       levels.add(e.difficulty!);
     }
   }
-  // Fixed order: beginner → intermediate → advanced
   const order = ['beginner', 'intermediate', 'advanced'];
   return order.where(levels.contains).toList();
 });
+
+List<String> _decodeList(String? raw) {
+  if (raw == null || raw.isEmpty) return const [];
+  try {
+    return (jsonDecode(raw) as List).cast<String>();
+  } catch (_) {
+    return const [];
+  }
+}
+
+/// Applies the active muscle/equipment/difficulty filters to a list of items.
+List<Exercise> _applyFilters(
+  List<Exercise> items, {
+  String? muscle,
+  String? equipment,
+  String? difficulty,
+}) {
+  var list = items;
+  if (muscle != null) {
+    list = list.where((e) => e.muscleGroup == muscle).toList();
+  }
+  if (equipment != null) {
+    final eqLower = equipment.toLowerCase();
+    list = list
+        .where((e) =>
+            _decodeList(e.equipments).any((eq) => eq.toLowerCase() == eqLower))
+        .toList();
+  }
+  if (difficulty != null) {
+    list = list.where((e) => e.difficulty == difficulty).toList();
+  }
+  return list;
+}
 
 // ═══════════════════════════════════════════════════════════════════
 // Exercise Browser — supports single-pick and multi-pick modes
@@ -160,7 +284,31 @@ class _ExerciseBrowserScreenState
   /// Ordered list to preserve selection order.
   final List<Exercise> _selectedExercises = [];
 
+  final ScrollController _scrollController = ScrollController();
+
   bool get _isMultiPick => widget.multiPickMode;
+
+  @override
+  void initState() {
+    super.initState();
+    _scrollController.addListener(_onScroll);
+  }
+
+  @override
+  void dispose() {
+    _scrollController
+      ..removeListener(_onScroll)
+      ..dispose();
+    super.dispose();
+  }
+
+  void _onScroll() {
+    if (!_scrollController.hasClients) return;
+    final pos = _scrollController.position;
+    if (pos.pixels >= pos.maxScrollExtent - 300) {
+      unawaited(ref.read(_browserControllerProvider.notifier).loadMore());
+    }
+  }
 
   void _toggleSelection(Exercise exercise) {
     setState(() {
@@ -182,12 +330,111 @@ class _ExerciseBrowserScreenState
     Navigator.of(context).pop();
   }
 
+  void _openExercise(Exercise exercise) {
+    if (_isMultiPick) {
+      _toggleSelection(exercise);
+    } else if (widget.pickMode && widget.onSelect != null) {
+      widget.onSelect!(exercise);
+    } else {
+      Navigator.of(context).push(
+        CupertinoPageRoute(
+          builder: (_) => ExerciseDetailScreen(exercise: exercise),
+        ),
+      );
+    }
+  }
+
+  /// Renders the list area across all states: first-load, hard error,
+  /// empty/offline, and the populated paginated list (with an offline banner
+  /// and an infinite-scroll footer spinner).
+  Widget _buildList(
+    BuildContext context,
+    AppColorsTheme colors,
+    AppLocalizations l10n,
+    ExerciseBrowserState state,
+    List<Exercise> visible,
+  ) {
+    if (state.loading && state.items.isEmpty) {
+      return Center(
+        child: CircularProgressIndicator(color: colors.accent, strokeWidth: 2),
+      );
+    }
+
+    if (state.error != null && state.items.isEmpty) {
+      return _CenteredMessage(
+        colors: colors,
+        icon: Icons.cloud_off_rounded,
+        title: "Couldn't load exercises",
+        message: 'Check your connection and try again.',
+        actionLabel: 'Retry',
+        onAction: () => unawaited(
+          ref.read(_browserControllerProvider.notifier).refresh(),
+        ),
+      );
+    }
+
+    if (visible.isEmpty) {
+      return _CenteredMessage(
+        colors: colors,
+        icon: state.fromCache ? Icons.wifi_off_rounded : Icons.search_off_rounded,
+        title: l10n.noExercisesFound,
+        message: state.fromCache
+            ? "You're offline — only saved exercises are available."
+            : null,
+      );
+    }
+
+    final showFooter =
+        state.loadingMore || (state.hasMore && state.query.isEmpty);
+
+    return Column(
+      children: [
+        if (state.fromCache) _OfflineBanner(colors: colors),
+        Expanded(
+          child: ListView.builder(
+            controller: _scrollController,
+            padding:
+                EdgeInsets.symmetric(horizontal: AppSizes.contentPaddingH.w),
+            itemCount: visible.length + (showFooter ? 1 : 0),
+            itemBuilder: (_, i) {
+              if (i >= visible.length) {
+                return Padding(
+                  padding: EdgeInsets.symmetric(vertical: 16.h),
+                  child: Center(
+                    child: CircularProgressIndicator(
+                      color: colors.accent,
+                      strokeWidth: 2,
+                    ),
+                  ),
+                );
+              }
+              final exercise = visible[i];
+              return _ExerciseTile(
+                exercise: exercise,
+                pickMode: widget.pickMode || _isMultiPick,
+                isSelected: _selectedIds.contains(exercise.exerciseId),
+                showCheckmark: _isMultiPick,
+                onTap: () => _openExercise(exercise),
+              );
+            },
+          ),
+        ),
+      ],
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     Responsive.init(context);
     final colors = AppColors.of(context);
     final l10n = AppLocalizations.of(context);
-    final exercises = ref.watch(_filteredExercisesProvider);
+    final browserState = ref.watch(_browserControllerProvider);
+    final visible = _applyFilters(
+      browserState.items,
+      muscle: ref.watch(_muscleFilterProvider),
+      equipment: ref.watch(_equipmentFilterProvider),
+      difficulty: ref.watch(_difficultyFilterProvider),
+    );
 
     return Scaffold(
       backgroundColor: colors.panelBackground,
@@ -278,63 +525,7 @@ class _ExerciseBrowserScreenState
 
             // ── Exercise list ──
             Expanded(
-              child: exercises.when(
-                data: (list) => list.isEmpty
-                    ? Center(
-                        child: Padding(
-                          padding: EdgeInsets.symmetric(horizontal: 40.w),
-                          child: Text(
-                            l10n.noExercisesFound,
-                            textAlign: TextAlign.center,
-                            style: TextStyle(
-                              color: colors.textSecondary,
-                              fontSize: 14.sp,
-                            ),
-                          ),
-                        ),
-                      )
-                    : ListView.builder(
-                        padding: EdgeInsets.symmetric(
-                          horizontal: AppSizes.contentPaddingH.w,
-                        ),
-                        itemCount: list.length,
-                        itemBuilder: (_, i) {
-                          final exercise = list[i];
-                          final isSelected =
-                              _selectedIds.contains(exercise.exerciseId);
-
-                          return _ExerciseTile(
-                            exercise: exercise,
-                            pickMode: widget.pickMode || _isMultiPick,
-                            isSelected: isSelected,
-                            showCheckmark: _isMultiPick,
-                            onTap: () {
-                              if (_isMultiPick) {
-                                _toggleSelection(exercise);
-                              } else if (widget.pickMode &&
-                                  widget.onSelect != null) {
-                                widget.onSelect!(exercise);
-                              } else {
-                                Navigator.of(context).push(
-                                  CupertinoPageRoute(
-                                    builder: (_) => ExerciseDetailScreen(
-                                      exercise: exercise,
-                                    ),
-                                  ),
-                                );
-                              }
-                            },
-                          );
-                        },
-                      ),
-                loading: () => Center(
-                  child: CircularProgressIndicator(
-                    color: colors.accent,
-                    strokeWidth: 2,
-                  ),
-                ),
-                error: (_, __) => const SizedBox.shrink(),
-              ),
+              child: _buildList(context, colors, l10n, browserState, visible),
             ),
 
             // ── 3 Filter buttons row (Muscle | Equipment | Difficulty) ──
@@ -381,8 +572,8 @@ class _ExerciseBrowserScreenState
                                 contentPadding: EdgeInsets.zero,
                               ),
                               onChanged: (v) => ref
-                                  .read(_searchQueryProvider.notifier)
-                                  .state = v,
+                                  .read(_browserControllerProvider.notifier)
+                                  .onQueryChanged(v),
                             ),
                           ),
                           Icon(Icons.search_rounded,
@@ -877,5 +1068,110 @@ class _ExerciseTile extends StatelessWidget {
           size: 22.sp,
         ),
       );
+  }
+}
+
+// ── Empty / error state ─────────────────────────────────────────────────────
+
+class _CenteredMessage extends StatelessWidget {
+  final AppColorsTheme colors;
+  final IconData icon;
+  final String title;
+  final String? message;
+  final String? actionLabel;
+  final VoidCallback? onAction;
+
+  const _CenteredMessage({
+    required this.colors,
+    required this.icon,
+    required this.title,
+    this.message,
+    this.actionLabel,
+    this.onAction,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: Padding(
+        padding: EdgeInsets.symmetric(horizontal: 40.w),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(icon, color: colors.textSecondary, size: 40.sp),
+            SizedBox(height: 12.h),
+            Text(
+              title,
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                color: colors.textPrimary,
+                fontSize: 15.sp,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+            if (message != null) ...[
+              SizedBox(height: 6.h),
+              Text(
+                message!,
+                textAlign: TextAlign.center,
+                style: TextStyle(color: colors.textSecondary, fontSize: 13.sp),
+              ),
+            ],
+            if (actionLabel != null && onAction != null) ...[
+              SizedBox(height: 16.h),
+              TextButton(
+                onPressed: onAction,
+                child: Text(
+                  actionLabel!,
+                  style: TextStyle(
+                    color: colors.accent,
+                    fontSize: 14.sp,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              ),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+// ── Offline / cached-results banner ─────────────────────────────────────────
+
+class _OfflineBanner extends StatelessWidget {
+  final AppColorsTheme colors;
+  const _OfflineBanner({required this.colors});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      margin: EdgeInsets.fromLTRB(
+          AppSizes.contentPaddingH.w, 0, AppSizes.contentPaddingH.w, 8.h),
+      padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 8.h),
+      decoration: BoxDecoration(
+        color: colors.amber.withValues(alpha: 0.12),
+        borderRadius: BorderRadius.circular(12.r),
+      ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(Icons.wifi_off_rounded, color: colors.amber, size: 14.sp),
+          SizedBox(width: 6.w),
+          Flexible(
+            child: Text(
+              'Offline — showing saved exercises',
+              style: TextStyle(
+                color: colors.amber,
+                fontSize: 11.sp,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
   }
 }

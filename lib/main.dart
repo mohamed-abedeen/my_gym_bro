@@ -15,7 +15,8 @@ import 'core/database/daos/session_dao.dart';
 import 'core/database/daos/user_profile_dao.dart';
 import 'core/providers/providers.dart';
 import 'core/security/secure_storage.dart';
-import 'core/services/exercise_local_service.dart';
+import 'core/services/exercise_api_service.dart';
+import 'core/services/exercise_repository.dart';
 import 'core/services/program_seeder.dart';
 
 void main() async {
@@ -57,17 +58,20 @@ void main() async {
   // Database
   final db = AppDatabase.create();
 
-  // Seed exercises from bundled JSON if the database is empty
+  // WorkoutX API key — injected at build time via --dart-define WORKOUTX_API_KEY.
+  const workoutxApiKey = String.fromEnvironment('WORKOUTX_API_KEY');
+
+  // Exercise repository (WorkoutX API + local cache). Exercises are no longer
+  // bulk-seeded from a bundled JSON; the seeder only loads a tiny starter set
+  // so the default program works offline on first launch.
   final exerciseDao = ExerciseDao(db);
-  final count = await exerciseDao.count();
-  if (count == 0) {
-    await ExerciseLocalService.seedFromAssets(db);
-  } else {
-    // Migration: remap muscle groups for existing installs
-    await ExerciseLocalService.remapMuscleGroups(db);
-    // Migration: backfill difficulty for exercises that don't have one
-    await ExerciseLocalService.backfillDifficulty(db);
-  }
+  final exerciseApi = ExerciseApiService(apiKey: workoutxApiKey);
+  final exerciseRepo = ExerciseRepository(exerciseApi, exerciseDao);
+
+  // Seed the bundled starter set into the cache (idempotent) so demo sessions
+  // and the default program have real exercise data offline.
+  final programSeeder = ProgramSeeder(db, exerciseRepo);
+  await programSeeder.ensureStarterCached();
 
   // Seed demo sessions if none exist (for UI preview)
   final sessionDao = SessionDao(db);
@@ -77,8 +81,11 @@ void main() async {
   }
 
   // Seed 3 real training programs if none exist
-  final programSeeder = ProgramSeeder(db);
   await programSeeder.seedIfNeeded();
+
+  // Startup seeding done — release the throwaway HTTP client. The UI uses the
+  // repository from `exerciseRepositoryProvider` instead.
+  exerciseApi.dispose();
 
   // Get saved locale preference
   final userProfileDao = UserProfileDao(db);
@@ -103,6 +110,7 @@ void main() async {
     ProviderScope(
       overrides: [
         databaseProvider.overrideWithValue(db),
+        workoutxApiKeyProvider.overrideWithValue(workoutxApiKey),
         localeProvider.overrideWith((ref) => savedLocale),
         if (savedTheme != null) themeModeProvider.overrideWith((ref) => savedTheme!),
       ],
