@@ -303,6 +303,8 @@
   "scopeRivals": "Rivalen",
   "scopeGlobal": "Global",
   "scopeFriends": "Freunde",
+  "follow": "Folgen",
+  "friends": "Freunde",
   "volumeLabel": "Volumen",
   "percentDone": "{percent}% erledigt",
   "@percentDone": {

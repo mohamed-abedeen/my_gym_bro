@@ -54,13 +54,15 @@ Legend: ✅ done · 🟡 partial · 🔴 not built · ⚠️ remove · `[new]` b
 - ✅ `[rm]` Supabase: `005_drop_dm.sql` drops `dm_messages`/`dm_conversations` (CASCADE).
 - ⏳ `[verify]` Offline gate behavior — needs on-device testing (see test guide).
 
-### Phase 2 — Social graph (followers + friends) + public profiles
-- 🔴 `[new]` Supabase `follows` table + RLS; `friends` view (mutual follow); counts on a `user_profiles` view (+ `friend_count`).
-- 🔴 `[new]` Drift `Follows` cache + sync-outbox wiring.
-- 🔴 `[new]` Follow/unfollow actions (optimistic local → sync); auto-"friends" on mutual.
-- 🟡 `[fix]` Replace hardcoded `'9'`/`'120'` in `profile_screen.dart` with real follower/following/friend counts.
-- 🔴 `[new]` Public profile fetch (public-safe fields + counts + posts + achievements + streak) and relationship state (not following / following / friends).
-- 🔴 `[new]` Privacy: hide sensitive raw metrics unless opted in.
+### Phase 2 — Social graph (followers + friends) + public profiles ✅ BUILT + VERIFIED (2026-05-31, local Supabase)
+- ✅ `[new]` `supabase/migrations/006_social.sql`: `follows` + RLS (own-write, authenticated-read), `friends` view (mutual), `public_profiles` view (safe columns + follower/following/friend counts). Proven via psql AND end-to-end through PostgREST.
+- ✅ `[new]` Drift `Follows` cache (schema 14→15) + `FollowDao`; client-generated UUID id so unfollow targets the row on delete-sync.
+- ✅ `[new]` `lib/features/social/`: `FollowRepository` (optimistic follow/unfollow → sync outbox; relationship/counts from server, offline-safe), `follow_providers.dart`, `public_profile.dart`, `widgets/follow_button.dart`.
+- ✅ `[fix]` `profile_screen.dart` `_StatsRow` shows real following (local) + followers (server) counts — hardcoded `9`/`120` removed.
+- ✅ `[new]` Public profile fetch via `public_profiles` view (safe fields only — subscription/fcm/trial stay private). Relationship self/none/following/friends computed.
+- ✅ `[verify]` `tool/verify_social.py` — 7/7 end-to-end checks pass; `flutter analyze` 0/0; 75 tests pass.
+- ⏳ `[defer]` "View another user + tap FollowButton" has no live entry point yet (feed=Phase 3, leaderboard=Phase 5 still mock). Button + data layer built and ready to wire. Manual on-device smoke test pending.
+- ⚠️ Pre-existing: repo migrations don't apply cleanly from scratch (`002` refs `exercises`, `003` refs `dm_conversations`, nothing creates them). Fix before a clean cloud `db reset`.
 
 ### Phase 3 — Community feed backend
 - 🔴 `[new]` `SupabaseCommunityRepository` implementing the existing repo interface (drop-in for `MockCommunityRepository`).

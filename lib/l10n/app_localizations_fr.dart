@@ -802,6 +802,12 @@ class AppLocalizationsFr extends AppLocalizations {
   String get followers => 'Followers';
 
   @override
+  String get follow => 'Suivre';
+
+  @override
+  String get friends => 'Amis';
+
+  @override
   String get streak => 'Streak';
 
   @override

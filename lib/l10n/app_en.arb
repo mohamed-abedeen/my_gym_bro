@@ -323,6 +323,8 @@
   "account": "Account",
   "following": "Following",
   "followers": "Followers",
+  "follow": "Follow",
+  "friends": "Friends",
   "streak": "Streak",
   "widgetStreakStart": "Start a streak",
   "widgetStreakOneDay": "1-day streak",

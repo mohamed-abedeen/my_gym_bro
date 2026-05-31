@@ -1614,6 +1614,18 @@ abstract class AppLocalizations {
   /// **'Followers'**
   String get followers;
 
+  /// No description provided for @follow.
+  ///
+  /// In en, this message translates to:
+  /// **'Follow'**
+  String get follow;
+
+  /// No description provided for @friends.
+  ///
+  /// In en, this message translates to:
+  /// **'Friends'**
+  String get friends;
+
   /// No description provided for @streak.
   ///
   /// In en, this message translates to:

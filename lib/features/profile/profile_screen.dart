@@ -10,6 +10,7 @@ import 'package:my_gym_bro/core/services/exercise_gif_cache.dart';
 import 'package:my_gym_bro/core/services/units.dart';
 import 'package:my_gym_bro/features/community/community_mock_data.dart';
 import 'package:my_gym_bro/features/profile/profile_providers.dart';
+import 'package:my_gym_bro/features/social/follow_providers.dart';
 import 'package:my_gym_bro/features/settings/skin_provider.dart';
 import 'package:my_gym_bro/features/workout/exercise_detail_sheet.dart';
 import 'package:my_gym_bro/features/workout/workout_providers.dart';
@@ -455,26 +456,34 @@ class _BannerSectionState extends ConsumerState<_BannerSection> {
 // Stats Row — Following | Followers | Streak
 // ═══════════════════════════════════════════════════════════════════════════
 
-class _StatsRow extends StatelessWidget {
+class _StatsRow extends ConsumerWidget {
   const _StatsRow({required this.streakCount, required this.l10n});
 
   final int streakCount;
   final AppLocalizations l10n;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final colors = AppColors.of(context);
+
+    // "Following" comes from the local cache so it's instant and offline-safe;
+    // "Followers" is authoritative from the server (who follows me), falling
+    // back to 0 when offline / pre-fetch.
+    final followingCount =
+        ref.watch(followingIdsProvider).valueOrNull?.length ?? 0;
+    final myProfile = ref.watch(myPublicProfileProvider).valueOrNull;
+    final followersCount = myProfile?.followerCount ?? 0;
 
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceEvenly,
       children: [
-        _StatColumn(value: '9', label: l10n.following),
+        _StatColumn(value: '$followingCount', label: l10n.following),
         Container(
           width: 1,
           height: 22.h,
           color: const Color(0xFF282828),
         ),
-        _StatColumn(value: '120', label: l10n.followers),
+        _StatColumn(value: '$followersCount', label: l10n.followers),
         Container(
           width: 1,
           height: 22.h,

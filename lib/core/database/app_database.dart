@@ -186,6 +186,33 @@ class SyncQueue extends Table {
   BoolColumn get isSynced => boolean().withDefault(const Constant(false))();
 }
 
+/// Local cache of the current user's outgoing follow edges (who I follow).
+///
+/// Mirrors Supabase `public.follows`. [remoteId] holds the client-generated
+/// UUID used as the row's Supabase `id`, so an unfollow can target that exact
+/// row on delete-sync without first reading it back from the server. This is
+/// the device's offline source of truth for "am I following X?" and powers
+/// optimistic follow/unfollow.
+class Follows extends Table {
+  IntColumn get localId => integer().autoIncrement()();
+  TextColumn get remoteId => text().nullable()();
+  TextColumn get syncStatus => text().withDefault(const Constant('pending'))();
+  DateTimeColumn get createdAt => dateTime().nullable()();
+  DateTimeColumn get updatedAt => dateTime().nullable()();
+  DateTimeColumn get deletedAt => dateTime().nullable()();
+
+  /// The current user's auth id (the follower).
+  TextColumn get followerId => text()();
+
+  /// The followed user's auth id.
+  TextColumn get followeeId => text()();
+
+  @override
+  List<Set<Column>> get uniqueKeys => [
+        {followerId, followeeId},
+      ];
+}
+
 // ─────────────────────────────────────────────
 // D A T A B A S E
 // ─────────────────────────────────────────────
@@ -201,6 +228,7 @@ class SyncQueue extends Table {
     SessionExercises,
     WorkoutSets,
     SyncQueue,
+    Follows,
   ],
 )
 class AppDatabase extends _$AppDatabase {
@@ -213,7 +241,7 @@ class AppDatabase extends _$AppDatabase {
   }
 
   @override
-  int get schemaVersion => 14;
+  int get schemaVersion => 15;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -313,6 +341,10 @@ class AppDatabase extends _$AppDatabase {
         // it re-caches on demand from the API as the user browses/logs.
         // User-created custom exercises (is_custom = 1) are preserved.
         await customStatement('DELETE FROM exercises WHERE is_custom = 0');
+      }
+      if (from < 15) {
+        // Social graph — local cache of the current user's outgoing follows.
+        await m.createTable(follows);
       }
     },
   );

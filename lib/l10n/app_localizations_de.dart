@@ -803,6 +803,12 @@ class AppLocalizationsDe extends AppLocalizations {
   String get followers => 'Followers';
 
   @override
+  String get follow => 'Folgen';
+
+  @override
+  String get friends => 'Freunde';
+
+  @override
   String get streak => 'Streak';
 
   @override
