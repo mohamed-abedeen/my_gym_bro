@@ -2,6 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:my_gym_bro/core/auth/auth_notifier.dart';
 import 'package:my_gym_bro/core/database/app_database.dart';
+import 'package:my_gym_bro/core/database/daos/exercise_dao.dart';
+import 'package:my_gym_bro/core/services/exercise_api_service.dart';
+import 'package:my_gym_bro/core/services/exercise_repository.dart';
 import 'package:my_gym_bro/core/services/sync_service.dart';
 import 'package:my_gym_bro/shared/widgets/anatomy_body.dart';
 import 'package:package_info_plus/package_info_plus.dart';
@@ -27,6 +30,25 @@ final supabaseProvider = Provider<SupabaseClient?>((ref) {
     // not initialised — AssertionError is an Error, not an Exception).
     return null;
   }
+});
+
+/// WorkoutX API key — overridden at startup from `--dart-define WORKOUTX_API_KEY`.
+/// Empty string means no key configured (network exercise features disabled).
+final workoutxApiKeyProvider = Provider<String>((ref) => '');
+
+/// WorkoutX exercise API client.
+final exerciseApiServiceProvider = Provider<ExerciseApiService>((ref) {
+  final apiKey = ref.watch(workoutxApiKeyProvider);
+  final service = ExerciseApiService(apiKey: apiKey);
+  ref.onDispose(service.dispose);
+  return service;
+});
+
+/// Exercise repository: WorkoutX API + local Drift cache (offline-first).
+final exerciseRepositoryProvider = Provider<ExerciseRepository>((ref) {
+  final api = ref.watch(exerciseApiServiceProvider);
+  final dao = ExerciseDao(ref.watch(databaseProvider));
+  return ExerciseRepository(api, dao);
 });
 
 /// Sync service provider.

@@ -773,6 +773,10 @@ class AppLocalizationsEn extends AppLocalizations {
       'No exercises found for this combination, Bro!';
 
   @override
+  String get exercisesOfflineCached =>
+      'Offline — showing your saved exercises.';
+
+  @override
   String get allMuscles => 'All Muscles';
 
   @override

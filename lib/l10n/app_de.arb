@@ -217,6 +217,7 @@
   "filterEquipment": "Gerät",
   "filterDifficulty": "Schwierigkeit",
   "noExercisesFound": "Keine Übungen für diese Kombination gefunden, Bro!",
+  "exercisesOfflineCached": "Offline – deine gespeicherten Übungen werden angezeigt.",
   "allMuscles": "Alle Muskeln",
   "allEquipment": "Alle Geräte",
   "allDifficulties": "Alle Level",

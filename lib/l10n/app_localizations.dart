@@ -1566,6 +1566,12 @@ abstract class AppLocalizations {
   /// **'No exercises found for this combination, Bro!'**
   String get noExercisesFound;
 
+  /// No description provided for @exercisesOfflineCached.
+  ///
+  /// In en, this message translates to:
+  /// **'Offline — showing your saved exercises.'**
+  String get exercisesOfflineCached;
+
   /// No description provided for @allMuscles.
   ///
   /// In en, this message translates to:

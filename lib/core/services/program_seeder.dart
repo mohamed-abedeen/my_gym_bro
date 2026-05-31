@@ -1,20 +1,49 @@
+import 'dart:convert';
+
 import 'package:drift/drift.dart';
+import 'package:flutter/services.dart' show rootBundle;
 
 import 'package:my_gym_bro/core/database/app_database.dart';
 import 'package:my_gym_bro/core/database/daos/exercise_dao.dart';
 import 'package:my_gym_bro/core/database/daos/schedule_dao.dart';
+import 'package:my_gym_bro/core/services/exercise_repository.dart';
+import 'package:my_gym_bro/core/services/workoutx_exercise.dart';
 
 /// Seeds the database with 3 ready-to-use training programs:
 /// Arnold Split, Bro Split, Push/Pull/Legs.
 ///
+/// Exercises are no longer bundled in bulk — they come from the WorkoutX API.
+/// [ensureStarterCached] loads a tiny bundled starter set so the default
+/// program has rich data even on a first launch with no network; remaining
+/// exercises resolve via the API (and get cached) when online, or fall back to
+/// loggable custom rows offline.
+///
 /// Call once at startup (guarded by a check so it doesn't re-seed).
 class ProgramSeeder {
-
-  ProgramSeeder(AppDatabase db)
+  ProgramSeeder(AppDatabase db, this._repo)
       : _scheduleDao = ScheduleDao(db),
         _exerciseDao = ExerciseDao(db);
+
   final ScheduleDao _scheduleDao;
   final ExerciseDao _exerciseDao;
+  final ExerciseRepository _repo;
+
+  /// Loads the bundled starter set (`assets/exercises_starter.json`) into the
+  /// local cache. Idempotent — safe to call on every launch. Non-fatal on
+  /// failure so startup is never blocked.
+  Future<void> ensureStarterCached() async {
+    try {
+      final raw = await rootBundle.loadString('assets/exercises_starter.json');
+      final list = (jsonDecode(raw) as List).cast<Map<String, dynamic>>();
+      final companions = list
+          .map((j) => WorkoutXExercise.fromJson(j)
+              .toCompanion(apiKey: _repo.mediaApiKey))
+          .toList();
+      await _exerciseDao.cacheAll(companions);
+    } on Object {
+      // Non-fatal — the default program still seeds with custom fallbacks.
+    }
+  }
 
   /// Returns true if programs were seeded, false if they already exist.
   Future<bool> seedIfNeeded() async {
@@ -31,29 +60,45 @@ class ProgramSeeder {
 
   final Map<String, String> _cache = {};
 
-  /// Returns exerciseId for a given name. Searches the DB first,
-  /// creates a custom exercise if not found.
-  Future<String> _resolve(String name, {String? muscleGroup}) async {
+  /// Resolves an `exerciseId` for [name]:
+  ///   1. local cache — exact match, then shortest partial,
+  ///   2. WorkoutX API by name (results are cached as a side effect),
+  ///   3. a loggable custom exercise as a last resort (offline / no match).
+  Future<String> _id(String name, {String? muscleGroup}) async {
     final key = name.toLowerCase();
     if (_cache.containsKey(key)) return _cache[key]!;
 
-    // Try exact match first
-    final results = await _exerciseDao.searchByName(name);
-    for (final e in results) {
-      if (e.name.toLowerCase() == key) {
-        _cache[key] = e.exerciseId;
-        return e.exerciseId;
+    // 1. Local cache.
+    final local = await _exerciseDao.searchByName(name);
+    final localExact =
+        local.where((e) => e.name.toLowerCase() == key).toList();
+    if (localExact.isNotEmpty) {
+      return _cache[key] = localExact.first.exerciseId;
+    }
+    if (local.isNotEmpty) {
+      local.sort((a, b) => a.name.length.compareTo(b.name.length));
+      return _cache[key] = local.first.exerciseId;
+    }
+
+    // 2. Online lookup (repo caches matched rows).
+    if (_repo.isOnlineCapable) {
+      try {
+        final items = (await _repo.searchByName(name)).items;
+        final onlineExact =
+            items.where((e) => e.name.toLowerCase() == key).toList();
+        if (onlineExact.isNotEmpty) {
+          return _cache[key] = onlineExact.first.exerciseId;
+        }
+        if (items.isNotEmpty) {
+          items.sort((a, b) => a.name.length.compareTo(b.name.length));
+          return _cache[key] = items.first.exerciseId;
+        }
+      } on Object {
+        // fall through to custom
       }
     }
 
-    // Try partial match — pick the shortest name that contains our term
-    if (results.isNotEmpty) {
-      results.sort((a, b) => a.name.length.compareTo(b.name.length));
-      _cache[key] = results.first.exerciseId;
-      return results.first.exerciseId;
-    }
-
-    // Create custom exercise
+    // 3. Custom fallback.
     final customId = 'custom_${key.replaceAll(RegExp('[^a-z0-9]'), '_')}';
     await _exerciseDao.upsert(ExercisesCompanion(
       exerciseId: Value(customId),
@@ -61,91 +106,7 @@ class ProgramSeeder {
       muscleGroup: Value(muscleGroup),
       isCustom: const Value(true),
     ));
-    _cache[key] = customId;
-    return customId;
-  }
-
-  // ─── Known exercise IDs (from exercises.json seed) ────────────────
-
-  // Pre-mapped IDs to avoid DB lookups for known exercises.
-  static const _known = <String, String>{
-    // Chest
-    'Barbell Bench Press': 'EIeI8Vf',
-    'Dumbbell Fly': 'yz9nUhF',
-    'Barbell Incline Bench Press': '3TZduzM',
-    'Cable Cross-Over': '0CXGHya',
-    'Chest Dip': '9WTm7dq',
-    'Dumbbell Pullover': '9XjtHvS',
-    'Dumbbell Incline Bench Press': 'ns0SIbU',
-    'Dumbbell Bench Press': 'SpYC0Kp',
-    'Barbell Decline Bench Press': 'GrO65fd',
-    'Push-Up': 'I4hDWkc',
-
-    // Back
-    'Wide Grip Pull-Up': 'Qqi7bko',
-    'Pull-Up': 'lBDjFxJ',
-    'Lever Reverse T-Bar Row': 'BgljGjd',
-    'Cable Seated Row': 'fUBheHs',
-    'Barbell Straight Leg Deadlift': 'hrVQWvE',
-    'Barbell Bent Over Row': 'eZyBC3j',
-    'Barbell Deadlift': 'ila4NZS',
-    'Cable Straight Arm Pulldown': 'x69MAlq',
-    'Cable Lat Pulldown Full Range of Motion': 'LEprlgG',
-
-    // Legs
-    'Barbell Full Squat': 'qXTaZnJ',
-    'Sled 45° Leg Press': '2Qh2J1e',
-    'Lever Leg Extension': 'my33uHU',
-    'Lever Lying Leg Curl': '17lJ1kr',
-    'Barbell Lunge': 't8iSghb',
-    'Sled Hack Squat': 'Qa55kX1',
-    'Lever Seated Calf Raise': 'bOOdeyc',
-    'Lever Standing Calf Raise': 'ykUOVze',
-    'Lever Seated Leg Curl': 'Zg3XY7P',
-
-    // Shoulders
-    'Barbell Seated Overhead Press': 'kTbSH9h',
-    'Dumbbell Lateral Raise': 'DsgkuIt',
-    'Dumbbell Rear Delt Raise': 'mu5Guxt',
-    'Cable Lateral Raise': 'goJ6ezq',
-    'Dumbbell Arnold Press': 'Xy4jlWA',
-    'Barbell Upright Row': 'UDlhcO8',
-    'Dumbbell Seated Shoulder Press': 'znQUdHY',
-    'Dumbbell Shrug': 'NJzBsGJ',
-    'Barbell Shrug': 'dG7tG5y',
-    'Barbell Clean and Press': 'SGY8Zui',
-
-    // Arms
-    'Barbell Curl': '25GPyDY',
-    'Dumbbell Seated Curl': 'TiaZTxx',
-    'Dumbbell Concentration Curl': 'gvsWLQw',
-    'Barbell Close-Grip Bench Press': 'J6Dx1Mu',
-    'Cable Triceps Pushdown': 'gAwDzB3',
-    'Barbell Wrist Curl': '82LxxkW',
-    'Barbell Reverse Curl': 'xNrS20v',
-    'Wrist Rollerer': 'bd5b860',
-    'Barbell Preacher Curl': 'qOgPVf6',
-    'Dumbbell Incline Curl': 'ae9UoXQ',
-    'Barbell Lying Triceps Extension': 'iZop9xO',
-    'Weighted Tricep Dips': 'bZq4bwK',
-    'Dumbbell Hammer Curl': 'slDvUAU',
-    'Dumbbell Lying Triceps Extension': 'mpKZGWz',
-    'Cable Overhead Triceps Extension': '2IxROQ1',
-
-    // Other
-    'Barbell Good Morning': 'XlZ4lAC',
-    'Reverse Crunch': 'nCU1Ekp',
-    'Barbell Standing Overhead Triceps Extension': 'dZl9Q27',
-    'Dumbbell Decline Hammer Press': '1qrWgZ2',
-  };
-
-  /// Resolve using known map first, then DB search, then create custom.
-  Future<String> _id(String name, {String? muscleGroup}) async {
-    if (_known.containsKey(name)) {
-      _cache[name.toLowerCase()] = _known[name]!;
-      return _known[name]!;
-    }
-    return _resolve(name, muscleGroup: muscleGroup);
+    return _cache[key] = customId;
   }
 
   // ─── Helper to build a schedule ───────────────────────────────────
@@ -167,21 +128,19 @@ class ProgramSeeder {
         scheduleId: Value(scheduleId),
         dayIndex: Value(i),
         label: Value(day.label),
-        isRestDay: Value(day.isRest),
+        isRestDay: const Value(false),
       ));
 
-      if (!day.isRest) {
-        for (var j = 0; j < day.exercises.length; j++) {
-          final ex = day.exercises[j];
-          final exerciseId = await _id(ex.name, muscleGroup: ex.muscleGroup);
-          await _scheduleDao.addExercise(ScheduledExercisesCompanion(
-            scheduleDayId: Value(dayId),
-            exerciseId: Value(exerciseId),
-            orderIndex: Value(j),
-            targetSets: Value(ex.sets),
-            targetReps: Value(ex.reps),
-          ));
-        }
+      for (var j = 0; j < day.exercises.length; j++) {
+        final ex = day.exercises[j];
+        final exerciseId = await _id(ex.name, muscleGroup: ex.muscleGroup);
+        await _scheduleDao.addExercise(ScheduledExercisesCompanion(
+          scheduleDayId: Value(dayId),
+          exerciseId: Value(exerciseId),
+          orderIndex: Value(j),
+          targetSets: Value(ex.sets),
+          targetReps: Value(ex.reps),
+        ));
       }
     }
   }
@@ -246,12 +205,12 @@ class ProgramSeeder {
       name: 'Arnold Split',
       isActive: true,
       days: [
-        chestBackLegs,           // Day 1
-        shouldersArms,           // Day 2
-        chestBackLegs,           // Day 3
-        shouldersArms,           // Day 4
-        chestBackLegs,           // Day 5
-        shouldersArms,           // Day 6
+        chestBackLegs, // Day 1
+        shouldersArms, // Day 2
+        chestBackLegs, // Day 3
+        shouldersArms, // Day 4
+        chestBackLegs, // Day 5
+        shouldersArms, // Day 6
       ],
     );
   }
@@ -356,18 +315,12 @@ class ProgramSeeder {
 // ─── Data classes ─────────────────────────────────────────────────
 
 class _DayDef {
-
-  const _DayDef(this.label, this.exercises) : isRest = false;
-  const _DayDef.rest(this.label)
-      : exercises = const [],
-        isRest = true;
+  const _DayDef(this.label, this.exercises);
   final String label;
   final List<_Ex> exercises;
-  final bool isRest;
 }
 
 class _Ex {
-
   const _Ex(this.name, this.sets, this.reps, [this.muscleGroup]);
   final String name;
   final int sets;

@@ -14,12 +14,12 @@ import 'package:my_gym_bro/core/database/daos/user_profile_dao.dart';
 import 'package:my_gym_bro/core/providers/providers.dart';
 import 'package:my_gym_bro/core/security/secure_storage.dart';
 import 'package:my_gym_bro/core/services/crash_reporter.dart';
-import 'package:my_gym_bro/core/services/exercise_local_service.dart';
+import 'package:my_gym_bro/core/services/exercise_api_service.dart';
+import 'package:my_gym_bro/core/services/exercise_repository.dart';
 import 'package:my_gym_bro/core/services/notification_service.dart';
 import 'package:my_gym_bro/core/services/program_seeder.dart';
 import 'package:my_gym_bro/core/services/subscription_sync_service.dart';
 import 'package:my_gym_bro/features/workout/workout_providers.dart';
-import 'package:my_gym_bro/shared/app_constants.dart';
 import 'package:purchases_flutter/purchases_flutter.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
@@ -71,6 +71,10 @@ Future<void> _bootstrap() async {
     // Exception. Non-fatal — the app runs without Firebase.
     mark('firebase init skipped (not configured)');
   }
+
+  // WorkoutX exercise API key — injected at build time via
+  // --dart-define WORKOUTX_API_KEY. Empty = network exercise features disabled.
+  const workoutxApiKey = String.fromEnvironment('WORKOUTX_API_KEY');
 
   // Supabase — bounded so a slow/absent network can't stall startup.
   const supabaseUrl = String.fromEnvironment('SUPABASE_URL');
@@ -139,6 +143,7 @@ Future<void> _bootstrap() async {
     ProviderScope(
       overrides: [
         databaseProvider.overrideWithValue(db),
+        workoutxApiKeyProvider.overrideWithValue(workoutxApiKey),
         localeProvider.overrideWith((ref) => savedLocale),
         if (savedTheme != null)
           themeModeProvider.overrideWith((ref) => savedTheme!),
@@ -156,7 +161,7 @@ Future<void> _bootstrap() async {
   // which can block indefinitely on a slow/absent network. Awaiting it
   // before runApp() froze the splash, so it is now fire-and-forget.
   unawaited(NotificationService.initialise());
-  unawaited(_backgroundDbInit(db, secureStorage));
+  unawaited(_backgroundDbInit(db, workoutxApiKey));
 
   // Reconcile RevenueCat entitlements into the local profile on launch, and
   // keep them in sync as renewals/cancellations arrive. Best-effort — both
@@ -171,24 +176,22 @@ Future<void> _bootstrap() async {
 /// Seeds and migrates the database after [runApp] so the main thread is never
 /// blocked waiting for these operations.
 Future<void> _backgroundDbInit(
-    AppDatabase db, SecureStorage secureStorage) async {
+    AppDatabase db, String workoutxApiKey) async {
+  // Throwaway API client + repository used only for startup seeding; the UI
+  // uses the repository from `exerciseRepositoryProvider` instead.
+  final exerciseApi = ExerciseApiService(apiKey: workoutxApiKey);
+  final exerciseRepo = ExerciseRepository(exerciseApi, ExerciseDao(db));
   try {
-    final exerciseDao = ExerciseDao(db);
-    final count = await exerciseDao.count();
-    if (count == 0) {
-      await ExerciseLocalService.seedFromAssets(db);
-    }
-
-    final lastMigration = await secureStorage.read('db_migration_version');
-    if (lastMigration != AppConstants.dbMigrationVersion) {
-      await ExerciseLocalService.remapMuscleGroups(db);
-      await ExerciseLocalService.backfillDifficulty(db);
-      await secureStorage.write(
-          'db_migration_version', AppConstants.dbMigrationVersion);
-    }
-
-    await ProgramSeeder(db).seedIfNeeded();
+    // Exercises are no longer bulk-seeded from a bundled JSON; they come from
+    // the WorkoutX API and are cached on demand. Seed only the tiny starter
+    // set so the default program has rich data offline on first launch.
+    final programSeeder = ProgramSeeder(db, exerciseRepo);
+    await programSeeder.ensureStarterCached();
+    await programSeeder.seedIfNeeded();
   } on Exception catch (e, stack) {
-    CrashReporter.recordError(e, stackTrace: stack, reason: 'Background DB init failed');
+    CrashReporter.recordError(e,
+        stackTrace: stack, reason: 'Background DB init failed');
+  } finally {
+    exerciseApi.dispose();
   }
 }

@@ -2,7 +2,9 @@ import 'dart:async';
 
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:my_gym_bro/core/providers/providers.dart';
 import 'package:my_gym_bro/core/security/input_sanitiser.dart';
+import 'package:my_gym_bro/core/services/exercise_repository.dart';
 import 'package:my_gym_bro/core/services/live_activity_service.dart';
 import 'package:my_gym_bro/core/services/notification_image_cache.dart';
 import 'package:my_gym_bro/core/services/notification_service.dart';
@@ -203,12 +205,14 @@ class ActiveSessionNotifier extends StateNotifier<ActiveSessionState> {
 
   ActiveSessionNotifier({
     required WorkoutLogRepository repository,
+    ExerciseRepository? exerciseRepository,
     int defaultRestSeconds = 90,
     String weightUnit = 'kg',
     String restNotificationTitle = 'Rest complete!',
     String restNotificationBody = 'Time to start your next set.',
     Future<int> Function()? getStreak,
   })  : _repository = repository,
+        _exerciseRepo = exerciseRepository,
         _defaultRestSeconds = defaultRestSeconds,
         _weightUnit = weightUnit,
         _restNotificationTitle = restNotificationTitle,
@@ -216,6 +220,10 @@ class ActiveSessionNotifier extends StateNotifier<ActiveSessionState> {
         _getStreak = getStreak,
         super(const ActiveSessionState());
   final WorkoutLogRepository _repository;
+
+  /// Optional WorkoutX-backed cache. When present, logging an exercise ensures
+  /// it is cached locally (cache-on-log) so history/recovery resolve offline.
+  final ExerciseRepository? _exerciseRepo;
   /// Refresh-and-read the streak. Invalidates the cached value first so the
   /// just-finished session is included. Provided by the provider builder.
   final Future<int> Function()? _getStreak;
@@ -507,6 +515,13 @@ class ActiveSessionNotifier extends StateNotifier<ActiveSessionState> {
   /// Auto-fills sets from the user's most recently completed session for
   /// this exercise. Falls back to a single empty set when no history exists.
   Future<void> addExercise(String exerciseId) async {
+    // Cache-on-log: pull this exercise into the local cache if it isn't there
+    // yet (online), so it (and its gif/muscle data) resolve offline later.
+    // Best-effort and a no-op when already cached or offline.
+    if (_exerciseRepo != null) {
+      await _exerciseRepo.ensureCached([exerciseId]);
+    }
+
     final exercise = await _repository.findExercise(exerciseId);
     if (exercise == null || state.sessionId == null) return;
 
@@ -1166,6 +1181,7 @@ final activeSessionProvider =
 
   final notifier = ActiveSessionNotifier(
     repository: repository,
+    exerciseRepository: ref.read(exerciseRepositoryProvider),
     defaultRestSeconds: profile?.defaultRestSeconds ?? 90,
     weightUnit: profile?.weightUnit ?? 'kg',
     getStreak: () {

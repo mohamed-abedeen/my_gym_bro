@@ -20,6 +20,7 @@ dependencies:
   flutter:
     sdk: flutter
   flutter_local_notifications: ^17.2.2
+  http: ^1.2.0
   flutter_localizations:
     sdk: flutter
   flutter_riverpod: ^2.6.1
@@ -58,7 +59,7 @@ flutter:
   uses-material-design: true
   generate: true
   assets:
-    - assets/exercises.json
+    - assets/exercises_starter.json
     - assets/anatomy/
     - assets/skins/
     - assets/audio/

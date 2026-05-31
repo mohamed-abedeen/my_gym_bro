@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 
 import 'package:cached_network_image/cached_network_image.dart';
@@ -5,8 +6,8 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:my_gym_bro/core/database/app_database.dart';
-import 'package:my_gym_bro/core/database/daos/exercise_dao.dart';
 import 'package:my_gym_bro/core/providers/providers.dart';
+import 'package:my_gym_bro/core/services/exercise_repository.dart';
 import 'package:my_gym_bro/features/exercises/exercise_detail_screen.dart';
 import 'package:my_gym_bro/l10n/app_localizations.dart';
 import 'package:my_gym_bro/shared/constants.dart';
@@ -16,12 +17,152 @@ import 'package:my_gym_bro/shared/widgets/shimmer_box.dart';
 
 // ── Providers ──
 
-final _exerciseDaoProvider = Provider<ExerciseDao>((ref) {
-  return ExerciseDao(ref.watch(databaseProvider));
-});
+/// Immutable state for the paginated exercise catalogue.
+class _CatalogueState {
+  const _CatalogueState({
+    this.items = const [],
+    this.isLoading = false,
+    this.isLoadingMore = false,
+    this.hasMore = true,
+    this.fromCache = false,
+    this.error,
+  });
 
-final _allExercisesProvider = FutureProvider<List<Exercise>>((ref) {
-  return ref.watch(_exerciseDaoProvider).getAll();
+  final List<Exercise> items;
+  final bool isLoading; // initial / reset load in flight
+  final bool isLoadingMore; // appending a further page
+  final bool hasMore;
+  final bool fromCache; // last result served from the local cache (offline)
+  final Object? error; // only meaningful when [items] is empty
+
+  _CatalogueState copyWith({
+    List<Exercise>? items,
+    bool? isLoading,
+    bool? isLoadingMore,
+    bool? hasMore,
+    bool? fromCache,
+    Object? error,
+    bool clearError = false,
+  }) {
+    return _CatalogueState(
+      items: items ?? this.items,
+      isLoading: isLoading ?? this.isLoading,
+      isLoadingMore: isLoadingMore ?? this.isLoadingMore,
+      hasMore: hasMore ?? this.hasMore,
+      fromCache: fromCache ?? this.fromCache,
+      error: clearError ? null : (error ?? this.error),
+    );
+  }
+}
+
+/// Drives catalogue browse/search against [ExerciseRepository] with
+/// pagination. The accumulated list is what the in-memory filters and sections
+/// operate on. Offline (or free-plan search) the repository transparently
+/// serves the local cache, flagged via [_CatalogueState.fromCache].
+class _CatalogueNotifier extends StateNotifier<_CatalogueState> {
+  _CatalogueNotifier(this._repo)
+      : super(const _CatalogueState(isLoading: true)) {
+    _load(reset: true);
+  }
+
+  final ExerciseRepository _repo;
+  String _query = '';
+
+  /// When the API rate-limits us mid-pagination, back off briefly before
+  /// retrying so repeated scrolling can't hammer the quota.
+  DateTime? _retryAfter;
+
+  /// Re-run the current query from the first page.
+  Future<void> refresh() {
+    _retryAfter = null;
+    return _load(reset: true);
+  }
+
+  /// Append the next page when browsing (no-op while searching or exhausted).
+  Future<void> loadMore() async {
+    if (state.isLoading || state.isLoadingMore || !state.hasMore) return;
+    final retryAfter = _retryAfter;
+    if (retryAfter != null && DateTime.now().isBefore(retryAfter)) return;
+    await _load(reset: false);
+  }
+
+  /// Switch to a search query (empty restores full-catalogue browse).
+  Future<void> setSearch(String query) async {
+    final q = query.trim();
+    if (q == _query) return;
+    _query = q;
+    await _load(reset: true);
+  }
+
+  Future<void> _load({required bool reset}) async {
+    if (reset) {
+      state = state.copyWith(isLoading: true, clearError: true);
+    } else {
+      state = state.copyWith(isLoadingMore: true);
+    }
+
+    final offset = reset ? 0 : state.items.length;
+    try {
+      final page = _query.isEmpty
+          ? await _repo.browse(offset: offset)
+          : await _repo.searchByName(_query);
+
+      final prevLen = state.items.length;
+      final merged =
+          reset ? page.items : _dedupAppend(state.items, page.items);
+
+      // Decide whether more pages remain:
+      //  • search isn't paginated → no more;
+      //  • a cache fallback means the API was unavailable (rate-limited /
+      //    offline / quota) — the cache can't report the true remaining count,
+      //    so DON'T conclude we've hit the end; preserve hasMore so a later
+      //    scroll retries, and back off briefly to spare the quota;
+      //  • online with a grand total → page until we reach it;
+      //  • online without a total (bare array) → page until a page adds nothing.
+      final bool hasMore;
+      if (_query.isNotEmpty) {
+        hasMore = false;
+      } else if (page.fromCache) {
+        hasMore = reset ? merged.length < page.total : state.hasMore;
+        if (!reset) _retryAfter = DateTime.now().add(const Duration(seconds: 5));
+      } else if (page.items.isEmpty) {
+        hasMore = false;
+      } else if (page.total < 0) {
+        hasMore = reset || merged.length > prevLen;
+      } else {
+        _retryAfter = null;
+        hasMore = merged.length < page.total;
+      }
+
+      state = _CatalogueState(
+        items: merged,
+        hasMore: hasMore,
+        fromCache: page.fromCache,
+      );
+    } on Object catch (e) {
+      // The repository falls back to cache internally, so this is rare.
+      state = state.copyWith(
+        isLoading: false,
+        isLoadingMore: false,
+        error: state.items.isEmpty ? e : null,
+      );
+    }
+  }
+
+  static List<Exercise> _dedupAppend(
+      List<Exercise> existing, List<Exercise> next) {
+    final seen = existing.map((e) => e.exerciseId).toSet();
+    return [
+      ...existing,
+      for (final e in next)
+        if (seen.add(e.exerciseId)) e,
+    ];
+  }
+}
+
+final _catalogueProvider =
+    StateNotifierProvider<_CatalogueNotifier, _CatalogueState>((ref) {
+  return _CatalogueNotifier(ref.watch(exerciseRepositoryProvider));
 });
 
 final _searchQueryProvider = StateProvider<String>((ref) => '');
@@ -29,90 +170,93 @@ final _muscleFilterProvider = StateProvider<String?>((ref) => null);
 final _equipmentFilterProvider =
     StateProvider<_EquipmentFilterValue?>((ref) => null);
 final _difficultyFilterProvider = StateProvider<String?>((ref) => null);
+
 /// Applies all active filters then splits the result into two sorted sections:
-/// up to 25 recents (frequency DESC) and the A-Z remainder.
+/// up to 25 recents (frequency DESC) and the A-Z remainder. Maps the catalogue
+/// notifier's state into an [AsyncValue] so the screen's `.when` rendering
+/// (loading skeleton / error+retry / data) keeps working unchanged.
 final _filteredExercisesProvider =
-    FutureProvider<_ExerciseSections>((ref) {
+    Provider<AsyncValue<_ExerciseSections>>((ref) {
+  final cat = ref.watch(_catalogueProvider);
+  if (cat.isLoading && cat.items.isEmpty) {
+    return const AsyncValue.loading();
+  }
+  if (cat.error != null && cat.items.isEmpty) {
+    return AsyncValue.error(cat.error!, StackTrace.empty);
+  }
+
   final query = ref.watch(_searchQueryProvider);
   final muscleFilter = ref.watch(_muscleFilterProvider);
   final equipmentFilter = ref.watch(_equipmentFilterProvider);
   final difficultyFilter = ref.watch(_difficultyFilterProvider);
-  final allAsync = ref.watch(_allExercisesProvider);
 
-  return allAsync.when(
-    data: (all) {
-      var list = all;
+  var list = cat.items;
 
-      // 1. Muscle group filter — 'Shoulders' is the umbrella value that
-      // matches every deltoid sub-group as well as unclassified shoulder work.
-      if (muscleFilter != null) {
-        if (muscleFilter == 'Shoulders') {
-          const shoulderGroups = {
-            'Shoulders', 'Front Delt', 'Side Delt', 'Rear Delt',
-          };
-          list = list
-              .where((e) => shoulderGroups.contains(e.muscleGroup))
-              .toList();
-        } else {
-          final mf = muscleFilter.trim().toLowerCase();
-          list = list
-              .where((e) => e.muscleGroup?.trim().toLowerCase() == mf)
-              .toList();
-        }
+  // 1. Muscle group filter — 'Shoulders' is the umbrella value that
+  // matches every deltoid sub-group as well as unclassified shoulder work.
+  if (muscleFilter != null) {
+    if (muscleFilter == 'Shoulders') {
+      const shoulderGroups = {
+        'Shoulders', 'Front Delt', 'Side Delt', 'Rear Delt',
+      };
+      list =
+          list.where((e) => shoulderGroups.contains(e.muscleGroup)).toList();
+    } else {
+      final mf = muscleFilter.trim().toLowerCase();
+      list = list
+          .where((e) => e.muscleGroup?.trim().toLowerCase() == mf)
+          .toList();
+    }
+  }
+
+  // 2. Equipment filter — OR-matches any exercise whose equipment array
+  // contains at least one value from the selected category's raw set.
+  if (equipmentFilter != null) {
+    final rawSet =
+        equipmentFilter.rawValues.map((v) => v.toLowerCase()).toSet();
+    list = list.where((e) {
+      if (e.equipments == null) return false;
+      try {
+        final equips = (jsonDecode(e.equipments!) as List).cast<String>();
+        return equips.any((eq) => rawSet.contains(eq.toLowerCase()));
+      } on FormatException catch (fe) {
+        debugPrint(
+            'exercise_browser: bad equipments JSON for "${e.name}": $fe');
+        return false;
       }
+    }).toList();
+  }
 
-      // 2. Equipment filter — OR-matches any exercise whose equipment array
-      // contains at least one value from the selected category's raw set.
-      if (equipmentFilter != null) {
-        final rawSet =
-            equipmentFilter.rawValues.map((v) => v.toLowerCase()).toSet();
-        list = list.where((e) {
-          if (e.equipments == null) return false;
-          try {
-            final equips = (jsonDecode(e.equipments!) as List).cast<String>();
-            return equips.any((eq) => rawSet.contains(eq.toLowerCase()));
-          } on FormatException catch (fe) {
-            debugPrint(
-                'exercise_browser: bad equipments JSON for "${e.name}": $fe');
-            return false;
-          }
-        }).toList();
-      }
+  // 3. Difficulty filter
+  if (difficultyFilter != null) {
+    list = list.where((e) => e.difficulty == difficultyFilter).toList();
+  }
 
-      // 3. Difficulty filter
-      if (difficultyFilter != null) {
-        list = list.where((e) => e.difficulty == difficultyFilter).toList();
-      }
+  // 4. Search text — client-side narrowing over the loaded/cached items
+  // (the catalogue notifier already issued the server-side search).
+  if (query.isNotEmpty) {
+    final q = query.toLowerCase();
+    list = list.where((e) => e.name.toLowerCase().contains(q)).toList();
+  }
 
-      // 4. Search text
-      if (query.isNotEmpty) {
-        final q = query.toLowerCase();
-        list = list.where((e) => e.name.toLowerCase().contains(q)).toList();
-      }
+  // 5. Split: top-25 recents pinned by frequency DESC, rest sorted A-Z.
+  // Exercises that have never been used go directly into the rest section.
+  final used = list.where((e) => e.usageCount > 0).toList()
+    ..sort((a, b) {
+      final byUsage = b.usageCount.compareTo(a.usageCount);
+      return byUsage != 0 ? byUsage : a.name.compareTo(b.name);
+    });
+  final recents = used.take(25).toList();
+  final recentIds = recents.map((e) => e.exerciseId).toSet();
+  final rest = list.where((e) => !recentIds.contains(e.exerciseId)).toList()
+    ..sort((a, b) => a.name.compareTo(b.name));
 
-      // 5. Split: top-25 recents pinned by frequency DESC, rest sorted A-Z.
-      // Exercises that have never been used go directly into the rest section.
-      final used = list.where((e) => e.usageCount > 0).toList()
-        ..sort((a, b) {
-          final byUsage = b.usageCount.compareTo(a.usageCount);
-          return byUsage != 0 ? byUsage : a.name.compareTo(b.name);
-        });
-      final recents = used.take(25).toList();
-      final recentIds = recents.map((e) => e.exerciseId).toSet();
-      final rest =
-          list.where((e) => !recentIds.contains(e.exerciseId)).toList()
-            ..sort((a, b) => a.name.compareTo(b.name));
-
-      return _ExerciseSections(recents: recents, rest: rest);
-    },
-    loading: () => _ExerciseSections(recents: const [], rest: const []),
-    error: (_, __) => _ExerciseSections(recents: const [], rest: const []),
-  );
+  return AsyncValue.data(_ExerciseSections(recents: recents, rest: rest));
 });
 
-/// Unique difficulty levels extracted from all exercises.
+/// Unique difficulty levels extracted from the loaded catalogue.
 final _difficultyLevelsProvider = FutureProvider<List<String>>((ref) async {
-  final all = await ref.watch(_allExercisesProvider.future);
+  final all = ref.watch(_catalogueProvider).items;
   final levels = <String>{};
   for (final e in all) {
     if (e.difficulty != null && e.difficulty!.isNotEmpty) {
@@ -298,6 +442,65 @@ class _ExerciseBrowserScreenState
 
   bool get _isMultiPick => widget.multiPickMode;
 
+  final ScrollController _scrollController = ScrollController();
+  Timer? _searchDebounce;
+
+  @override
+  void initState() {
+    super.initState();
+    _scrollController.addListener(_onScroll);
+  }
+
+  @override
+  void dispose() {
+    _scrollController
+      ..removeListener(_onScroll)
+      ..dispose();
+    _searchDebounce?.cancel();
+    super.dispose();
+  }
+
+  /// Infinite scroll — fetch the next catalogue page as the list nears bottom.
+  void _onScroll() {
+    if (_scrollController.position.pixels >=
+        _scrollController.position.maxScrollExtent - 400) {
+      ref.read(_catalogueProvider.notifier).loadMore();
+    }
+  }
+
+  /// The API returns small pages (the free plan caps at ~10 items), so a single
+  /// page often doesn't fill the screen — then there's nothing to scroll and
+  /// [_onScroll] never fires. Proactively fetch the next page until the list
+  /// overflows the viewport (or the catalogue is exhausted).
+  ///
+  /// Gated to the plain browse view: with a filter/search active a narrow match
+  /// could otherwise page through the entire catalogue and burn API quota.
+  void _maybeAutoPaginate() {
+    if (!_scrollController.hasClients) return;
+    final filtered = ref.read(_searchQueryProvider).isNotEmpty ||
+        ref.read(_muscleFilterProvider) != null ||
+        ref.read(_equipmentFilterProvider) != null ||
+        ref.read(_difficultyFilterProvider) != null;
+    if (filtered) return;
+    final cat = ref.read(_catalogueProvider);
+    if (cat.hasMore &&
+        !cat.isLoading &&
+        !cat.isLoadingMore &&
+        _scrollController.position.maxScrollExtent <= 0) {
+      ref.read(_catalogueProvider.notifier).loadMore();
+    }
+  }
+
+  /// Debounced search — update the instant client-side filter immediately, then
+  /// issue the server-side search after a short pause to conserve API quota.
+  void _onSearchChanged(String value) {
+    ref.read(_searchQueryProvider.notifier).state = value;
+    _searchDebounce?.cancel();
+    _searchDebounce = Timer(const Duration(milliseconds: 350), () {
+      ref.read(_catalogueProvider.notifier).setSearch(value);
+    });
+  }
+
   void _toggleSelection(Exercise exercise) {
     setState(() {
       if (_selectedIds.contains(exercise.exerciseId)) {
@@ -451,6 +654,34 @@ class _ExerciseBrowserScreenState
             ),
             SizedBox(height: 12.h),
 
+            // ── Offline banner — shown when results came from the local cache ──
+            if (ref.watch(_catalogueProvider).fromCache &&
+                ref.watch(_catalogueProvider).items.isNotEmpty)
+              Padding(
+                padding: EdgeInsets.fromLTRB(
+                  AppSizes.contentPaddingH.w,
+                  0,
+                  AppSizes.contentPaddingH.w,
+                  8.h,
+                ),
+                child: Row(
+                  children: [
+                    Icon(Icons.cloud_off_rounded,
+                        color: colors.textSecondary, size: 14.sp),
+                    SizedBox(width: 6.w),
+                    Expanded(
+                      child: Text(
+                        l10n.exercisesOfflineCached,
+                        style: TextStyle(
+                          color: colors.textSecondary,
+                          fontSize: 11.sp,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+
             // ── Exercise list ──
             Expanded(
               child: exercises.when(
@@ -529,12 +760,33 @@ class _ExerciseBrowserScreenState
                     items.addAll(sections.rest);
                   }
 
+                  // Fill the viewport when a small page doesn't overflow it.
+                  WidgetsBinding.instance
+                      .addPostFrameCallback((_) => _maybeAutoPaginate());
+                  final loadingMore =
+                      ref.watch(_catalogueProvider).isLoadingMore;
                   return ListView.builder(
+                    controller: _scrollController,
                     padding: EdgeInsets.symmetric(
                       horizontal: AppSizes.contentPaddingH.w,
                     ),
-                    itemCount: items.length,
+                    itemCount: items.length + (loadingMore ? 1 : 0),
                     itemBuilder: (_, i) {
+                      if (i >= items.length) {
+                        return Padding(
+                          padding: EdgeInsets.symmetric(vertical: 16.h),
+                          child: Center(
+                            child: SizedBox(
+                              width: 22.w,
+                              height: 22.w,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                color: colors.accent,
+                              ),
+                            ),
+                          ),
+                        );
+                      }
                       final item = items[i];
                       if (item is String) return _buildSectionHeader(item);
                       return _buildExerciseTile(item as Exercise);
@@ -556,7 +808,8 @@ class _ExerciseBrowserScreenState
                 error:
                     (_, __) => Center(
                       child: GestureDetector(
-                        onTap: () => ref.invalidate(_filteredExercisesProvider),
+                        onTap: () =>
+                            ref.read(_catalogueProvider.notifier).refresh(),
                         child: Column(
                           mainAxisSize: MainAxisSize.min,
                           children: [
@@ -642,9 +895,7 @@ class _ExerciseBrowserScreenState
                                 isDense: true,
                                 contentPadding: EdgeInsets.zero,
                               ),
-                              onChanged: (v) => ref
-                                  .read(_searchQueryProvider.notifier)
-                                  .state = v,
+                              onChanged: _onSearchChanged,
                             ),
                           ),
                           Icon(Icons.search_rounded,

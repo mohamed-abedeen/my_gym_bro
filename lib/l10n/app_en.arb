@@ -315,6 +315,7 @@
     }
   },
   "noExercisesFound": "No exercises found for this combination, Bro!",
+  "exercisesOfflineCached": "Offline — showing your saved exercises.",
   "allMuscles": "All Muscles",
   "allEquipment": "All Equipment",
   "allDifficulties": "All Levels",

@@ -1,46 +1,70 @@
 # 08 — WorkoutX Exercise API Migration
 
 **Status:** Planned, not started.
-**Audience:** This document is a self-contained implementation brief. It assumes you have access to this Flutter repo **and** the project's Supabase backend, but no prior context on the discussion that produced it.
+**Audience:** Self-contained implementation brief. Assumes access to this Flutter repo
+and the project's Supabase backend, but no prior context.
+**Chosen path:** WorkoutX **Ultra API plan** ($24.99/mo), **direct client → WorkoutX**
+calls (NO backend proxy — see §4). AI generator deferred to a later version.
+
+> ⚠️ This supersedes any earlier draft of this doc that described a Supabase Edge
+> Function proxy. **WorkoutX explicitly forbids server-side proxying/caching on standard
+> plans** (see Appendix A). Do not build a proxy.
 
 ---
 
 ## 1. Goal
 
-Replace the app's exercise data source. Today the app ships ~1,500 ExerciseDB exercises bundled in `assets/exercises.json`, seeded into a local Drift/SQLite table, and hotlinks GIFs from `static.exercisedb.dev`. We are switching to the **WorkoutX REST API** (`https://api.workoutxapp.com/v1`) for three reasons:
+Replace the app's exercise data source. Today the app ships ~1,500 ExerciseDB exercises
+bundled in `assets/exercises.json`, seeded into a local Drift/SQLite table, with GIFs
+hotlinked from `static.exercisedb.dev`. We are switching to the **WorkoutX REST API**
+(`https://api.workoutxapp.com/v1`) on the **Ultra plan** for:
 
-1. **Legal/licensing safety** — this is a paid subscription app; WorkoutX grants an explicit commercial license for its GIFs/data, removing the murky-terms risk of the current ExerciseDB hotlinking.
-2. **AI workout generator** — WorkoutX exposes `/v1/workout/generate` (Pro+ plan).
-3. Forward-looking metadata (similar/alternative exercises, calorie estimates).
+1. **Legal/licensing safety** — paid app; Ultra includes full commercial rights for GIFs
+   + exercise data inside a subscription app (confirmed in writing — Appendix A).
+2. Cleaner, owned exercise infrastructure with forward-looking metadata.
 
-> ⚠️ **Reality check, do not skip:** WorkoutX is repackaged ExerciseDB. The *content* is the same (~1,400 vs the current 1,500 exercises). This migration is justified by **licensing + the AI generator**, not by better/more exercises. Don't expect a content upgrade.
+The AI workout generator (`/v1/workout/generate`) is **nice-to-have, deferred** — build
+code switch-ready but do not depend on it for v1.
 
-### Two explicit product decisions (locked by the product owner)
-
-- **Remove the current bundled exercises entirely.** Drop `assets/exercises.json` and the seed-from-assets flow.
-- **Cache only what the user needs offline.** The exercise browser becomes **online** (fetch-on-demand via the proxy). The app **caches into local Drift only the exercises the user has saved into a workout program (and exercises they actually log)** — so they can train offline in the gym without losing their program's exercise data. This respects WorkoutX's ToS, which forbids "cache exercise data in bulk beyond what is needed for your application." Caching the user's own program ≠ bulk caching.
+> Note: WorkoutX is repackaged ExerciseDB; content is comparable (~1,400 exercises), not
+> a content upgrade. The justification is **licensing**, not more/better exercises.
 
 ---
 
-## 2. WorkoutX API reference (verified)
+## 2. Locked product decisions (do not deviate)
+
+1. **Remove the bundled exercises entirely** — delete `assets/exercises.json`, its
+   `pubspec.yaml` entry, and every `seedFromAssets()` call.
+2. **Browser is ONLINE** (fetch-on-demand via the API), paginated + debounced.
+3. **Local Drift `exercises` table becomes a per-user CACHE**, populated:
+   - **cache-on-save** — when an exercise is added to a program (`ScheduledExercises`).
+   - **cache-on-log** — when an exercise is logged in a session (`SessionExercises`).
+   This is exactly what WorkoutX permits ("client-side caching... no restrictions" —
+   Appendix A) and gives the user full **offline access to their program in the gym**.
+4. **No backend proxy** — the app calls `api.workoutxapp.com` directly (Appendix A).
+
+---
+
+## 3. WorkoutX API reference (verified)
 
 - **Base URL:** `https://api.workoutxapp.com/v1`
-- **Auth:** HTTP header `X-WorkoutX-Key: wx_...` (server-side only — never ship in the app).
-- **Plan needed:** **Pro ($15.99/mo)** — required for multi-filter search and the AI generator. (Free=500 req/mo, Basic=3k, Pro=10k, Ultra=35k.)
+- **Auth:** HTTP header `X-WorkoutX-Key: wx_...`
+- **Production plan:** **Ultra** ($24.99/mo, 35k req/mo, ~600 req/min).
+- **Testing plan:** a **Free** key will be provided (see §9 for its limits).
 
 ### Endpoints
-| Endpoint | Purpose |
-|---|---|
-| `GET /v1/exercises?limit=&offset=` | Paginated list |
-| `GET /v1/exercises/exercise/:id` | Single exercise by id |
-| `GET /v1/exercises/name/:name` | Partial-name search |
-| `GET /v1/exercises/search` | Multi-filter (Basic+) |
-| `GET /v1/exercises/bodyPart/:bodyPart` | Filter by body part |
-| `GET /v1/exercises/target/:target` | Filter by target muscle |
-| `GET /v1/exercises/equipment/:equipment` | Filter by equipment |
-| `GET /v1/exercises/bodyPartList` / `targetList` / `equipmentList` | Filter vocabularies |
-| `GET /v1/exercises/:id/similar` / `:id/alternatives` / `:id/calories` | Smart endpoints |
-| `GET /v1/workout/generate?goal=&level=&split=` | AI generator (Pro+) |
+| Endpoint | Purpose | Min plan |
+|---|---|---|
+| `GET /v1/exercises?limit=&offset=` | Paginated list | Free |
+| `GET /v1/exercises/exercise/:id` | Single by id | Free |
+| `GET /v1/exercises/name/:name` | Partial-name search | Free |
+| `GET /v1/exercises/bodyPart/:bodyPart` | Filter by body part | Free |
+| `GET /v1/exercises/target/:target` | Filter by target muscle | Free |
+| `GET /v1/exercises/equipment/:equipment` | Filter by equipment | Free |
+| `GET /v1/exercises/bodyPartList` / `targetList` / `equipmentList` | Filter vocab | Free |
+| `GET /v1/exercises/search` | Multi-filter | **Basic+** |
+| `GET /v1/exercises/:id/similar` / `:id/alternatives` / `:id/calories` | Smart | check tier |
+| `GET /v1/workout/generate?goal=&level=&split=` | AI generator | **Pro+** |
 
 ### Exercise object shape (WorkoutX)
 ```json
@@ -50,128 +74,99 @@ Replace the app's exercise data source. Today the app ships ~1,500 ExerciseDB ex
   "bodyPart": "waist",
   "target": "abs",
   "equipment": "body weight",
-  "gifUrl": "https://<supabase-storage>/exercise-gifs/0001.gif",
+  "gifUrl": "https://<workoutx-storage>/exercise-gifs/0001.gif",
   "instructions": ["Lie down ...", "Place your hands ..."],
   "secondaryMuscles": ["hip flexors", "lower back"]
 }
 ```
 
-**Critical differences from our current data:**
-- WorkoutX uses **singular string** fields (`bodyPart`, `target`, `equipment`); our schema uses **JSON-array** columns (`bodyParts`, `targetMuscles`, `equipments`). → Wrap each singular value in a one-element array on ingest.
-- WorkoutX has **no `difficulty`** field. → Not a problem: the app *derives* difficulty locally (see §6).
-- WorkoutX **IDs differ** (`0001`) from our current ExerciseDB v1 IDs (`2gPfomN`). → See §7 (migration).
+**Differences from our current data:**
+- WorkoutX uses **singular string** fields (`bodyPart`/`target`/`equipment`); our schema
+  uses **JSON-array** columns (`bodyParts`/`targetMuscles`/`equipments`) → wrap in
+  one-element arrays on ingest.
+- WorkoutX has **no `difficulty`** → not a problem, we derive it locally (§7).
+- WorkoutX **IDs differ** (`0001`) from current ExerciseDB v1 IDs (`2gPfomN`) → §8.
 
 ---
 
-## 3. Target architecture
+## 4. Architecture — direct client, NO proxy
 
 ```
-Flutter app  ──►  Supabase Edge Function "workoutx" (holds API key, caches)  ──►  api.workoutxapp.com
+Flutter app ──HTTPS, X-WorkoutX-Key──► api.workoutxapp.com/v1
      │
-     └──►  Local Drift "exercises" table = per-user cache (program + logged exercises only)
+     └──► Local Drift "exercises" table  =  per-user cache (program + logged exercises)
+     └──► cached_network_image           =  per-device GIF cache (offline after first view)
 ```
 
-- The app **never** calls WorkoutX directly (key protection). It calls the Edge Function via `supabase.functions.invoke('workoutx', ...)` — the same mechanism already used for `delete-account` ([auth_notifier.dart:300](../../lib/core/auth/auth_notifier.dart#L300)).
-- The local `exercises` table stops being a full mirror and becomes a **cache** populated on-save / on-log.
+- The app calls WorkoutX **directly**. No Supabase involvement for exercises. (Supabase
+  stays as-is for profile/workout-log sync — unchanged by this migration.)
+- Add an HTTP client. `http` is already available transitively via `supabase_flutter`;
+  declare it explicitly in `pubspec.yaml` (`http: ^1.2.0`) or use `dio` if preferred.
+
+### 4.1 API key management & security (READ — this is the main risk)
+Because proxying is forbidden, the API key lives in the client binary. It is therefore
+**extractable by a determined attacker** — this is WorkoutX's sanctioned model, mitigated
+by their per-account rate limiting. Minimize exposure:
+
+- **Never hardcode the key in source / never commit it.** Inject at build time:
+  `flutter build --dart-define=WORKOUTX_API_KEY=wx_...` read via
+  `const String.fromEnvironment('WORKOUTX_API_KEY')`. This mirrors the existing
+  `SUPABASE_URL` / `SUPABASE_ANON_KEY` pattern in [main.dart](../../lib/main.dart#L76).
+- Enable Dart obfuscation for release builds:
+  `flutter build appbundle --obfuscate --split-debug-info=build/symbols`.
+- Use **separate keys** for dev (the free key) and prod (Ultra) via different
+  `--dart-define` values per build flavor.
+- Monitor usage in the WorkoutX dashboard; rotate the key if it leaks.
+- Document this residual risk in the security section of the project plan so it's a known,
+  accepted trade-off (and revisit the **Data Pack $699 one-time** option — Appendix A — if
+  key exposure or rate limits ever become a real problem; it eliminates the API entirely).
 
 ---
 
-## 4. PART A — Supabase backend (Edge Function proxy)
+## 5. Client implementation
 
-> This is the portion that requires Supabase access. Deliver this first; the Flutter work (Part B) depends on it.
-
-### A1. Store the API key as a secret
-```bash
-supabase secrets set WORKOUTX_API_KEY=wx_xxxxxxxxxxxx
-```
-Never commit it; never expose it to the client.
-
-### A2. Edge Function `workoutx`
-Create `supabase/functions/workoutx/index.ts`. It forwards a whitelisted set of GET paths to WorkoutX, injecting the key header. Reject any non-whitelisted path. Add short-TTL caching and basic per-user rate limiting.
-
-```ts
-// supabase/functions/workoutx/index.ts
-import { serve } from "https://deno.land/std/http/server.ts";
-
-const BASE = "https://api.workoutxapp.com/v1";
-const KEY = Deno.env.get("WORKOUTX_API_KEY")!;
-
-// Whitelist of allowed upstream paths (prefix match). Everything else 403s.
-const ALLOWED = [
-  "/exercises", "/exercises/exercise/", "/exercises/name/",
-  "/exercises/search", "/exercises/bodyPart/", "/exercises/target/",
-  "/exercises/equipment/", "/exercises/bodyPartList",
-  "/exercises/targetList", "/exercises/equipmentList",
-  "/exercises/", // covers /:id/similar|alternatives|calories
-  "/workout/generate",
-];
-
-serve(async (req) => {
-  // Supabase verifies the caller's JWT automatically when verify_jwt = true.
-  const { path, query } = await req.json().catch(() => ({ path: "", query: "" }));
-  if (typeof path !== "string" || !ALLOWED.some((p) => path.startsWith(p))) {
-    return new Response(JSON.stringify({ error: "forbidden path" }), { status: 403 });
-  }
-  const url = `${BASE}${path}${query ? `?${query}` : ""}`;
-  const upstream = await fetch(url, { headers: { "X-WorkoutX-Key": KEY } });
-  const body = await upstream.text();
-  return new Response(body, {
-    status: upstream.status,
-    headers: {
-      "content-type": "application/json",
-      // Edge cache for list/search responses (tune as needed).
-      "cache-control": "public, max-age=86400",
-    },
-  });
-});
-```
-
-Deploy:
-```bash
-supabase functions deploy workoutx
-```
-
-Keep `verify_jwt = true` (default) so only authenticated app users can call it — this is the rate-abuse guard.
-
-### A3. (Optional, later) AI generator hardening
-`/workout/generate` is the most expensive call. Consider caching generated plans per (goal, level, split) tuple in a Supabase table to stay under the 10k/mo Pro quota.
-
-### A4. Quota monitoring
-Add a lightweight counter (a `workoutx_usage` table incremented per call, or log-based) so you can watch monthly request volume against the Pro 10k cap and upgrade to Ultra if needed.
-
----
-
-## 5. PART B — Flutter client changes
-
-### B1. New API client → `lib/core/services/exercise_api_service.dart`
-Thin wrapper over `supabase.functions.invoke('workoutx', body: {path, query})`. Returns parsed `WorkoutXExercise` DTOs. No `http`/`dio` dependency needed — reuse the existing Supabase functions client.
+### 5.1 `ExerciseApiService` → `lib/core/services/exercise_api_service.dart`
+Thin `http` wrapper. Sends `X-WorkoutX-Key`. Parses `WorkoutXExercise` DTOs. Handle
+non-200s, timeouts, and offline (throw a typed `ExerciseApiException` the UI can catch).
 
 ```dart
 class ExerciseApiService {
-  ExerciseApiService(this._sb);
-  final SupabaseClient _sb;
+  ExerciseApiService(this._client, this._key);
+  final http.Client _client;
+  final String _key; // from String.fromEnvironment, injected at app start
+  static const _base = 'https://api.workoutxapp.com/v1';
 
   Future<List<WorkoutXExercise>> list({int limit = 30, int offset = 0}) =>
-      _get('/exercises', 'limit=$limit&offset=$offset');
-
+      _get('/exercises?limit=$limit&offset=$offset');
   Future<List<WorkoutXExercise>> searchByName(String name) =>
-      _get('/exercises/name/${Uri.encodeComponent(name)}', '');
-
+      _get('/exercises/name/${Uri.encodeComponent(name)}');
   Future<List<WorkoutXExercise>> byTarget(String target) =>
-      _get('/exercises/target/${Uri.encodeComponent(target)}', '');
+      _get('/exercises/target/${Uri.encodeComponent(target)}');
+  Future<WorkoutXExercise?> byId(String id) async =>
+      (await _get('/exercises/exercise/$id')).firstOrNull;
 
-  Future<List<WorkoutXExercise>> _get(String path, String query) async {
-    final res = await _sb.functions.invoke('workoutx',
-        body: {'path': path, 'query': query});
-    final data = res.data as List<dynamic>;
-    return data.map((e) => WorkoutXExercise.fromJson(e)).toList();
+  Future<List<WorkoutXExercise>> _get(String path) async {
+    final res = await _client
+        .get(Uri.parse('$_base$path'), headers: {'X-WorkoutX-Key': _key})
+        .timeout(const Duration(seconds: 12));
+    if (res.statusCode != 200) {
+      throw ExerciseApiException(res.statusCode, res.body);
+    }
+    final body = jsonDecode(res.body);
+    final list = body is List ? body : (body['data'] as List? ?? [body]);
+    return list.map((e) => WorkoutXExercise.fromJson(e)).toList();
   }
 }
 ```
-Register `exerciseApiServiceProvider` alongside the existing providers in [providers.dart](../../lib/core/providers/providers.dart).
+Register `exerciseApiServiceProvider` in [providers.dart](../../lib/core/providers/providers.dart),
+reading the key from `String.fromEnvironment`.
 
-### B2. DTO + mapping → `WorkoutXExercise`
-Map WorkoutX's singular fields into the existing array-shaped `ExercisesCompanion`. **Reuse the existing local heuristics** for `muscleGroup` and `difficulty` — do not delete them; move/keep `_resolveGymMuscleGroup` and `_resolveDifficulty` (currently private statics in [exercise_local_service.dart](../../lib/core/services/exercise_local_service.dart)) into a shared helper both the seeder-removal and the new mapper can call.
+### 5.2 DTO + mapper → `WorkoutXExercise`
+Map singular WorkoutX fields into the array-shaped `ExercisesCompanion`. **Reuse the
+existing local heuristics** for `muscleGroup` and `difficulty` — promote
+`_resolveGymMuscleGroup` and `_resolveDifficulty` (currently private statics in
+[exercise_local_service.dart](../../lib/core/services/exercise_local_service.dart)) into a
+shared public helper (e.g. `ExerciseMapping`). Do not reinvent them.
 
 ```dart
 ExercisesCompanion toCompanion(WorkoutXExercise w) => ExercisesCompanion(
@@ -183,37 +178,51 @@ ExercisesCompanion toCompanion(WorkoutXExercise w) => ExercisesCompanion(
   equipments: Value(jsonEncode([w.equipment])),
   gifUrl: Value(w.gifUrl),
   instructions: Value(jsonEncode(w.instructions)),
-  muscleGroup: Value(resolveGymMuscleGroup(
+  muscleGroup: Value(ExerciseMapping.resolveGymMuscleGroup(
       target: w.target, bodyPart: w.bodyPart, exerciseName: w.name)),
-  difficulty: Value(resolveDifficulty(
+  difficulty: Value(ExerciseMapping.resolveDifficulty(
       equipments: [w.equipment], secondaryMuscles: w.secondaryMuscles, name: w.name)),
   isCustom: const Value(false),
 );
 ```
 
-### B3. Caching strategy (the core of this migration)
-Introduce an `ExerciseRepository` that is the single source of truth for the UI:
+### 5.3 `ExerciseRepository` — single source of truth for the UI
+- **Browse / search** → `ExerciseApiService` (online), paginated + debounced.
+- **Read a known exercise by id** (program / history / active session) → **local-first**:
+  `ExerciseDao.findByExerciseId`; on miss AND online, fetch + cache; on miss AND offline,
+  return a graceful placeholder.
+- **cache-on-save** → in the flow that creates `ScheduledExercises` rows, `upsert` the
+  full exercise into `exercises` (`ExerciseDao.upsert` already exists —
+  [exercise_dao.dart:64](../../lib/core/database/daos/exercise_dao.dart#L64)).
+- **cache-on-log** → in the flow that creates `SessionExercises` rows, upsert too. This
+  keeps history enrichment + `MuscleRecoveryService` working offline (they read local
+  `exercises` via `findByExerciseIds` —
+  [workout_providers.dart:268,826](../../lib/features/workout/workout_providers.dart#L268)).
+- Cache the small filter-vocab lists (`bodyPartList`/`targetList`/`equipmentList`) locally.
 
-- **Browse/search** → goes to `ExerciseApiService` (online). Paginated, debounced.
-- **Read a known exercise by id** (program/history/active session) → **local-first**: `ExerciseDao.findByExerciseId`; on miss *and* online, fetch from API and cache.
-- **Cache-on-save**: whenever an exercise is added to a schedule (`ScheduleDao.addExercise` / wherever `ScheduledExercises` rows are created), `upsert` the full exercise into the local `exercises` table. `ExerciseDao.upsert` already exists ([exercise_dao.dart:64](../../lib/core/database/daos/exercise_dao.dart#L64)).
-- **Cache-on-log**: whenever a `SessionExercises` row is created during a workout, upsert the exercise too. This keeps history enrichment + muscle-recovery working offline (`MuscleRecoveryService` and session enrichment read local `exercises` via `findByExerciseIds` — see [workout_providers.dart:268,826](../../lib/features/workout/workout_providers.dart#L268)).
+### 5.4 Remove the bundled dataset & seeding
+- Delete `assets/exercises.json` + its `pubspec.yaml` asset entry.
+- [main.dart](../../lib/main.dart#L179): remove the `seedFromAssets` call in
+  `_backgroundDbInit` (~line 179) and the now-pointless `remapMuscleGroups` /
+  `backfillDifficulty` calls (~184–185) — mapping now happens at ingest (§5.2).
+- [sign_up_screen.dart](../../lib/features/onboarding/screens/sign_up_screen.dart#L130):
+  remove both `seedFromAssets` calls (lines 130 & 134).
+- Shrink `ExerciseLocalService` to the shared `ExerciseMapping` helpers.
 
-Net effect: the local `exercises` table contains exactly the exercises the user has engaged with — their program + their logged history. Compliant with ToS, and fully offline for the gym.
+### 5.5 Rework the browser / pickers
+- [exercise_browser_screen.dart](../../lib/features/exercises/exercise_browser_screen.dart):
+  replace "all local rows / recent-25 + A–Z" with **online paginated lists** + **debounced
+  search** via `ExerciseRepository`. Add empty / error / offline states. Seed the filter
+  dropdowns from the cached vocab lists.
+- [log_bottom_sheet.dart](../../lib/features/workout/log_bottom_sheet.dart) + exercise
+  detail sheet: read **known** exercises → local-first path (offline-safe for cached items).
+- GIFs: `cached_network_image` already in use; point at the new `gifUrl`s and lazy-load.
 
-### B4. Remove the bundled dataset & seeding
-- Delete `assets/exercises.json` and its `pubspec.yaml` asset entry.
-- In [main.dart](../../lib/main.dart): remove the `seedFromAssets` call (`_backgroundDbInit`, ~line 179). Keep `remapMuscleGroups`/`backfillDifficulty`? No — these operate on bundled data; they become no-ops once the cache is API-fed (mapping happens at ingest in B2). Remove or repurpose.
-- In [sign_up_screen.dart](../../lib/features/onboarding/screens/sign_up_screen.dart#L130): remove the two `seedFromAssets` calls.
-- `ExerciseLocalService` shrinks to just the shared `resolveGymMuscleGroup` / `resolveDifficulty` helpers (rename to e.g. `ExerciseMapping`).
-
-### B5. Rework the browser/picker UI
-- [exercise_browser_screen.dart](../../lib/features/exercises/exercise_browser_screen.dart): replace the "all local rows, recent-25 + A–Z" model with **paginated online lists** + **debounced search** hitting `ExerciseRepository`. Add empty/error/offline states. Filter dropdowns (bodyPart/target/equipment) can be seeded from the `*List` endpoints (cache these vocab lists locally — tiny, allowed).
-- [log_bottom_sheet.dart](../../lib/features/workout/log_bottom_sheet.dart) and the exercise detail sheet: these read a *known* exercise → use the local-first repository path (B3), so they work offline for cached exercises.
-- GIFs: `cached_network_image` is already used; just point at the new `gifUrl` values. Lazy-load as today.
-
-### B6. Rework `ProgramSeeder`
-Good news: [program_seeder.dart](../../lib/core/services/program_seeder.dart) already resolves exercises **by name** (`_id(name)` searches the DB, else creates a custom row — line 34). Update `_id()` to: search local cache → else `ExerciseApiService.searchByName` → cache the best match → else fall back to a custom exercise (as today). This means the default starter program auto-populates from WorkoutX and seeds the cache at the same time. Requires network on first program seed; handle the offline-first-launch case (defer seeding until online, or keep a tiny bundled fallback set of ~10 starter exercises — product decision, see §9).
+### 5.6 Rework `ProgramSeeder`
+[program_seeder.dart](../../lib/core/services/program_seeder.dart) already resolves
+exercises **by name** (`_id(name)` — line 34). Update `_id()` to: search local cache →
+else `ExerciseApiService.searchByName` → cache the best match → else fall back to a custom
+exercise (as today). Handle first-launch offline via the bundled fallback (§10.1).
 
 ---
 
@@ -228,53 +237,88 @@ Good news: [program_seeder.dart](../../lib/core/services/program_seeder.dart) al
 | `secondaryMuscles` | `secondaryMuscles` | `jsonEncode(v)` |
 | `equipments` | `equipment` | `jsonEncode([v])` |
 | `gifUrl` | `gifUrl` | direct |
-| `instructions` | `instructions` | `jsonEncode(v)` (strip any `Step:n` prefixes if present) |
-| `muscleGroup` | — | derive via `resolveGymMuscleGroup` |
-| `difficulty` | — | derive via `resolveDifficulty` |
+| `instructions` | `instructions` | `jsonEncode(v)` (strip any `Step:n` prefixes) |
+| `muscleGroup` | — | derive via `ExerciseMapping.resolveGymMuscleGroup` |
+| `difficulty` | — | derive via `ExerciseMapping.resolveDifficulty` |
 | `isCustom` | — | `false` |
 | `usageCount` / `isFavorite` | — | local-only, unchanged |
 
 ---
 
-## 7. ID migration for existing installs
-
-WorkoutX IDs (`0001`) ≠ current IDs (`2gPfomN`). Tables holding the string id: **`ScheduledExercises.exerciseId`** (the user's program) and **`SessionExercises.exerciseId`** (history). See [app_database.dart:110,147](../../lib/core/database/app_database.dart#L110).
-
-**Recommended approach — clean wipe (app is pre-launch / no production users):**
-- Add a Drift migration (bump `schemaVersion` from 13 → 14) that **deletes all non-custom rows** from `exercises` (`DELETE FROM exercises WHERE is_custom = 0`). The cache repopulates from the API going forward.
-- Existing dev/test logs that referenced old IDs will orphan their exercise metadata. Acceptable pre-launch. The active program (`ScheduledExercises`) should be re-seeded via the reworked `ProgramSeeder` (§B6), which re-resolves by name → new IDs.
-
-**Only if there are real users to preserve** (decide before shipping): build a name-based old→new remap (fetch each old exercise's name, `searchByName` on WorkoutX, take best match) and rewrite `exerciseId` in `ScheduledExercises` + `SessionExercises`. Unmatched exercises convert to local custom entries so no history is lost. This is significantly more work — avoid it if the user base is zero.
+## 7. (covered above — heuristics reused, not re-derived)
 
 ---
 
-## 8. AI workout generator (optional, after core migration)
+## 8. ID migration / schema v14
 
-- Add `ExerciseApiService.generateWorkout({goal, level, split})` → `/workout/generate`.
-- Surface behind the existing paywall (the app already has paywall + RevenueCat wiring).
-- Map the returned plan (`order`, `sets`, `reps`, `restSeconds`, nested exercise) into `Schedules` / `ScheduleDays` / `ScheduledExercises`, caching each exercise as it's added.
-
----
-
-## 9. Open decisions before coding
-
-1. **First-launch offline:** the browser and default-program seeding need network on first run. Options: (a) require connectivity for first launch, (b) ship a tiny ~10-exercise bundled fallback for the starter program only. **Recommend (b)** for a smooth cold start.
-2. **WorkoutX plan tier:** confirm **Pro** (needed for AI generator + multi-filter search).
-3. **ID migration:** confirm the app has **no production users** so we can use the clean-wipe path (§7). If there are users, budget for the name-remap.
-4. **GIF longevity:** WorkoutX GIFs live on their Supabase storage. `cached_network_image` caches them per-device after first view — that's the offline GIF story for cached exercises. Confirm acceptable.
+String-id columns: **`ScheduledExercises.exerciseId`** + **`SessionExercises.exerciseId`**
+([app_database.dart:110,147](../../lib/core/database/app_database.dart#L110)).
+App is **pre-launch (no production users)** → use the **clean-wipe** path:
+- Bump `schemaVersion` 13 → 14 (currently 13 — [app_database.dart:216](../../lib/core/database/app_database.dart#L216)).
+- Migration: `DELETE FROM exercises WHERE is_custom = 0;` The cache repopulates from the API.
+- Re-seed the active program via the reworked `ProgramSeeder` (re-resolves by name → new IDs).
+- Do **not** build the name-based remap (only needed if there are real users).
 
 ---
 
-## 10. Build order / checklist
+## 9. Free-tier testing constraints (pre-deployment)
 
-1. **[Backend]** Set `WORKOUTX_API_KEY` secret; deploy `workoutx` Edge Function (§4). Smoke-test with a curl-via-invoke.
-2. **[Client]** `ExerciseApiService` + `WorkoutXExercise` DTO + mapper, reusing the existing muscle/difficulty heuristics (§B1, B2).
-3. **[Client]** `ExerciseRepository` with local-first reads + cache-on-save + cache-on-log (§B3).
-4. **[Client]** Remove bundled JSON + all `seedFromAssets` calls; shrink `ExerciseLocalService` to shared helpers (§B4).
-5. **[Client]** Rework browser/picker for online paginated + debounced search; offline states (§B5).
-6. **[Client]** Rework `ProgramSeeder` to resolve names via API + cache (§B6).
-7. **[Client]** Schema v14 migration: wipe non-custom exercises (§7).
-8. **[Client]** Re-verify `MuscleRecoveryService` + history enrichment against the cache.
-9. **[Optional]** AI generator behind paywall (§8).
-10. **Test:** offline gym flow (start a logged program with no network), online browse/search, quota usage, App Store/Play compliance.
-```
+A **Free** WorkoutX key will be provided for build/test. Limits:
+- **500 requests/month, 30 requests/minute.** Be frugal: don't loop, cache aggressively,
+  and prefer fixtures/mocks for repetitive UI testing.
+- Free tier excludes `/exercises/search` (Basic+) and `/workout/generate` (Pro+).
+- **Build/test against the Free endpoints only** (list, name, target, bodyPart, equipment,
+  *List). Design `/search` and the AI generator switch-ready but stubbed/flagged off.
+- Production swaps to the Ultra key via `--dart-define`; no code change.
+
+---
+
+## 10. Open decisions
+
+### 10.1 First-launch offline (recommended: bundled fallback)
+The browser + default-program seeding need network on first run. Ship a **tiny (~10
+exercise) bundled starter set** used ONLY to seed the default program offline; everything
+else comes from the API. (Alternative: require connectivity on first launch.)
+
+### 10.2 GIF offline story
+`cached_network_image` caches GIFs per-device after first view — that's the offline GIF
+path for cached exercises. For guaranteed offline, optionally pre-fetch a program's GIFs
+on save. Client caching is explicitly permitted (Appendix A).
+
+---
+
+## 11. Build order / checklist
+
+1. Add `http` to `pubspec.yaml`; wire `WORKOUTX_API_KEY` via `--dart-define` + read in
+   `main.dart`; set up obfuscated release build (§4).
+2. `ExerciseApiService` + `WorkoutXExercise` DTO + `ExerciseMapping` shared helpers (§5.1–5.2).
+3. `ExerciseRepository`: online browse/search + local-first reads + cache-on-save +
+   cache-on-log (§5.3).
+4. Remove bundled JSON + all `seedFromAssets` calls; shrink `ExerciseLocalService` (§5.4).
+5. Rework browser/picker for online paginated + debounced search + offline states (§5.5).
+6. Rework `ProgramSeeder` (API-by-name + cache + bundled fallback) (§5.6).
+7. Schema v14 clean-wipe migration (§8).
+8. Re-verify `MuscleRecoveryService` + history enrichment against the cache.
+9. (Deferred) AI generator behind paywall — switch-ready, off for v1.
+10. Test: offline gym flow (start + log a saved program with no network); online
+    browse/search; free-tier request budget; App Store / Play compliance.
+
+---
+
+## Appendix A — WorkoutX written confirmation (2026, business@workoutxapp.com)
+
+Key points from WorkoutX's emailed reply (retain for App Store review evidence):
+
+- **GIF/media ownership & commercial use:** GIFs and media are **owned by WorkoutX**. All
+  paid plans (incl. Ultra) include **full commercial usage rights** — display to paying
+  users in a subscription/SaaS mobile app is permitted.
+- **Client-side caching:** **Permitted, no restrictions.** App may cache previously viewed
+  exercises + GIFs locally for performance and offline access.
+- **Backend caching / proxy:** **NOT permitted on standard plans.** "The API is designed
+  for direct authenticated client usage, not server-side proxying or re-serving."
+- **Data Pack alternative ($699 one-time):** full 1,000+ exercise dataset + all GIFs
+  delivered to your backend, lifetime, no API dependency, no rate limits, full commercial
+  rights — the sanctioned path if you need backend control / offline-without-API.
+- **Attribution:** **None required.**
+- **Scaling:** Ultra supports production apps; at very high volume, move to Data Pack or an
+  Enterprise agreement (custom limits / SLA / dedicated infra).

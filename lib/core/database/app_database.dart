@@ -213,7 +213,7 @@ class AppDatabase extends _$AppDatabase {
   }
 
   @override
-  int get schemaVersion => 13;
+  int get schemaVersion => 14;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -305,6 +305,14 @@ class AppDatabase extends _$AppDatabase {
       if (from < 13) {
         // DMs removed — drop the local cache table if it exists.
         await customStatement('DROP TABLE IF EXISTS dm_messages');
+      }
+      if (from < 14) {
+        // Exercise source switched from the bundled ExerciseDB JSON to the
+        // WorkoutX API. The old bundled rows use a different id scheme
+        // ("2gPfomN") than WorkoutX ("0025"), so wipe the seeded catalogue;
+        // it re-caches on demand from the API as the user browses/logs.
+        // User-created custom exercises (is_custom = 1) are preserved.
+        await customStatement('DELETE FROM exercises WHERE is_custom = 0');
       }
     },
   );

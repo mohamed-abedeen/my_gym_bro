@@ -217,6 +217,7 @@
   "filterEquipment": "Equipo",
   "filterDifficulty": "Dificultad",
   "noExercisesFound": "No se encontraron ejercicios para esta combinación, Bro!",
+  "exercisesOfflineCached": "Sin conexión: mostrando tus ejercicios guardados.",
   "allMuscles": "Todos los músculos",
   "allEquipment": "Todo el equipo",
   "allDifficulties": "Todos los niveles",
