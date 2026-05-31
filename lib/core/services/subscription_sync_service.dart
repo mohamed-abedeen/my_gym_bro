@@ -1,8 +1,7 @@
 import 'package:flutter/foundation.dart';
-import 'package:purchases_flutter/purchases_flutter.dart';
-
 import 'package:my_gym_bro/core/database/app_database.dart';
 import 'package:my_gym_bro/core/database/daos/user_profile_dao.dart';
+import 'package:purchases_flutter/purchases_flutter.dart';
 
 /// Reconciles RevenueCat entitlements into the local [UserProfiles] row.
 ///

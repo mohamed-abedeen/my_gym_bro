@@ -2,7 +2,7 @@ import 'dart:async';
 import 'dart:io';
 
 import 'package:flutter/foundation.dart';
-import 'package:flutter_cache_manager/flutter_cache_manager.dart';
+import 'package:my_gym_bro/core/services/exercise_gif_cache.dart';
 
 /// Resolves a remote image URL (exercise GIF, profile avatar, etc.) into a
 /// **local file path** suitable for `FilePathAndroidBitmap` in
@@ -24,7 +24,7 @@ class NotificationImageCache {
   static Future<String?> filePathFor(String? url) async {
     if (url == null || url.isEmpty) return null;
     try {
-      final file = await DefaultCacheManager()
+      final file = await ExerciseGifCache.instance
           .getSingleFile(url)
           .timeout(_timeout);
       if (!await File(file.path).exists()) return null;

@@ -9,6 +9,7 @@ import 'package:my_gym_bro/core/database/app_database.dart';
 import 'package:my_gym_bro/core/database/daos/exercise_dao.dart';
 import 'package:my_gym_bro/core/providers/providers.dart';
 import 'package:my_gym_bro/core/router/app_router.dart';
+import 'package:my_gym_bro/core/services/exercise_gif_cache.dart';
 import 'package:my_gym_bro/core/services/notification_tone.dart';
 import 'package:my_gym_bro/features/workout/active_session/active_session_notifier.dart';
 import 'package:my_gym_bro/features/workout/active_session/rest_timer_service.dart';
@@ -17,9 +18,9 @@ import 'package:my_gym_bro/l10n/app_localizations.dart';
 import 'package:my_gym_bro/shared/constants.dart';
 import 'package:my_gym_bro/shared/responsive.dart';
 import 'package:my_gym_bro/shared/widgets/inline_editable_field.dart';
-import 'package:oc_liquid_glass/oc_liquid_glass.dart';
 import 'package:my_gym_bro/shared/widgets/liquid_glass_button.dart';
 import 'package:my_gym_bro/shared/widgets/oc_glass_btn.dart';
+import 'package:oc_liquid_glass/oc_liquid_glass.dart';
 import 'package:wakelock_plus/wakelock_plus.dart';
 
 class ActiveSessionScreen extends ConsumerStatefulWidget {
@@ -389,6 +390,7 @@ class _ExerciseImageArea extends StatelessWidget {
               child: Padding(
                 padding: EdgeInsets.only(top: topPad),
                 child: CachedNetworkImage(
+                  cacheManager: ExerciseGifCache.instance,
                   imageUrl: exercise!.gifUrl!,
                   width: 280.w,
                   height: 280.h,
@@ -1869,6 +1871,7 @@ class _HowToSheet extends StatelessWidget {
                   if (exercise.gifUrl != null)
                     ClipOval(
                       child: CachedNetworkImage(
+                        cacheManager: ExerciseGifCache.instance,
                         imageUrl: exercise.gifUrl!,
                         width: 44.w,
                         height: 44.w,

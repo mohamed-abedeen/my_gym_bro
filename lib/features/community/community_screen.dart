@@ -4,14 +4,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:oc_liquid_glass/oc_liquid_glass.dart';
-
 import 'package:my_gym_bro/features/community/community_mock_data.dart';
 import 'package:my_gym_bro/l10n/app_localizations.dart';
 import 'package:my_gym_bro/shared/constants.dart';
 import 'package:my_gym_bro/shared/responsive.dart';
 import 'package:my_gym_bro/shared/widgets/liquid_glass_button.dart';
 import 'package:my_gym_bro/shared/widgets/user_avatar.dart';
+import 'package:oc_liquid_glass/oc_liquid_glass.dart';
 
 /// Community tab — matches Figma screen 4 (pixel-perfect from CSS).
 class CommunityScreen extends ConsumerStatefulWidget {

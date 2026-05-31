@@ -10,6 +10,7 @@ import 'package:my_gym_bro/core/database/app_database.dart';
 import 'package:my_gym_bro/core/providers/providers.dart';
 import 'package:my_gym_bro/core/router/app_router.dart';
 import 'package:my_gym_bro/core/security/secure_storage.dart';
+import 'package:my_gym_bro/core/services/exercise_gif_cache.dart';
 import 'package:my_gym_bro/core/services/notification_service.dart';
 import 'package:my_gym_bro/core/services/notification_tone.dart';
 import 'package:my_gym_bro/features/settings/app_settings_provider.dart';
@@ -740,6 +741,7 @@ class SettingsScreen extends ConsumerWidget {
       BuildContext context, AppColorsTheme colors) async {
     try {
       await CachedNetworkImage.evictFromCache('');
+      await ExerciseGifCache.instance.emptyCache();
       PaintingBinding.instance.imageCache.clear();
       PaintingBinding.instance.imageCache.clearLiveImages();
       if (context.mounted) _showSnack(context, 'Cache cleared', colors);

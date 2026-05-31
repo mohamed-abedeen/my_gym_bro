@@ -6,6 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import 'package:my_gym_bro/core/database/app_database.dart';
 import 'package:my_gym_bro/core/database/daos/session_dao.dart';
+import 'package:my_gym_bro/core/services/exercise_gif_cache.dart';
 import 'package:my_gym_bro/features/workout/workout_providers.dart';
 import 'package:my_gym_bro/l10n/app_localizations.dart';
 import 'package:my_gym_bro/shared/constants.dart';
@@ -303,6 +304,7 @@ class _SummaryTab extends StatelessWidget {
         height: AppSizes.howtoGifH.h,
         color: colors.panelBackground,
         child: CachedNetworkImage(
+          cacheManager: ExerciseGifCache.instance,
           imageUrl: exercise.gifUrl!,
           fit: BoxFit.contain,
           placeholder: (_, __) => Center(
@@ -858,6 +860,7 @@ class _HowToTab extends StatelessWidget {
                 height: AppSizes.howtoGifH.h,
                 color: colors.panelBackground,
                 child: CachedNetworkImage(
+                  cacheManager: ExerciseGifCache.instance,
                   imageUrl: exercise.gifUrl!,
                   fit: BoxFit.contain,
                   placeholder: (_, __) => Center(
@@ -879,6 +882,7 @@ class _HowToTab extends StatelessWidget {
               ClipOval(
                 child: exercise.gifUrl != null
                     ? CachedNetworkImage(
+                        cacheManager: ExerciseGifCache.instance,
                         imageUrl: exercise.gifUrl!,
                         width: 44.w,
                         height: 44.w,
@@ -1323,6 +1327,7 @@ class ExerciseStatusScreen extends StatelessWidget {
                       ClipOval(
                         child: exercise.gifUrl != null
                             ? CachedNetworkImage(
+                                cacheManager: ExerciseGifCache.instance,
                                 imageUrl: exercise.gifUrl!,
                                 width: 83.w,
                                 height: 83.w,

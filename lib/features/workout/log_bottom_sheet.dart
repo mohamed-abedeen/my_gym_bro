@@ -2,6 +2,7 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
+import 'package:my_gym_bro/core/services/exercise_gif_cache.dart';
 import 'package:my_gym_bro/core/services/units.dart';
 import 'package:my_gym_bro/features/workout/exercise_detail_sheet.dart';
 import 'package:my_gym_bro/features/workout/workout_providers.dart';
@@ -350,6 +351,7 @@ class _SessionCardState extends ConsumerState<_SessionCard>
                           ),
                           child: ex.gifUrl != null
                               ? CachedNetworkImage(
+                                  cacheManager: ExerciseGifCache.instance,
                                   imageUrl: ex.gifUrl!,
                                   width: 58.w,
                                   height: 58.h,

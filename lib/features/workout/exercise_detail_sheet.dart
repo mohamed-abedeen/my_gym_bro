@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import 'package:my_gym_bro/core/database/app_database.dart';
+import 'package:my_gym_bro/core/services/exercise_gif_cache.dart';
 import 'package:my_gym_bro/core/services/units.dart';
 import 'package:my_gym_bro/features/workout/workout_providers.dart';
 import 'package:my_gym_bro/l10n/app_localizations.dart';
@@ -141,6 +142,7 @@ class _ExerciseDetailSheet extends ConsumerWidget {
                     ClipOval(
                       child: exercise.gifUrl != null
                           ? CachedNetworkImage(
+                              cacheManager: ExerciseGifCache.instance,
                               imageUrl: exercise.gifUrl!,
                               width: 83.w,
                               height: 82.h,

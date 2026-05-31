@@ -7,6 +7,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:my_gym_bro/core/database/app_database.dart';
 import 'package:my_gym_bro/core/providers/providers.dart';
+import 'package:my_gym_bro/core/services/exercise_gif_cache.dart';
 import 'package:my_gym_bro/core/services/exercise_repository.dart';
 import 'package:my_gym_bro/features/exercises/exercise_detail_screen.dart';
 import 'package:my_gym_bro/l10n/app_localizations.dart';
@@ -1893,6 +1894,7 @@ class _ExerciseTile extends StatelessWidget {
                     borderRadius: BorderRadius.circular(12.r),
                     child: exercise.gifUrl != null
                         ? CachedNetworkImage(
+                            cacheManager: ExerciseGifCache.instance,
                             imageUrl: exercise.gifUrl!,
                             width: 58.w,
                             height: 58.w,

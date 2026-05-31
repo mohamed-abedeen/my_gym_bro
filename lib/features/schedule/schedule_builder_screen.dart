@@ -9,9 +9,10 @@ import 'package:my_gym_bro/core/database/app_database.dart';
 import 'package:my_gym_bro/core/database/daos/exercise_dao.dart';
 import 'package:my_gym_bro/core/database/daos/schedule_dao.dart';
 import 'package:my_gym_bro/core/providers/providers.dart';
-import 'package:my_gym_bro/features/workout/workout_providers.dart';
+import 'package:my_gym_bro/core/services/exercise_gif_cache.dart';
 import 'package:my_gym_bro/features/exercises/exercise_browser_screen.dart';
 import 'package:my_gym_bro/features/exercises/exercise_detail_screen.dart';
+import 'package:my_gym_bro/features/workout/workout_providers.dart';
 import 'package:my_gym_bro/l10n/app_localizations.dart';
 import 'package:my_gym_bro/shared/constants.dart';
 import 'package:my_gym_bro/shared/responsive.dart';
@@ -566,6 +567,7 @@ class _ScheduleBuilderScreenState
                 borderRadius: BorderRadius.circular(12.r),
                 child: ex.gifUrl != null
                     ? CachedNetworkImage(
+                        cacheManager: ExerciseGifCache.instance,
                         imageUrl: ex.gifUrl!,
                         width: 50.w,
                         height: 50.h,

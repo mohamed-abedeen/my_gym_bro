@@ -1,26 +1,25 @@
 import 'dart:io';
 import 'dart:ui';
 
-import 'package:path_provider/path_provider.dart';
-
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:intl/intl.dart';
-
+import 'package:my_gym_bro/core/services/exercise_gif_cache.dart';
 import 'package:my_gym_bro/core/services/units.dart';
 import 'package:my_gym_bro/features/community/community_mock_data.dart';
 import 'package:my_gym_bro/features/profile/profile_providers.dart';
+import 'package:my_gym_bro/features/settings/skin_provider.dart';
 import 'package:my_gym_bro/features/workout/exercise_detail_sheet.dart';
 import 'package:my_gym_bro/features/workout/workout_providers.dart';
 import 'package:my_gym_bro/l10n/app_localizations.dart';
-import 'package:my_gym_bro/features/settings/skin_provider.dart';
 import 'package:my_gym_bro/shared/constants.dart';
 import 'package:my_gym_bro/shared/responsive.dart';
 import 'package:my_gym_bro/shared/widgets/anatomy_body.dart';
 import 'package:my_gym_bro/shared/widgets/liquid_glass_button.dart';
 import 'package:my_gym_bro/shared/widgets/user_avatar.dart';
+import 'package:path_provider/path_provider.dart';
 
 /// Enhanced Profile screen — Figma "Profile" design.
 class ProfileScreen extends ConsumerWidget {
@@ -920,6 +919,7 @@ class _ProfileSessionCardState extends ConsumerState<_ProfileSessionCard>
                                   ),
                                   child: ex.gifUrl != null
                                       ? CachedNetworkImage(
+                                          cacheManager: ExerciseGifCache.instance,
                                           imageUrl: ex.gifUrl!,
                                           width: 58.w,
                                           height: 58.h,

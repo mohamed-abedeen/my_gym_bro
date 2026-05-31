@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:my_gym_bro/core/providers/providers.dart';
-import 'package:my_gym_bro/features/workout/muscle_recovery_service.dart';
 import 'package:my_gym_bro/features/settings/skin_provider.dart';
+import 'package:my_gym_bro/features/workout/muscle_recovery_service.dart';
 import 'package:my_gym_bro/features/workout/workout_providers.dart';
 import 'package:my_gym_bro/l10n/app_localizations.dart';
 import 'package:my_gym_bro/shared/constants.dart';
