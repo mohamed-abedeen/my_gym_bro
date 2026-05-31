@@ -510,9 +510,11 @@ INSERT INTO notification_templates (category, message) VALUES
 -- ============================================================================
 
 INSERT INTO storage.buckets (id, name, public)
-VALUES ('community-images', 'community-images', false);
+VALUES ('community-images', 'community-images', false)
+ON CONFLICT (id) DO NOTHING;
 
 -- Storage RLS: allow authenticated users to upload to their own folder
+DROP POLICY IF EXISTS "Users can upload community images" ON storage.objects;
 CREATE POLICY "Users can upload community images"
     ON storage.objects FOR INSERT
     TO authenticated
@@ -522,12 +524,14 @@ CREATE POLICY "Users can upload community images"
     );
 
 -- Storage RLS: allow authenticated users to view community images
+DROP POLICY IF EXISTS "Users can view community images" ON storage.objects;
 CREATE POLICY "Users can view community images"
     ON storage.objects FOR SELECT
     TO authenticated
     USING (bucket_id = 'community-images');
 
 -- Storage RLS: allow users to update their own images
+DROP POLICY IF EXISTS "Users can update own community images" ON storage.objects;
 CREATE POLICY "Users can update own community images"
     ON storage.objects FOR UPDATE
     TO authenticated
@@ -537,6 +541,7 @@ CREATE POLICY "Users can update own community images"
     );
 
 -- Storage RLS: allow users to delete their own images
+DROP POLICY IF EXISTS "Users can delete own community images" ON storage.objects;
 CREATE POLICY "Users can delete own community images"
     ON storage.objects FOR DELETE
     TO authenticated
