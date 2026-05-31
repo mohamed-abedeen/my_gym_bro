@@ -23,10 +23,12 @@ jobs:
       - run: flutter pub get
       - run: dart run build_runner build --delete-conflicting-outputs
       - run: flutter gen-l10n
-      # `--fatal-warnings` blocks merge on real problems but lets pre-existing
-      # `info`-level style lints through. Tighten to `--fatal-infos` once the
-      # remaining style nits in lib/ are cleaned up.
-      - run: flutter analyze --fatal-warnings
+      # Block merge on real problems (errors + warnings) but let the
+      # pre-existing `info`-level style lints from very_good_analysis through.
+      # NOTE: `flutter analyze` is fatal-on-infos by default, so `--fatal-warnings`
+      # alone still fails on infos — `--no-fatal-infos` is required to get the
+      # intended behaviour. Drop it once the style nits in lib/ are cleaned up.
+      - run: flutter analyze --no-fatal-infos --fatal-warnings
 
   test:
     name: Test
