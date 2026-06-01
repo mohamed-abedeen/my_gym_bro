@@ -744,6 +744,18 @@ abstract class AppLocalizations {
   /// **'What\'s on your mind?'**
   String get whatOnYourMind;
 
+  /// No description provided for @communityEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'No posts yet. Be the first to share!'**
+  String get communityEmpty;
+
+  /// No description provided for @communityError.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t load the feed. Try again.'**
+  String get communityError;
+
   /// No description provided for @post.
   ///
   /// In en, this message translates to:

@@ -113,6 +113,8 @@
   "syncError": "Sync-Fehler",
   "loadingExercises": "Übungen werden geladen...",
   "whatOnYourMind": "Was gibt es Neues?",
+  "communityEmpty": "Noch keine Beiträge. Sei der Erste!",
+  "communityError": "Feed konnte nicht geladen werden. Versuch es erneut.",
   "post": "Posten",
   "skip": "Überspringen",
   "cancel": "Abbrechen",

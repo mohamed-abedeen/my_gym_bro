@@ -64,12 +64,13 @@ Legend: ✅ done · 🟡 partial · 🔴 not built · ⚠️ remove · `[new]` b
 - ⏳ `[defer]` "View another user + tap FollowButton" has no live entry point yet (feed=Phase 3, leaderboard=Phase 5 still mock). Button + data layer built and ready to wire. Manual on-device smoke test pending.
 - ⚠️ Pre-existing: repo migrations don't apply cleanly from scratch (`002` refs `exercises`, `003` refs `dm_conversations`, nothing creates them). Fix before a clean cloud `db reset`.
 
-### Phase 3 — Community feed backend
-- 🔴 `[new]` `SupabaseCommunityRepository` implementing the existing repo interface (drop-in for `MockCommunityRepository`).
-- 🔴 `[new]` Paginated feed from `posts` + like/comment counts; gate reads by `has_active_subscription`.
-- 🔴 `[new]` Composer: image upload to `community-images/<uid>/…` + insert post (sanitize via `input_sanitiser`).
-- 🔴 `[new]` Likes/comments (insert/delete `post_likes`, insert `post_comments`).
-- ⚠️ `[rm]` Delete `community_mock_data.dart` once wired; loading/empty/error states.
+### Phase 3 — Community feed backend ✅ BUILT + VERIFIED (2026-06-01, local Supabase)
+- ✅ `[new]` **Migration 007** — `handle_new_user` trigger auto-creates a `user_profiles` row (display_name + 7-day trial) on signup; `has_active_subscription` now honors the profile trial window. Fixes two foundational gaps (no server-side profiles; trial users couldn't read the feed) — also makes Phase 2 real for actual users.
+- ✅ `[new]` `SupabaseCommunityRepository` (drop-in for the interface): paginated `fetchFeed` (posts + `post_likes(count)`/`post_comments(count)` embeds + author from `public_profiles` + likedByMe), `createPost` (sanitized), `toggleLike`. Mock kept as offline fallback.
+- ✅ `[new]` `community_providers.dart` (repo + `communityFeedProvider`); `community_models.dart` (real `CommunityPost`); `community_mock_data.dart` re-exports the model so `profile_screen` is untouched.
+- ✅ `[fix]` `community_screen`: feed driven by the provider (loading/empty/error), **composer now creates a post and refreshes the feed**, like cluster tappable (toggles + tints).
+- ✅ `[verify]` `tool/verify_feed.py` — 6/6 (cross-user visibility, author name, like count). `flutter analyze` 0/0; 75 tests pass.
+- ⏳ `[defer]` Image upload in composer (text posts work; image button is a no-op for now), comment composer (counts show; top-comments preview only on mock), profile Posts tab still shows mock (its own follow-up). **Cloud needs `007` applied (`supabase db push`) before cloud testing — local already has it.**
 
 ### Phase 4 — Challenges (curated + community) + moderation
 - 🔴 `[new]` Supabase `challenges`, `challenge_participants`, `challenge_reports` + RLS.

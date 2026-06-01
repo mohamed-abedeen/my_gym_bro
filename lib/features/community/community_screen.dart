@@ -4,7 +4,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:my_gym_bro/features/community/community_mock_data.dart';
+import 'package:my_gym_bro/features/community/community_models.dart';
+import 'package:my_gym_bro/features/community/community_providers.dart';
 import 'package:my_gym_bro/l10n/app_localizations.dart';
 import 'package:my_gym_bro/shared/constants.dart';
 import 'package:my_gym_bro/shared/responsive.dart';
@@ -62,20 +63,8 @@ class _CommunityScreenState extends ConsumerState<CommunityScreen> {
                   // Stories row
                   const SliverToBoxAdapter(child: _StoriesRow()),
 
-                  // Posts feed — driven by CommunityMockData (swap for
-                  // real backend data when the social feature is ready).
-                  SliverList(
-                    delegate: SliverChildListDelegate([
-                      ...CommunityMockData.posts.expand(
-                        (post) => [
-                          _PostCard(post: post),
-                          SizedBox(height: 8.h),
-                        ],
-                      ),
-                      // Bottom padding for composer + nav
-                      SizedBox(height: 160.h),
-                    ]),
-                  ),
+                  // Posts feed — real Supabase data (mock when offline).
+                  ..._buildFeedSlivers(ref, l10n, colors),
                 ],
               ),
             ),
@@ -93,6 +82,60 @@ class _CommunityScreenState extends ConsumerState<CommunityScreen> {
         ),
       ),
     );
+  }
+
+  /// Builds the feed slivers from [communityFeedProvider], handling
+  /// loading / error / empty states. Always pads the bottom for the composer.
+  List<Widget> _buildFeedSlivers(
+    WidgetRef ref,
+    AppLocalizations l10n,
+    AppColorsTheme colors,
+  ) {
+    Widget centered(Widget child) => SliverToBoxAdapter(
+          child: Padding(
+            padding: EdgeInsets.symmetric(horizontal: 24.w, vertical: 60.h),
+            child: Center(child: child),
+          ),
+        );
+    final bottomPad = SliverToBoxAdapter(child: SizedBox(height: 160.h));
+
+    return ref.watch(communityFeedProvider).when(
+          loading: () => [
+            centered(CircularProgressIndicator(color: colors.accent)),
+            bottomPad,
+          ],
+          error: (_, __) => [
+            centered(Text(
+              l10n.communityError,
+              textAlign: TextAlign.center,
+              style: TextStyle(color: colors.textSecondary, fontSize: 13.sp),
+            )),
+            bottomPad,
+          ],
+          data: (posts) {
+            if (posts.isEmpty) {
+              return [
+                centered(Text(
+                  l10n.communityEmpty,
+                  textAlign: TextAlign.center,
+                  style:
+                      TextStyle(color: colors.textSecondary, fontSize: 13.sp),
+                )),
+                bottomPad,
+              ];
+            }
+            return [
+              SliverList(
+                delegate: SliverChildListDelegate([
+                  ...posts.expand(
+                    (post) => [_PostCard(post: post), SizedBox(height: 8.h)],
+                  ),
+                  SizedBox(height: 160.h),
+                ]),
+              ),
+            ];
+          },
+        );
   }
 }
 
@@ -287,13 +330,13 @@ class _FriendStory extends StatelessWidget {
 // ═══════════════════════════════════════════════════════════════════
 // Post card: author row + image + interaction bar + description
 // ═══════════════════════════════════════════════════════════════════
-class _PostCard extends StatelessWidget {
+class _PostCard extends ConsumerWidget {
   const _PostCard({required this.post});
 
   final CommunityPost post;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final colors = AppColors.of(context);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -371,18 +414,36 @@ class _PostCard extends StatelessWidget {
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    Image.asset(
-                      'assets/images/bicep.png',
-                      width: 20.w,
-                      height: 20.h,
-                    ),
-                    SizedBox(width: 4.w),
-                    Text(
-                      post.likes,
-                      style: TextStyle(
-                        fontSize: 10.sp,
-                        fontWeight: FontWeight.w700,
-                        color: colors.textPrimary,
+                    // Like toggle (bicep + count)
+                    GestureDetector(
+                      onTap: post.id.isEmpty
+                          ? null
+                          : () async {
+                              await ref
+                                  .read(communityRepositoryProvider)
+                                  .toggleLike(post.id,
+                                      currentlyLiked: post.likedByMe);
+                              ref.invalidate(communityFeedProvider);
+                            },
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Image.asset(
+                            'assets/images/bicep.png',
+                            width: 20.w,
+                            height: 20.h,
+                            color: post.likedByMe ? colors.accent : null,
+                          ),
+                          SizedBox(width: 4.w),
+                          Text(
+                            post.likes,
+                            style: TextStyle(
+                              fontSize: 10.sp,
+                              fontWeight: FontWeight.w700,
+                              color: colors.textPrimary,
+                            ),
+                          ),
+                        ],
                       ),
                     ),
                     SizedBox(width: 14.w),
@@ -525,12 +586,12 @@ class _PostCard extends StatelessWidget {
 // ═══════════════════════════════════════════════════════════════════
 // Bottom composer bar: oc_liquid_glass pill — same aesthetic as nav
 // ═══════════════════════════════════════════════════════════════════
-class _ComposerBar extends StatelessWidget {
+class _ComposerBar extends ConsumerWidget {
   const _ComposerBar({required this.l10n});
   final AppLocalizations l10n;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final colors = AppColors.of(context);
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final pillH = 52.h;
@@ -553,7 +614,7 @@ class _ComposerBar extends StatelessWidget {
     );
 
     return GestureDetector(
-      onTap: () => _showComposeSheet(context),
+      onTap: () => _showComposeSheet(context, ref),
       child: SizedBox(
         width: double.infinity,
         height: pillH,
@@ -616,7 +677,7 @@ class _ComposerBar extends StatelessWidget {
     );
   }
 
-  void _showComposeSheet(BuildContext context) {
+  void _showComposeSheet(BuildContext context, WidgetRef ref) {
     final colors = AppColors.of(context);
     showModalBottomSheet<void>(
       context: context,
@@ -685,7 +746,16 @@ class _ComposerBar extends StatelessWidget {
                     size: 24.sp,
                   ),
                   ElevatedButton(
-                    onPressed: () => Navigator.of(ctx).pop(),
+                    onPressed: () async {
+                      final text = controller.text.trim();
+                      Navigator.of(ctx).pop();
+                      if (text.isEmpty) return;
+                      await ref
+                          .read(communityRepositoryProvider)
+                          .createPost(content: text);
+                      // Refresh the feed so the new post appears immediately.
+                      ref.invalidate(communityFeedProvider);
+                    },
                     style: ElevatedButton.styleFrom(
                       backgroundColor: AppColors.storyRingEnd,
                       foregroundColor: colors.black,
@@ -696,7 +766,7 @@ class _ComposerBar extends StatelessWidget {
                       ),
                     ),
                     child: Text(
-                      'Post',
+                      l10n.post,
                       style: TextStyle(
                         fontWeight: FontWeight.w700,
                         fontSize: 13.sp,

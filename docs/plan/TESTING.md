@@ -56,5 +56,23 @@ Needs a **free WorkoutX key**; run with `--dart-define=WORKOUTX_API_KEY=<key>` (
 
 > Combined state (Phase 1 + WorkoutX) verified clean on 2026-05-31: `flutter analyze` 0/0, 75 tests pass.
 
+## ⚠️ REMINDER — Cloud edge-function secrets (set before any function works)
+
+The 6 edge functions are **deployed** to project `konzjrklgyuodzrrhwwv`, but they read env vars that are NOT all auto-injected. Until set, functions that use them fail at runtime.
+
+Exact names the code reads (from `Deno.env.get(...)`):
+- `SUPABASE_URL`, `SUPABASE_ANON_KEY` — **auto-injected** by Supabase, no action.
+- **`SERVICE_ROLE_KEY`** — ⚠️ **MUST set manually.** The code uses this custom name, NOT the auto-injected `SUPABASE_SERVICE_ROLE_KEY`, so it is undefined until you set it. Needed by ALL functions (revenuecat-webhook, verify-subscription, send-push-notification, schedule-notifications, delete-account, notify-social-challenge). Value = Dashboard → Project Settings → API → `service_role` key.
+- **`FCM_SERVER_KEY`** — set manually. Needed by send-push-notification, schedule-notifications, notify-social-challenge. Value = Firebase Console → Project Settings → Cloud Messaging server key. (Note: Google deprecated legacy FCM server keys; if it's gone, the functions may need updating to FCM HTTP v1.)
+- **`REVENUECAT_WEBHOOK_SECRET`** — set manually. Needed by revenuecat-webhook. Value = the Authorization secret you configure on the RevenueCat webhook.
+
+Set them in one go (single quotes to avoid PowerShell `$` expansion):
+```powershell
+supabase secrets set SERVICE_ROLE_KEY='...' FCM_SERVER_KEY='...' REVENUECAT_WEBHOOK_SECRET='...'
+supabase secrets list   # verify
+```
+
+(Consider renaming `SERVICE_ROLE_KEY` → use the auto-injected `SUPABASE_SERVICE_ROLE_KEY` in code to drop one manual secret — a small code change across the 6 functions.)
+
 ## Optional dev aid (not yet built)
 - A debug-only "Expire trial now" button in Settings to test the gate with one tap instead of changing the clock. Ask the user if they want this.

@@ -342,6 +342,13 @@ class AppLocalizationsFr extends AppLocalizations {
   String get whatOnYourMind => 'Quoi de neuf ?';
 
   @override
+  String get communityEmpty =>
+      'Aucune publication pour l\'instant. Sois le premier !';
+
+  @override
+  String get communityError => 'Impossible de charger le fil. Réessaie.';
+
+  @override
   String get post => 'Publier';
 
   @override

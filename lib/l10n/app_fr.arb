@@ -113,6 +113,8 @@
   "syncError": "Erreur de sync",
   "loadingExercises": "Chargement des exercices...",
   "whatOnYourMind": "Quoi de neuf ?",
+  "communityEmpty": "Aucune publication pour l'instant. Sois le premier !",
+  "communityError": "Impossible de charger le fil. Réessaie.",
   "post": "Publier",
   "skip": "Passer",
   "cancel": "Annuler",

@@ -340,6 +340,12 @@ class AppLocalizationsEn extends AppLocalizations {
   String get whatOnYourMind => 'What\'s on your mind?';
 
   @override
+  String get communityEmpty => 'No posts yet. Be the first to share!';
+
+  @override
+  String get communityError => 'Couldn\'t load the feed. Try again.';
+
+  @override
   String get post => 'Post';
 
   @override

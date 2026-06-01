@@ -342,6 +342,13 @@ class AppLocalizationsDe extends AppLocalizations {
   String get whatOnYourMind => 'Was gibt es Neues?';
 
   @override
+  String get communityEmpty => 'Noch keine Beiträge. Sei der Erste!';
+
+  @override
+  String get communityError =>
+      'Feed konnte nicht geladen werden. Versuch es erneut.';
+
+  @override
   String get post => 'Posten';
 
   @override

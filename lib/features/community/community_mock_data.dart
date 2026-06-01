@@ -1,48 +1,20 @@
-// ⚠️  MOCK DATA — UI placeholder only.
-// Replace [CommunityMockData.posts] with a real Supabase feed query
-// when the community backend is ready (Phase 16 / social feature sprint).
+// Offline / no-backend fallback sample posts. Re-exports the shared models so
+// existing importers (profile, community screen) keep their single import.
+export 'package:my_gym_bro/features/community/community_models.dart';
 
-/// A single comment preview shown below a post.
-class CommunityComment {
-  const CommunityComment(this.name, this.text);
+import 'package:my_gym_bro/features/community/community_models.dart';
 
-  final String name;
-  final String text;
-}
-
-/// Flat data model for a community post card.
-class CommunityPost {
-  const CommunityPost({
-    required this.authorName,
-    required this.likes,
-    required this.comments,
-    required this.bookmarks,
-    required this.description,
-    this.topComments = const [],
-  });
-
-  final String authorName;
-  final String likes;
-  final String comments;
-  final String bookmarks;
-  final String description;
-  final List<CommunityComment> topComments;
-}
-
-/// Static placeholder posts.
-/// TODO(backend): swap for `SupabaseCommunityRepository.fetchFeed()`.
+/// Sample posts shown when Supabase is unavailable (offline / not configured).
 abstract final class CommunityMockData {
   static const List<CommunityPost> posts = [
     CommunityPost(
       authorName: 'Aziz Rhuma',
-      likes: '10k',
-      comments: '324',
-      bookmarks: '67',
+      likeCount: 10000,
+      commentCount: 324,
       description:
           'A fundamental compound movement that builds massive lower-body '
           'power and functional strength. By mimicking a natural sitting '
-          'motion, it engages multiple muscle groups simultaneously, boosting '
-          'metabolism and improving overall athletic performance.',
+          'motion, it engages multiple muscle groups simultaneously.',
       topComments: [
         CommunityComment('Omar', 'This is insane bro, keep pushing!'),
         CommunityComment('Ali', 'What weight are you squatting here?'),
@@ -51,16 +23,14 @@ abstract final class CommunityMockData {
     ),
     CommunityPost(
       authorName: 'Omar',
-      likes: '5.2k',
-      comments: '142',
-      bookmarks: '31',
+      likeCount: 5200,
+      commentCount: 142,
       description:
           'Building strength one rep at a time. Consistency is key to '
           'unlocking your full potential.',
       topComments: [
         CommunityComment('Aziz', "Let's go champ!"),
         CommunityComment('Khaled', 'Consistency is everything 🔥'),
-        CommunityComment('Yusuf', 'Need to train with you sometime'),
       ],
     ),
   ];
