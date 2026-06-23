@@ -9,9 +9,9 @@ import 'package:my_gym_bro/features/community/community_providers.dart';
 import 'package:my_gym_bro/l10n/app_localizations.dart';
 import 'package:my_gym_bro/shared/constants.dart';
 import 'package:my_gym_bro/shared/responsive.dart';
+import 'package:my_gym_bro/shared/widgets/glass_surface.dart';
 import 'package:my_gym_bro/shared/widgets/liquid_glass_button.dart';
 import 'package:my_gym_bro/shared/widgets/user_avatar.dart';
-import 'package:oc_liquid_glass/oc_liquid_glass.dart';
 
 /// Community tab — matches Figma screen 4 (pixel-perfect from CSS).
 class CommunityScreen extends ConsumerStatefulWidget {
@@ -584,7 +584,7 @@ class _PostCard extends ConsumerWidget {
 }
 
 // ═══════════════════════════════════════════════════════════════════
-// Bottom composer bar: oc_liquid_glass pill — same aesthetic as nav
+// Bottom composer bar: frosted glass pill — same aesthetic as nav
 // ═══════════════════════════════════════════════════════════════════
 class _ComposerBar extends ConsumerWidget {
   const _ComposerBar({required this.l10n});
@@ -597,81 +597,61 @@ class _ComposerBar extends ConsumerWidget {
     final pillH = 52.h;
     final pillR = 296.r;
 
-    final glassSettings = OCLiquidGlassSettings(
-      blendPx: 3,
-      refractStrength: isDark ? 0.01 : 0.1,
-      distortFalloffPx: 13,
-      blurRadiusPx: isDark ? 4 : 5.5,
-      specAngle: 0.1,
-      specStrength: isDark ? -1 : -1.0,
-      specPower: 1,
-      specWidth: 1.7,
-      lightbandOffsetPx: 3,
-      lightbandWidthPx: 3.5,
-      lightbandStrength: isDark ? 0.6 : 0.4,
-      lightbandColor:
-          isDark ? const Color.fromARGB(255, 255, 255, 255) : AppColors.of(context).white,
-    );
-
     return GestureDetector(
       onTap: () => _showComposeSheet(context, ref),
       child: SizedBox(
         width: double.infinity,
         height: pillH,
-        child: OCLiquidGlassGroup(
-          settings: glassSettings,
-          child: Stack(
-            clipBehavior: Clip.none,
-            children: [
-              // ── Glass pill shell ──
-              OCLiquidGlass(
-                width: double.infinity,
-                height: pillH,
-                borderRadius: pillR,
-                color:
-                    isDark
-                        ? AppColors.of(context).white.withValues(alpha: 0.06)
-                        : AppColors.of(context).black.withValues(alpha: 0.04),
-                shadow: BoxShadow(
-                  color: AppColors.of(context).black.withValues(alpha: isDark ? 0.30 : 0.15),
-                  blurRadius: 28.w,
-                  offset: Offset(0, 10.h),
-                ),
-                child: const SizedBox.expand(),
+        child: Stack(
+          clipBehavior: Clip.none,
+          children: [
+            // ── Frosted glass pill shell ──
+            GlassSurface(
+              width: double.infinity,
+              height: pillH,
+              radius: pillR,
+              tint: isDark
+                  ? colors.white.withValues(alpha: 0.08)
+                  : colors.white.withValues(alpha: 0.55),
+              shadow: BoxShadow(
+                color: colors.black.withValues(alpha: isDark ? 0.30 : 0.15),
+                blurRadius: 28.w,
+                offset: Offset(0, 10.h),
               ),
+              child: const SizedBox.expand(),
+            ),
 
-              // ── Content row ──
-              Positioned.fill(
-                child: Padding(
-                  padding: EdgeInsets.symmetric(horizontal: 10.w),
-                  child: Row(
-                    children: [
-                      // Avatar
-                      UserAvatar(size: 35, iconColor: colors.textSecondary),
-                      SizedBox(width: 8.w),
-                      // Placeholder text
-                      Text(
-                        l10n.whatOnYourMind,
-                        style: TextStyle(
-                          fontSize: 10.sp,
-                          fontWeight: FontWeight.w700,
-                          color: colors.textSecondary,
-                        ),
+            // ── Content row ──
+            Positioned.fill(
+              child: Padding(
+                padding: EdgeInsets.symmetric(horizontal: 10.w),
+                child: Row(
+                  children: [
+                    // Avatar
+                    UserAvatar(size: 35, iconColor: colors.textSecondary),
+                    SizedBox(width: 8.w),
+                    // Placeholder text
+                    Text(
+                      l10n.whatOnYourMind,
+                      style: TextStyle(
+                        fontSize: 10.sp,
+                        fontWeight: FontWeight.w700,
+                        color: colors.textSecondary,
                       ),
-                      const Spacer(),
-                      // Image icon
-                      Icon(
-                        Icons.image_outlined,
-                        color: colors.textPrimary,
-                        size: 18.sp,
-                      ),
-                      SizedBox(width: 4.w),
-                    ],
-                  ),
+                    ),
+                    const Spacer(),
+                    // Image icon
+                    Icon(
+                      Icons.image_outlined,
+                      color: colors.textPrimary,
+                      size: 18.sp,
+                    ),
+                    SizedBox(width: 4.w),
+                  ],
                 ),
               ),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
     );

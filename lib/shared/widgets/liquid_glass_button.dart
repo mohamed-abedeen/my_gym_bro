@@ -2,9 +2,14 @@ import 'package:flutter/material.dart';
 
 import 'package:my_gym_bro/shared/constants.dart';
 import 'package:my_gym_bro/shared/widgets/glass_decoration.dart';
+import 'package:my_gym_bro/shared/widgets/glass_surface.dart';
 
-/// Flat frosted-glass button. Shares its visual language (tint + shadow)
-/// with the other glass surfaces via [GlassDecoration].
+/// Telegram-style frosted-glass button.
+///
+/// Reimplemented on top of [GlassSurface]: a real backdrop blur with the same
+/// tint + shadow it used before (via [GlassDecoration]). The public API is
+/// unchanged, so every call site keeps working — buttons just gain the real
+/// frosted-glass look instead of a flat tint.
 class LiquidGlassButton extends StatelessWidget {
   const LiquidGlassButton({
     required this.child,
@@ -27,19 +32,15 @@ class LiquidGlassButton extends StatelessWidget {
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
-    return GestureDetector(
+    return GlassSurface(
+      width: width,
+      height: height,
+      radius: radius,
+      blurSigma: AppGlass.blurButton,
+      tint: GlassDecoration.tint(isDark: isDark, opacity: opacity),
+      shadow: GlassDecoration.shadow(isDark: isDark),
       onTap: onTap,
-      behavior: HitTestBehavior.opaque,
-      child: Container(
-        width: width,
-        height: height,
-        decoration: BoxDecoration(
-          color: GlassDecoration.tint(isDark: isDark, opacity: opacity),
-          borderRadius: BorderRadius.circular(radius),
-          boxShadow: [GlassDecoration.shadow(isDark: isDark)],
-        ),
-        child: Center(child: child),
-      ),
+      child: Center(child: child),
     );
   }
 }

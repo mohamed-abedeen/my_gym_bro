@@ -1,62 +1,106 @@
-import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:my_gym_bro/core/providers/providers.dart';
-import 'package:oc_liquid_glass/oc_liquid_glass.dart';
+import 'dart:ui' show ImageFilter;
 
-/// A glass-surface container backed by [OCLiquidGlassGroup] + [OCLiquidGlass].
-/// Drop any [child] inside to render it on a liquid-glass background.
-class GlassSurface extends ConsumerWidget {
+import 'package:flutter/material.dart';
+
+import 'package:my_gym_bro/shared/constants.dart';
+
+/// Telegram-style frosted glass surface — the shared glass primitive.
+///
+/// Recipe: a real Gaussian [BackdropFilter] blur of whatever is painted behind,
+/// a translucent (theme-aware) tint, and a hairline border. Deliberately NOT a
+/// refractive / "liquid" glass — no specular highlights or light bands (that was
+/// the retired `oc_liquid_glass` look the user disliked).
+///
+/// Because it relies on [BackdropFilter], it only frosts content painted *behind*
+/// it. Place it above the content you want blurred — e.g. in a [Stack] over a
+/// scroll view, or as a transparent/extended app bar — not as an opaque page
+/// background.
+class GlassSurface extends StatelessWidget {
   const GlassSurface({
     super.key,
-    required this.width,
-    required this.height,
+    this.width,
+    this.height,
     this.opacity = 0.65,
-    this.radius = 24.0,
+    this.radius = AppRadius.card,
+    this.blurSigma = AppGlass.blur,
+    this.tint,
+    this.border = true,
+    this.shadow,
+    this.padding,
+    this.onTap,
     this.child,
   });
 
-  final double width;
-  final double height;
+  final double? width;
+  final double? height;
+
+  /// Scales the default tint when [tint] is null. Kept for API compatibility
+  /// with the previous (refractive) GlassSurface.
   final double opacity;
   final double radius;
+
+  /// Gaussian blur strength. Defaults to [AppGlass.blur].
+  final double blurSigma;
+
+  /// Fill tint painted over the blur. When null, a theme-aware white frost
+  /// scaled by [opacity] is used.
+  final Color? tint;
+
+  /// Draw the hairline glass border.
+  final bool border;
+
+  /// Optional drop shadow, rendered outside the clip so it isn't clipped away.
+  final BoxShadow? shadow;
+
+  final EdgeInsetsGeometry? padding;
+  final VoidCallback? onTap;
   final Widget? child;
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final isDark = ref.watch(themeModeProvider) == ThemeMode.dark;
+  Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final r = BorderRadius.circular(radius);
 
-    final settings = OCLiquidGlassSettings(
-      blendPx: 3,
-      refractStrength: isDark ? 0.01 : 0.1,
-      distortFalloffPx: 13,
-      blurRadiusPx: isDark ? 4 : 5.5,
-      specAngle: 0.1,
-      specStrength: -1,
-      specPower: 1,
-      specWidth: 1.7,
-      lightbandOffsetPx: 3,
-      lightbandWidthPx: 3.5,
-      lightbandStrength: isDark ? 0.6 : 0.4,
-      lightbandColor: Colors.white,
-    );
+    final fill = tint ??
+        (isDark
+            ? Colors.white.withValues(alpha: opacity * 0.14)
+            : Colors.white.withValues(alpha: opacity * 0.55));
+    final borderColor = isDark ? AppGlass.borderDark : AppGlass.borderLight;
 
-    final tint = isDark
-        ? Colors.white.withValues(alpha: opacity * 0.10)
-        : Colors.black.withValues(alpha: opacity * 0.06);
-
-    return SizedBox(
-      width: width,
-      height: height,
-      child: OCLiquidGlassGroup(
-        settings: settings,
-        child: OCLiquidGlass(
+    Widget surface = ClipRRect(
+      borderRadius: r,
+      child: BackdropFilter(
+        filter: ImageFilter.blur(sigmaX: blurSigma, sigmaY: blurSigma),
+        child: Container(
           width: width,
           height: height,
-          borderRadius: radius,
-          color: tint,
-          child: child ?? const SizedBox.shrink(),
+          padding: padding,
+          decoration: BoxDecoration(
+            color: fill,
+            borderRadius: r,
+            border:
+                border ? Border.all(color: borderColor, width: 0.7) : null,
+          ),
+          child: child,
         ),
       ),
     );
+
+    if (shadow != null) {
+      surface = DecoratedBox(
+        decoration: BoxDecoration(borderRadius: r, boxShadow: [shadow!]),
+        child: surface,
+      );
+    }
+
+    if (onTap != null) {
+      surface = GestureDetector(
+        onTap: onTap,
+        behavior: HitTestBehavior.opaque,
+        child: surface,
+      );
+    }
+
+    return surface;
   }
 }

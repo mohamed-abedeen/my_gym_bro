@@ -251,6 +251,29 @@ class AppRadius {
   static const howtoGif = 15.0;
 }
 
+/// Telegram-style frosted glass tokens. Single source of truth for the app's
+/// glass look — consumed by the GlassSurface widget. NOT a refractive glass.
+class AppGlass {
+  AppGlass._();
+
+  // ── Blur strength (Gaussian sigma; not responsive-scaled) ──
+  /// Bars, sheets, nav pill, cards.
+  static const blur = 24.0;
+
+  /// Scroll-edge header fades (stronger).
+  static const blurStrong = 30.0;
+
+  /// Small chips / buttons — lighter blur is cheaper to render.
+  static const blurButton = 16.0;
+
+  // ── Hairline border painted on the glass edge ──
+  /// Dark mode: white @ 10%.
+  static const borderDark = Color(0x1AFFFFFF);
+
+  /// Light mode: white @ 50%.
+  static const borderLight = Color(0x80FFFFFF);
+}
+
 /// Fixed sizes from Figma design spec.
 class AppSizes {
   AppSizes._();

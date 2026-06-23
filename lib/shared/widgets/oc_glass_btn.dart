@@ -1,14 +1,12 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:my_gym_bro/core/providers/providers.dart';
+
 import 'package:my_gym_bro/shared/constants.dart';
 import 'package:my_gym_bro/shared/responsive.dart';
-import 'package:my_gym_bro/shared/widgets/bottom_nav_pill.dart'
-    show BottomNavPill;
 import 'package:my_gym_bro/shared/widgets/glass_decoration.dart';
+import 'package:my_gym_bro/shared/widgets/glass_surface.dart';
 
 // ─────────────────────────────────────────────────────────────────────────────
-// OC Liquid Glass Button — iOS 26 style refractive glass icon buttons
+// Glass icon button — Telegram-style frosted glass chips
 // ─────────────────────────────────────────────────────────────────────────────
 
 /// Icon type determines the icon, shape, and optional tint.
@@ -21,11 +19,13 @@ enum OcGlassBtnType {
   hint, // Info/lightbulb — circle
 }
 
-/// A high-fidelity iOS 26 Liquid-Glass button powered by the `oc_liquid_glass` package.
+/// A frosted-glass icon button built on [GlassSurface].
 ///
-/// Uses the same shader settings as [BottomNavPill] for visual consistency.
-/// Shape is circular by default; [OcGlassBtnType.save] renders as a pill.
-class OcGlassBtn extends ConsumerWidget {
+/// Previously powered by the refractive `oc_liquid_glass` package; now renders
+/// the app's Telegram-style frosted glass (real backdrop blur) while keeping its
+/// original tints. Shape is circular by default; [OcGlassBtnType.save] renders
+/// as a pill. Public API is unchanged.
+class OcGlassBtn extends StatelessWidget {
   const OcGlassBtn({
     required this.type,
     this.onTap,
@@ -47,53 +47,46 @@ class OcGlassBtn extends ConsumerWidget {
   final double? size;
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  Widget build(BuildContext context) {
     final colors = AppColors.of(context);
-    final isDark = ref.watch(themeModeProvider) == ThemeMode.dark;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
-    final diameter = size ?? 48.0;
-    final d = diameter.w;
+    final d = (size ?? 48.0).w;
     final isPill = type == OcGlassBtnType.save;
     final pillW = isPill ? (label != null ? 120.0.w : 80.0.w) : d;
     final pillH = d;
-    final radius = isPill ? d / 2 : d / 2;
+    final radius = pillH / 2;
 
-    // Icon + color resolution.
     final iconData = _iconFor(type);
     final iconColor = _iconColor(type, colors, isDark);
-    final bgColor = _glassColor(type, colors, isDark);
+    final glassTint = _glassTint(type, colors, isDark);
 
-    return GestureDetector(
+    return GlassSurface(
+      width: pillW,
+      height: pillH,
+      radius: radius,
+      blurSigma: AppGlass.blurButton,
+      tint: glassTint,
+      shadow: GlassDecoration.shadow(isDark: isDark),
       onTap: onTap,
-      behavior: HitTestBehavior.opaque,
-      child: Container(
-        width: pillW,
-        height: pillH,
-        decoration: BoxDecoration(
-          color: bgColor,
-          borderRadius: BorderRadius.circular(radius),
-          boxShadow: [GlassDecoration.shadow(isDark: isDark)],
-        ),
-        child: Center(
-          child:
-              isPill && label != null
-                  ? Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(iconData, color: iconColor, size: 20.sp),
-                      SizedBox(width: 6.w),
-                      Text(
-                        label!,
-                        style: TextStyle(
-                          color: iconColor,
-                          fontSize: 14.sp,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                    ],
-                  )
-                  : Icon(iconData, color: iconColor, size: 22.sp),
-        ),
+      child: Center(
+        child: isPill && label != null
+            ? Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(iconData, color: iconColor, size: 20.sp),
+                  SizedBox(width: 6.w),
+                  Text(
+                    label!,
+                    style: TextStyle(
+                      color: iconColor,
+                      fontSize: 14.sp,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ],
+              )
+            : Icon(iconData, color: iconColor, size: 22.sp),
       ),
     );
   }
@@ -101,13 +94,13 @@ class OcGlassBtn extends ConsumerWidget {
   // ── Icon mapping ──
 
   IconData _iconFor(OcGlassBtnType t) => switch (t) {
-    OcGlassBtnType.close => Icons.close_rounded,
-    OcGlassBtnType.done => Icons.check_rounded,
-    OcGlassBtnType.save => Icons.save_rounded,
-    OcGlassBtnType.share => Icons.ios_share_rounded,
-    OcGlassBtnType.delete => Icons.delete_outline_rounded,
-    OcGlassBtnType.hint => Icons.lightbulb_outline_rounded,
-  };
+        OcGlassBtnType.close => Icons.close_rounded,
+        OcGlassBtnType.done => Icons.check_rounded,
+        OcGlassBtnType.save => Icons.save_rounded,
+        OcGlassBtnType.share => Icons.ios_share_rounded,
+        OcGlassBtnType.delete => Icons.delete_outline_rounded,
+        OcGlassBtnType.hint => Icons.lightbulb_outline_rounded,
+      };
 
   // ── Icon color ──
 
@@ -120,17 +113,10 @@ class OcGlassBtn extends ConsumerWidget {
         _ => isDark ? c.white : c.black,
       };
 
-  // ── Glass fill tint ──
+  // ── Glass fill tint (over the blur) — preserves the original look ──
 
-  Color _glassColor(
-    OcGlassBtnType t,
-    AppColorsTheme c,
-    bool isDark,
-  ) => switch (t) {
-    OcGlassBtnType.delete => c.danger.withValues(alpha: isDark ? 0.10 : 0.08),
-    _ =>
-      isDark
-          ? c.white.withValues(alpha: 0.06)
-          : c.black.withValues(alpha: 0.04),
-  };
+  Color _glassTint(OcGlassBtnType t, AppColorsTheme c, bool isDark) =>
+      t == OcGlassBtnType.delete
+          ? c.danger.withValues(alpha: isDark ? 0.10 : 0.08)
+          : GlassDecoration.tint(isDark: isDark);
 }

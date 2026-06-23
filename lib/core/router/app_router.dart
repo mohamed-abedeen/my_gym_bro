@@ -1,3 +1,4 @@
+import 'package:cupertino_native_better/cupertino_native_better.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -160,6 +161,10 @@ final routerProvider = Provider<GoRouter>((ref) {
   final router = GoRouter(
     initialLocation: AppRoutes.splash,
     refreshListenable: lockNotifier,
+    // Lets the native iOS CNTabBar auto-hide under bottom sheets/modals so its
+    // UIView z-order doesn't cover Flutter-rendered sheet content. Harmless on
+    // other platforms (just counts modal depth; the native bar isn't used).
+    observers: [CNTabBarRouteObserver()],
     routes: [
       // ────────────────────────────────────────────────────────────────────
       // ONBOARDING — fade transitions (they're a linear wizard, not a stack)

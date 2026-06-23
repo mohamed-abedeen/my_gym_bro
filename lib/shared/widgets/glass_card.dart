@@ -1,11 +1,12 @@
 import 'package:flutter/material.dart';
 
 import 'package:my_gym_bro/shared/widgets/glass_decoration.dart';
+import 'package:my_gym_bro/shared/widgets/glass_surface.dart';
 
 /// Glass card for session log rows, sets tables.
 ///
-/// Uses rgba(255,255,255,0.07) background + a soft drop-shadow shared with
-/// the other frosted-glass surfaces (see [GlassDecoration]).
+/// Telegram-style frosted glass via [GlassSurface] (real backdrop blur), keeping
+/// the original rgba(255,255,255,0.07) fill + soft drop-shadow.
 class GlassCard extends StatelessWidget {
 
   const GlassCard({
@@ -19,13 +20,11 @@ class GlassCard extends StatelessWidget {
   final double borderRadius;
 
   @override
-  Widget build(BuildContext context) => Container(
+  Widget build(BuildContext context) => GlassSurface(
         width: width,
-        decoration: BoxDecoration(
-          color: const Color(0x12FFFFFF), // rgba(255,255,255,0.07)
-          borderRadius: BorderRadius.circular(borderRadius),
-          boxShadow: [GlassDecoration.cardShadow()],
-        ),
+        radius: borderRadius,
+        tint: const Color(0x12FFFFFF), // rgba(255,255,255,0.07)
+        shadow: GlassDecoration.cardShadow(),
         child: child,
       );
 }

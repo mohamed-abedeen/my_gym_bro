@@ -17,10 +17,11 @@ import 'package:my_gym_bro/features/workout/workout_providers.dart';
 import 'package:my_gym_bro/l10n/app_localizations.dart';
 import 'package:my_gym_bro/shared/constants.dart';
 import 'package:my_gym_bro/shared/responsive.dart';
+import 'package:my_gym_bro/shared/widgets/glass_decoration.dart';
+import 'package:my_gym_bro/shared/widgets/glass_surface.dart';
 import 'package:my_gym_bro/shared/widgets/inline_editable_field.dart';
 import 'package:my_gym_bro/shared/widgets/liquid_glass_button.dart';
 import 'package:my_gym_bro/shared/widgets/oc_glass_btn.dart';
-import 'package:oc_liquid_glass/oc_liquid_glass.dart';
 import 'package:wakelock_plus/wakelock_plus.dart';
 
 class ActiveSessionScreen extends ConsumerStatefulWidget {
@@ -603,62 +604,37 @@ class _SetsTable extends StatelessWidget {
                 child: Builder(
                   builder: (context) {
                     final isDark = Theme.of(context).brightness == Brightness.dark;
-                    final glassSettings = OCLiquidGlassSettings(
-                      blendPx: 3,
-                      refractStrength: isDark ? 0.01 : 0.1,
-                      distortFalloffPx: 13,
-                      blurRadiusPx: isDark ? 4 : 5.5,
-                      specAngle: 0.1,
-                      specStrength: isDark ? -1 : -1.0,
-                      specPower: 1,
-                      specWidth: 3.5,
-                      lightbandOffsetPx: 3,
-                      lightbandWidthPx: 3.5,
-                      lightbandStrength: isDark ? 0.6 : 0.4,
-                      lightbandColor: isDark
-                          ? const Color.fromARGB(255, 255, 255, 255)
-                          : AppColors.of(context).white,
-                    );
-                    
                     final btnWidth = constraints.maxWidth;
                     final btnHeight = 36.h;
 
                     return SizedBox(
                       width: btnWidth,
                       height: btnHeight,
-                      child: OCLiquidGlassGroup(
-                        settings: glassSettings,
-                        child: Stack(
-                          clipBehavior: Clip.none,
-                          children: [
-                            OCLiquidGlass(
-                              width: btnWidth,
-                              height: btnHeight,
-                              borderRadius: btnHeight / 2,
-                              color: isDark
-                                  ? AppColors.of(context).white.withValues(alpha: 0.06)
-                                  : AppColors.of(context).black.withValues(alpha: 0.04),
-                              shadow: BoxShadow(
-                                color: AppColors.of(context).black.withValues(alpha: isDark ? 0.30 : 0.15),
-                                blurRadius: 10.w,
-                                offset: Offset(0, 4.h),
-                              ),
-                              child: const SizedBox.expand(),
-                            ),
-                            Positioned.fill(
-                              child: Center(
-                                child: Text(
-                                  l10n.addSet,
-                                  style: TextStyle(
-                                    color: AppColors.of(context).textPrimary,
-                                    fontSize: 13.sp,
-                                    fontWeight: FontWeight.w600,
-                                  ),
+                      child: Stack(
+                        clipBehavior: Clip.none,
+                        children: [
+                          GlassSurface(
+                            width: btnWidth,
+                            height: btnHeight,
+                            radius: btnHeight / 2,
+                            blurSigma: AppGlass.blurButton,
+                            tint: GlassDecoration.tint(isDark: isDark),
+                            shadow: GlassDecoration.shadow(isDark: isDark),
+                            child: const SizedBox.expand(),
+                          ),
+                          Positioned.fill(
+                            child: Center(
+                              child: Text(
+                                l10n.addSet,
+                                style: TextStyle(
+                                  color: AppColors.of(context).textPrimary,
+                                  fontSize: 13.sp,
+                                  fontWeight: FontWeight.w600,
                                 ),
                               ),
                             ),
-                          ],
-                        ),
+                          ),
+                        ],
                       ),
                     );
                   },

@@ -11,6 +11,7 @@ import 'package:my_gym_bro/features/workout/workout_screen.dart';
 import 'package:my_gym_bro/shared/constants.dart';
 import 'package:my_gym_bro/shared/responsive.dart';
 import 'package:my_gym_bro/shared/widgets/bottom_nav_pill.dart';
+import 'package:my_gym_bro/shared/widgets/ios_native_nav.dart';
 
 /// Main app scaffold — animated tab switching with floating nav pill.
 ///
@@ -78,64 +79,49 @@ class _MyGymBroScaffoldState extends ConsumerState<MyGymBroScaffold>
     final goingForward = idx >= _previousIndex;
     _previousIndex = idx;
 
+    // ── Animated page content ── (shared by both nav styles)
+    final pageBody = AnimatedSwitcher(
+      duration: const Duration(milliseconds: 350),
+      switchInCurve: Curves.easeOutCubic,
+      switchOutCurve: Curves.easeInCubic,
+      transitionBuilder: (child, animation) {
+        // AnimatedSwitcher calls transitionBuilder for BOTH the old (fading
+        // out) and new (fading in) child. The incoming child has the current
+        // key; the outgoing has the previous key.
+        final isIncoming = child.key == ValueKey(idx);
+        final slideOffset = isIncoming
+            ? (goingForward
+                ? const Offset(0.15, 0) // new page enters from right
+                : const Offset(-0.15, 0)) // new page enters from left
+            : (goingForward
+                ? const Offset(-0.08, 0) // old page exits to left
+                : const Offset(0.08, 0)); // old page exits to right
+
+        return SlideTransition(
+          position: Tween<Offset>(begin: slideOffset, end: Offset.zero)
+              .animate(animation),
+          child: FadeTransition(opacity: animation, child: child),
+        );
+      },
+      child: KeyedSubtree(key: ValueKey(idx), child: _pages[idx]),
+    );
+
+    // iOS → real native UITabBar (Apple Liquid Glass on iOS 26) via
+    // cupertino_native_better. Every other platform keeps the custom frosted
+    // floating pill. Both drive the same [navIndexProvider].
+    if (Theme.of(context).platform == TargetPlatform.iOS) {
+      return Scaffold(
+        backgroundColor: colors.background,
+        body: pageBody,
+        bottomNavigationBar: const IosNativeNav(),
+      );
+    }
+
     return Scaffold(
       backgroundColor: colors.background,
       body: Stack(
         children: [
-          // ── Animated page content ──
-          AnimatedSwitcher(
-            duration: const Duration(milliseconds: 350),
-            switchInCurve: Curves.easeOutCubic,
-            switchOutCurve: Curves.easeInCubic,
-            transitionBuilder: (child, animation) {
-              // Determine if this child is the incoming or outgoing page.
-              // AnimatedSwitcher calls transitionBuilder for BOTH the old
-              // (fading out) and new (fading in) child. The incoming child
-              // has the current key; the outgoing has the previous key.
-              final isIncoming = (child.key == ValueKey(idx));
-              final slideOffset =
-                  isIncoming
-                      ? (goingForward
-                          ? const Offset(0.15, 0) // new page enters from right
-                          : const Offset(-0.15, 0)) // new page enters from left
-                      : (goingForward
-                          ? const Offset(-0.08, 0) // old page exits to left
-                          : const Offset(0.08, 0)); // old page exits to right
-
-              return SlideTransition(
-                position: Tween<Offset>(
-                  begin: slideOffset,
-                  end: Offset.zero,
-                ).animate(animation),
-                child: FadeTransition(opacity: animation, child: child),
-              );
-            },
-            child: KeyedSubtree(key: ValueKey(idx), child: _pages[idx]),
-          ),
-
-          // ── Faded lime glow at bottom ──
-          // Positioned(
-          //   left: 0,
-          //   right: 0,
-          //   bottom: 0,
-          //   height: MediaQuery.of(context).padding.bottom + 1,
-          //   child: IgnorePointer(
-          //     child: Container(
-          //       decoration: const BoxDecoration(
-          //         gradient: LinearGradient(
-          //           begin: Alignment.bottomCenter,
-          //           end: Alignment.topCenter,
-          //           colors: [
-          //             Color(0x40D2FF00), // lime at ~25% opacity
-          //             Color(0x00D2FF00), // fully transparent
-          //           ],
-          //         ),
-          //       ),
-          //     ),
-          //   ),
-          // ),
-
-          // ── Floating nav pill ──
+          pageBody,
           const BottomNavPill(),
         ],
       ),

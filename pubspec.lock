@@ -369,6 +369,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "1.0.2"
+  cupertino_native_better:
+    dependency: "direct main"
+    description:
+      name: cupertino_native_better
+      sha256: "271fbf582aebb55d8ccef103add60373f65359fa7626e995ed62b5afca1131f8"
+      url: "https://pub.dev"
+    source: hosted
+    version: "1.5.0"
   custom_lint_core:
     dependency: transitive
     description:
@@ -1065,10 +1073,10 @@ packages:
     dependency: "direct main"
     description:
       name: oc_liquid_glass
-      sha256: ca255faaf7c070d611e2b91c237f9a8f4f4627554c29f4f075c34a61ce0c64c4
+      sha256: "94c858a3abde3ec4a060bca5d317c15e53f9fdb873809b1740e0e65bd861284e"
       url: "https://pub.dev"
     source: hosted
-    version: "0.2.1"
+    version: "0.2.2"
   octo_image:
     dependency: transitive
     description:
