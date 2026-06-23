@@ -254,59 +254,42 @@ class AppDatabase extends _$AppDatabase {
         await _createIndexes(m);
       }
       if (from < 3) {
-        await customStatement(
-          'ALTER TABLE user_profiles ADD COLUMN gender TEXT',
-        );
+        await _addColumnIfMissing('user_profiles', 'gender', 'TEXT');
       }
       // (v4 previously created the dm_messages table; DMs were removed in v13,
       //  so the table is no longer created here and is dropped below.)
       if (from < 5) {
-        await customStatement(
-          'ALTER TABLE exercises ADD COLUMN difficulty TEXT',
-        );
+        await _addColumnIfMissing('exercises', 'difficulty', 'TEXT');
       }
       if (from < 6) {
-        await customStatement(
-          "ALTER TABLE user_profiles ADD COLUMN notification_tone TEXT NOT NULL DEFAULT 'balanced'",
+        await _addColumnIfMissing(
+          'user_profiles',
+          'notification_tone',
+          "TEXT NOT NULL DEFAULT 'balanced'",
         );
       }
       if (from < 7) {
-        await customStatement(
-          'ALTER TABLE workout_sets ADD COLUMN duration_seconds INTEGER',
-        );
-        await customStatement(
-          'ALTER TABLE workout_sets ADD COLUMN distance REAL',
-        );
-        await customStatement(
-          'ALTER TABLE workout_sets ADD COLUMN speed REAL',
-        );
-        await customStatement(
-          'ALTER TABLE workout_sets ADD COLUMN incline REAL',
-        );
-        await customStatement(
-          'ALTER TABLE scheduled_exercises ADD COLUMN target_duration_seconds INTEGER',
-        );
-        await customStatement(
-          'ALTER TABLE scheduled_exercises ADD COLUMN target_distance REAL',
-        );
+        await _addColumnIfMissing('workout_sets', 'duration_seconds', 'INTEGER');
+        await _addColumnIfMissing('workout_sets', 'distance', 'REAL');
+        await _addColumnIfMissing('workout_sets', 'speed', 'REAL');
+        await _addColumnIfMissing('workout_sets', 'incline', 'REAL');
+        await _addColumnIfMissing(
+          'scheduled_exercises', 'target_duration_seconds', 'INTEGER');
+        await _addColumnIfMissing(
+          'scheduled_exercises', 'target_distance', 'REAL');
       }
       if (from < 8) {
-        await customStatement(
-          'ALTER TABLE user_profiles ADD COLUMN banner_url TEXT',
-        );
+        await _addColumnIfMissing('user_profiles', 'banner_url', 'TEXT');
       }
       if (from < 9) {
-        await customStatement(
-          'ALTER TABLE exercises ADD COLUMN usage_count INTEGER NOT NULL DEFAULT 0',
-        );
-        await customStatement(
-          'ALTER TABLE exercises ADD COLUMN is_favorite INTEGER NOT NULL DEFAULT 0',
-        );
+        await _addColumnIfMissing(
+          'exercises', 'usage_count', 'INTEGER NOT NULL DEFAULT 0');
+        await _addColumnIfMissing(
+          'exercises', 'is_favorite', 'INTEGER NOT NULL DEFAULT 0');
       }
       if (from < 10) {
-        await customStatement(
-          'ALTER TABLE workout_sets ADD COLUMN is_failure INTEGER NOT NULL DEFAULT 0',
-        );
+        await _addColumnIfMissing(
+          'workout_sets', 'is_failure', 'INTEGER NOT NULL DEFAULT 0');
       }
       if (from < 11) {
         // Persist set completion so crash-recovery + cardio volume math
@@ -314,9 +297,8 @@ class AppDatabase extends _$AppDatabase {
         // which mis-classifies warm-ups and cardio without weight.
         // Existing rows: mark completed when they have either weight+reps
         // or any cardio signal — best-effort backfill of inferred state.
-        await customStatement(
-          'ALTER TABLE workout_sets ADD COLUMN is_completed INTEGER NOT NULL DEFAULT 0',
-        );
+        await _addColumnIfMissing(
+          'workout_sets', 'is_completed', 'INTEGER NOT NULL DEFAULT 0');
         await customStatement(
           'UPDATE workout_sets SET is_completed = 1 WHERE '
           '(weight IS NOT NULL AND reps IS NOT NULL) '
@@ -344,7 +326,9 @@ class AppDatabase extends _$AppDatabase {
       }
       if (from < 15) {
         // Social graph — local cache of the current user's outgoing follows.
-        await m.createTable(follows);
+        if (!await _hasTable('follows')) {
+          await m.createTable(follows);
+        }
       }
     },
   );
@@ -361,6 +345,15 @@ class AppDatabase extends _$AppDatabase {
       String table, String column, String definition) async {
     if (await _hasColumn(table, column)) return;
     await customStatement('ALTER TABLE $table ADD COLUMN $column $definition');
+  }
+
+  /// True if [table] exists. Keeps `createTable` migrations idempotent for a
+  /// database that already created the table at an inconsistent version.
+  Future<bool> _hasTable(String table) async {
+    final rows = await customSelect(
+      "SELECT 1 FROM sqlite_master WHERE type = 'table' AND name = '$table'",
+    ).get();
+    return rows.isNotEmpty;
   }
 
   Future<void> _createIndexes(Migrator m) async {
