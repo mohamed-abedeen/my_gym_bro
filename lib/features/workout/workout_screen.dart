@@ -10,7 +10,6 @@ import 'package:my_gym_bro/core/router/app_router.dart';
 import 'package:my_gym_bro/core/security/secure_storage.dart';
 import 'package:my_gym_bro/core/services/units.dart';
 import 'package:my_gym_bro/features/settings/skin_provider.dart';
-import 'package:my_gym_bro/features/workout/active_session/countdown_screen.dart';
 import 'package:my_gym_bro/features/workout/log_bottom_sheet.dart';
 import 'package:my_gym_bro/features/workout/muscle_detail_sheet.dart';
 import 'package:my_gym_bro/features/workout/status_bottom_sheet.dart';
@@ -915,7 +914,8 @@ class _DayCard extends ConsumerWidget {
             children: [
               // Play button
               GestureDetector(
-                onTap: () => _startWorkoutWithCountdown(context, ref, dayLabel),
+                onTap: () =>
+                    context.push(AppRoutes.activeSession, extra: day.localId),
                 child: Container(
                   width: 69.w,
                   height: 68.h,
@@ -963,36 +963,6 @@ class _DayCard extends ConsumerWidget {
     );
   }
 
-  /// Launch countdown animation → then navigate to active session.
-  Future<void> _startWorkoutWithCountdown(
-    BuildContext context,
-    WidgetRef ref,
-    String dayLabel,
-  ) async {
-    // Get exercise count for the selected day
-    final scheduleDao = ref.read(scheduleDaoProvider);
-    final exercises = await scheduleDao.getExercises(day.localId);
-
-    if (!context.mounted) return;
-
-    // Show countdown screen as a full-screen modal
-    final shouldStart = await Navigator.of(context).push<bool>(
-      PageRouteBuilder(
-        pageBuilder:
-            (_, __, ___) => CountdownScreen(
-              dayLabel: dayLabel,
-              exerciseCount: exercises.length,
-            ),
-        transitionsBuilder: (_, animation, __, child) {
-          return FadeTransition(opacity: animation, child: child);
-        },
-      ),
-    );
-
-    if ((shouldStart ?? false) && context.mounted) {
-      unawaited(context.push(AppRoutes.activeSession, extra: day.localId));
-    }
-  }
 }
 
 // ── Shared program picker — used by both _DayCard and _AddDayCard ──

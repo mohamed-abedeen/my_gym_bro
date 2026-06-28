@@ -1,4 +1,3 @@
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -83,61 +82,6 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
               ),
             ),
           ),
-
-          // ── DEV ONLY — visible in debug builds only ──────────────────────
-          if (kDebugMode)
-            Positioned(
-              bottom: 40,
-              left: 0,
-              right: 0,
-              child: Column(
-                children: [
-                  GestureDetector(
-                    onTap: () => context.go('/'),
-                    child: Container(
-                      margin: const EdgeInsets.symmetric(horizontal: 40),
-                      padding: const EdgeInsets.symmetric(vertical: 12),
-                      decoration: BoxDecoration(
-                        border: Border.all(color: AppColors.of(context).white.withValues(alpha: 0.24)),
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: Center(
-                        child: Text(
-                          '⚡ DEV — Skip to Home',
-                          style: TextStyle(
-                            color: AppColors.of(context).white.withValues(alpha: 0.54),
-                            fontSize: 13,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  GestureDetector(
-                    onTap: () => context.go('/onboarding/welcome'),
-                    child: Container(
-                      margin: const EdgeInsets.symmetric(horizontal: 40),
-                      padding: const EdgeInsets.symmetric(vertical: 12),
-                      decoration: BoxDecoration(
-                        border: Border.all(color: AppColors.of(context).white.withValues(alpha: 0.24)),
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: Center(
-                        child: Text(
-                          '⚡ DEV — Skip to Onboarding',
-                          style: TextStyle(
-                            color: AppColors.of(context).white.withValues(alpha: 0.54),
-                            fontSize: 13,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
         ],
       ),
     );
