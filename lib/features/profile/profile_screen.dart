@@ -495,7 +495,7 @@ class _StatsRow extends ConsumerWidget {
           children: [
             Icon(
               Icons.local_fire_department_rounded,
-              color: colors.accent,
+              color: colors.amber,
               size: 14.sp,
             ),
             SizedBox(width: 2.w),

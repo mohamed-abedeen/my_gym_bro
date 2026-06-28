@@ -119,7 +119,7 @@ class _Header extends ConsumerWidget {
           SizedBox(width: 8.w),
 
           // Fire streak icon + count
-          Icon(Icons.local_fire_department, color: colors.accent, size: 26.sp),
+          Icon(Icons.local_fire_department, color: colors.amber, size: 26.sp),
           SizedBox(width: 2.w),
           Text(
             '$streak',

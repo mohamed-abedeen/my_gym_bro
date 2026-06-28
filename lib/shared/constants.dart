@@ -87,7 +87,7 @@ class AppColorsTheme extends ThemeExtension<AppColorsTheme> {
   static const light = AppColorsTheme(
     background: Color(0xFFF2F2F7),
     card: Color(0xFFFFFFFF),
-    accent: Color(0xFFD2FF00),
+    accent: Color(0xFFFF7A00), // light-mode brand: orange (dark keeps the lime)
     textPrimary: Color(0xFF1C1C1E),
     textSecondary: Color(0xFF8E8E93),
     success: Color(0xFF34C759),

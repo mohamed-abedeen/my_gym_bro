@@ -188,6 +188,7 @@ class _NavTab extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final colors = AppColors.of(context);
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     final isActive = ref.watch(navIndexProvider) == index;
 
     return Expanded(
@@ -203,7 +204,13 @@ class _NavTab extends ConsumerWidget {
                 icon,
                 key: ValueKey('$index-$isActive'),
                 size: size,
-                color: isActive ? colors.accent : colors.textSecondary,
+                color: isActive
+                    ? colors.accent
+                    // Inactive icons: keep the soft grey on dark glass, but go
+                    // noticeably darker on the light pill for legibility.
+                    : (isDark
+                        ? colors.textSecondary
+                        : colors.textPrimary.withValues(alpha: 0.6)),
               ),
             ),
           ),
