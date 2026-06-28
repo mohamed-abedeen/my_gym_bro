@@ -4,9 +4,10 @@ import 'package:my_gym_bro/shared/constants.dart';
 import 'package:my_gym_bro/shared/responsive.dart';
 import 'package:my_gym_bro/shared/widgets/glass_decoration.dart';
 import 'package:my_gym_bro/shared/widgets/glass_surface.dart';
+import 'package:my_gym_bro/shared/widgets/refractive_glass.dart';
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Glass icon button — Telegram-style frosted glass chips
+// Glass icon button — frosted by default, opt-in refractive (like the nav)
 // ─────────────────────────────────────────────────────────────────────────────
 
 /// Icon type determines the icon, shape, and optional tint.
@@ -19,12 +20,9 @@ enum OcGlassBtnType {
   hint, // Info/lightbulb — circle
 }
 
-/// A frosted-glass icon button built on [GlassSurface].
-///
-/// Previously powered by the refractive `oc_liquid_glass` package; now renders
-/// the app's Telegram-style frosted glass (real backdrop blur) while keeping its
-/// original tints. Shape is circular by default; [OcGlassBtnType.save] renders
-/// as a pill. Public API is unchanged.
+/// A glass icon button. Telegram-style frosted glass by default; pass
+/// [refractive] = true for the oc_liquid_glass refractive look (matches the
+/// bottom nav). Shape is circular by default; [OcGlassBtnType.save] is a pill.
 class OcGlassBtn extends StatelessWidget {
   const OcGlassBtn({
     required this.type,
@@ -32,6 +30,7 @@ class OcGlassBtn extends StatelessWidget {
     this.isActive = false,
     this.label,
     this.size,
+    this.refractive = false,
     super.key,
   });
   final OcGlassBtnType type;
@@ -45,6 +44,9 @@ class OcGlassBtn extends StatelessWidget {
 
   /// Override the default diameter (circle) or height (pill).
   final double? size;
+
+  /// Refractive oc_liquid_glass look (like the bottom nav) instead of frost.
+  final bool refractive;
 
   @override
   Widget build(BuildContext context) {
@@ -60,34 +62,51 @@ class OcGlassBtn extends StatelessWidget {
     final iconData = _iconFor(type);
     final iconColor = _iconColor(type, colors, isDark);
     final glassTint = _glassTint(type, colors, isDark);
+    final shadow = GlassDecoration.shadow(isDark: isDark);
 
-    return GlassSurface(
-      width: pillW,
-      height: pillH,
-      radius: radius,
-      blurSigma: AppGlass.blurButton,
-      tint: glassTint,
-      shadow: GlassDecoration.shadow(isDark: isDark),
-      onTap: onTap,
-      child: Center(
-        child: isPill && label != null
-            ? Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Icon(iconData, color: iconColor, size: 20.sp),
-                  SizedBox(width: 6.w),
-                  Text(
-                    label!,
-                    style: TextStyle(
-                      color: iconColor,
-                      fontSize: 14.sp,
-                      fontWeight: FontWeight.w600,
-                    ),
+    final content = Center(
+      child: isPill && label != null
+          ? Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(iconData, color: iconColor, size: 20.sp),
+                SizedBox(width: 6.w),
+                Text(
+                  label!,
+                  style: TextStyle(
+                    color: iconColor,
+                    fontSize: 14.sp,
+                    fontWeight: FontWeight.w600,
                   ),
-                ],
-              )
-            : Icon(iconData, color: iconColor, size: 22.sp),
-      ),
+                ),
+              ],
+            )
+          : Icon(iconData, color: iconColor, size: 22.sp),
+    );
+
+    final Widget surface = refractive
+        ? RefractiveGlass(
+            width: pillW,
+            height: pillH,
+            radius: radius,
+            tint: glassTint,
+            shadow: shadow,
+            child: content,
+          )
+        : GlassSurface(
+            width: pillW,
+            height: pillH,
+            radius: radius,
+            blurSigma: AppGlass.blurButton,
+            tint: glassTint,
+            shadow: shadow,
+            child: content,
+          );
+
+    return GestureDetector(
+      onTap: onTap,
+      behavior: HitTestBehavior.opaque,
+      child: surface,
     );
   }
 
@@ -113,7 +132,7 @@ class OcGlassBtn extends StatelessWidget {
         _ => isDark ? c.white : c.black,
       };
 
-  // ── Glass fill tint (over the blur) — preserves the original look ──
+  // ── Glass fill tint (over the blur / shader) ──
 
   Color _glassTint(OcGlassBtnType t, AppColorsTheme c, bool isDark) =>
       t == OcGlassBtnType.delete

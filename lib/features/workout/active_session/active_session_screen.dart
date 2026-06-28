@@ -18,10 +18,10 @@ import 'package:my_gym_bro/l10n/app_localizations.dart';
 import 'package:my_gym_bro/shared/constants.dart';
 import 'package:my_gym_bro/shared/responsive.dart';
 import 'package:my_gym_bro/shared/widgets/glass_decoration.dart';
-import 'package:my_gym_bro/shared/widgets/glass_surface.dart';
 import 'package:my_gym_bro/shared/widgets/inline_editable_field.dart';
 import 'package:my_gym_bro/shared/widgets/liquid_glass_button.dart';
 import 'package:my_gym_bro/shared/widgets/oc_glass_btn.dart';
+import 'package:my_gym_bro/shared/widgets/refractive_glass.dart';
 import 'package:wakelock_plus/wakelock_plus.dart';
 
 class ActiveSessionScreen extends ConsumerStatefulWidget {
@@ -426,6 +426,7 @@ class _ExerciseImageArea extends StatelessWidget {
               height: 44.w,
               radius: 22.r,
               onTap: onMenuTap,
+              refractive: true,
               child: Icon(
                 Icons.menu_rounded,
                 size: 22.sp,
@@ -613,12 +614,10 @@ class _SetsTable extends StatelessWidget {
                       child: Stack(
                         clipBehavior: Clip.none,
                         children: [
-                          GlassSurface(
+                          RefractiveGlass(
                             width: btnWidth,
                             height: btnHeight,
                             radius: btnHeight / 2,
-                            blurSigma: AppGlass.blurButton,
-                            tint: GlassDecoration.tint(isDark: isDark),
                             shadow: GlassDecoration.shadow(isDark: isDark),
                             child: const SizedBox.expand(),
                           ),
@@ -1248,6 +1247,7 @@ class _BottomPanel extends StatelessWidget {
                   type: OcGlassBtnType.hint,
                   size: 66,
                   onTap: onHowTo,
+                  refractive: true,
                 ),
 
                 // Skip / next arrow
@@ -1773,6 +1773,7 @@ class _PauseOverlay extends StatelessWidget {
                     type: OcGlassBtnType.hint,
                     size: 66,
                     onTap: onHowTo,
+                    refractive: true,
                   ),
 
                   // Resume / play button
