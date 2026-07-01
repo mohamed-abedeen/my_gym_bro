@@ -25,6 +25,8 @@ class GlassSurface extends StatelessWidget {
     this.blurSigma = AppGlass.blur,
     this.tint,
     this.border = true,
+    this.borderColor,
+    this.borderWidth = 0.7,
     this.shadow,
     this.padding,
     this.onTap,
@@ -49,6 +51,12 @@ class GlassSurface extends StatelessWidget {
   /// Draw the hairline glass border.
   final bool border;
 
+  /// Override the hairline border color. Null → theme default ([AppGlass]).
+  final Color? borderColor;
+
+  /// Border stroke width. Defaults to a 0.7 hairline.
+  final double borderWidth;
+
   /// Optional drop shadow, rendered outside the clip so it isn't clipped away.
   final BoxShadow? shadow;
 
@@ -65,7 +73,8 @@ class GlassSurface extends StatelessWidget {
         (isDark
             ? Colors.white.withValues(alpha: opacity * 0.14)
             : Colors.white.withValues(alpha: opacity * 0.55));
-    final borderColor = isDark ? AppGlass.borderDark : AppGlass.borderLight;
+    final borderClr =
+        borderColor ?? (isDark ? AppGlass.borderDark : AppGlass.borderLight);
 
     Widget surface = ClipRRect(
       borderRadius: r,
@@ -78,8 +87,9 @@ class GlassSurface extends StatelessWidget {
           decoration: BoxDecoration(
             color: fill,
             borderRadius: r,
-            border:
-                border ? Border.all(color: borderColor, width: 0.7) : null,
+            border: border
+                ? Border.all(color: borderClr, width: borderWidth)
+                : null,
           ),
           child: child,
         ),

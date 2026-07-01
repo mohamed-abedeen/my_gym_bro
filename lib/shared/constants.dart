@@ -60,7 +60,7 @@ class AppColorsTheme extends ThemeExtension<AppColorsTheme> {
   static const dark = AppColorsTheme(
     background: Color(0xFF000000),
     card: Color(0xFF161414),
-    accent: Color(0xFFD2FF00),
+    accent: Color(0xFFF0FF00), // dark-mode lime, nudged toward yellow
     textPrimary: Color(0xFFFFFFFF),
     textSecondary: Color(0xFF999999),
     success: Color(0xFF49995C),
@@ -208,7 +208,7 @@ class AppColors {
   // ── Static fallbacks (dark-theme values) for code that doesn't have context ──
   static const background = Color(0xFF000000);
   static const card = Color(0xFF161414);
-  static const accent = Color(0xFFD2FF00);
+  static const accent = Color(0xFFF0FF00);
   static const textPrimary = Color(0xFFFFFFFF);
   static const textSecondary = Color(0xFF999999);
   static const success = Color(0xFF49995C);

@@ -1,17 +1,19 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:my_gym_bro/core/providers/providers.dart';
 import 'package:my_gym_bro/shared/constants.dart';
 import 'package:my_gym_bro/shared/responsive.dart';
-import 'package:oc_liquid_glass/oc_liquid_glass.dart';
+import 'package:my_gym_bro/shared/widgets/glass_surface.dart';
 
 /// Navigation index provider — shared across bottom nav and scaffold.
 final navIndexProvider = StateProvider<int>((ref) => 0);
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Platform-adaptive Bottom Nav
-//   • iOS  → CNTabBar (native iOS 26 Liquid Glass via cupertino_native)
-//   • Other → OCLiquidGlass floating pill
+//   • iOS  → CNTabBar (native iOS 26 Liquid Glass)  — see IosNativeNav
+//   • Other → frosted pill matching the Figma spec:
+//       pill      = #000000 @60% + background blur + #383838 hairline (0.5)
+//       highlight = #4E4E4E @25% + #C1C1C1 hairline (0.5), slides between tabs
+//       icons     = #C1C1C1, white when active   (light mode: dark icons)
 // ─────────────────────────────────────────────────────────────────────────────
 
 class BottomNavPill extends ConsumerStatefulWidget {
@@ -23,12 +25,11 @@ class BottomNavPill extends ConsumerStatefulWidget {
 
 class _BottomNavPillState extends ConsumerState<BottomNavPill>
     with SingleTickerProviderStateMixin {
-  // ── Android / non-iOS animation state ──
   late final AnimationController _slideCtrl;
   late Animation<double> _slideAnim;
   int _prevIndex = 0;
 
-  /// Horizontal left-offset for each tab's active indicator.
+  /// Horizontal left-offset for each tab's active highlight.
   List<double> get _offsets => [1.0.w, 92.0.w, 181.0.w];
 
   @override
@@ -36,7 +37,7 @@ class _BottomNavPillState extends ConsumerState<BottomNavPill>
     super.initState();
     _slideCtrl = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 400),
+      duration: const Duration(milliseconds: 300),
     );
     _slideAnim = AlwaysStoppedAnimation(_offsets[0]);
   }
@@ -49,26 +50,20 @@ class _BottomNavPillState extends ConsumerState<BottomNavPill>
 
   void _animateTo(int newIndex) {
     if (newIndex == _prevIndex) return;
-
     _slideAnim = Tween<double>(
       begin: _offsets[_prevIndex],
       end: _offsets[newIndex],
-    ).animate(CurvedAnimation(parent: _slideCtrl, curve: Curves.easeOutQuart));
-
+    ).animate(CurvedAnimation(parent: _slideCtrl, curve: Curves.easeOutCubic));
     _slideCtrl
       ..reset()
       ..forward();
-
     _prevIndex = newIndex;
   }
 
   @override
   Widget build(BuildContext context) {
     final idx = ref.watch(navIndexProvider);
-
-    // ── OCLiquidGlass floating pill ──
-    final isDark = ref.watch(themeModeProvider) == ThemeMode.dark;
-    final colors = AppColors.of(context);
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     if (idx != _prevIndex) {
       WidgetsBinding.instance.addPostFrameCallback((_) => _animateTo(idx));
@@ -76,26 +71,20 @@ class _BottomNavPillState extends ConsumerState<BottomNavPill>
 
     final pillW = AppSizes.navPillWidth.w;
     final pillH = AppSizes.navPillHeight.h;
-    final pillR = AppRadius.navPill.r;
     final indicatorW = AppSizes.navActiveW.w;
     final indicatorH = AppSizes.navActiveH.h;
     final indicatorTop = (pillH - indicatorH) / 2;
 
-    final glassSettings = OCLiquidGlassSettings(
-      blendPx: 3,
-      refractStrength: isDark ? 0.01 : 0.1,
-      distortFalloffPx: 13,
-      blurRadiusPx: isDark ? 4 : 5.5,
-      specAngle: 0.1,
-      specStrength: isDark ? -1 : -1.0,
-      specPower: 1,
-      specWidth: 1.7,
-      lightbandOffsetPx: 3,
-      lightbandWidthPx: 3.5,
-      lightbandStrength: isDark ? 0.6 : 0.4,
-      lightbandColor:
-          isDark ? const Color.fromARGB(255, 255, 255, 255) : AppColors.of(context).white,
-    );
+    // ── Figma colours (dark) + light-mode analogues ──
+    final pillFill = isDark
+        ? Colors.black.withValues(alpha: 0.50) // #000000 @ 50%
+        : Colors.white.withValues(alpha: 0.50); // #FFFFFF @ 50%
+    final pillStroke = isDark
+        ? const Color(0xFF555555) // #555555
+        : const Color(0xFFC1C1C1); // #C1C1C1
+    final highlightFill = isDark
+        ? const Color(0xFFC1C1C1).withValues(alpha: 0.15) // #C1C1C1 @ 15%
+        : Colors.black.withValues(alpha: 0.15); // #000000 @ 15%
 
     return Positioned(
       bottom: MediaQuery.of(context).padding.bottom + 7.h,
@@ -105,68 +94,60 @@ class _BottomNavPillState extends ConsumerState<BottomNavPill>
         child: SizedBox(
           width: pillW,
           height: pillH,
-          child: OCLiquidGlassGroup(
-            settings: glassSettings,
-            child: Stack(
-              clipBehavior: Clip.none,
-              children: [
-                // ── Glass pill shell ──
-                OCLiquidGlass(
-                  width: pillW,
-                  height: pillH,
-                  borderRadius: pillR,
-                  color:
-                      isDark
-                          ? AppColors.of(context).white.withValues(alpha: 0.06)
-                          : AppColors.of(context).black.withValues(alpha: 0.04),
-                  shadow: BoxShadow(
-                    color: AppColors.of(context).black.withValues(alpha: isDark ? 0.30 : 0.15),
-                    blurRadius: 28.w,
-                    offset: Offset(0, 10.h),
-                  ),
-                  child: const SizedBox.expand(),
-                ),
+          child: Stack(
+            clipBehavior: Clip.none,
+            children: [
+              // ── Frosted pill shell (Figma: #000000 60% + background blur) ──
+              GlassSurface(
+                width: pillW,
+                height: pillH,
+                radius: pillH / 2, // fully rounded (Figma corner radius 33.5)
+                blurSigma: 2.5, // ≈ Figma background blur 5 (Flutter sigma runs heavier)
+                tint: pillFill,
+                borderColor: pillStroke,
+                borderWidth: 0.5,
+                child: const SizedBox.expand(),
+              ),
 
-                // ── Liquid active indicator ──
-                AnimatedBuilder(
-                  animation: _slideCtrl,
-                  builder: (_, __) {
-                    return Positioned(
-                      left: _slideAnim.value,
-                      top: indicatorTop,
-                      child: OCLiquidGlass(
-                        width: indicatorW,
-                        height: indicatorH,
-                        borderRadius: indicatorH / 2,
-                        color: colors.accent.withValues(
-                          alpha: isDark ? 0.10 : 0.08,
-                        ),
-                        child: const SizedBox.expand(),
+              // ── Active highlight — neutral #4E4E4E @25%, slides between tabs ──
+              AnimatedBuilder(
+                animation: _slideCtrl,
+                builder: (_, __) {
+                  return Positioned(
+                    left: _slideAnim.value,
+                    top: indicatorTop,
+                    child: Container(
+                      width: indicatorW,
+                      height: indicatorH,
+                      decoration: BoxDecoration(
+                        color: highlightFill,
+                        borderRadius: BorderRadius.circular(indicatorH / 2),
+                        // No stroke on the selected-tab drop (per spec).
                       ),
-                    );
-                  },
-                ),
+                    ),
+                  );
+                },
+              ),
 
-                // ── Tab icons ──
-                Positioned.fill(
-                  child: Row(
-                    children: [
-                      _NavTab(index: 0, icon: Icons.home_rounded, size: 34.sp),
-                      _NavTab(
-                        index: 1,
-                        icon: Icons.fitness_center_rounded,
-                        size: 34.sp,
-                      ),
-                      _NavTab(
-                        index: 2,
-                        icon: Icons.people_rounded,
-                        size: 38.sp,
-                      ),
-                    ],
-                  ),
+              // ── Tab icons ──
+              Positioned.fill(
+                child: Row(
+                  children: [
+                    _NavTab(index: 0, icon: Icons.home_rounded, size: 34.sp),
+                    _NavTab(
+                      index: 1,
+                      icon: Icons.fitness_center_rounded,
+                      size: 34.sp,
+                    ),
+                    _NavTab(
+                      index: 2,
+                      icon: Icons.people_rounded,
+                      size: 38.sp,
+                    ),
+                  ],
                 ),
-              ],
-            ),
+              ),
+            ],
           ),
         ),
       ),
@@ -187,9 +168,21 @@ class _NavTab extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final colors = AppColors.of(context);
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final isActive = ref.watch(navIndexProvider) == index;
+
+    // Neutral per the Figma: grey icons, white (dark) / near-black (light) when
+    // active. No accent colour in the nav.
+    final Color color;
+    if (isDark) {
+      color = isActive
+          ? Colors.white.withValues(alpha: 0.90) // #FFFFFF @ 90%
+          : const Color(0xFFC1C1C1).withValues(alpha: 0.90); // #C1C1C1 @ 90%
+    } else {
+      color = isActive
+          ? Colors.black.withValues(alpha: 0.90) // #000000 @ 90%
+          : const Color(0xFF666666).withValues(alpha: 0.90); // #666666 @ 90%
+    }
 
     return Expanded(
       child: GestureDetector(
@@ -204,13 +197,7 @@ class _NavTab extends ConsumerWidget {
                 icon,
                 key: ValueKey('$index-$isActive'),
                 size: size,
-                color: isActive
-                    ? colors.accent
-                    // Inactive icons: keep the soft grey on dark glass, but go
-                    // noticeably darker on the light pill for legibility.
-                    : (isDark
-                        ? colors.textSecondary
-                        : colors.textPrimary.withValues(alpha: 0.6)),
+                color: color,
               ),
             ),
           ),

@@ -28,7 +28,7 @@ When the user says **"make X glassy"** (or "glass", "glassify"), the look is **c
 The `oc_liquid_glass` shader look (iOS-26-ish refraction + specular). Use it for prominent, nav-like chrome (floating bars, hero buttons, the nav family) to match the bottom nav + active-workout chrome — or whenever the user asks for the "refractive / liquid / like-the-nav" look.
 
 - Widget: `lib/shared/widgets/refractive_glass.dart` (wraps `oc_liquid_glass`; settings matched to the nav).
-- Currently used by: the non-iOS bottom nav pill, and the active-workout chrome (menu button, both hint buttons, the Add Set bar).
+- Currently used by: the active-workout chrome (menu button, both hint buttons, the Add Set bar). (The non-iOS nav pill *was* refractive but is now **frosted**, rebuilt to a Figma spec — see the nav section.)
 - It's a Flutter fragment shader (not a platform view), so it's safe inside lists — unlike native glass.
 - `oc_liquid_glass` is retained **only** for this refractive look. Don't add it to new surfaces unless you're deliberately going refractive.
 
@@ -44,7 +44,7 @@ Real Apple Liquid Glass via `cupertino_native_better` (`CNTabBar`), **iOS only**
 | `OcGlassBtn` | frosted | typed icon button (close/done/save/share/delete/hint); `refractive: true` opt-in |
 | `RefractiveGlass` | refractive | the `oc_liquid_glass` primitive |
 | `GlassDecoration` | — | shared tint/shadow math used by the frosted widgets |
-| `BottomNavPill` | refractive | non-iOS bottom nav pill |
+| `BottomNavPill` | frosted | non-iOS bottom nav pill (built to the Figma neutral spec) |
 | `IosNativeNav` | native | iOS bottom tab bar (CNTabBar) |
 
 ### Glass rules
@@ -55,7 +55,7 @@ Real Apple Liquid Glass via `cupertino_native_better` (`CNTabBar`), **iOS only**
 ---
 
 ## 🧭 Bottom nav is platform-adaptive — don't break it
-`MyGymBroScaffold` (`lib/features/scaffold/`) branches on platform: **iOS → `IosNativeNav`** (native CNTabBar) as the `bottomNavigationBar`; **every other platform → `BottomNavPill`** (refractive) floating in a `Stack`. Both are driven by `navIndexProvider` (defined in `bottom_nav_pill.dart`). `CNTabBarRouteObserver` is registered in the GoRouter `observers` (`app_router.dart`) so the native iOS bar hides under bottom sheets — keep it registered.
+`MyGymBroScaffold` (`lib/features/scaffold/`) branches on platform: **iOS → `IosNativeNav`** (native CNTabBar) as the `bottomNavigationBar`; **every other platform → `BottomNavPill`** (frosted, built to the Figma spec) floating in a `Stack`. Both are driven by `navIndexProvider` (defined in `bottom_nav_pill.dart`). `CNTabBarRouteObserver` is registered in the GoRouter `observers` (`app_router.dart`) so the native iOS bar hides under bottom sheets — keep it registered.
 
 ---
 
