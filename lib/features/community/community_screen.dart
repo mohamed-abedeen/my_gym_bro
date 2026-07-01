@@ -1,5 +1,6 @@
 import 'dart:ui';
 
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -368,37 +369,41 @@ class _PostCard extends ConsumerWidget {
           ),
         ),
 
-        // Post image placeholder (full-width gym image — 297px per Figma)
-        Container(
+        // Post image — the post's photo when present, else a placeholder.
+        SizedBox(
           width: double.infinity,
           height: 297.h,
-          color: colors.avatarPlaceholderDarker,
-          child: Stack(
-            fit: StackFit.expand,
-            children: [
-              // Placeholder gradient simulating gym image
-              Container(
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                    colors: [
-                      colors.avatarPlaceholderDarker,
-                      colors.avatarPlaceholderDark,
-                      colors.avatarPlaceholderDarker,
-                    ],
+          child: post.imageUrl == null
+              ? DecoratedBox(
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                      colors: [
+                        colors.avatarPlaceholderDarker,
+                        colors.avatarPlaceholderDark,
+                        colors.avatarPlaceholderDarker,
+                      ],
+                    ),
                   ),
-                ),
-                child: Center(
-                  child: Icon(
-                    Icons.fitness_center,
-                    color: colors.textSecondary,
-                    size: 48.sp,
+                  child: Center(
+                    child: Icon(
+                      Icons.fitness_center,
+                      color: colors.textSecondary,
+                      size: 48.sp,
+                    ),
                   ),
-                ),
-              ),
-            ],
-          ),
+                )
+              : post.imageUrl!.startsWith('assets/')
+                  ? Image.asset(post.imageUrl!, fit: BoxFit.cover)
+                  : CachedNetworkImage(
+                      imageUrl: post.imageUrl!,
+                      fit: BoxFit.cover,
+                      placeholder: (_, __) =>
+                          ColoredBox(color: colors.avatarPlaceholderDarker),
+                      errorWidget: (_, __, ___) =>
+                          ColoredBox(color: colors.avatarPlaceholderDarker),
+                    ),
         ),
 
         SizedBox(height: 10.h),

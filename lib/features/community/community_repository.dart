@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'package:my_gym_bro/core/security/input_sanitiser.dart';
@@ -56,7 +57,11 @@ class SupabaseCommunityRepository implements CommunityRepository {
         .range(offset, offset + limit - 1);
 
     final list = (rows as List).cast<Map<String, dynamic>>();
-    if (list.isEmpty) return const [];
+    // Debug-only: show the sample posts when the real feed is empty so the
+    // community tab isn't blank while testing. Real (release) builds stay empty.
+    if (list.isEmpty) {
+      return kDebugMode ? CommunityMockData.posts : const [];
+    }
 
     // Author display info (one batched query against the safe profile view).
     final userIds = list.map((r) => r['user_id'] as String).toSet().toList();

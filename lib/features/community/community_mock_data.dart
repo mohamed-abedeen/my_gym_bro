@@ -4,11 +4,14 @@ export 'package:my_gym_bro/features/community/community_models.dart';
 
 import 'package:my_gym_bro/features/community/community_models.dart';
 
-/// Sample posts shown when Supabase is unavailable (offline / not configured).
+/// Sample posts shown when Supabase is unavailable (offline / not configured),
+/// and — in debug builds — when the real feed is empty. Images are bundled test
+/// assets under `assets/images/` (replace for production).
 abstract final class CommunityMockData {
   static const List<CommunityPost> posts = [
     CommunityPost(
       authorName: 'Aziz Rhuma',
+      imageUrl: 'assets/images/sample_post_1.jpg',
       likeCount: 10000,
       commentCount: 324,
       description:
@@ -23,6 +26,7 @@ abstract final class CommunityMockData {
     ),
     CommunityPost(
       authorName: 'Omar',
+      imageUrl: 'assets/images/sample_post_2.jpg',
       likeCount: 5200,
       commentCount: 142,
       description:
@@ -31,6 +35,19 @@ abstract final class CommunityMockData {
       topComments: [
         CommunityComment('Aziz', "Let's go champ!"),
         CommunityComment('Khaled', 'Consistency is everything 🔥'),
+      ],
+    ),
+    CommunityPost(
+      authorName: 'Lina',
+      imageUrl: 'assets/images/sample_post_3.jpg',
+      likeCount: 2870,
+      commentCount: 89,
+      description:
+          'Color and energy — good vibes carry the session. Show up, lift, '
+          'repeat.',
+      topComments: [
+        CommunityComment('Sara', 'Love the energy 🌈'),
+        CommunityComment('Yousef', 'Vibes on point!'),
       ],
     ),
   ];
