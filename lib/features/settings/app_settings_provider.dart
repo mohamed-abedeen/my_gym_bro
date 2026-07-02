@@ -49,6 +49,15 @@ final restTimerSoundEnabledProvider =
   ),
 );
 
+/// Whether the rest-timer vibrates when it completes.
+final restTimerVibrationEnabledProvider =
+    StateNotifierProvider<_BoolPrefNotifier, bool>(
+  (ref) => _BoolPrefNotifier(
+    key: 'setting_rest_timer_vibration_enabled',
+    defaultValue: true,
+  ),
+);
+
 /// Whether to receive push notifications for community activity.
 final communityNotificationsEnabledProvider =
     StateNotifierProvider<_BoolPrefNotifier, bool>(

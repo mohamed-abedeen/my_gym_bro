@@ -1111,4 +1111,61 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String get noChallengesYet => 'Aucun défi actif';
+
+  @override
+  String get settingsSectionAppearance => 'Apparence';
+
+  @override
+  String get settingsSectionWorkout => 'Entraînement';
+
+  @override
+  String get settingsSectionGeneral => 'Général';
+
+  @override
+  String get settingsSectionData => 'Données et compte';
+
+  @override
+  String get skins => 'Skins';
+
+  @override
+  String get anatomyModel => 'Modèle anatomique';
+
+  @override
+  String get male => 'Homme';
+
+  @override
+  String get female => 'Femme';
+
+  @override
+  String get restTimerVibration => 'Vibration du minuteur de repos';
+
+  @override
+  String get signOut => 'Se déconnecter';
+
+  @override
+  String get signOutConfirm => 'Se déconnecter de votre compte ? Vos données locales restent sur cet appareil.';
+
+  @override
+  String get cacheCleared => 'Cache vidé';
+
+  @override
+  String get cacheClearFailed => 'Impossible de vider le cache';
+
+  @override
+  String get couldNotOpenLink => 'Impossible d\'ouvrir le lien';
+
+  @override
+  String get exportComingSoon => 'Export bientôt disponible';
+
+  @override
+  String get deleteAccountFailed => 'Impossible de supprimer le compte. Veuillez réessayer.';
+
+  @override
+  String get planPremium => 'Premium';
+
+  @override
+  String get trainingReminderBody => 'Garde ta série. On va s\'entraîner.';
+
+  @override
+  String get languageSystem => 'Système';
 }

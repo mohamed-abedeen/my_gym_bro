@@ -472,5 +472,24 @@
     }
   },
   "leagueMasterTitle": "Master",
-  "noChallengesYet": "No active challenges yet"
+  "noChallengesYet": "No active challenges yet",
+  "settingsSectionAppearance": "Appearance",
+  "settingsSectionWorkout": "Workout",
+  "settingsSectionGeneral": "General",
+  "settingsSectionData": "Data & Account",
+  "skins": "Skins",
+  "anatomyModel": "Anatomy Model",
+  "male": "Male",
+  "female": "Female",
+  "restTimerVibration": "Rest timer vibration",
+  "signOut": "Sign Out",
+  "signOutConfirm": "Sign out of your account? Your local data stays on this device.",
+  "cacheCleared": "Cache cleared",
+  "cacheClearFailed": "Failed to clear cache",
+  "couldNotOpenLink": "Could not open link",
+  "exportComingSoon": "Export coming soon",
+  "deleteAccountFailed": "Could not delete account. Please try again.",
+  "planPremium": "Premium",
+  "trainingReminderBody": "Keep your streak going. Let's train.",
+  "languageSystem": "System"
 }

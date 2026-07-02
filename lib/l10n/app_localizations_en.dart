@@ -1105,4 +1105,61 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get noChallengesYet => 'No active challenges yet';
+
+  @override
+  String get settingsSectionAppearance => 'Appearance';
+
+  @override
+  String get settingsSectionWorkout => 'Workout';
+
+  @override
+  String get settingsSectionGeneral => 'General';
+
+  @override
+  String get settingsSectionData => 'Data & Account';
+
+  @override
+  String get skins => 'Skins';
+
+  @override
+  String get anatomyModel => 'Anatomy Model';
+
+  @override
+  String get male => 'Male';
+
+  @override
+  String get female => 'Female';
+
+  @override
+  String get restTimerVibration => 'Rest timer vibration';
+
+  @override
+  String get signOut => 'Sign Out';
+
+  @override
+  String get signOutConfirm => 'Sign out of your account? Your local data stays on this device.';
+
+  @override
+  String get cacheCleared => 'Cache cleared';
+
+  @override
+  String get cacheClearFailed => 'Failed to clear cache';
+
+  @override
+  String get couldNotOpenLink => 'Could not open link';
+
+  @override
+  String get exportComingSoon => 'Export coming soon';
+
+  @override
+  String get deleteAccountFailed => 'Could not delete account. Please try again.';
+
+  @override
+  String get planPremium => 'Premium';
+
+  @override
+  String get trainingReminderBody => 'Keep your streak going. Let\'s train.';
+
+  @override
+  String get languageSystem => 'System';
 }

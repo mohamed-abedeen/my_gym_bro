@@ -10,6 +10,7 @@ import 'package:my_gym_bro/core/services/notification_image_cache.dart';
 import 'package:my_gym_bro/core/services/notification_service.dart';
 import 'package:my_gym_bro/core/services/notification_tone.dart';
 import 'package:my_gym_bro/core/services/widget_sync_service.dart';
+import 'package:my_gym_bro/features/settings/app_settings_provider.dart';
 import 'package:my_gym_bro/features/workout/active_session/rest_timer_service.dart';
 import 'package:my_gym_bro/features/workout/workout_log_repository.dart';
 import 'package:my_gym_bro/features/workout/workout_providers.dart';
@@ -217,6 +218,8 @@ class ActiveSessionNotifier extends StateNotifier<ActiveSessionState> {
     ExerciseRepository? exerciseRepository,
     int defaultRestSeconds = 90,
     String weightUnit = 'kg',
+    bool restSoundEnabled = true,
+    bool restVibrationEnabled = true,
     String restNotificationTitle = 'Rest complete!',
     String restNotificationBody = 'Time to start your next set.',
     Future<int> Function()? getStreak,
@@ -224,6 +227,8 @@ class ActiveSessionNotifier extends StateNotifier<ActiveSessionState> {
         _exerciseRepo = exerciseRepository,
         _defaultRestSeconds = defaultRestSeconds,
         _weightUnit = weightUnit,
+        _restSoundEnabled = restSoundEnabled,
+        _restVibrationEnabled = restVibrationEnabled,
         _restNotificationTitle = restNotificationTitle,
         _restNotificationBody = restNotificationBody,
         _getStreak = getStreak,
@@ -247,6 +252,8 @@ class ActiveSessionNotifier extends StateNotifier<ActiveSessionState> {
 
   int _defaultRestSeconds;
   String _weightUnit;
+  bool _restSoundEnabled;
+  bool _restVibrationEnabled;
   String _restNotificationTitle;
   String _restNotificationBody;
   String _workoutReminderTitle = 'Workout day';
@@ -343,6 +350,7 @@ class ActiveSessionNotifier extends StateNotifier<ActiveSessionState> {
       total: saved.total,
       onComplete: _onRestComplete,
       soundEnabled: saved.soundEnabled,
+      vibrationEnabled: saved.vibrationEnabled,
       notificationTitle: saved.title,
       notificationBody: saved.body,
     );
@@ -950,6 +958,8 @@ class ActiveSessionNotifier extends StateNotifier<ActiveSessionState> {
     restTimerService.start(
       seconds: _defaultRestSeconds,
       onComplete: _onRestComplete,
+      soundEnabled: _restSoundEnabled,
+      vibrationEnabled: _restVibrationEnabled,
       notificationTitle: _restNotificationTitle,
       notificationBody: _restNotificationBody,
     );
@@ -1157,9 +1167,18 @@ class ActiveSessionNotifier extends StateNotifier<ActiveSessionState> {
     return sets;
   }
 
-  void updateSettings({int? restSeconds, String? weightUnit}) {
+  void updateSettings({
+    int? restSeconds,
+    String? weightUnit,
+    bool? restSoundEnabled,
+    bool? restVibrationEnabled,
+  }) {
     if (restSeconds != null) _defaultRestSeconds = restSeconds;
     if (weightUnit != null) _weightUnit = weightUnit;
+    if (restSoundEnabled != null) _restSoundEnabled = restSoundEnabled;
+    if (restVibrationEnabled != null) {
+      _restVibrationEnabled = restVibrationEnabled;
+    }
   }
 
   String get weightUnit => _weightUnit;
@@ -1285,6 +1304,8 @@ final activeSessionProvider =
     exerciseRepository: ref.read(exerciseRepositoryProvider),
     defaultRestSeconds: profile?.defaultRestSeconds ?? 90,
     weightUnit: profile?.weightUnit ?? 'kg',
+    restSoundEnabled: ref.read(restTimerSoundEnabledProvider),
+    restVibrationEnabled: ref.read(restTimerVibrationEnabledProvider),
     getStreak: () {
       // Invalidate the cached streak so the just-finished session counts,
       // then read the fresh value.
@@ -1303,6 +1324,15 @@ final activeSessionProvider =
       );
     }
   });
+
+  // Keep the rest-timer sound/vibration toggles in sync mid-session.
+  ref
+    ..listen(restTimerSoundEnabledProvider, (_, enabled) {
+      notifier.updateSettings(restSoundEnabled: enabled);
+    })
+    ..listen(restTimerVibrationEnabledProvider, (_, enabled) {
+      notifier.updateSettings(restVibrationEnabled: enabled);
+    });
 
   return notifier;
 });
