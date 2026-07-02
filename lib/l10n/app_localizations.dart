@@ -1080,6 +1080,12 @@ abstract class AppLocalizations {
   /// **'Weekly Streak'**
   String get weeklyStreak;
 
+  /// No description provided for @leaderboardEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'No rankings yet. Finish a workout to enter this week\'s board.'**
+  String get leaderboardEmpty;
+
   /// No description provided for @setsThisWeekCount.
   ///
   /// In en, this message translates to:

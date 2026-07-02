@@ -519,6 +519,10 @@ class AppLocalizationsEs extends AppLocalizations {
   String get weeklyStreak => 'Racha semanal';
 
   @override
+  String get leaderboardEmpty =>
+      'Aún no hay clasificación. Termina un entrenamiento para entrar en la tabla de esta semana.';
+
+  @override
   String setsThisWeekCount(int count) {
     String _temp0 = intl.Intl.pluralLogic(
       count,

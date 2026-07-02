@@ -522,6 +522,10 @@ class AppLocalizationsFr extends AppLocalizations {
   String get weeklyStreak => 'Série hebdomadaire';
 
   @override
+  String get leaderboardEmpty =>
+      'Pas encore de classement. Termine une séance pour entrer dans le tableau de la semaine.';
+
+  @override
   String setsThisWeekCount(int count) {
     String _temp0 = intl.Intl.pluralLogic(
       count,

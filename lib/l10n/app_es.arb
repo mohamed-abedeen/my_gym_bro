@@ -169,6 +169,7 @@
   "thisWeek": "Esta semana",
   "thisMonth": "Este mes",
   "weeklyStreak": "Racha semanal",
+  "leaderboardEmpty": "Aún no hay clasificación. Termina un entrenamiento para entrar en la tabla de esta semana.",
   "setsThisWeekCount": "{count, plural, =1{1 serie esta semana} other{{count} series esta semana}}",
   "@setsThisWeekCount": {
     "placeholders": {

@@ -169,6 +169,7 @@
   "thisWeek": "Cette semaine",
   "thisMonth": "Ce mois-ci",
   "weeklyStreak": "Série hebdomadaire",
+  "leaderboardEmpty": "Pas encore de classement. Termine une séance pour entrer dans le tableau de la semaine.",
   "setsThisWeekCount": "{count, plural, =1{1 série cette semaine} other{{count} séries cette semaine}}",
   "@setsThisWeekCount": {
     "placeholders": {

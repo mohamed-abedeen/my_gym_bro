@@ -150,6 +150,20 @@ skin_ownership (
 - `user_profiles.active_skin_id` stores the selected skin.
 
 ### 3.4 Leaderboard (server-computed)
+
+> **Status (008_leaderboard.sql — shipped):** `leaderboard_scores` exists with
+> raw + normalised components, computed by the SQL function
+> `compute_leaderboard_scores()` (called from the `compute-leaderboard` edge
+> function on a cron). RPCs `leaderboard_global` / `leaderboard_friends` /
+> `leaderboard_rivals` serve the three scopes. Deviations from the plan below:
+> challenge points are 0 until the challenges backend ships (composite averages
+> streak+volume only); Rivals is a read-time ±5 window around the caller's
+> global rank instead of stored pods (§3.4a can replace it later without
+> changing the RPC shape); `season_winners` / finalize job not yet built.
+> Anti-cheat: volume is recomputed server-side from `sets` with per-set
+> plausibility caps (≤500 kg, ≤60 reps, ≤6000 kg·reps) — the client-reported
+> session total is never trusted.
+
 Leaderboard is **derived**, not a hand-edited table. Recommended:
 ```
 leaderboard_scores (          -- materialized per user per board, current season

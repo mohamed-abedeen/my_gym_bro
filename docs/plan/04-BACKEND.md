@@ -38,6 +38,17 @@ The app does **not** call custom CRUD endpoints — it uses the Supabase SDK aga
 ## 3. New / Modified Edge Functions *(to build)*
 
 ### 3.1 `compute-leaderboard` (scheduled)
+
+> **Status: shipped** (`supabase/functions/compute-leaderboard` +
+> `migrations/008_leaderboard.sql`). The function authenticates via the
+> `x-cron-secret` header (CRON_SECRET project secret) and delegates to the
+> `compute_leaderboard_scores()` SQL function so all three boards recompute in
+> one transaction. Current deviations: points component is 0 (challenges
+> backend pending) so composite = avg(streak_norm, volume_norm); Rivals is a
+> read-time rank-window RPC instead of pods; finalize-season not built yet.
+> Client wiring: `lib/features/leaderboard/leaderboard_providers.dart` (weekly
+> board), offline-safe (empty list without Supabase/auth).
+
 Computes `leaderboard_scores` for all three boards.
 
 **Scoring contract — composite = average of three normalized components:**

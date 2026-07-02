@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:my_gym_bro/features/leaderboard/leaderboard_providers.dart';
 import 'package:my_gym_bro/l10n/app_localizations.dart';
 import 'package:my_gym_bro/shared/constants.dart';
 import 'package:my_gym_bro/shared/responsive.dart';
@@ -8,19 +10,19 @@ import 'package:my_gym_bro/shared/widgets/user_avatar.dart';
 ///
 /// Implements the three Figma frames "iPhone 16 & 17 Pro Max - 57 / 101 / 102":
 ///  • Leaderboard tab — Current League card, scope (Rivals/Global/Friends),
-///    and a ranked list of 6 rows with tier colours.
+///    and a server-ranked list with tier colours (weekly board via the
+///    `leaderboard_*` RPCs; offline/empty states handled).
 ///  • Challenges tab — vertically stacked challenge cards with hero photo,
-///    progress bar, rank, and an "End in Nd" badge.
-class LeaderboardScreen extends StatefulWidget {
+///    progress bar, rank, and an "End in Nd" badge (mock until the
+///    challenges backend ships).
+class LeaderboardScreen extends ConsumerStatefulWidget {
   const LeaderboardScreen({super.key});
 
   @override
-  State<LeaderboardScreen> createState() => _LeaderboardScreenState();
+  ConsumerState<LeaderboardScreen> createState() => _LeaderboardScreenState();
 }
 
 enum _Tab { leaderboard, challenges }
-
-enum _Scope { rivals, global, friends }
 
 class _Row {
   const _Row({
@@ -28,6 +30,7 @@ class _Row {
     required this.name,
     required this.volume,
     required this.tier,
+    this.avatarUrl,
     this.isMe = false,
   });
 
@@ -35,10 +38,21 @@ class _Row {
   final String name;
   final int volume;
   final _Tier tier;
+  final String? avatarUrl;
   final bool isMe;
 }
 
 enum _Tier { elite, master, standing, movingUp, workHarder }
+
+/// Tier from a row's rank within the visible board: podium ranks get the
+/// medal tiers, the upper half is "moving up", the rest "work harder".
+_Tier _tierForRank(int rank, int total) {
+  if (rank == 1) return _Tier.elite;
+  if (rank == 2) return _Tier.master;
+  if (rank == 3) return _Tier.standing;
+  if (total > 0 && rank <= (total / 2).ceil()) return _Tier.movingUp;
+  return _Tier.workHarder;
+}
 
 class _Challenge {
   const _Challenge({
@@ -54,25 +68,9 @@ class _Challenge {
   final int daysLeft;
 }
 
-class _LeaderboardScreenState extends State<LeaderboardScreen> {
+class _LeaderboardScreenState extends ConsumerState<LeaderboardScreen> {
   _Tab _tab = _Tab.leaderboard;
-  _Scope _scope = _Scope.rivals;
-
-  // Mock data — replace with Riverpod provider once backend is wired.
-  static const _rows = <_Row>[
-    _Row(rank: 1, name: 'Mo Abideen', volume: 30000, tier: _Tier.elite),
-    _Row(rank: 2, name: 'Mo Abideen', volume: 30000, tier: _Tier.master),
-    _Row(rank: 3, name: 'Mo Abideen', volume: 30000, tier: _Tier.standing),
-    _Row(rank: 4, name: 'Mo Abideen', volume: 30000, tier: _Tier.movingUp),
-    _Row(
-      rank: 5,
-      name: 'Mo Abideen',
-      volume: 30000,
-      tier: _Tier.workHarder,
-      isMe: true,
-    ),
-    _Row(rank: 6, name: 'Mo Abideen', volume: 30000, tier: _Tier.workHarder),
-  ];
+  LeaderboardScope _scope = LeaderboardScope.rivals;
 
   static const _challenges = <_Challenge>[
     _Challenge(title: '1000 push up', percent: 30, rank: 20, daysLeft: 25),
@@ -124,7 +122,6 @@ class _LeaderboardScreenState extends State<LeaderboardScreen> {
                 Expanded(
                   child: _tab == _Tab.leaderboard
                       ? _LeaderboardTab(
-                          rows: _rows,
                           scope: _scope,
                           onScope: (s) => setState(() => _scope = s),
                           l10n: l10n,
@@ -250,37 +247,102 @@ class _TopPill extends StatelessWidget {
 // L E A D E R B O A R D   T A B
 // ─────────────────────────────────────────────
 
-class _LeaderboardTab extends StatelessWidget {
+class _LeaderboardTab extends ConsumerWidget {
   const _LeaderboardTab({
-    required this.rows,
     required this.scope,
     required this.onScope,
     required this.l10n,
   });
 
-  final List<_Row> rows;
-  final _Scope scope;
-  final ValueChanged<_Scope> onScope;
+  final LeaderboardScope scope;
+  final ValueChanged<LeaderboardScope> onScope;
   final AppLocalizations l10n;
 
   @override
-  Widget build(BuildContext context) {
-    final me = rows.firstWhere(
-      (r) => r.isMe,
-      orElse: () => rows.first,
-    );
+  Widget build(BuildContext context, WidgetRef ref) {
+    final colors = AppColors.of(context);
+    final entries = ref.watch(leaderboardProvider(scope));
 
     return ListView(
       padding: EdgeInsets.fromLTRB(10.w, 0, 10.w, 24.h),
       children: [
-        _CurrentLeagueCard(myPlace: me.rank, l10n: l10n),
+        _CurrentLeagueCard(
+          me: entries.valueOrNull
+              ?.where((e) => e.isMe)
+              .cast<LeaderboardEntry?>()
+              .firstWhere((_) => true, orElse: () => null),
+          total: entries.valueOrNull?.length ?? 0,
+          l10n: l10n,
+        ),
         SizedBox(height: 18.h),
         _ScopeSelector(scope: scope, onChange: onScope, l10n: l10n),
         SizedBox(height: 18.h),
-        for (var i = 0; i < rows.length; i++) ...[
-          _LeaderboardRow(row: rows[i], l10n: l10n),
-          if (i < rows.length - 1) SizedBox(height: 10.h),
-        ],
+        ...entries.when(
+          data: (list) {
+            if (list.isEmpty) {
+              return [
+                Padding(
+                  padding: EdgeInsets.symmetric(
+                    horizontal: 20.w,
+                    vertical: 40.h,
+                  ),
+                  child: Text(
+                    l10n.leaderboardEmpty,
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      color: colors.textSecondary,
+                      fontSize: 14.sp,
+                    ),
+                  ),
+                ),
+              ];
+            }
+            final rows = [
+              for (final e in list)
+                _Row(
+                  rank: e.rank,
+                  name: e.name,
+                  volume: e.volume.round(),
+                  tier: _tierForRank(e.rank, list.length),
+                  avatarUrl: e.avatarUrl,
+                  isMe: e.isMe,
+                ),
+            ];
+            return [
+              for (var i = 0; i < rows.length; i++) ...[
+                _LeaderboardRow(row: rows[i], l10n: l10n),
+                if (i < rows.length - 1) SizedBox(height: 10.h),
+              ],
+            ];
+          },
+          loading: () => [
+            Padding(
+              padding: EdgeInsets.symmetric(vertical: 60.h),
+              child: Center(
+                child: CircularProgressIndicator(
+                  color: colors.accent,
+                  strokeWidth: 2.w,
+                ),
+              ),
+            ),
+          ],
+          error: (_, __) => [
+            Padding(
+              padding: EdgeInsets.symmetric(
+                horizontal: 20.w,
+                vertical: 40.h,
+              ),
+              child: Text(
+                l10n.leaderboardEmpty,
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  color: colors.textSecondary,
+                  fontSize: 14.sp,
+                ),
+              ),
+            ),
+          ],
+        ),
       ],
     );
   }
@@ -289,14 +351,21 @@ class _LeaderboardTab extends StatelessWidget {
 // ── Current League card — 419x194, radius 36 ──
 
 class _CurrentLeagueCard extends StatelessWidget {
-  const _CurrentLeagueCard({required this.myPlace, required this.l10n});
+  const _CurrentLeagueCard({
+    required this.me,
+    required this.total,
+    required this.l10n,
+  });
 
-  final int myPlace;
+  /// The caller's own row on the current board, when loaded and present.
+  final LeaderboardEntry? me;
+  final int total;
   final AppLocalizations l10n;
 
   @override
   Widget build(BuildContext context) {
     final colors = AppColors.of(context);
+    final tier = me == null ? null : _tierForRank(me!.rank, total);
 
     return Container(
       height: 194.h,
@@ -334,7 +403,9 @@ class _CurrentLeagueCard extends StatelessWidget {
                 ),
                 SizedBox(height: 4.h),
                 Text(
-                  l10n.leagueMasterTitle,
+                  tier == null
+                      ? l10n.leagueMasterTitle
+                      : _LeaderboardRow._tierLabel(tier, l10n),
                   style: TextStyle(
                     color: colors.textPrimary,
                     fontSize: 24.sp,
@@ -354,7 +425,7 @@ class _CurrentLeagueCard extends StatelessWidget {
                 Row(
                   children: [
                     Text(
-                      l10n.placeNumber(myPlace),
+                      me == null ? '—' : l10n.placeNumber(me!.rank),
                       style: TextStyle(
                         color: colors.textPrimary,
                         fontSize: 16.sp,
@@ -390,17 +461,17 @@ class _ScopeSelector extends StatelessWidget {
     required this.l10n,
   });
 
-  final _Scope scope;
-  final ValueChanged<_Scope> onChange;
+  final LeaderboardScope scope;
+  final ValueChanged<LeaderboardScope> onChange;
   final AppLocalizations l10n;
 
   @override
   Widget build(BuildContext context) {
     final colors = AppColors.of(context);
-    final labels = <_Scope, String>{
-      _Scope.rivals: l10n.scopeRivals,
-      _Scope.global: l10n.scopeGlobal,
-      _Scope.friends: l10n.scopeFriends,
+    final labels = <LeaderboardScope, String>{
+      LeaderboardScope.rivals: l10n.scopeRivals,
+      LeaderboardScope.global: l10n.scopeGlobal,
+      LeaderboardScope.friends: l10n.scopeFriends,
     };
 
     return Container(
@@ -411,7 +482,7 @@ class _ScopeSelector extends StatelessWidget {
         borderRadius: BorderRadius.circular(39.5.r),
       ),
       child: Row(
-        children: _Scope.values.map((s) {
+        children: LeaderboardScope.values.map((s) {
           final active = scope == s;
           return Expanded(
             child: GestureDetector(
@@ -484,7 +555,11 @@ class _LeaderboardRow extends StatelessWidget {
             ),
             SizedBox(width: 6.w),
             // Avatar with optional tier ring (for top 3)
-            _AvatarMedal(tier: row.tier, isMe: row.isMe),
+            _AvatarMedal(
+              tier: row.tier,
+              isMe: row.isMe,
+              avatarUrl: row.avatarUrl,
+            ),
             SizedBox(width: 11.w),
             // Name + tier sublabel
             Expanded(
@@ -616,10 +691,15 @@ _TierPalette _tierPalette(_Tier t, AppColorsTheme colors) => switch (t) {
 // ── Avatar with medal ring for top 3 ──
 
 class _AvatarMedal extends StatelessWidget {
-  const _AvatarMedal({required this.tier, required this.isMe});
+  const _AvatarMedal({
+    required this.tier,
+    required this.isMe,
+    this.avatarUrl,
+  });
 
   final _Tier tier;
   final bool isMe;
+  final String? avatarUrl;
 
   @override
   Widget build(BuildContext context) {
@@ -654,6 +734,7 @@ class _AvatarMedal extends StatelessWidget {
               width: innerSize,
               height: innerSize,
               child: UserAvatar(
+                url: avatarUrl,
                 size: innerSize,
                 iconColor: isMe
                     ? colors.todayPillText

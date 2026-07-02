@@ -204,6 +204,7 @@
   "thisWeek": "This Week",
   "thisMonth": "This Month",
   "weeklyStreak": "Weekly Streak",
+  "leaderboardEmpty": "No rankings yet. Finish a workout to enter this week's board.",
   "setsThisWeekCount": "{count, plural, =1{1 set this week} other{{count} sets this week}}",
   "@setsThisWeekCount": {
     "placeholders": {

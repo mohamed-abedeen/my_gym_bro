@@ -169,6 +169,7 @@
   "thisWeek": "Diese Woche",
   "thisMonth": "Dieser Monat",
   "weeklyStreak": "Wochen-Serie",
+  "leaderboardEmpty": "Noch keine Platzierungen. Schließe ein Workout ab, um in die Wochenwertung zu kommen.",
   "setsThisWeekCount": "{count, plural, =1{1 Satz diese Woche} other{{count} Sätze diese Woche}}",
   "@setsThisWeekCount": {
     "placeholders": {
