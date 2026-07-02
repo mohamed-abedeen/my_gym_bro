@@ -1,5 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:my_gym_bro/core/providers/providers.dart';
+import 'package:my_gym_bro/core/security/secure_storage.dart';
 import 'package:my_gym_bro/shared/widgets/anatomy_body.dart';
 
 // ── Default base PNGs (already in assets/anatomy/) ──
@@ -125,8 +126,32 @@ const availableSkins = <Skin>[
   ),
 ];
 
-/// Currently selected skin id.
-final selectedSkinProvider = StateProvider<String>((ref) => 'default');
+/// Currently selected skin id. Persisted via SecureStorage so the choice
+/// survives app restarts (it used to silently reset to the default skin).
+class SelectedSkinNotifier extends StateNotifier<String> {
+  SelectedSkinNotifier() : super('default') {
+    _load();
+  }
+
+  static const _key = 'setting_selected_skin';
+
+  Future<void> _load() async {
+    final raw = await SecureStorage().read(_key);
+    if (raw != null && mounted && availableSkins.any((s) => s.id == raw)) {
+      state = raw;
+    }
+  }
+
+  Future<void> select(String id) async {
+    state = id;
+    await SecureStorage().write(_key, id);
+  }
+}
+
+final selectedSkinProvider =
+    StateNotifierProvider<SelectedSkinNotifier, String>(
+  (ref) => SelectedSkinNotifier(),
+);
 
 /// Resolves to the correct base-PNG asset path for the active skin,
 /// reacting to both [selectedSkinProvider] and [anatomyGenderProvider].

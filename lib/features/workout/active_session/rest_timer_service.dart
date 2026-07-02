@@ -20,6 +20,7 @@ class RestTimerService {
   int _remaining = 0;
   int _total = 0;
   bool _soundEnabled = true;
+  bool _vibrationEnabled = true;
   VoidCallback? _onComplete;
   String _notificationTitle = 'Rest Complete!';
   String _notificationBody = 'Time to hit the next set!';
@@ -58,6 +59,7 @@ class RestTimerService {
             .toIso8601String(),
         'total': _total,
         'soundEnabled': _soundEnabled,
+        'vibrationEnabled': _vibrationEnabled,
         'notificationTitle': _notificationTitle,
         'notificationBody': _notificationBody,
       };
@@ -81,8 +83,15 @@ class RestTimerService {
   ///
   /// Returns the remaining seconds if a valid, non-expired timer was found,
   /// along with the persisted total. Returns `null` if nothing to restore.
-  static Future<({int remaining, int total, bool soundEnabled, String title, String body})?>
-      loadPersistedState() async {
+  static Future<
+      ({
+        int remaining,
+        int total,
+        bool soundEnabled,
+        bool vibrationEnabled,
+        String title,
+        String body,
+      })?> loadPersistedState() async {
     try {
       final file = await _stateFile();
       if (!file.existsSync()) return null;
@@ -91,6 +100,7 @@ class RestTimerService {
       final deadline = DateTime.parse(json['deadline'] as String);
       final total = json['total'] as int;
       final soundEnabled = json['soundEnabled'] as bool? ?? true;
+      final vibrationEnabled = json['vibrationEnabled'] as bool? ?? true;
       final title = json['notificationTitle'] as String? ?? 'Rest Complete!';
       final body = json['notificationBody'] as String? ?? 'Time to hit the next set!';
 
@@ -105,6 +115,7 @@ class RestTimerService {
         remaining: remaining,
         total: total,
         soundEnabled: soundEnabled,
+        vibrationEnabled: vibrationEnabled,
         title: title,
         body: body,
       );
@@ -120,6 +131,7 @@ class RestTimerService {
     required int seconds,
     required VoidCallback onComplete,
     bool soundEnabled = true,
+    bool vibrationEnabled = true,
     String? notificationTitle,
     String? notificationBody,
   }) {
@@ -127,6 +139,7 @@ class RestTimerService {
     _remaining = seconds;
     _total = seconds;
     _soundEnabled = soundEnabled;
+    _vibrationEnabled = vibrationEnabled;
     _onComplete = onComplete;
     if (notificationTitle != null) _notificationTitle = notificationTitle;
     if (notificationBody != null) _notificationBody = notificationBody;
@@ -151,6 +164,7 @@ class RestTimerService {
     required int total,
     required VoidCallback onComplete,
     bool soundEnabled = true,
+    bool vibrationEnabled = true,
     String? notificationTitle,
     String? notificationBody,
   }) {
@@ -158,6 +172,7 @@ class RestTimerService {
     _remaining = remaining;
     _total = total;
     _soundEnabled = soundEnabled;
+    _vibrationEnabled = vibrationEnabled;
     _onComplete = onComplete;
     if (notificationTitle != null) _notificationTitle = notificationTitle;
     if (notificationBody != null) _notificationBody = notificationBody;
@@ -197,8 +212,10 @@ class RestTimerService {
     // Clean up persisted state — timer is done.
     unawaited(_clearPersistedState());
 
-    // Vibrate
-    Vibration.vibrate(pattern: [0, 200, 100, 500, 100, 200]);
+    // Vibrate — gated by the settings toggle.
+    if (_vibrationEnabled) {
+      Vibration.vibrate(pattern: [0, 200, 100, 500, 100, 200]);
+    }
 
     // Sound — use audio ducking so background music is lowered, not stopped.
     if (_soundEnabled) {

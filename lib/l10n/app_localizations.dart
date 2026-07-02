@@ -2123,6 +2123,120 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'No active challenges yet'**
   String get noChallengesYet;
+
+  /// No description provided for @settingsSectionAppearance.
+  ///
+  /// In en, this message translates to:
+  /// **'Appearance'**
+  String get settingsSectionAppearance;
+
+  /// No description provided for @settingsSectionWorkout.
+  ///
+  /// In en, this message translates to:
+  /// **'Workout'**
+  String get settingsSectionWorkout;
+
+  /// No description provided for @settingsSectionGeneral.
+  ///
+  /// In en, this message translates to:
+  /// **'General'**
+  String get settingsSectionGeneral;
+
+  /// No description provided for @settingsSectionData.
+  ///
+  /// In en, this message translates to:
+  /// **'Data & Account'**
+  String get settingsSectionData;
+
+  /// No description provided for @skins.
+  ///
+  /// In en, this message translates to:
+  /// **'Skins'**
+  String get skins;
+
+  /// No description provided for @anatomyModel.
+  ///
+  /// In en, this message translates to:
+  /// **'Anatomy Model'**
+  String get anatomyModel;
+
+  /// No description provided for @male.
+  ///
+  /// In en, this message translates to:
+  /// **'Male'**
+  String get male;
+
+  /// No description provided for @female.
+  ///
+  /// In en, this message translates to:
+  /// **'Female'**
+  String get female;
+
+  /// No description provided for @restTimerVibration.
+  ///
+  /// In en, this message translates to:
+  /// **'Rest timer vibration'**
+  String get restTimerVibration;
+
+  /// No description provided for @signOut.
+  ///
+  /// In en, this message translates to:
+  /// **'Sign Out'**
+  String get signOut;
+
+  /// No description provided for @signOutConfirm.
+  ///
+  /// In en, this message translates to:
+  /// **'Sign out of your account? Your local data stays on this device.'**
+  String get signOutConfirm;
+
+  /// No description provided for @cacheCleared.
+  ///
+  /// In en, this message translates to:
+  /// **'Cache cleared'**
+  String get cacheCleared;
+
+  /// No description provided for @cacheClearFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to clear cache'**
+  String get cacheClearFailed;
+
+  /// No description provided for @couldNotOpenLink.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not open link'**
+  String get couldNotOpenLink;
+
+  /// No description provided for @exportComingSoon.
+  ///
+  /// In en, this message translates to:
+  /// **'Export coming soon'**
+  String get exportComingSoon;
+
+  /// No description provided for @deleteAccountFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not delete account. Please try again.'**
+  String get deleteAccountFailed;
+
+  /// No description provided for @planPremium.
+  ///
+  /// In en, this message translates to:
+  /// **'Premium'**
+  String get planPremium;
+
+  /// No description provided for @trainingReminderBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Keep your streak going. Let\'s train.'**
+  String get trainingReminderBody;
+
+  /// No description provided for @languageSystem.
+  ///
+  /// In en, this message translates to:
+  /// **'System'**
+  String get languageSystem;
 }
 
 class _AppLocalizationsDelegate

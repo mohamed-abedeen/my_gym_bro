@@ -336,5 +336,24 @@
     "placeholders": {
       "days": { "type": "int" }
     }
-  }
+  },
+  "settingsSectionAppearance": "Apparence",
+  "settingsSectionWorkout": "Entraînement",
+  "settingsSectionGeneral": "Général",
+  "settingsSectionData": "Données et compte",
+  "skins": "Skins",
+  "anatomyModel": "Modèle anatomique",
+  "male": "Homme",
+  "female": "Femme",
+  "restTimerVibration": "Vibration du minuteur de repos",
+  "signOut": "Se déconnecter",
+  "signOutConfirm": "Se déconnecter de votre compte ? Vos données locales restent sur cet appareil.",
+  "cacheCleared": "Cache vidé",
+  "cacheClearFailed": "Impossible de vider le cache",
+  "couldNotOpenLink": "Impossible d'ouvrir le lien",
+  "exportComingSoon": "Export bientôt disponible",
+  "deleteAccountFailed": "Impossible de supprimer le compte. Veuillez réessayer.",
+  "planPremium": "Premium",
+  "trainingReminderBody": "Garde ta série. On va s'entraîner.",
+  "languageSystem": "Système"
 }

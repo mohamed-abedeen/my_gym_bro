@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:my_gym_bro/core/providers/providers.dart';
 import 'package:my_gym_bro/features/settings/skin_provider.dart';
+import 'package:my_gym_bro/l10n/app_localizations.dart';
 import 'package:my_gym_bro/shared/constants.dart';
 import 'package:my_gym_bro/shared/responsive.dart';
 import 'package:my_gym_bro/shared/widgets/anatomy_body.dart';
@@ -41,6 +42,7 @@ class _SkinsGrid extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final l10n = AppLocalizations.of(context);
     final isFemale =
         ref.watch(anatomyGenderProvider) == AnatomyGender.female;
     final selectedId = ref.watch(selectedSkinProvider);
@@ -50,7 +52,7 @@ class _SkinsGrid extends ConsumerWidget {
         .where((s) => s.availableForGender(isFemale: isFemale))
         .toList();
 
-    final genderLabel = isFemale ? 'Female' : 'Male';
+    final genderLabel = isFemale ? l10n.female : l10n.male;
 
     return SafeArea(
       child: Column(
@@ -77,7 +79,7 @@ class _SkinsGrid extends ConsumerWidget {
                     color: colors.textPrimary, size: 20.sp),
                 SizedBox(width: 8.w),
                 Text(
-                  'Skins',
+                  l10n.skins,
                   style: TextStyle(
                     color: colors.textPrimary,
                     fontSize: 20.sp,
@@ -128,7 +130,7 @@ class _SkinsGrid extends ConsumerWidget {
                   isSelected: isSelected,
                   colors: colors,
                   onTap: () {
-                    ref.read(selectedSkinProvider.notifier).state = skin.id;
+                    ref.read(selectedSkinProvider.notifier).select(skin.id);
                     Navigator.of(context).pop();
                   },
                 );
@@ -213,7 +215,7 @@ class _SkinCard extends StatelessWidget {
                 children: [
                   Expanded(
                     child: Text(
-                      '$genderLabel ${skin.name} Skin',
+                      '${skin.name} · $genderLabel',
                       style: TextStyle(
                         color: isSelected ? colors.accent : colors.textPrimary,
                         fontSize: 11.sp,

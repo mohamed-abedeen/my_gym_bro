@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:my_gym_bro/core/auth/auth_notifier.dart';
 import 'package:my_gym_bro/core/database/app_database.dart';
 import 'package:my_gym_bro/core/database/daos/exercise_dao.dart';
+import 'package:my_gym_bro/core/security/secure_storage.dart';
 import 'package:my_gym_bro/core/services/exercise_api_service.dart';
 import 'package:my_gym_bro/core/services/exercise_repository.dart';
 import 'package:my_gym_bro/core/services/sync_service.dart';
@@ -72,7 +73,31 @@ final isSupabaseAvailableProvider = Provider<bool>((ref) {
   return ref.watch(supabaseProvider) != null;
 });
 
-final anatomyGenderProvider = StateProvider<AnatomyGender>((ref) => AnatomyGender.male);
+/// Anatomy-body gender toggle. Persisted via SecureStorage so the choice
+/// survives app restarts (it used to silently reset to male).
+class AnatomyGenderNotifier extends StateNotifier<AnatomyGender> {
+  AnatomyGenderNotifier() : super(AnatomyGender.male) {
+    _load();
+  }
+
+  static const _key = 'setting_anatomy_gender';
+
+  Future<void> _load() async {
+    final raw = await SecureStorage().read(_key);
+    if (raw == 'female' && mounted) state = AnatomyGender.female;
+  }
+
+  Future<void> set(AnatomyGender gender) async {
+    state = gender;
+    await SecureStorage()
+        .write(_key, gender == AnatomyGender.female ? 'female' : 'male');
+  }
+}
+
+final anatomyGenderProvider =
+    StateNotifierProvider<AnatomyGenderNotifier, AnatomyGender>(
+  (ref) => AnatomyGenderNotifier(),
+);
 
 /// Reads the bundled app version + build number once at startup. Cached
 /// after the first read, so it's safe to watch from any screen footer.
