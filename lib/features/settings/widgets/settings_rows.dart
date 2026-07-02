@@ -4,47 +4,33 @@ import 'package:my_gym_bro/shared/constants.dart';
 import 'package:my_gym_bro/shared/responsive.dart';
 import 'package:my_gym_bro/shared/widgets/glass_surface.dart';
 
-/// iOS-Settings-style building blocks for the redesigned settings screen.
+/// HIG-style building blocks for the settings screen.
 ///
-/// A section is a frosted [GlassSurface] card (per the glass system: general
-/// surfaces → frosted) holding compact rows: leading tinted icon badge,
-/// label, trailing value/control, hairline inset dividers.
+/// Follows the patterns of Apple's first-party apps (Fitness, Health,
+/// Journal) rather than the Settings app: inset grouped cards on frosted
+/// [GlassSurface] (per the glass system: general surfaces → frosted),
+/// icon-less content-first rows, footnote group footers, and centered
+/// text-button rows for destructive actions.
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Icon badge palette — fixed decorative colors (iOS system palette), shared
-// by both themes so sections read the same in light and dark.
+// Section — header, grouped card, footnote footer
 // ─────────────────────────────────────────────────────────────────────────────
 
-/// Decorative badge colors for settings rows.
-class SettingsBadgeColors {
-  SettingsBadgeColors._();
-
-  static const purple = Color(0xFFAF52DE);
-  static const indigo = Color(0xFF5856D6);
-  static const teal = Color(0xFF30B0C7);
-  static const blue = Color(0xFF007AFF);
-  static const green = Color(0xFF34C759);
-  static const orange = Color(0xFFFF9500);
-  static const pink = Color(0xFFFF2D55);
-  static const red = Color(0xFFFF3B30);
-  static const yellow = Color(0xFFFFCC00);
-  static const gray = Color(0xFF8E8E93);
-}
-
-// ─────────────────────────────────────────────────────────────────────────────
-// Section
-// ─────────────────────────────────────────────────────────────────────────────
-
-/// A titled group of settings rows on a single frosted card.
+/// A grouped card of rows with an optional header above and an optional
+/// explanatory footnote below (the Apple "group footer" pattern).
 class SettingsSection extends StatelessWidget {
   const SettingsSection({
     required this.children,
     this.header,
+    this.footer,
     super.key,
   });
 
   /// Uppercase mini-header rendered above the card. Null → no header.
   final String? header;
+
+  /// Footnote text rendered under the card. Null → no footer.
+  final String? footer;
   final List<Widget> children;
 
   @override
@@ -56,8 +42,11 @@ class SettingsSection extends StatelessWidget {
       rows.add(children[i]);
       if (i < children.length - 1) {
         rows.add(Padding(
-          padding: EdgeInsets.only(left: 54.w),
-          child: Container(height: 0.7, color: colors.divider.withValues(alpha: 0.55)),
+          padding: EdgeInsets.only(left: 16.w),
+          child: Container(
+            height: 0.7,
+            color: colors.divider.withValues(alpha: 0.5),
+          ),
         ));
       }
     }
@@ -67,13 +56,13 @@ class SettingsSection extends StatelessWidget {
       children: [
         if (header != null)
           Padding(
-            padding: EdgeInsets.only(left: 18.w, bottom: 7.h),
+            padding: EdgeInsets.only(left: 16.w, bottom: 7.h),
             child: Text(
               header!.toUpperCase(),
               style: TextStyle(
                 fontSize: 11.sp,
                 fontWeight: FontWeight.w600,
-                letterSpacing: 0.8,
+                letterSpacing: 0.7,
                 color: colors.subtitleText,
               ),
             ),
@@ -83,49 +72,25 @@ class SettingsSection extends StatelessWidget {
           radius: 22.r,
           child: Column(children: rows),
         ),
+        if (footer != null)
+          Padding(
+            padding: EdgeInsets.only(left: 16.w, right: 16.w, top: 7.h),
+            child: Text(
+              footer!,
+              style: TextStyle(
+                fontSize: 11.5.sp,
+                height: 1.35,
+                color: colors.subtitleText,
+              ),
+            ),
+          ),
       ],
     );
   }
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Icon badge
-// ─────────────────────────────────────────────────────────────────────────────
-
-/// Rounded-square tinted icon container (the iOS Settings leading icon).
-class SettingsIconBadge extends StatelessWidget {
-  const SettingsIconBadge({
-    required this.icon,
-    required this.color,
-    super.key,
-  });
-
-  final IconData icon;
-  final Color color;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: 30.w,
-      height: 30.w,
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(8.5.r),
-        gradient: LinearGradient(
-          begin: Alignment.topCenter,
-          end: Alignment.bottomCenter,
-          colors: [
-            Color.lerp(color, Colors.white, 0.18)!,
-            color,
-          ],
-        ),
-      ),
-      child: Icon(icon, color: Colors.white, size: 17.sp),
-    );
-  }
-}
-
-// ─────────────────────────────────────────────────────────────────────────────
-// Row scaffold — press highlight shared by tappable rows
+// Pressable shell — shared press-highlight behaviour
 // ─────────────────────────────────────────────────────────────────────────────
 
 class _PressableRow extends StatefulWidget {
@@ -161,8 +126,8 @@ class _PressableRowState extends State<_PressableRow> {
   }
 }
 
-/// Public pressable wrapper for custom row content (e.g. the profile hero
-/// row) so it gets the same press-highlight behaviour as the standard rows.
+/// Public pressable wrapper for custom row content (e.g. the subscription
+/// card) so it gets the same press-highlight behaviour as the standard rows.
 class SettingsNavRowShell extends StatelessWidget {
   const SettingsNavRowShell({
     required this.child,
@@ -178,7 +143,7 @@ class SettingsNavRowShell extends StatelessWidget {
     return _PressableRow(
       onTap: onTap,
       child: Padding(
-        padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 10.h),
+        padding: EdgeInsets.symmetric(horizontal: 14.w, vertical: 11.h),
         child: child,
       ),
     );
@@ -192,46 +157,37 @@ class SettingsNavRowShell extends StatelessWidget {
 /// Tappable disclosure row (opens a sheet, modal, or external link).
 class SettingsNavRow extends StatelessWidget {
   const SettingsNavRow({
-    required this.icon,
-    required this.iconColor,
     required this.label,
     this.value,
-    this.isDestructive = false,
     this.onTap,
     super.key,
   });
 
-  final IconData icon;
-  final Color iconColor;
   final String label;
 
   /// Current value rendered dimmed before the chevron.
   final String? value;
-  final bool isDestructive;
   final VoidCallback? onTap;
 
   @override
   Widget build(BuildContext context) {
     final colors = AppColors.of(context);
-    final labelColor = isDestructive ? colors.danger : colors.textPrimary;
 
     return _PressableRow(
       onTap: onTap,
       child: Padding(
-        padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 9.h),
+        padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 13.h),
         child: Row(
           children: [
-            SettingsIconBadge(icon: icon, color: iconColor),
-            SizedBox(width: 12.w),
             Expanded(
               child: Text(
                 label,
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
                 style: TextStyle(
-                  fontSize: 14.sp,
+                  fontSize: 15.sp,
                   fontWeight: FontWeight.w500,
-                  color: labelColor,
+                  color: colors.textPrimary,
                 ),
               ),
             ),
@@ -243,16 +199,16 @@ class SettingsNavRow extends StatelessWidget {
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: TextStyle(
-                    fontSize: 13.sp,
+                    fontSize: 14.sp,
                     color: colors.subtitleText,
                   ),
                 ),
               ),
             ],
-            SizedBox(width: 4.w),
+            SizedBox(width: 5.w),
             Icon(
               Icons.chevron_right_rounded,
-              color: colors.textSecondary.withValues(alpha: 0.7),
+              color: colors.textSecondary.withValues(alpha: 0.6),
               size: 18.sp,
             ),
           ],
@@ -269,16 +225,12 @@ class SettingsNavRow extends StatelessWidget {
 /// Row with an inline adaptive switch. Fires a selection haptic on toggle.
 class SettingsSwitchRow extends StatelessWidget {
   const SettingsSwitchRow({
-    required this.icon,
-    required this.iconColor,
     required this.label,
     required this.value,
     required this.onChanged,
     super.key,
   });
 
-  final IconData icon;
-  final Color iconColor;
   final String label;
   final bool value;
   final ValueChanged<bool> onChanged;
@@ -288,18 +240,16 @@ class SettingsSwitchRow extends StatelessWidget {
     final colors = AppColors.of(context);
 
     return Padding(
-      padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 5.h),
+      padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 6.h),
       child: Row(
         children: [
-          SettingsIconBadge(icon: icon, color: iconColor),
-          SizedBox(width: 12.w),
           Expanded(
             child: Text(
               label,
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
               style: TextStyle(
-                fontSize: 14.sp,
+                fontSize: 15.sp,
                 fontWeight: FontWeight.w500,
                 color: colors.textPrimary,
               ),
@@ -330,8 +280,6 @@ class SettingsSwitchRow extends StatelessWidget {
 /// Row with a compact segmented control on the trailing edge.
 class SettingsSegmentedRow extends StatelessWidget {
   const SettingsSegmentedRow({
-    required this.icon,
-    required this.iconColor,
     required this.label,
     required this.options,
     required this.selectedIndex,
@@ -339,8 +287,6 @@ class SettingsSegmentedRow extends StatelessWidget {
     super.key,
   });
 
-  final IconData icon;
-  final Color iconColor;
   final String label;
   final List<String> options;
   final int selectedIndex;
@@ -353,18 +299,16 @@ class SettingsSegmentedRow extends StatelessWidget {
     final thumbColor = isDark ? const Color(0xFF636366) : Colors.white;
 
     return Padding(
-      padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 8.h),
+      padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 9.h),
       child: Row(
         children: [
-          SettingsIconBadge(icon: icon, color: iconColor),
-          SizedBox(width: 12.w),
           Expanded(
             child: Text(
               label,
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
               style: TextStyle(
-                fontSize: 14.sp,
+                fontSize: 15.sp,
                 fontWeight: FontWeight.w500,
                 color: colors.textPrimary,
               ),
@@ -426,6 +370,44 @@ class SettingsSegmentedRow extends StatelessWidget {
             ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Button row — centered text action (Apple grouped-list button pattern)
+// ─────────────────────────────────────────────────────────────────────────────
+
+/// Centered text-button row, e.g. Sign Out / Delete Account.
+class SettingsButtonRow extends StatelessWidget {
+  const SettingsButtonRow({
+    required this.label,
+    required this.color,
+    this.onTap,
+    super.key,
+  });
+
+  final String label;
+  final Color color;
+  final VoidCallback? onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return _PressableRow(
+      onTap: onTap,
+      child: Padding(
+        padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 13.h),
+        child: Center(
+          child: Text(
+            label,
+            style: TextStyle(
+              fontSize: 15.sp,
+              fontWeight: FontWeight.w600,
+              color: color,
+            ),
+          ),
+        ),
       ),
     );
   }

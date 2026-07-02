@@ -1127,4 +1127,13 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get languageSystem => 'System';
+
+  @override
+  String get settingsWorkoutFooter => 'Defaults for rest timers, logging, and calorie estimates.';
+
+  @override
+  String get settingsNotificationsFooter => 'Training reminders help protect your streak.';
+
+  @override
+  String get settingsDataFooter => 'Deleting your account permanently removes your data from our servers.';
 }

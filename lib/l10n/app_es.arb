@@ -355,5 +355,8 @@
   "deleteAccountFailed": "No se pudo eliminar la cuenta. Inténtalo de nuevo.",
   "planPremium": "Premium",
   "trainingReminderBody": "Mantén tu racha. A entrenar.",
-  "languageSystem": "Sistema"
+  "languageSystem": "Sistema",
+  "settingsWorkoutFooter": "Valores predeterminados para temporizadores de descanso, registro y estimación de calorías.",
+  "settingsNotificationsFooter": "Los recordatorios de entrenamiento protegen tu racha.",
+  "settingsDataFooter": "Eliminar tu cuenta borra permanentemente tus datos de nuestros servidores."
 }

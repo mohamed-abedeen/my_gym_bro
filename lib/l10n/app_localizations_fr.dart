@@ -1133,4 +1133,13 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String get languageSystem => 'Système';
+
+  @override
+  String get settingsWorkoutFooter => 'Valeurs par défaut pour les minuteurs de repos, le suivi et l\'estimation des calories.';
+
+  @override
+  String get settingsNotificationsFooter => 'Les rappels d\'entraînement protègent votre série.';
+
+  @override
+  String get settingsDataFooter => 'La suppression de votre compte efface définitivement vos données de nos serveurs.';
 }

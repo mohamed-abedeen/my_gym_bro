@@ -1133,4 +1133,13 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get languageSystem => 'System';
+
+  @override
+  String get settingsWorkoutFooter => 'Standardwerte für Pausen-Timer, Logging und Kalorienschätzungen.';
+
+  @override
+  String get settingsNotificationsFooter => 'Trainingserinnerungen schützen deine Serie.';
+
+  @override
+  String get settingsDataFooter => 'Beim Löschen deines Kontos werden deine Daten dauerhaft von unseren Servern entfernt.';
 }
