@@ -977,6 +977,22 @@ final muscleRecoveryProvider = FutureProvider<List<MuscleStateInfo>>((ref) {
   return MuscleRecoveryService(sessionDao, exerciseDao).getAllMuscleStates();
 });
 
+/// Weighted working sets per muscle group this week (Monday-anchored) —
+/// primary movers count 1.0 per set, secondary muscles 0.5, mirroring the
+/// recovery dose model. Powers the per-muscle weekly volume line in the
+/// muscle detail sheet (evidence-based hypertrophy guideline: ~10–20
+/// weekly sets per muscle).
+final weeklySetsPerMuscleProvider =
+    FutureProvider<Map<String, double>>((ref) {
+  final sessionDao = ref.watch(sessionDaoProvider);
+  final exerciseDao = ref.watch(exerciseDaoProvider);
+  final weekStart = _startOfWeek(DateTime.now());
+  return MuscleRecoveryService(sessionDao, exerciseDao).getMuscleDoseTotals(
+    from: weekStart,
+    to: weekStart.add(const Duration(days: 7)),
+  );
+});
+
 // ── Consecutive rest days ─────────────────────
 
 /// Number of full calendar days since the last completed workout session.

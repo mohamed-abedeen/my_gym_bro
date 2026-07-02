@@ -1080,6 +1080,12 @@ abstract class AppLocalizations {
   /// **'Weekly Streak'**
   String get weeklyStreak;
 
+  /// No description provided for @setsThisWeekCount.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 set this week} other{{count} sets this week}}'**
+  String setsThisWeekCount(int count);
+
   /// No description provided for @weeksCount.
   ///
   /// In en, this message translates to:

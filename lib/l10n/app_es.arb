@@ -169,6 +169,12 @@
   "thisWeek": "Esta semana",
   "thisMonth": "Este mes",
   "weeklyStreak": "Racha semanal",
+  "setsThisWeekCount": "{count, plural, =1{1 serie esta semana} other{{count} series esta semana}}",
+  "@setsThisWeekCount": {
+    "placeholders": {
+      "count": { "type": "int" }
+    }
+  },
   "weeksCount": "{count, plural, =1{1 semana} other{{count} semanas}}",
   "@weeksCount": {
     "placeholders": {

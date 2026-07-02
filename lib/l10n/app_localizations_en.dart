@@ -519,6 +519,17 @@ class AppLocalizationsEn extends AppLocalizations {
   String get weeklyStreak => 'Weekly Streak';
 
   @override
+  String setsThisWeekCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count sets this week',
+      one: '1 set this week',
+    );
+    return '$_temp0';
+  }
+
+  @override
   String weeksCount(int count) {
     String _temp0 = intl.Intl.pluralLogic(
       count,

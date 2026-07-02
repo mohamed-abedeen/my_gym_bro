@@ -143,6 +143,9 @@ class _MuscleDetailSheet extends ConsumerWidget {
           Expanded(
             child: muscleStates.when(
               data: (states) {
+                final weeklySets =
+                    ref.watch(weeklySetsPerMuscleProvider).valueOrNull ??
+                        const <String, double>{};
                 // Sort: recovering first (most sore at top), then recovered, then untrained
                 final sorted = [...states]..sort((a, b) {
                     final order = _stateOrder(a.state)
@@ -168,6 +171,7 @@ class _MuscleDetailSheet extends ConsumerWidget {
                   itemBuilder: (_, i) => _MuscleRecoveryTile(
                     muscle: filtered[i],
                     l10n: l10n,
+                    weeklySets: weeklySets[filtered[i].muscleGroup],
                   ),
                 );
               },
@@ -193,9 +197,20 @@ int _stateOrder(MuscleState state) => switch (state) {
     };
 
 class _MuscleRecoveryTile extends StatelessWidget {
-  const _MuscleRecoveryTile({required this.muscle, required this.l10n});
+  const _MuscleRecoveryTile({
+    required this.muscle,
+    required this.l10n,
+    this.weeklySets,
+  });
   final MuscleStateInfo muscle;
   final AppLocalizations l10n;
+
+  /// Weighted working sets accumulated this week (null/0 = none logged).
+  final double? weeklySets;
+
+  /// Evidence-based weekly hypertrophy volume band (sets per muscle).
+  static const double _kMinEffectiveSets = 10;
+  static const double _kMaxEffectiveSets = 20;
 
   @override
   Widget build(BuildContext context) {
@@ -246,6 +261,22 @@ class _MuscleRecoveryTile extends StatelessWidget {
                     fontSize: 12.sp,
                   ),
                 ),
+                if (weeklySets != null && weeklySets! > 0) ...[
+                  SizedBox(height: 2.h),
+                  Text(
+                    l10n.setsThisWeekCount(weeklySets!.round()),
+                    style: TextStyle(
+                      // Colour-code against the 10–20 weekly-set band:
+                      // in range → green, over → amber, under → neutral.
+                      color: weeklySets! > _kMaxEffectiveSets
+                          ? colors.amber
+                          : weeklySets! >= _kMinEffectiveSets
+                              ? colors.success
+                              : colors.textSecondary,
+                      fontSize: 11.sp,
+                    ),
+                  ),
+                ],
               ],
             ),
           ),

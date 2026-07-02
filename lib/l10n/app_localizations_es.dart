@@ -519,6 +519,17 @@ class AppLocalizationsEs extends AppLocalizations {
   String get weeklyStreak => 'Racha semanal';
 
   @override
+  String setsThisWeekCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count series esta semana',
+      one: '1 serie esta semana',
+    );
+    return '$_temp0';
+  }
+
+  @override
   String weeksCount(int count) {
     String _temp0 = intl.Intl.pluralLogic(
       count,

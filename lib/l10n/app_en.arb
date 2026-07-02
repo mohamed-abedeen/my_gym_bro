@@ -204,6 +204,12 @@
   "thisWeek": "This Week",
   "thisMonth": "This Month",
   "weeklyStreak": "Weekly Streak",
+  "setsThisWeekCount": "{count, plural, =1{1 set this week} other{{count} sets this week}}",
+  "@setsThisWeekCount": {
+    "placeholders": {
+      "count": { "type": "int" }
+    }
+  },
   "weeksCount": "{count, plural, =1{1 week} other{{count} weeks}}",
   "@weeksCount": {
     "placeholders": {

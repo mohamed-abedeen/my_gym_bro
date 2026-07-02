@@ -459,6 +459,28 @@ class MuscleRecoveryService {
     return history;
   }
 
+  /// Weighted working-set totals per muscle group for sessions finished in
+  /// `[from, to)` — the same primary (×1.0) / secondary
+  /// (×[secondaryMuscleCredit]) credit as the recovery dose model. Groups
+  /// with no work in the window are absent.
+  Future<Map<String, double>> getMuscleDoseTotals({
+    required DateTime from,
+    required DateTime to,
+  }) async {
+    final history = await _getMuscleDoseHistory();
+    final totals = <String, double>{};
+    history.forEach((group, events) {
+      var sum = 0.0;
+      for (final e in events) {
+        if (!e.trainedAt.isBefore(from) && e.trainedAt.isBefore(to)) {
+          sum += e.dose;
+        }
+      }
+      if (sum > 0) totals[group] = sum;
+    });
+    return totals;
+  }
+
   /// Returns recovery state for every canonical muscle group.
   Future<List<MuscleStateInfo>> getAllMuscleStates() async {
     final history = await _getMuscleDoseHistory();

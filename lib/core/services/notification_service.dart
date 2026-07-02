@@ -292,6 +292,8 @@ class NotificationService {
         deadline,
         details,
         androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
+        uiLocalNotificationDateInterpretation:
+            UILocalNotificationDateInterpretation.absoluteTime,
       );
     } on PlatformException {
       // Exact alarms not permitted — deliver inexactly rather than not at
@@ -304,6 +306,8 @@ class NotificationService {
           deadline,
           details,
           androidScheduleMode: AndroidScheduleMode.inexactAllowWhileIdle,
+          uiLocalNotificationDateInterpretation:
+              UILocalNotificationDateInterpretation.absoluteTime,
         );
       } on Exception catch (e) {
         if (kDebugMode) debugPrint('scheduleRestTimer failed: $e');
