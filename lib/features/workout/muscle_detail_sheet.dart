@@ -271,16 +271,18 @@ class _MuscleRecoveryTile extends StatelessWidget {
 
     if (muscle.lastTrainedAt == null) return l10n.notTrainedYet;
 
-    final hoursSince =
-        DateTime.now().difference(muscle.lastTrainedAt!).inMinutes / 60.0;
-
     if (muscle.state == MuscleState.recovered) {
       return l10n.fullyRecovered;
     }
 
-    // Hours remaining until full recovery (per-muscle recovery time)
-    final recoveryH = MuscleRecoveryService.recoveryHoursFor(muscle.muscleGroup);
-    final hoursRemaining = (recoveryH - hoursSince).clamp(0.0, recoveryH);
+    // Hours remaining until the dose-adjusted recovery window closes.
+    final recoveryH = muscle.recoveryHours ??
+        MuscleRecoveryService.recoveryHoursFor(muscle.muscleGroup);
+    final recoveredAt = muscle.recoveredAt;
+    final hoursRemaining = recoveredAt == null
+        ? 0.0
+        : (recoveredAt.difference(DateTime.now()).inMinutes / 60.0)
+            .clamp(0.0, recoveryH);
 
     if (hoursRemaining < 1) {
       return l10n.lessThanOneHourRecovery;

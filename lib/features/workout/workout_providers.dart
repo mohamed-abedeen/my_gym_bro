@@ -296,12 +296,11 @@ final dayRecoveryStatusProvider =
       continue;
     }
 
-    // Recovering → calculate remaining hours
-    if (state.lastTrainedAt != null && state.recoveryPercent != null) {
-      final recoveryH = MuscleRecoveryService.recoveryHoursFor(group);
-      final hoursSince =
-          DateTime.now().difference(state.lastTrainedAt!).inMinutes / 60.0;
-      final remaining = (recoveryH - hoursSince).ceil();
+    // Recovering → remaining hours until the dose-adjusted window closes.
+    final recoveredAt = state.recoveredAt;
+    if (recoveredAt != null) {
+      final remaining =
+          (recoveredAt.difference(DateTime.now()).inMinutes / 60.0).ceil();
 
       if (remaining > maxRemainingHours) {
         maxRemainingHours = remaining;
