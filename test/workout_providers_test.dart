@@ -46,6 +46,41 @@ Schedule _schedule({int id = 1}) {
   );
 }
 
+SessionExercise _sessionExercise({
+  required int id,
+  required int sessionId,
+  required String exerciseId,
+}) {
+  return SessionExercise(
+    localId: id,
+    syncStatus: 'synced',
+    sessionId: sessionId,
+    exerciseId: exerciseId,
+    orderIndex: 0,
+  );
+}
+
+WorkoutSet _set({
+  required int sessionExerciseId,
+  double? weight,
+  int? reps,
+  bool isWarmup = false,
+  bool isCompleted = true,
+}) {
+  return WorkoutSet(
+    localId: 0,
+    syncStatus: 'synced',
+    sessionExerciseId: sessionExerciseId,
+    setIndex: 0,
+    weight: weight,
+    reps: reps,
+    isWarmup: isWarmup,
+    isDropset: false,
+    isFailure: false,
+    isCompleted: isCompleted,
+  );
+}
+
 /// Builds a schedule-day cycle from a pattern where `true` = rest day.
 List<ScheduleDay> _scheduleDays(List<bool> restPattern, {int scheduleId = 1}) {
   return [
@@ -319,6 +354,89 @@ void main() {
 
       final container = makeContainer(profile: _profile(bodyWeightKg: 80));
       expect(await container.read(weeklyCaloriesProvider.future), 0);
+    });
+  });
+
+  // ── epleyOneRepMax + weeklyStatsProvider strength ───────────────────────
+
+  group('epleyOneRepMax', () {
+    test('single rep is its own 1RM', () {
+      expect(epleyOneRepMax(100, 1), 100);
+    });
+
+    test('follows the Epley formula for multi-rep sets', () {
+      // 100kg × 10 reps → 100 × (1 + 10/30) ≈ 133.3
+      expect(epleyOneRepMax(100, 10), closeTo(133.33, 0.01));
+    });
+
+    test('heavier low-rep set beats lighter high-rep junk volume', () {
+      // 140×3 (e1RM 154) should out-rank 80×15 (e1RM 120): strength went
+      // up even though per-set volume went down.
+      expect(
+        epleyOneRepMax(140, 3),
+        greaterThan(epleyOneRepMax(80, 15)),
+      );
+    });
+  });
+
+  group('weeklyStatsProvider strength (e1RM)', () {
+    test('averages the best e1RM per exercise, skipping warmups', () async {
+      final session = _session(id: 1, startedAt: today);
+      when(() => sessionDao.getInRange(any(), any())).thenAnswer(
+        (invocation) async {
+          // Only this week has data; last week's range returns empty.
+          final from = invocation.positionalArguments[0] as DateTime;
+          return from.isBefore(today.subtract(const Duration(days: 6)))
+              ? <Session>[]
+              : [session];
+        },
+      );
+      when(() => sessionDao.getSessionExercisesForSessions(any()))
+          .thenAnswer((_) async => [
+                _sessionExercise(id: 10, sessionId: 1, exerciseId: 'bench'),
+                _sessionExercise(id: 11, sessionId: 1, exerciseId: 'squat'),
+              ]);
+      when(() => sessionDao.getSetsForSessionExercises(any()))
+          .thenAnswer((_) async => [
+                // Warmup — must be ignored even though it computes high.
+                _set(sessionExerciseId: 10, weight: 200, reps: 10,
+                    isWarmup: true),
+                // Bench best: 100×5 → 116.67
+                _set(sessionExerciseId: 10, weight: 100, reps: 5),
+                _set(sessionExerciseId: 10, weight: 90, reps: 8),
+                // Squat best: 140×3 → 154
+                _set(sessionExerciseId: 11, weight: 140, reps: 3),
+                // Incomplete set — ignored.
+                _set(sessionExerciseId: 11, weight: 180, reps: 5,
+                    isCompleted: false),
+              ]);
+
+      final container = makeContainer();
+      final stats = await container.read(weeklyStatsProvider.future);
+
+      final expected =
+          (epleyOneRepMax(100, 5) + epleyOneRepMax(140, 3)) / 2;
+      expect(stats.avgStrength, closeTo(expected, 0.01));
+      // Last week empty → no strength trend.
+      expect(stats.strengthTrend, isNull);
+    });
+
+    test('strength is 0 with no completed weighted sets', () async {
+      when(() => sessionDao.getInRange(any(), any()))
+          .thenAnswer((_) async => [_session(id: 1, startedAt: today)]);
+      when(() => sessionDao.getSessionExercisesForSessions(any()))
+          .thenAnswer((_) async => [
+                _sessionExercise(id: 10, sessionId: 1, exerciseId: 'run'),
+              ]);
+      when(() => sessionDao.getSetsForSessionExercises(any()))
+          .thenAnswer((_) async => [
+                // Cardio set: no weight/reps.
+                _set(sessionExerciseId: 10),
+              ]);
+
+      final container = makeContainer();
+      final stats = await container.read(weeklyStatsProvider.future);
+      expect(stats.avgStrength, 0);
     });
   });
 }

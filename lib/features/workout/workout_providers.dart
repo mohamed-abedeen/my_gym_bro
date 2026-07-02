@@ -439,6 +439,52 @@ final weekStripProvider = FutureProvider.family<List<DayData>, Locale>(
 
 // ── Weekly stats ──────────────────────────────
 
+/// Epley estimated one-rep max: `weight × (1 + reps/30)`. A single-rep set
+/// is its own 1RM. The industry-standard strength measure (Strong, Hevy)
+/// — unlike volume-per-session it doesn't reward junk sets and doesn't
+/// drop when the user trains heavier for fewer reps.
+double epleyOneRepMax(double weight, int reps) =>
+    reps <= 1 ? weight : weight * (1 + reps / 30.0);
+
+/// Mean of the best estimated 1RM per exercise across [sessions].
+/// Warmup and incomplete sets are excluded. Returns 0 when there is no
+/// completed weighted set.
+Future<double> _avgBestE1Rm(
+  SessionDao sessionDao,
+  List<Session> sessions,
+) async {
+  if (sessions.isEmpty) return 0;
+
+  final sessionExercises = await sessionDao
+      .getSessionExercisesForSessions(sessions.map((s) => s.localId).toList());
+  if (sessionExercises.isEmpty) return 0;
+
+  final sets = await sessionDao.getSetsForSessionExercises(
+    sessionExercises.map((se) => se.localId).toList(),
+  );
+
+  final exerciseIdBySeId = {
+    for (final se in sessionExercises) se.localId: se.exerciseId,
+  };
+
+  final bestPerExercise = <String, double>{};
+  for (final s in sets) {
+    if (!s.isCompleted || s.isWarmup) continue;
+    final weight = s.weight;
+    final reps = s.reps;
+    if (weight == null || reps == null || weight <= 0 || reps <= 0) continue;
+    final exerciseId = exerciseIdBySeId[s.sessionExerciseId];
+    if (exerciseId == null) continue;
+    final e1rm = epleyOneRepMax(weight, reps);
+    if (e1rm > (bestPerExercise[exerciseId] ?? 0)) {
+      bestPerExercise[exerciseId] = e1rm;
+    }
+  }
+  if (bestPerExercise.isEmpty) return 0;
+  return bestPerExercise.values.reduce((a, b) => a + b) /
+      bestPerExercise.length;
+}
+
 class WeeklyStats {
 
   const WeeklyStats({
@@ -491,9 +537,9 @@ final weeklyStatsProvider = FutureProvider<WeeklyStats>((ref) async {
     lastDur += s.durationSeconds ?? 0;
   }
 
-  // Avg strength = total volume / total sets (simplified as volume per session)
-  final avgStr = thisWeek.isNotEmpty ? totalVol / thisWeek.length : 0.0;
-  final lastAvgStr = lastWeek.isNotEmpty ? lastVol / lastWeek.length : 0.0;
+  // Strength = mean of the best estimated 1RM per exercise in the window.
+  final avgStr = await _avgBestE1Rm(sessionDao, thisWeek);
+  final lastAvgStr = await _avgBestE1Rm(sessionDao, lastWeek);
 
   // Suppress trends when the user hasn't trained yet this week — it's
   // misleading to show "-100%" because they opened the app on Monday.
@@ -557,7 +603,7 @@ final lifetimeStatsProvider = FutureProvider<LifetimeStats>((ref) async {
   return LifetimeStats(
     totalVolume: totalVol,
     totalDurationSeconds: totalDur,
-    avgStrength: totalVol / all.length,
+    avgStrength: await _avgBestE1Rm(sessionDao, all),
     sessionCount: all.length,
   );
 });
