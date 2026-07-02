@@ -6,6 +6,10 @@
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_HEALTH"/>
     <!-- Allows the notification sound to play even when the device screen is off -->
     <uses-permission android:name="android.permission.WAKE_LOCK"/>
+    <!-- Lets the rest-timer notification fire at its exact deadline while the
+         app is backgrounded/suspended (Android 12+; user-revocable). The
+         scheduler falls back to inexact delivery when not granted. -->
+    <uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM"/>
     <application
         android:label="My Gym Bro"
         android:name="${applicationName}"

@@ -173,9 +173,18 @@ class ActiveSessionState {
           ? exercises[currentExerciseIndex]
           : null;
 
-  int get elapsedSeconds => startedAt != null
-      ? DateTime.now().difference(startedAt!).inSeconds
-      : 0;
+  /// Session time excluding pauses — wall clock minus accumulated paused
+  /// time minus any in-flight pause. Matches what finishSession persists.
+  int get elapsedSeconds {
+    final started = startedAt;
+    if (started == null) return 0;
+    final now = DateTime.now();
+    final wallClock = now.difference(started).inSeconds;
+    final inFlightPause =
+        pausedAt == null ? 0 : now.difference(pausedAt!).inSeconds;
+    return (wallClock - accumulatedPausedSeconds - inFlightPause)
+        .clamp(0, wallClock);
+  }
 
   double get totalVolume {
     double vol = 0;
@@ -376,6 +385,98 @@ class ActiveSessionNotifier extends StateNotifier<ActiveSessionState> {
     } else {
       _updateActiveSetNotification();
     }
+  }
+
+  /// Restore an in-progress session after a process kill, or just resync
+  /// the ongoing notification when a session is already live in memory.
+  /// Returns true when a session is live after the call.
+  ///
+  /// Restoration rebuilds the full [ActiveSessionState] (exercises + sets)
+  /// from Drift — every mutation is already persisted as it happens, so a
+  /// mid-workout kill loses nothing. Unfinished sessions older than the
+  /// repository's restore window are reconciled instead: auto-finished when
+  /// they contain completed work (so the workout still reaches history) or
+  /// deleted when empty. Pause bookkeeping does not survive a kill; the
+  /// restored session resumes unpaused.
+  Future<bool> restoreOrResync() async {
+    if (state.sessionId != null) {
+      await resyncActiveNotification();
+      return true;
+    }
+
+    try {
+      await _repository.reconcileAbandonedSessions();
+    } on Exception {
+      // Best-effort cleanup — never block restore on it.
+    }
+
+    final RestoredSessionInfo? restored;
+    try {
+      restored = await _repository.getRestorableSession();
+    } on Exception {
+      return false;
+    }
+    if (restored == null) {
+      // Nothing to restore — tear down any ghost notification left behind
+      // by a previous process.
+      await NotificationService.cancelActiveWorkout();
+      return false;
+    }
+    // A manual start may have raced us across the awaits above.
+    if (state.sessionId != null) return true;
+
+    final exercises = [
+      for (final e in restored.exercises)
+        ActiveExercise(
+          sessionExerciseId: e.sessionExerciseId,
+          exerciseId: e.exerciseId,
+          name: e.name,
+          gifUrl: e.gifUrl,
+          muscleGroup: e.muscleGroup,
+          sets: [
+            for (final s in e.sets)
+              ActiveSet(
+                localId: s.localId,
+                setIndex: s.setIndex,
+                weight: s.weight,
+                reps: s.reps,
+                isWarmup: s.isWarmup,
+                isDropset: s.isDropset,
+                isFailure: s.isFailure,
+                isCompleted: s.isCompleted,
+                durationSeconds: s.durationSeconds,
+                distance: s.distance,
+                speed: s.speed,
+                incline: s.incline,
+              ),
+          ],
+        ),
+    ];
+
+    // Resume on the first exercise that still has work to do.
+    var currentIndex =
+        exercises.indexWhere((ex) => ex.sets.any((s) => !s.isCompleted));
+    if (currentIndex < 0) {
+      currentIndex = exercises.isEmpty ? 0 : exercises.length - 1;
+    }
+
+    state = state.copyWith(
+      sessionId: restored.sessionId,
+      startedAt: restored.startedAt,
+      exercises: exercises,
+      currentExerciseIndex: currentIndex,
+    );
+
+    restTimerService.completeSetFromNotification = completeNextSet;
+
+    // Re-arm a persisted rest countdown if one survived; it resyncs the
+    // ongoing notification itself. Otherwise rebuild the active-set view.
+    await tryRestoreRestTimer();
+    if (!state.showRestTimer) {
+      unawaited(_refreshExerciseImage());
+      await resyncActiveNotification();
+    }
+    return true;
   }
 
   /// Start a new workout session, optionally pre-loading exercises from a

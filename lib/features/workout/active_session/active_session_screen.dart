@@ -50,20 +50,27 @@ class _ActiveSessionScreenState extends ConsumerState<ActiveSessionScreen> {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       // If a session is already live (the user got here by tapping the
       // ongoing notification, or by returning to this screen from
-      // backgrounded state) DON'T call startSession — that would create
-      // a duplicate session row in Drift and overwrite the live state.
-      // Instead, run Option A's resync so any stale notification gets
-      // rebuilt against this isolate's handlers.
+      // backgrounded state) restoreOrResync just rebuilds the stale
+      // notification against this isolate's handlers — it never calls
+      // startSession, which would create a duplicate session row.
+      // With no live session, first try to restore one the OS killed
+      // (deep-link cold starts land here before the scaffold's restore
+      // runs); only start fresh when there's truly nothing to resume.
       final notifier = ref.read(activeSessionProvider.notifier);
-      final existing = ref.read(activeSessionProvider).sessionId;
-      if (existing == null) {
-        notifier.startSession(scheduleDayId: widget.scheduleDayId);
-      } else {
-        unawaited(notifier.resyncActiveNotification());
-      }
+      unawaited(() async {
+        final restoredOrLive = await notifier.restoreOrResync();
+        if (!restoredOrLive) {
+          await notifier.startSession(scheduleDayId: widget.scheduleDayId);
+        }
+      }());
     });
     _durationTimer = Timer.periodic(const Duration(seconds: 1), (_) {
-      if (!_isPaused) _elapsed.value++;
+      // Derive elapsed from the wall clock instead of counting ticks:
+      // Dart timers don't fire while the app is suspended, so a tick
+      // counter freezes in the background and re-entry restarts it at 0.
+      final s = ref.read(activeSessionProvider);
+      if (s.startedAt == null || _isPaused) return;
+      _elapsed.value = s.elapsedSeconds;
     });
   }
 

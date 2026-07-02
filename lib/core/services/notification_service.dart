@@ -9,6 +9,8 @@ import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 
 import 'package:my_gym_bro/core/router/app_router.dart';
 import 'package:my_gym_bro/features/workout/active_session/rest_timer_service.dart';
+import 'package:timezone/data/latest.dart' as tz_data;
+import 'package:timezone/timezone.dart' as tz;
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Action constants — shared between Android `AndroidNotificationAction.id`
@@ -118,6 +120,11 @@ class NotificationService {
   /// Initialise local notifications and Firebase Cloud Messaging.
   /// Call once from main() before runApp().
   static Future<void> initialise() async {
+    // Timezone database for zonedSchedule. We only schedule relative
+    // deadlines ("now + N seconds"), so the default UTC location is
+    // sufficient — no need for a platform lookup of the device zone.
+    tz_data.initializeTimeZones();
+
     // ── Setup Isolate Port for Background Actions ────────────────────────────
     final port = ReceivePort();
     IsolateNameServer.removePortNameMapping('notification_action_port');
@@ -247,16 +254,63 @@ class NotificationService {
     await _showLocalNotification(title: title, body: body);
   }
 
-  /// Schedule a rest-timer notification via a Dart-side delay.
+  /// Schedule the rest-complete notification at an OS level so it fires at
+  /// the deadline even when the app is suspended (locked phone mid-rest is
+  /// the normal case at the gym — Dart timers stop ticking there).
+  ///
+  /// Replaces any previously scheduled rest notification. Prefers an exact
+  /// alarm on Android and falls back to inexact delivery when the exact-
+  /// alarm permission is missing (Android 12+ treats it as user-revocable).
   static Future<void> scheduleRestTimer(
     int seconds, {
     required String title,
     required String body,
   }) async {
     await _localPlugin.cancel(_restTimerId);
-    Future.delayed(Duration(seconds: seconds), () {
-      showRestComplete(title: title, body: body);
-    });
+    if (seconds <= 0) return;
+
+    const androidDetails = AndroidNotificationDetails(
+      _channelId,
+      _channelName,
+      channelDescription: _channelDesc,
+      importance: Importance.high,
+      priority: Priority.high,
+      playSound: false,
+    );
+    const iosDetails = DarwinNotificationDetails(presentSound: false);
+    const details =
+        NotificationDetails(android: androidDetails, iOS: iosDetails);
+
+    final deadline =
+        tz.TZDateTime.now(tz.local).add(Duration(seconds: seconds));
+
+    try {
+      await _localPlugin.zonedSchedule(
+        _restTimerId,
+        title,
+        body,
+        deadline,
+        details,
+        androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
+      );
+    } on PlatformException {
+      // Exact alarms not permitted — deliver inexactly rather than not at
+      // all. For a 1–5 minute rest the OS usually lands within seconds.
+      try {
+        await _localPlugin.zonedSchedule(
+          _restTimerId,
+          title,
+          body,
+          deadline,
+          details,
+          androidScheduleMode: AndroidScheduleMode.inexactAllowWhileIdle,
+        );
+      } on Exception catch (e) {
+        if (kDebugMode) debugPrint('scheduleRestTimer failed: $e');
+      }
+    } on Exception catch (e) {
+      if (kDebugMode) debugPrint('scheduleRestTimer failed: $e');
+    }
   }
 
   /// Cancel any pending rest-timer notification.

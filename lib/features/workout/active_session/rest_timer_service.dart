@@ -19,6 +19,12 @@ class RestTimerService {
   Timer? _timer;
   int _remaining = 0;
   int _total = 0;
+
+  /// Wall-clock moment the rest ends. The tick handler derives [_remaining]
+  /// from this rather than counting ticks, so time spent suspended (locked
+  /// phone, app in background — Dart timers don't fire there) is caught up
+  /// on the first tick after resume instead of silently stretching the rest.
+  DateTime? _deadline;
   bool _soundEnabled = true;
   VoidCallback? _onComplete;
   String _notificationTitle = 'Rest Complete!';
@@ -53,8 +59,8 @@ class RestTimerService {
     try {
       final file = await _stateFile();
       final data = {
-        'deadline': DateTime.now()
-            .add(Duration(seconds: _remaining))
+        'deadline': (_deadline ??
+                DateTime.now().add(Duration(seconds: _remaining)))
             .toIso8601String(),
         'total': _total,
         'soundEnabled': _soundEnabled,
@@ -126,6 +132,7 @@ class RestTimerService {
     cancel();
     _remaining = seconds;
     _total = seconds;
+    _deadline = DateTime.now().add(Duration(seconds: seconds));
     _soundEnabled = soundEnabled;
     _onComplete = onComplete;
     if (notificationTitle != null) _notificationTitle = notificationTitle;
@@ -138,6 +145,10 @@ class RestTimerService {
 
     // Persist deadline so the timer can survive OS app kills.
     unawaited(_persistState());
+
+    // OS-scheduled backup so the alert fires at the deadline even while
+    // the app is suspended and this Dart timer isn't ticking.
+    _scheduleOsNotification();
 
     _startTicking();
   }
@@ -157,6 +168,7 @@ class RestTimerService {
     cancel();
     _remaining = remaining;
     _total = total;
+    _deadline = DateTime.now().add(Duration(seconds: remaining));
     _soundEnabled = soundEnabled;
     _onComplete = onComplete;
     if (notificationTitle != null) _notificationTitle = notificationTitle;
@@ -165,19 +177,23 @@ class RestTimerService {
     _controller!.add(_remaining);
 
     activeInstance = this;
+    // Replace whatever pending notification the previous (dead) app
+    // instance scheduled with one owned by this process.
+    _scheduleOsNotification();
     _startTicking();
   }
 
   void _startTicking() {
     _timer = Timer.periodic(const Duration(seconds: 1), (_) {
-      _remaining--;
-      if (_remaining <= 0) {
-        _remaining = 0;
-        _controller?.add(_remaining);
-        _complete();
-      } else {
-        _controller?.add(_remaining);
-      }
+      final deadline = _deadline;
+      if (deadline == null) return;
+      // Derive remaining from the wall clock so suspended time is caught
+      // up on the first tick after resume. Ceil so the display doesn't
+      // read a second low mid-countdown.
+      final msLeft = deadline.difference(DateTime.now()).inMilliseconds;
+      _remaining = msLeft <= 0 ? 0 : (msLeft / 1000).ceil();
+      _controller?.add(_remaining);
+      if (_remaining <= 0) _complete();
     });
   }
 
@@ -187,12 +203,30 @@ class RestTimerService {
     // bounded. Don't let _total grow past the clamp ceiling, and don't let
     // it dip below current remaining (would draw an over-full ring).
     _total = _remaining > _total ? _remaining : _total;
+    if (_timer != null) {
+      // Move the wall-clock deadline, keep the persisted copy + the
+      // OS-scheduled notification in sync with the adjusted time.
+      _deadline = DateTime.now().add(Duration(seconds: _remaining));
+      unawaited(_persistState());
+      _scheduleOsNotification();
+    }
     _controller?.add(_remaining);
+  }
+
+  /// (Re)schedule the OS-level rest-complete notification at the current
+  /// deadline. Replaces any previously scheduled one (same id).
+  void _scheduleOsNotification() {
+    unawaited(NotificationService.scheduleRestTimer(
+      _remaining,
+      title: _notificationTitle,
+      body: _notificationBody,
+    ));
   }
 
   void _complete() {
     _timer?.cancel();
     _timer = null;
+    _deadline = null;
 
     // Clean up persisted state — timer is done.
     unawaited(_clearPersistedState());
@@ -205,11 +239,17 @@ class RestTimerService {
       unawaited(_playWithDucking());
     }
 
-    // Local notification (for backgrounded app)
-    NotificationService.showRestComplete(
-      title: _notificationTitle,
-      body: _notificationBody,
-    );
+    // The OS-scheduled copy handles the suspended/background case. When we
+    // complete in the foreground the deadline hasn't been reached by the
+    // scheduler yet, so cancel the pending copy and show the alert now —
+    // exactly one notification either way (they share an id).
+    unawaited(() async {
+      await NotificationService.cancelRestTimer();
+      await NotificationService.showRestComplete(
+        title: _notificationTitle,
+        body: _notificationBody,
+      );
+    }());
 
     _onComplete?.call();
   }
@@ -261,24 +301,30 @@ class RestTimerService {
   bool get isPaused => _timer == null && _remaining > 0;
 
   /// Suspend ticking without losing remaining time. The persisted deadline
-  /// is cleared so a kill+restore doesn't keep counting through pause.
+  /// and the OS-scheduled notification are cleared so neither a kill+restore
+  /// nor the notification scheduler keeps counting through the pause.
   void pause() {
     if (_timer == null) return;
     _timer?.cancel();
     _timer = null;
+    _deadline = null;
+    unawaited(NotificationService.cancelRestTimer());
     unawaited(_clearPersistedState());
   }
 
   /// Resume after [pause]. No-op if not paused or already finished.
   void resume() {
     if (_timer != null || _remaining <= 0) return;
+    _deadline = DateTime.now().add(Duration(seconds: _remaining));
     unawaited(_persistState());
+    _scheduleOsNotification();
     _startTicking();
   }
 
   void cancel() {
     _timer?.cancel();
     _timer = null;
+    _deadline = null;
     if (_controller != null && !_controller!.isClosed) {
       _controller!.close();
     }
@@ -287,7 +333,9 @@ class RestTimerService {
     _total = 0;
     if (activeInstance == this) activeInstance = null;
 
-    // Clean up persisted state — user explicitly cancelled.
+    // Clean up the persisted state and the OS-scheduled notification —
+    // the user explicitly cancelled, so nothing should fire later.
+    unawaited(NotificationService.cancelRestTimer());
     unawaited(_clearPersistedState());
   }
 

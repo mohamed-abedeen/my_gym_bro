@@ -32,6 +32,15 @@ class _MyGymBroScaffoldState extends ConsumerState<MyGymBroScaffold>
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
+    // Cold start: restore a workout the OS killed mid-session (state is
+    // rebuilt from Drift), reconcile abandoned ones into history, and
+    // resync/tear down the ongoing notification accordingly.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      unawaited(
+        ref.read(activeSessionProvider.notifier).restoreOrResync(),
+      );
+    });
   }
 
   @override
@@ -51,10 +60,11 @@ class _MyGymBroScaffoldState extends ConsumerState<MyGymBroScaffold>
         SubscriptionSyncService.syncNow(ref.read(userProfileDaoProvider)),
       );
       // Option A — rebuild any stale active-workout notification whose
-      // buttons would otherwise point at a dead isolate. See
-      // `docs/notification-recovery.md`.
+      // buttons would otherwise point at a dead isolate (see
+      // `docs/notification-recovery.md`) — and, if this process has no
+      // live session, restore one the OS killed mid-workout from Drift.
       unawaited(
-        ref.read(activeSessionProvider.notifier).resyncActiveNotification(),
+        ref.read(activeSessionProvider.notifier).restoreOrResync(),
       );
     }
   }
