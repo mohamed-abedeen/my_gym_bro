@@ -12,6 +12,7 @@ import 'package:my_gym_bro/core/database/daos/session_dao.dart';
 import 'package:my_gym_bro/core/database/daos/user_profile_dao.dart';
 import 'package:my_gym_bro/core/providers/providers.dart';
 import 'package:my_gym_bro/core/services/widget_sync_service.dart';
+import 'package:my_gym_bro/features/workout/calorie_service.dart';
 import 'package:my_gym_bro/features/workout/muscle_recovery_service.dart';
 import 'package:my_gym_bro/features/workout/workout_log_repository.dart';
 
@@ -624,24 +625,84 @@ class ActivityStats {
   final int monthCalories;
 }
 
-/// Default MET for mixed strength + cardio training. ACSM tables put
-/// moderate weight training around 3.5–6.0 MET; 5.0 is a reasonable
-/// midpoint for an attentive session with short rests. Tune per-exercise
-/// later if we add MET metadata to the Exercises table.
-const double _kDefaultMet = 5.0;
-
 /// Fallback body weight (kg) when the user hasn't set theirs yet. Picked
 /// to roughly match the global adult mean so calorie estimates are
 /// directionally right rather than zero. Visible cue to set weight is up
 /// to the UI.
 const double _kFallbackBodyWeightKg = 70;
 
-/// ACSM-style calorie estimate for one finished session.
-///   kcal = MET × bodyWeight(kg) × hours
+/// Legacy flat calorie estimate — kept for sessions with no set-level data
+/// and as the reference model in tests. Prefer [CalorieService] via
+/// [_sessionCaloriesBatch] everywhere else.
 int caloriesForSession(double bodyWeightKg, int durationSeconds) {
-  if (durationSeconds <= 0) return 0;
-  final hours = durationSeconds / 3600.0;
-  return (_kDefaultMet * bodyWeightKg * hours).round();
+  return CalorieService.estimateSessionCalories(
+    bodyWeightKg: bodyWeightKg,
+    durationSeconds: durationSeconds,
+  );
+}
+
+/// MET-weighted calories per session (keyed by session localId), computed
+/// in three batch queries. Each exercise's completed sets contribute their
+/// own duration (cardio) or [CalorieService.assumedSetSeconds] of work at
+/// the exercise's MET; the remaining wall-clock time bills at the rest
+/// MET. Sessions with no logged sets fall back to the flat model inside
+/// [CalorieService.estimateSessionCalories].
+Future<Map<int, int>> _sessionCaloriesBatch(
+  SessionDao sessionDao,
+  ExerciseDao exerciseDao,
+  List<Session> sessions, {
+  required double bodyWeightKg,
+  String? gender,
+}) async {
+  final finished =
+      sessions.where((s) => s.finishedAt != null).toList(growable: false);
+  if (finished.isEmpty) return {};
+
+  final sessionExercises = await sessionDao.getSessionExercisesForSessions(
+    finished.map((s) => s.localId).toList(),
+  );
+  final sets = sessionExercises.isEmpty
+      ? <WorkoutSet>[]
+      : await sessionDao.getSetsForSessionExercises(
+          sessionExercises.map((se) => se.localId).toList(),
+        );
+  final exerciseIds =
+      sessionExercises.map((se) => se.exerciseId).toSet().toList();
+  final exercises = exerciseIds.isEmpty
+      ? <Exercise>[]
+      : await exerciseDao.findByExerciseIds(exerciseIds);
+  final exerciseMap = {for (final e in exercises) e.exerciseId: e};
+
+  // Active seconds per session exercise from its completed sets.
+  final activeSecondsBySeId = <int, int>{};
+  for (final s in sets) {
+    if (!s.isCompleted) continue;
+    activeSecondsBySeId[s.sessionExerciseId] =
+        (activeSecondsBySeId[s.sessionExerciseId] ?? 0) +
+            (s.durationSeconds ?? CalorieService.assumedSetSeconds);
+  }
+
+  final effortsBySessionId = <int, List<ExerciseEffort>>{};
+  for (final se in sessionExercises) {
+    final activeSeconds = activeSecondsBySeId[se.localId] ?? 0;
+    if (activeSeconds == 0) continue;
+    final met = CalorieService.metForExercise(
+      muscleGroup: exerciseMap[se.exerciseId]?.muscleGroup,
+    );
+    effortsBySessionId.putIfAbsent(se.sessionId, () => []).add(
+          ExerciseEffort(met: met, activeSeconds: activeSeconds),
+        );
+  }
+
+  return {
+    for (final s in finished)
+      s.localId: CalorieService.estimateSessionCalories(
+        bodyWeightKg: bodyWeightKg,
+        durationSeconds: s.durationSeconds ?? 0,
+        efforts: effortsBySessionId[s.localId] ?? const [],
+        gender: gender,
+      ),
+  };
 }
 
 /// Volume + calories rolled up over today, this week (Monday-anchored, same
@@ -649,6 +710,7 @@ int caloriesForSession(double bodyWeightKg, int durationSeconds) {
 /// "Body Status" card in the Status sheet.
 final activityStatsProvider = FutureProvider<ActivityStats>((ref) async {
   final sessionDao = ref.watch(sessionDaoProvider);
+  final exerciseDao = ref.watch(exerciseDaoProvider);
   final profile = await ref.watch(userProfileProvider.future);
   final bodyWeight =
       profile?.bodyWeightKg ?? _kFallbackBodyWeightKg;
@@ -664,6 +726,13 @@ final activityStatsProvider = FutureProvider<ActivityStats>((ref) async {
       weekStart.isBefore(monthStart) ? weekStart : monthStart;
 
   final rangeSessions = await sessionDao.getInRange(rangeStart, tomorrow);
+  final calories = await _sessionCaloriesBatch(
+    sessionDao,
+    exerciseDao,
+    rangeSessions,
+    bodyWeightKg: bodyWeight,
+    gender: profile?.gender,
+  );
 
   double todayVol = 0;
   double weekVol = 0;
@@ -674,7 +743,7 @@ final activityStatsProvider = FutureProvider<ActivityStats>((ref) async {
   for (final s in rangeSessions) {
     if (s.finishedAt == null) continue;
     final v = s.totalVolume ?? 0;
-    final c = caloriesForSession(bodyWeight, s.durationSeconds ?? 0);
+    final c = calories[s.localId] ?? 0;
     if (!s.startedAt.isBefore(monthStart)) {
       monthVol += v;
       monthCal += c;
@@ -1129,6 +1198,7 @@ final recordsProvider = FutureProvider<RecordsData>((ref) async {
 /// falling back to [_kFallbackBodyWeightKg].
 final weeklyCaloriesProvider = FutureProvider<int>((ref) async {
   final sessionDao = ref.watch(sessionDaoProvider);
+  final exerciseDao = ref.watch(exerciseDaoProvider);
   final profile = await ref.watch(userProfileProvider.future);
   final bodyWeight = profile?.bodyWeightKg ?? _kFallbackBodyWeightKg;
 
@@ -1136,11 +1206,17 @@ final weeklyCaloriesProvider = FutureProvider<int>((ref) async {
   final weekEnd = weekStart.add(const Duration(days: 7));
 
   final thisWeek = await sessionDao.getInRange(weekStart, weekEnd);
+  final calories = await _sessionCaloriesBatch(
+    sessionDao,
+    exerciseDao,
+    thisWeek,
+    bodyWeightKg: bodyWeight,
+    gender: profile?.gender,
+  );
 
   var total = 0;
-  for (final s in thisWeek) {
-    if (s.finishedAt == null) continue;
-    total += caloriesForSession(bodyWeight, s.durationSeconds ?? 0);
+  for (final c in calories.values) {
+    total += c;
   }
   return total;
 });

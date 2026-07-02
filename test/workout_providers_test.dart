@@ -2,10 +2,14 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:my_gym_bro/core/database/app_database.dart';
+import 'package:my_gym_bro/core/database/daos/exercise_dao.dart';
 import 'package:my_gym_bro/core/database/daos/session_dao.dart';
+import 'package:my_gym_bro/features/workout/calorie_service.dart';
 import 'package:my_gym_bro/features/workout/workout_providers.dart';
 
 class MockSessionDao extends Mock implements SessionDao {}
+
+class MockExerciseDao extends Mock implements ExerciseDao {}
 
 /// Builds a finished [Session] for tests. Only the fields the providers
 /// under test actually read are meaningful; the rest are filler.
@@ -98,6 +102,7 @@ List<ScheduleDay> _scheduleDays(List<bool> restPattern, {int scheduleId = 1}) {
 
 void main() {
   late MockSessionDao sessionDao;
+  late MockExerciseDao exerciseDao;
 
   setUpAll(() {
     registerFallbackValue(DateTime(2020));
@@ -105,6 +110,15 @@ void main() {
 
   setUp(() {
     sessionDao = MockSessionDao();
+    exerciseDao = MockExerciseDao();
+    // Default: sessions carry no set-level data, so calorie estimates use
+    // the flat fallback model. Tests that exercise the MET model re-stub.
+    when(() => sessionDao.getSessionExercisesForSessions(any()))
+        .thenAnswer((_) async => []);
+    when(() => sessionDao.getSetsForSessionExercises(any()))
+        .thenAnswer((_) async => []);
+    when(() => exerciseDao.findByExerciseIds(any()))
+        .thenAnswer((_) async => []);
   });
 
   /// Creates a container with the session DAO mocked and, optionally, the
@@ -118,6 +132,7 @@ void main() {
     final container = ProviderContainer(
       overrides: [
         sessionDaoProvider.overrideWithValue(sessionDao),
+        exerciseDaoProvider.overrideWithValue(exerciseDao),
         activeScheduleProvider.overrideWith((ref) => Stream.value(schedule)),
         if (scheduleRestPattern != null)
           scheduleDaysProvider(schedule!.localId).overrideWith(
@@ -354,6 +369,50 @@ void main() {
 
       final container = makeContainer(profile: _profile(bodyWeightKg: 80));
       expect(await container.read(weeklyCaloriesProvider.future), 0);
+    });
+
+    test('uses the MET model when set-level data exists', () async {
+      when(() => sessionDao.getInRange(any(), any())).thenAnswer(
+        (_) async => [_session(id: 1, startedAt: thisWeekDay)],
+      );
+      when(() => sessionDao.getSessionExercisesForSessions(any()))
+          .thenAnswer((_) async => [
+                _sessionExercise(id: 10, sessionId: 1, exerciseId: 'squat'),
+              ]);
+      // 10 completed squat sets → 450s of large-muscle work.
+      when(() => sessionDao.getSetsForSessionExercises(any())).thenAnswer(
+        (_) async => [
+          for (var i = 0; i < 10; i++)
+            _set(sessionExerciseId: 10, weight: 100, reps: 5),
+        ],
+      );
+      when(() => exerciseDao.findByExerciseIds(any())).thenAnswer(
+        (_) async => [
+          const Exercise(
+            localId: 1,
+            syncStatus: 'synced',
+            exerciseId: 'squat',
+            name: 'Barbell Squat',
+            muscleGroup: 'Quads',
+            isCustom: false,
+            usageCount: 0,
+            isFavorite: false,
+          ),
+        ],
+      );
+
+      final container = makeContainer(profile: _profile(bodyWeightKg: 80));
+      final result = await container.read(weeklyCaloriesProvider.future);
+
+      // 450s work @ MET 6 + 3150s rest @ MET 2 for an 80kg user.
+      final expected = CalorieService.estimateSessionCalories(
+        bodyWeightKg: 80,
+        durationSeconds: 3600,
+        efforts: const [ExerciseEffort(met: 6, activeSeconds: 450)],
+      );
+      expect(result, expected);
+      // Sanity: the dense-work model bills less than flat 5-MET wall-clock.
+      expect(result, lessThan(caloriesForSession(80, 3600)));
     });
   });
 
