@@ -286,6 +286,7 @@ class _WorkoutStatusCard extends ConsumerWidget {
     // accumulated effort from every finished session.
     final stats = ref.watch(lifetimeStatsProvider);
     final records = ref.watch(recordsProvider);
+    final weeklyStreak = ref.watch(weeklyStreakProvider);
     final unit = ref.watch(weightUnitProvider);
 
     return Container(
@@ -339,6 +340,13 @@ class _WorkoutStatusCard extends ConsumerWidget {
                   label: l10n.records,
                   value: '${records.asData?.value.count ?? 0}',
                   trend: records.asData?.value.trend?.toDouble(),
+                ),
+                SizedBox(height: 10.h),
+                _WorkoutStatRow(
+                  label: l10n.weeklyStreak,
+                  value: l10n.weeksCount(
+                    weeklyStreak.asData?.value.weeks ?? 0,
+                  ),
                 ),
               ],
             ),

@@ -416,6 +416,94 @@ void main() {
     });
   });
 
+  // ── weeklyStreakProvider ────────────────────────────────────────────────
+
+  group('weeklyStreakProvider', () {
+    // Monday of the current week — the same anchor the provider uses.
+    final thisMonday =
+        DateTime(today.year, today.month, today.day - (today.weekday - 1));
+    DateTime weekDay(int weeksAgo, int offset) => DateTime(
+        thisMonday.year, thisMonday.month, thisMonday.day - weeksAgo * 7 + offset);
+
+    test('counts consecutive weeks hitting the default 3-day target',
+        () async {
+      when(() => sessionDao.getDistinctSessionDatesDescending(
+            limit: any(named: 'limit'),
+          )).thenAnswer((_) async => [
+            // Last week: Mon/Wed/Fri. Two weeks ago: Mon/Tue/Thu.
+            weekDay(1, 0), weekDay(1, 2), weekDay(1, 4),
+            weekDay(2, 0), weekDay(2, 1), weekDay(2, 3),
+          ]);
+
+      final container = makeContainer();
+      final data = await container.read(weeklyStreakProvider.future);
+      expect(data.target, 3);
+      expect(data.weeks, 2);
+      // This week has no sessions yet — pending, not broken.
+      expect(data.thisWeekDays, 0);
+    });
+
+    test('current week joins the streak once the target is met', () async {
+      when(() => sessionDao.getDistinctSessionDatesDescending(
+            limit: any(named: 'limit'),
+          )).thenAnswer((_) async => [
+            weekDay(0, 0), weekDay(0, 1), weekDay(0, 2),
+            weekDay(1, 0), weekDay(1, 2), weekDay(1, 4),
+          ]);
+
+      final container = makeContainer();
+      final data = await container.read(weeklyStreakProvider.future);
+      expect(data.weeks, 2);
+      expect(data.thisWeekDays, 3);
+    });
+
+    test('a missed week breaks the chain', () async {
+      when(() => sessionDao.getDistinctSessionDatesDescending(
+            limit: any(named: 'limit'),
+          )).thenAnswer((_) async => [
+            // Last week hit the target, two weeks ago only 1 day,
+            // three weeks ago hit it again — chain stops at the gap.
+            weekDay(1, 0), weekDay(1, 2), weekDay(1, 4),
+            weekDay(2, 0),
+            weekDay(3, 0), weekDay(3, 2), weekDay(3, 4),
+          ]);
+
+      final container = makeContainer();
+      final data = await container.read(weeklyStreakProvider.future);
+      expect(data.weeks, 1);
+    });
+
+    test('derives the target from the active schedule cycle', () async {
+      when(() => sessionDao.getDistinctSessionDatesDescending(
+            limit: any(named: 'limit'),
+          )).thenAnswer((_) async => [
+            // Last week: 4 workout days — meets a 4-day target.
+            weekDay(1, 0), weekDay(1, 1), weekDay(1, 3), weekDay(1, 4),
+          ]);
+
+      final container = makeContainer(
+        // 4 training days + 3 rest days in a 7-day cycle → target 4.
+        scheduleRestPattern: [
+          false, false, true, false, false, true, true,
+        ],
+      );
+      final data = await container.read(weeklyStreakProvider.future);
+      expect(data.target, 4);
+      expect(data.weeks, 1);
+    });
+
+    test('returns zero streak with no sessions', () async {
+      when(() => sessionDao.getDistinctSessionDatesDescending(
+            limit: any(named: 'limit'),
+          )).thenAnswer((_) async => <DateTime>[]);
+
+      final container = makeContainer();
+      final data = await container.read(weeklyStreakProvider.future);
+      expect(data.weeks, 0);
+      expect(data.target, 3);
+    });
+  });
+
   // ── epleyOneRepMax + weeklyStatsProvider strength ───────────────────────
 
   group('epleyOneRepMax', () {

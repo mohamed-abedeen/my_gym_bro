@@ -1074,6 +1074,18 @@ abstract class AppLocalizations {
   /// **'This Month'**
   String get thisMonth;
 
+  /// No description provided for @weeklyStreak.
+  ///
+  /// In en, this message translates to:
+  /// **'Weekly Streak'**
+  String get weeklyStreak;
+
+  /// No description provided for @weeksCount.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 week} other{{count} weeks}}'**
+  String weeksCount(int count);
+
   /// No description provided for @welcomeTitle.
   ///
   /// In en, this message translates to:

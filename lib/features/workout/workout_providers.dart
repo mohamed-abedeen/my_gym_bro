@@ -1142,6 +1142,88 @@ final streakProvider = FutureProvider<int>((ref) async {
   return streak;
 });
 
+// ── Weekly streak ────────────────────────────
+
+/// Weekly-streak state: how many consecutive weeks the user has hit their
+/// weekly workout target.
+class WeeklyStreakData {
+  const WeeklyStreakData({
+    this.weeks = 0,
+    this.target = _kDefaultWeeklyTarget,
+    this.thisWeekDays = 0,
+  });
+
+  /// Consecutive weeks meeting the target. The current week counts as soon
+  /// as it hits the target; an in-progress week never breaks the chain.
+  final int weeks;
+
+  /// Workout days per week required to keep the streak.
+  final int target;
+
+  /// Distinct workout days so far this week.
+  final int thisWeekDays;
+}
+
+/// Weekly target for users without an active schedule — three sessions a
+/// week is the common baseline programme.
+const int _kDefaultWeeklyTarget = 3;
+
+/// Consecutive weeks (Monday-anchored, same window as every other weekly
+/// metric) with at least `target` distinct workout days. The target comes
+/// from the active schedule's training-day density scaled to a 7-day week,
+/// falling back to [_kDefaultWeeklyTarget]. The industry-standard streak
+/// (Apple Fitness, Hevy) — tolerant of rest days by construction.
+final weeklyStreakProvider = FutureProvider<WeeklyStreakData>((ref) async {
+  final sessionDao = ref.watch(sessionDaoProvider);
+
+  var target = _kDefaultWeeklyTarget;
+  final active = await ref.watch(activeScheduleProvider.future);
+  if (active != null) {
+    final schedDays =
+        await ref.watch(scheduleDaysProvider(active.localId).future);
+    if (schedDays.isNotEmpty) {
+      final trainingDays =
+          schedDays.where((d) => !_isRestScheduleDay(d)).length;
+      if (trainingDays > 0) {
+        target = ((trainingDays / schedDays.length) * 7).round().clamp(1, 7);
+      }
+    }
+  }
+
+  final days = await sessionDao.getDistinctSessionDatesDescending();
+  if (days.isEmpty) return WeeklyStreakData(target: target);
+
+  // Distinct workout days per week, keyed by the week's Monday.
+  final daysPerWeek = <int, int>{};
+  for (final d in days) {
+    final key = _startOfWeek(d).millisecondsSinceEpoch;
+    daysPerWeek[key] = (daysPerWeek[key] ?? 0) + 1;
+  }
+
+  final thisWeekStart = _startOfWeek(DateTime.now());
+  final thisWeekDays =
+      daysPerWeek[thisWeekStart.millisecondsSinceEpoch] ?? 0;
+
+  var weeks = 0;
+  if (thisWeekDays >= target) weeks++;
+
+  var cursor = thisWeekStart;
+  while (true) {
+    cursor = DateTime(cursor.year, cursor.month, cursor.day - 7);
+    if ((daysPerWeek[cursor.millisecondsSinceEpoch] ?? 0) >= target) {
+      weeks++;
+    } else {
+      break;
+    }
+  }
+
+  return WeeklyStreakData(
+    weeks: weeks,
+    target: target,
+    thisWeekDays: thisWeekDays,
+  );
+});
+
 // ── Records count ────────────────────────────
 
 class RecordsData {

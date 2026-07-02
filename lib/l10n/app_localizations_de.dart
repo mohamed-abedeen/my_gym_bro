@@ -519,6 +519,20 @@ class AppLocalizationsDe extends AppLocalizations {
   String get thisMonth => 'Dieser Monat';
 
   @override
+  String get weeklyStreak => 'Wochen-Serie';
+
+  @override
+  String weeksCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count Wochen',
+      one: '1 Woche',
+    );
+    return '$_temp0';
+  }
+
+  @override
   String get welcomeTitle => 'Trainiere schlauer. Werde stärker.';
 
   @override

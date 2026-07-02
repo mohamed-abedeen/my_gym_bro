@@ -168,6 +168,13 @@
   "lastMonth": "Letzter Monat",
   "thisWeek": "Diese Woche",
   "thisMonth": "Dieser Monat",
+  "weeklyStreak": "Wochen-Serie",
+  "weeksCount": "{count, plural, =1{1 Woche} other{{count} Wochen}}",
+  "@weeksCount": {
+    "placeholders": {
+      "count": { "type": "int" }
+    }
+  },
   "welcomeTitle": "Trainiere schlauer. Werde stärker.",
   "continueButton": "Weiter",
   "passwordStrengthWeak": "Schwach",

@@ -168,6 +168,13 @@
   "lastMonth": "Mois dernier",
   "thisWeek": "Cette semaine",
   "thisMonth": "Ce mois-ci",
+  "weeklyStreak": "Série hebdomadaire",
+  "weeksCount": "{count, plural, =1{1 semaine} other{{count} semaines}}",
+  "@weeksCount": {
+    "placeholders": {
+      "count": { "type": "int" }
+    }
+  },
   "welcomeTitle": "Entraînez-vous mieux. Devenez plus fort.",
   "continueButton": "Continuer",
   "passwordStrengthWeak": "Faible",

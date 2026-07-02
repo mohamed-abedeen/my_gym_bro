@@ -203,6 +203,13 @@
   "lastMonth": "Last Month",
   "thisWeek": "This Week",
   "thisMonth": "This Month",
+  "weeklyStreak": "Weekly Streak",
+  "weeksCount": "{count, plural, =1{1 week} other{{count} weeks}}",
+  "@weeksCount": {
+    "placeholders": {
+      "count": { "type": "int" }
+    }
+  },
   "welcomeTitle": "Train smarter. Get stronger.",
   "continueButton": "Continue",
   "passwordStrengthWeak": "Weak",
