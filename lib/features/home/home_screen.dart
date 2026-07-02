@@ -496,7 +496,7 @@ class _StatusSection extends ConsumerWidget {
                   icon: Icons.local_fire_department_rounded,
                   iconColor: colors.amber,
                   iconSize: 35.sp,
-                  label: l10n.calBurnedLastWeek,
+                  label: l10n.calBurnedThisWeek,
                   value: ref
                       .watch(weeklyCaloriesProvider)
                       .when(

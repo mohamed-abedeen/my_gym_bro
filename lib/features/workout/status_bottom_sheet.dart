@@ -184,13 +184,13 @@ class _BodyStatusCard extends ConsumerWidget {
                 ),
                 SizedBox(height: 10.h),
                 _ActivityRow(
-                  label: l10n.lastWeek,
+                  label: l10n.thisWeek,
                   value: '${a.weekCalories} cal',
                   positive: a.weekCalories > 0,
                 ),
                 SizedBox(height: 10.h),
                 _ActivityRow(
-                  label: l10n.lastMonth,
+                  label: l10n.thisMonth,
                   value: '${a.monthCalories} cal',
                   positive: a.monthCalories > 0,
                 ),

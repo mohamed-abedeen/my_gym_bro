@@ -98,6 +98,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get calBurnedLastWeek => 'Cal Burned last week';
 
   @override
+  String get calBurnedThisWeek => 'Cal Burned this week';
+
+  @override
   String get totalDuration => 'Total Duration';
 
   @override
@@ -508,6 +511,9 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get thisWeek => 'This Week';
+
+  @override
+  String get thisMonth => 'This Month';
 
   @override
   String get welcomeTitle => 'Train smarter. Get stronger.';

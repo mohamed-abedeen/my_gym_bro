@@ -276,6 +276,12 @@ abstract class AppLocalizations {
   /// **'Cal Burned last week'**
   String get calBurnedLastWeek;
 
+  /// No description provided for @calBurnedThisWeek.
+  ///
+  /// In en, this message translates to:
+  /// **'Cal Burned this week'**
+  String get calBurnedThisWeek;
+
   /// No description provided for @totalDuration.
   ///
   /// In en, this message translates to:
@@ -1061,6 +1067,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'This Week'**
   String get thisWeek;
+
+  /// No description provided for @thisMonth.
+  ///
+  /// In en, this message translates to:
+  /// **'This Month'**
+  String get thisMonth;
 
   /// No description provided for @welcomeTitle.
   ///

@@ -131,6 +131,10 @@ final workoutCardStateProvider =
 
 // ── Next training day index ──────────────────
 
+/// Whether a schedule day is a rest day, either by flag or by label.
+bool _isRestScheduleDay(ScheduleDay d) =>
+    d.isRestDay || (d.label?.toLowerCase().contains('rest') ?? false);
+
 /// Determines which training day page to show based on completed sessions.
 ///
 /// Logic: nextIndex = completedSessions % trainingDays.length
@@ -141,11 +145,7 @@ final nextTrainingDayIndexProvider =
   final scheduleDao = ref.watch(scheduleDaoProvider);
 
   final days = await scheduleDao.getDays(scheduleId);
-  final trainingDays = days
-      .where((d) =>
-          !d.isRestDay &&
-          !(d.label?.toLowerCase().contains('rest') ?? false))
-      .toList();
+  final trainingDays = days.where((d) => !_isRestScheduleDay(d)).toList();
   if (trainingDays.isEmpty) return 0;
 
   final completedCount = await sessionDao.countBySchedule(scheduleId);
@@ -180,11 +180,7 @@ final nextSessionHoursProvider =
   final allDays = await scheduleDao.getDays(scheduleId);
   if (allDays.isEmpty) return null;
 
-  final trainingDays = allDays
-      .where((d) =>
-          !d.isRestDay &&
-          !(d.label?.toLowerCase().contains('rest') ?? false))
-      .toList();
+  final trainingDays = allDays.where((d) => !_isRestScheduleDay(d)).toList();
   if (trainingDays.isEmpty) return null;
 
   // Figure out which training day was last completed and which is next
@@ -204,9 +200,7 @@ final nextSessionHoursProvider =
   var pos = (lastDayIndex + 1) % totalDaysInCycle;
   while (pos != nextDayIndex) {
     final day = allDays.firstWhere((d) => d.dayIndex == pos);
-    final isRest = day.isRestDay ||
-        (day.label?.toLowerCase().contains('rest') ?? false);
-    if (isRest) {
+    if (_isRestScheduleDay(day)) {
       restDaysBetween++;
     }
     pos = (pos + 1) % totalDaysInCycle;
@@ -381,6 +375,12 @@ final recentSessionsProvider = StreamProvider<List<Session>>((ref) {
 
 // ── Weekly strip data ─────────────────────────
 
+/// Local midnight on Monday of the week containing [now]. Every "this week"
+/// metric in the app (week strip, weekly stats, activity stats, calories)
+/// anchors to this so different cards can never disagree about the window.
+DateTime _startOfWeek(DateTime now) =>
+    DateTime(now.year, now.month, now.day - (now.weekday - 1));
+
 class DayData {
 
   const DayData({
@@ -401,8 +401,7 @@ final weekStripProvider = FutureProvider.family<List<DayData>, Locale>(
   (ref, locale) async {
     final now = DateTime.now();
     // Monday 00:00 of this week through next Monday 00:00 (exclusive).
-    final mondayMidnight = DateTime(now.year, now.month, now.day)
-        .subtract(Duration(days: now.weekday - 1));
+    final mondayMidnight = _startOfWeek(now);
     final nextMondayMidnight = mondayMidnight.add(const Duration(days: 7));
     final sessionDao = ref.watch(sessionDaoProvider);
 
@@ -468,8 +467,7 @@ class WeeklyStats {
 final weeklyStatsProvider = FutureProvider<WeeklyStats>((ref) async {
   final sessionDao = ref.watch(sessionDaoProvider);
   final now = DateTime.now();
-  final monday = now.subtract(Duration(days: now.weekday - 1));
-  final weekStart = DateTime(monday.year, monday.month, monday.day);
+  final weekStart = _startOfWeek(now);
   final weekEnd = weekStart.add(const Duration(days: 7));
 
   // This week
@@ -601,8 +599,9 @@ int caloriesForSession(double bodyWeightKg, int durationSeconds) {
   return (_kDefaultMet * bodyWeightKg * hours).round();
 }
 
-/// Volume + calories rolled up over today, the last 7 days, and the last
-/// 30 days. Powers the "Body Status" card in the Status sheet.
+/// Volume + calories rolled up over today, this week (Monday-anchored, same
+/// window as [weeklyStatsProvider]), and this calendar month. Powers the
+/// "Body Status" card in the Status sheet.
 final activityStatsProvider = FutureProvider<ActivityStats>((ref) async {
   final sessionDao = ref.watch(sessionDaoProvider);
   final profile = await ref.watch(userProfileProvider.future);
@@ -612,10 +611,14 @@ final activityStatsProvider = FutureProvider<ActivityStats>((ref) async {
   final now = DateTime.now();
   final today = DateTime(now.year, now.month, now.day);
   final tomorrow = today.add(const Duration(days: 1));
-  final weekStart = today.subtract(const Duration(days: 7));
-  final monthStart = today.subtract(const Duration(days: 30));
+  final weekStart = _startOfWeek(now);
+  final monthStart = DateTime(now.year, now.month);
+  // The week can straddle a month boundary — fetch from the earlier of the
+  // two starts so both rollups see every session they need.
+  final rangeStart =
+      weekStart.isBefore(monthStart) ? weekStart : monthStart;
 
-  final monthSessions = await sessionDao.getInRange(monthStart, tomorrow);
+  final rangeSessions = await sessionDao.getInRange(rangeStart, tomorrow);
 
   double todayVol = 0;
   double weekVol = 0;
@@ -623,17 +626,19 @@ final activityStatsProvider = FutureProvider<ActivityStats>((ref) async {
   var todayCal = 0;
   var weekCal = 0;
   var monthCal = 0;
-  for (final s in monthSessions) {
+  for (final s in rangeSessions) {
     if (s.finishedAt == null) continue;
     final v = s.totalVolume ?? 0;
     final c = caloriesForSession(bodyWeight, s.durationSeconds ?? 0);
-    monthVol += v;
-    monthCal += c;
-    if (s.startedAt.isAfter(weekStart)) {
+    if (!s.startedAt.isBefore(monthStart)) {
+      monthVol += v;
+      monthCal += c;
+    }
+    if (!s.startedAt.isBefore(weekStart)) {
       weekVol += v;
       weekCal += c;
     }
-    if (s.startedAt.isAfter(today)) {
+    if (!s.startedAt.isBefore(today)) {
       todayVol += v;
       todayCal += c;
     }
@@ -926,6 +931,49 @@ final widgetSyncProvider = Provider<void>((ref) {
 
 // ── Streak count ─────────────────────────────
 
+/// Default gap allowance when the user has no active schedule: one rest day
+/// between workouts keeps the streak alive (every-other-day training).
+const int _kDefaultStreakGapDays = 1;
+
+/// Upper bound on the gap allowance so a rest-heavy schedule can't make the
+/// streak effectively unbreakable.
+const int _kMaxStreakGapDays = 3;
+
+/// How many consecutive workout-free calendar days the streak tolerates.
+///
+/// Schedule-aware: with an active schedule the allowance is the longest run
+/// of consecutive rest days in its cycle (checked cyclically, so a cycle
+/// ending and starting with rest days counts as one run). Without a schedule
+/// — or with a degenerate all-rest schedule — falls back to
+/// [_kDefaultStreakGapDays].
+int _streakGapAllowance(List<ScheduleDay>? scheduleDays) {
+  final days = scheduleDays;
+  if (days == null || days.isEmpty) return _kDefaultStreakGapDays;
+  if (days.every(_isRestScheduleDay)) return _kDefaultStreakGapDays;
+
+  // Longest cyclic run of consecutive rest days: doubling the list lets a
+  // run that wraps around the cycle boundary be counted in one pass.
+  var run = 0;
+  var maxRun = 0;
+  for (final d in [...days, ...days]) {
+    if (_isRestScheduleDay(d)) {
+      run++;
+      if (run > maxRun) maxRun = run;
+    } else {
+      run = 0;
+    }
+  }
+  return maxRun.clamp(0, days.length).clamp(0, _kMaxStreakGapDays);
+}
+
+/// Number of workout days in the current unbroken training chain.
+///
+/// Unlike a naive consecutive-calendar-day streak, scheduled rest days do
+/// not break the chain: a gap between two workout days (or between the last
+/// workout and today) is tolerated up to the schedule-derived allowance from
+/// [_streakGapAllowance]. The streak counts *training days*, so a Mon/Wed/Fri
+/// lifter who never misses a session builds one workout per training day —
+/// not a streak that resets to 1 every Tuesday.
 final streakProvider = FutureProvider<int>((ref) async {
   // Auto-invalidate at next local midnight so the streak rolls over even
   // when the app stays foregrounded across the day boundary. Re-runs of
@@ -938,27 +986,42 @@ final streakProvider = FutureProvider<int>((ref) async {
 
   final sessionDao = ref.watch(sessionDaoProvider);
   // One SQL round-trip: distinct local calendar days (newest first) with at
-  // least one completed session. Replaces the previous 365 sequential
-  // hasSessionOnDate() calls that blocked the UI thread every Workout-tab
-  // open. Walking the result list in Dart is O(streak length).
+  // least one completed session. Walking the result list in Dart is
+  // O(streak length).
   final days = await sessionDao.getDistinctSessionDatesDescending();
   if (days.isEmpty) return 0;
 
-  final today = DateTime(now.year, now.month, now.day);
-  final daySet = <int>{
-    for (final d in days)
-      DateTime(d.year, d.month, d.day).millisecondsSinceEpoch,
-  };
+  // Gap allowance from the active schedule (reactive: streak recomputes
+  // when the schedule or its days change).
+  final active = await ref.watch(activeScheduleProvider.future);
+  final scheduleDays = active == null
+      ? null
+      : await ref.watch(scheduleDaysProvider(active.localId).future);
+  final allowedGap = _streakGapAllowance(scheduleDays);
 
-  var streak = 0;
-  for (var i = 0; i <= days.length; i++) {
-    // Subtract calendar days at local midnight rather than fixed 24h
-    // Durations so a DST transition can't shift the lookup off the day.
-    final day = DateTime(today.year, today.month, today.day - i);
-    if (daySet.contains(day.millisecondsSinceEpoch)) {
+  // Calendar-day difference at local midnight; round hours/24 so a DST
+  // transition (23h/25h day) still counts as one calendar day.
+  int dayDiff(DateTime a, DateTime b) =>
+      (DateTime(a.year, a.month, a.day)
+              .difference(DateTime(b.year, b.month, b.day))
+              .inHours /
+          24)
+          .round();
+
+  // Streak is dead when the workout-free run since the last session already
+  // exceeds the allowance. (Today itself never counts against the user —
+  // they may simply not have trained *yet*.)
+  final today = DateTime(now.year, now.month, now.day);
+  final restRunSinceLast = dayDiff(today, days.first) - 1;
+  if (restRunSinceLast > allowedGap) return 0;
+
+  var streak = 1;
+  for (var i = 1; i < days.length; i++) {
+    final restDaysBetween = dayDiff(days[i - 1], days[i]) - 1;
+    if (restDaysBetween < 0) continue; // duplicate calendar day
+    if (restDaysBetween <= allowedGap) {
       streak++;
-    } else if (i > 0) {
-      // Allow today to not have a session yet.
+    } else {
       break;
     }
   }
@@ -1015,24 +1078,22 @@ final recordsProvider = FutureProvider<RecordsData>((ref) async {
 
 // ── Calories estimate ────────────────────────
 
-/// Total calories burned across *last* week's completed sessions (Monday
-/// 00:00 through the following Monday 00:00, exclusive). Uses the user's
-/// real body weight when set, falling back to [_kFallbackBodyWeightKg].
+/// Total calories burned across *this* week's completed sessions (Monday
+/// 00:00 through the following Monday 00:00, exclusive — the same window as
+/// [weeklyStatsProvider]). Uses the user's real body weight when set,
+/// falling back to [_kFallbackBodyWeightKg].
 final weeklyCaloriesProvider = FutureProvider<int>((ref) async {
   final sessionDao = ref.watch(sessionDaoProvider);
   final profile = await ref.watch(userProfileProvider.future);
   final bodyWeight = profile?.bodyWeightKg ?? _kFallbackBodyWeightKg;
 
-  final now = DateTime.now();
-  final monday = DateTime(now.year, now.month, now.day)
-      .subtract(Duration(days: now.weekday - 1));
-  final weekStart = DateTime(monday.year, monday.month, monday.day);
-  final lastWeekStart = weekStart.subtract(const Duration(days: 7));
+  final weekStart = _startOfWeek(DateTime.now());
+  final weekEnd = weekStart.add(const Duration(days: 7));
 
-  final lastWeek = await sessionDao.getInRange(lastWeekStart, weekStart);
+  final thisWeek = await sessionDao.getInRange(weekStart, weekEnd);
 
   var total = 0;
-  for (final s in lastWeek) {
+  for (final s in thisWeek) {
     if (s.finishedAt == null) continue;
     total += caloriesForSession(bodyWeight, s.durationSeconds ?? 0);
   }

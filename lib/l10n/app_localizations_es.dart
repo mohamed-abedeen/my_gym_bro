@@ -98,6 +98,9 @@ class AppLocalizationsEs extends AppLocalizations {
   String get calBurnedLastWeek => 'Calorías quemadas la semana pasada';
 
   @override
+  String get calBurnedThisWeek => 'Calorías quemadas esta semana';
+
+  @override
   String get totalDuration => 'Duración total';
 
   @override
@@ -508,6 +511,9 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get thisWeek => 'Esta semana';
+
+  @override
+  String get thisMonth => 'Este mes';
 
   @override
   String get welcomeTitle => 'Entrena mejor. Hazte más fuerte.';
