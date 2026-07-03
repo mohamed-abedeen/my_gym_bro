@@ -491,5 +491,8 @@
   "deleteAccountFailed": "Could not delete account. Please try again.",
   "planPremium": "Premium",
   "trainingReminderBody": "Keep your streak going. Let's train.",
-  "languageSystem": "System"
+  "languageSystem": "System",
+  "settingsWorkoutFooter": "Defaults for rest timers, logging, and calorie estimates.",
+  "settingsNotificationsFooter": "Training reminders help protect your streak.",
+  "settingsDataFooter": "Deleting your account permanently removes your data from our servers."
 }

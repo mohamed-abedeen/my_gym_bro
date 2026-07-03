@@ -2273,6 +2273,24 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'System'**
   String get languageSystem;
+
+  /// No description provided for @settingsWorkoutFooter.
+  ///
+  /// In en, this message translates to:
+  /// **'Defaults for rest timers, logging, and calorie estimates.'**
+  String get settingsWorkoutFooter;
+
+  /// No description provided for @settingsNotificationsFooter.
+  ///
+  /// In en, this message translates to:
+  /// **'Training reminders help protect your streak.'**
+  String get settingsNotificationsFooter;
+
+  /// No description provided for @settingsDataFooter.
+  ///
+  /// In en, this message translates to:
+  /// **'Deleting your account permanently removes your data from our servers.'**
+  String get settingsDataFooter;
 }
 
 class _AppLocalizationsDelegate

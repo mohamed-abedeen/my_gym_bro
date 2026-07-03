@@ -371,5 +371,8 @@
   "deleteAccountFailed": "Impossible de supprimer le compte. Veuillez réessayer.",
   "planPremium": "Premium",
   "trainingReminderBody": "Garde ta série. On va s'entraîner.",
-  "languageSystem": "Système"
+  "languageSystem": "Système",
+  "settingsWorkoutFooter": "Valeurs par défaut pour les minuteurs de repos, le suivi et l'estimation des calories.",
+  "settingsNotificationsFooter": "Les rappels d'entraînement protègent votre série.",
+  "settingsDataFooter": "La suppression de votre compte efface définitivement vos données de nos serveurs."
 }

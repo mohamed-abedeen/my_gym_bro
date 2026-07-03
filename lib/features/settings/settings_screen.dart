@@ -24,21 +24,48 @@ import 'package:my_gym_bro/l10n/app_localizations.dart';
 import 'package:my_gym_bro/shared/constants.dart';
 import 'package:my_gym_bro/shared/responsive.dart';
 import 'package:my_gym_bro/shared/widgets/anatomy_body.dart';
+import 'package:my_gym_bro/shared/widgets/glass_surface.dart';
 import 'package:my_gym_bro/shared/widgets/oc_glass_btn.dart';
 import 'package:my_gym_bro/shared/widgets/user_avatar.dart';
 import 'package:url_launcher/url_launcher.dart';
 
-/// Settings — premium iOS-26-style redesign.
+/// Settings — designed to HIG patterns the way Apple's first-party apps
+/// (Fitness, Health, Journal) do settings, not as a Settings-app clone:
 ///
-/// Grouped frosted-glass sections (Appearance / Workout / Notifications /
-/// General / Data & Account) over an ambient gradient backdrop, with compact
-/// iOS-Settings rows: tinted icon badges, inline segmented controls for
-/// two-state choices, and floating glass sheets for everything else.
-class SettingsScreen extends ConsumerWidget {
+/// * collapsing large title with an always-frosted top edge and an inline
+///   title that fades in as you scroll (the iOS large-title pattern),
+/// * centered profile header (avatar, name, plan),
+/// * a subscription feature card,
+/// * icon-less content-first grouped rows with footnote group footers,
+/// * centered red text rows for destructive actions.
+class SettingsScreen extends ConsumerStatefulWidget {
   const SettingsScreen({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<SettingsScreen> createState() => _SettingsScreenState();
+}
+
+class _SettingsScreenState extends ConsumerState<SettingsScreen> {
+  final _scroll = ScrollController();
+  bool _collapsed = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _scroll.addListener(() {
+      final collapsed = _scroll.offset > 30;
+      if (collapsed != _collapsed) setState(() => _collapsed = collapsed);
+    });
+  }
+
+  @override
+  void dispose() {
+    _scroll.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
     Responsive.init(context);
     final l10n = AppLocalizations.of(context);
     final colors = AppColors.of(context);
@@ -48,83 +75,76 @@ class SettingsScreen extends ConsumerWidget {
     final weightUnit = profile.valueOrNull?.weightUnit ?? 'kg';
     final authState = ref.watch(authNotifierProvider);
     final isSignedIn = authState.status == AuthStatus.authenticated;
+    final topPad = MediaQuery.of(context).padding.top;
+    final barHeight = topPad + 50.h;
 
     return Scaffold(
       backgroundColor: colors.background,
       body: Stack(
         children: [
-          // ── Ambient backdrop — gives the frosted cards something to blur ──
+          // ── Ambient accent wash behind the top of the screen ──
           Positioned(
-            top: -110.h,
-            right: -90.w,
-            child: _AuroraBlob(
-              color: colors.accent,
-              size: 340.w,
-              alpha: isDark ? 0.20 : 0.26,
-            ),
-          ),
-          Positioned(
-            top: 300.h,
-            left: -150.w,
-            child: _AuroraBlob(
-              color: SettingsBadgeColors.indigo,
-              size: 380.w,
-              alpha: isDark ? 0.16 : 0.16,
-            ),
-          ),
-          Positioned(
-            bottom: -120.h,
-            right: -70.w,
-            child: _AuroraBlob(
-              color: SettingsBadgeColors.teal,
-              size: 320.w,
-              alpha: isDark ? 0.12 : 0.14,
+            top: 0,
+            left: 0,
+            right: 0,
+            height: 320.h,
+            child: IgnorePointer(
+              child: DecoratedBox(
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.topCenter,
+                    end: Alignment.bottomCenter,
+                    colors: [
+                      colors.accent.withValues(alpha: isDark ? 0.12 : 0.16),
+                      colors.accent.withValues(alpha: 0),
+                    ],
+                  ),
+                ),
+              ),
             ),
           ),
 
-          // ── Content ──
-          SafeArea(
-            bottom: false,
+          // ── Scrollable content ──
+          Positioned.fill(
             child: SingleChildScrollView(
-              padding: EdgeInsets.fromLTRB(16.w, 8.h, 16.w, 48.h),
+              controller: _scroll,
+              padding:
+                  EdgeInsets.fromLTRB(16.w, barHeight + 6.h, 16.w, 48.h),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Header
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Text(
-                        l10n.settings,
-                        style: TextStyle(
-                          fontSize: 30.sp,
-                          fontWeight: FontWeight.w800,
-                          letterSpacing: -0.5,
-                          color: colors.textPrimary,
-                        ),
+                  // Large title — fades out as the inline title fades in.
+                  AnimatedOpacity(
+                    duration: const Duration(milliseconds: 150),
+                    opacity: _collapsed ? 0 : 1,
+                    child: Text(
+                      l10n.settings,
+                      style: TextStyle(
+                        fontSize: 32.sp,
+                        fontWeight: FontWeight.w800,
+                        letterSpacing: -0.6,
+                        color: colors.textPrimary,
                       ),
-                      OcGlassBtn(
-                        type: OcGlassBtnType.close,
-                        size: 42,
-                        onTap: () => Navigator.of(context).pop(),
-                      ),
-                    ],
+                    ),
                   ),
 
-                  SizedBox(height: 16.h),
+                  SizedBox(height: 18.h),
 
-                  // ── Profile hero card ──
-                  _ProfileCard(profile: profile),
+                  // ── Profile header — centered, taps through to profile ──
+                  Center(child: _ProfileHeader(profile: profile.valueOrNull)),
 
                   SizedBox(height: 20.h),
+
+                  // ── Subscription feature card ──
+                  _SubscriptionCard(profile: profile.valueOrNull),
+
+                  SizedBox(height: 24.h),
 
                   // ── Appearance ──
                   SettingsSection(
                     header: l10n.settingsSectionAppearance,
                     children: [
                       SettingsNavRow(
-                        icon: Icons.palette_rounded,
-                        iconColor: SettingsBadgeColors.purple,
                         label: l10n.skins,
                         value: availableSkins
                             .firstWhere(
@@ -135,10 +155,6 @@ class SettingsScreen extends ConsumerWidget {
                         onTap: () => showSkinsModal(context, ref),
                       ),
                       SettingsSwitchRow(
-                        icon: isDark
-                            ? Icons.dark_mode_rounded
-                            : Icons.light_mode_rounded,
-                        iconColor: SettingsBadgeColors.indigo,
                         label: l10n.darkMode,
                         value: isDark,
                         onChanged: (val) {
@@ -150,8 +166,6 @@ class SettingsScreen extends ConsumerWidget {
                         },
                       ),
                       SettingsSegmentedRow(
-                        icon: Icons.accessibility_new_rounded,
-                        iconColor: SettingsBadgeColors.teal,
                         label: l10n.anatomyModel,
                         options: [l10n.male, l10n.female],
                         selectedIndex:
@@ -165,15 +179,14 @@ class SettingsScreen extends ConsumerWidget {
                     ],
                   ),
 
-                  SizedBox(height: 18.h),
+                  SizedBox(height: 22.h),
 
                   // ── Workout ──
                   SettingsSection(
                     header: l10n.settingsSectionWorkout,
+                    footer: l10n.settingsWorkoutFooter,
                     children: [
                       SettingsSegmentedRow(
-                        icon: Icons.fitness_center_rounded,
-                        iconColor: SettingsBadgeColors.blue,
                         label: l10n.weightUnit,
                         options: const ['KG', 'LBS'],
                         selectedIndex: weightUnit == 'lbs' ? 1 : 0,
@@ -181,15 +194,11 @@ class SettingsScreen extends ConsumerWidget {
                             _setWeightUnit(ref, i == 1 ? 'lbs' : 'kg'),
                       ),
                       SettingsNavRow(
-                        icon: Icons.monitor_weight_rounded,
-                        iconColor: SettingsBadgeColors.green,
                         label: l10n.bodyWeight,
                         value: _bodyWeightLabel(profile.valueOrNull, l10n),
                         onTap: () => BodyWeightSheet.show(context),
                       ),
                       SettingsNavRow(
-                        icon: Icons.timer_rounded,
-                        iconColor: SettingsBadgeColors.orange,
                         label: l10n.defaultRestTime,
                         value: _restLabel(
                           profile.valueOrNull?.defaultRestSeconds ?? 90,
@@ -197,8 +206,6 @@ class SettingsScreen extends ConsumerWidget {
                         onTap: () => RestTimeSheet.show(context),
                       ),
                       SettingsSwitchRow(
-                        icon: Icons.volume_up_rounded,
-                        iconColor: SettingsBadgeColors.pink,
                         label: l10n.restTimerSound,
                         value: ref.watch(restTimerSoundEnabledProvider),
                         onChanged: (val) => ref
@@ -206,8 +213,6 @@ class SettingsScreen extends ConsumerWidget {
                             .set(val),
                       ),
                       SettingsSwitchRow(
-                        icon: Icons.vibration_rounded,
-                        iconColor: SettingsBadgeColors.red,
                         label: l10n.restTimerVibration,
                         value: ref.watch(restTimerVibrationEnabledProvider),
                         onChanged: (val) => ref
@@ -217,15 +222,14 @@ class SettingsScreen extends ConsumerWidget {
                     ],
                   ),
 
-                  SizedBox(height: 18.h),
+                  SizedBox(height: 22.h),
 
                   // ── Notifications ──
                   SettingsSection(
                     header: l10n.notificationsSection,
+                    footer: l10n.settingsNotificationsFooter,
                     children: [
                       SettingsSwitchRow(
-                        icon: Icons.alarm_rounded,
-                        iconColor: SettingsBadgeColors.red,
                         label: l10n.trainingReminders,
                         value: ref.watch(trainingRemindersEnabledProvider),
                         onChanged: (val) async {
@@ -243,8 +247,6 @@ class SettingsScreen extends ConsumerWidget {
                         },
                       ),
                       SettingsNavRow(
-                        icon: Icons.record_voice_over_rounded,
-                        iconColor: SettingsBadgeColors.orange,
                         label: l10n.notificationTone,
                         value: toneLabel(
                           notificationToneFromString(
@@ -259,8 +261,6 @@ class SettingsScreen extends ConsumerWidget {
                         ),
                       ),
                       SettingsSwitchRow(
-                        icon: Icons.people_alt_rounded,
-                        iconColor: SettingsBadgeColors.green,
                         label: l10n.communityNotifications,
                         value: ref
                             .watch(communityNotificationsEnabledProvider),
@@ -287,15 +287,13 @@ class SettingsScreen extends ConsumerWidget {
                     ],
                   ),
 
-                  SizedBox(height: 18.h),
+                  SizedBox(height: 22.h),
 
                   // ── General ──
                   SettingsSection(
                     header: l10n.settingsSectionGeneral,
                     children: [
                       SettingsNavRow(
-                        icon: Icons.language_rounded,
-                        iconColor: SettingsBadgeColors.blue,
                         label: l10n.language,
                         value: localeDisplayName(
                           ref.watch(localeProvider),
@@ -304,15 +302,11 @@ class SettingsScreen extends ConsumerWidget {
                         onTap: () => showLanguageSheet(context, ref),
                       ),
                       SettingsNavRow(
-                        icon: Icons.star_rounded,
-                        iconColor: SettingsBadgeColors.yellow,
                         label: l10n.rateApp,
                         onTap: () =>
                             _openExternal(context, _storeReviewUri()),
                       ),
                       SettingsNavRow(
-                        icon: Icons.mail_rounded,
-                        iconColor: SettingsBadgeColors.blue,
                         label: l10n.contactSupport,
                         onTap: () => _openExternal(
                           context,
@@ -326,8 +320,6 @@ class SettingsScreen extends ConsumerWidget {
                         ),
                       ),
                       SettingsNavRow(
-                        icon: Icons.shield_rounded,
-                        iconColor: SettingsBadgeColors.gray,
                         label: l10n.privacyPolicy,
                         onTap: () => _openExternal(
                           context,
@@ -335,8 +327,6 @@ class SettingsScreen extends ConsumerWidget {
                         ),
                       ),
                       SettingsNavRow(
-                        icon: Icons.description_rounded,
-                        iconColor: SettingsBadgeColors.gray,
                         label: l10n.termsOfService,
                         onTap: () => _openExternal(
                           context,
@@ -346,45 +336,47 @@ class SettingsScreen extends ConsumerWidget {
                     ],
                   ),
 
-                  SizedBox(height: 18.h),
+                  SizedBox(height: 22.h),
 
-                  // ── Data & Account (Apple requirement) ──
+                  // ── Data ──
                   SettingsSection(
                     header: l10n.settingsSectionData,
                     children: [
                       SettingsNavRow(
-                        icon: Icons.ios_share_rounded,
-                        iconColor: SettingsBadgeColors.blue,
                         label: l10n.exportData,
                         onTap: () =>
                             _showSnack(context, l10n.exportComingSoon),
                       ),
                       SettingsNavRow(
-                        icon: Icons.cleaning_services_rounded,
-                        iconColor: SettingsBadgeColors.gray,
                         label: l10n.clearCache,
                         onTap: () => _clearCache(context, l10n),
                       ),
+                    ],
+                  ),
+
+                  SizedBox(height: 22.h),
+
+                  // ── Account actions (Apple requirement: delete path) ──
+                  SettingsSection(
+                    footer: l10n.settingsDataFooter,
+                    children: [
                       if (isSignedIn)
-                        SettingsNavRow(
-                          icon: Icons.logout_rounded,
-                          iconColor: SettingsBadgeColors.gray,
+                        SettingsButtonRow(
                           label: l10n.signOut,
+                          color: colors.danger,
                           onTap: () =>
                               _showSignOutDialog(context, ref, l10n, colors),
                         ),
-                      SettingsNavRow(
-                        icon: Icons.delete_forever_rounded,
-                        iconColor: SettingsBadgeColors.red,
+                      SettingsButtonRow(
                         label: l10n.deleteAccount,
-                        isDestructive: true,
+                        color: colors.danger,
                         onTap: () => _showDeleteAccountDialog(
                             context, ref, l10n, colors),
                       ),
                     ],
                   ),
 
-                  SizedBox(height: 26.h),
+                  SizedBox(height: 28.h),
 
                   // ── Version footer ──
                   Center(
@@ -424,6 +416,78 @@ class SettingsScreen extends ConsumerWidget {
                   ),
                 ],
               ),
+            ),
+          ),
+
+          // ── Pinned top bar — frosted edge + inline title on collapse ──
+          Positioned(
+            top: 0,
+            left: 0,
+            right: 0,
+            height: barHeight,
+            child: Stack(
+              fit: StackFit.expand,
+              children: [
+                // Frost is always on (matches the app's scroll-edge
+                // pattern); only the tint fades in with the collapse.
+                IgnorePointer(
+                  child: AnimatedOpacity(
+                    duration: const Duration(milliseconds: 200),
+                    opacity: _collapsed ? 1 : 0,
+                    child: GlassSurface(
+                      radius: 0,
+                      border: false,
+                      blurSigma: AppGlass.blurStrong,
+                      tint: colors.background
+                          .withValues(alpha: isDark ? 0.55 : 0.6),
+                    ),
+                  ),
+                ),
+                Positioned(
+                  left: 0,
+                  right: 0,
+                  bottom: 0,
+                  child: AnimatedOpacity(
+                    duration: const Duration(milliseconds: 200),
+                    opacity: _collapsed ? 1 : 0,
+                    child: Container(
+                      height: 0.5,
+                      color: colors.divider.withValues(alpha: 0.6),
+                    ),
+                  ),
+                ),
+                SafeArea(
+                  bottom: false,
+                  child: Padding(
+                    padding: EdgeInsets.symmetric(horizontal: 16.w),
+                    child: Stack(
+                      alignment: Alignment.center,
+                      children: [
+                        AnimatedOpacity(
+                          duration: const Duration(milliseconds: 200),
+                          opacity: _collapsed ? 1 : 0,
+                          child: Text(
+                            l10n.settings,
+                            style: TextStyle(
+                              fontSize: 15.sp,
+                              fontWeight: FontWeight.w700,
+                              color: colors.textPrimary,
+                            ),
+                          ),
+                        ),
+                        Align(
+                          alignment: Alignment.centerRight,
+                          child: OcGlassBtn(
+                            type: OcGlassBtnType.close,
+                            size: 38,
+                            onTap: () => Navigator.of(context).pop(),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
             ),
           ),
         ],
@@ -629,154 +693,73 @@ class SettingsScreen extends ConsumerWidget {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Profile hero card — avatar, name, plan, premium banner
+// Profile header — centered avatar, name, plan (Apple ID / Health pattern)
 // ─────────────────────────────────────────────────────────────────────────────
 
-class _ProfileCard extends ConsumerWidget {
-  const _ProfileCard({required this.profile});
+class _ProfileHeader extends ConsumerWidget {
+  const _ProfileHeader({required this.profile});
 
-  final AsyncValue<UserProfile?> profile;
+  final UserProfile? profile;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final colors = AppColors.of(context);
     final l10n = AppLocalizations.of(context);
-    final p = profile.valueOrNull;
 
-    return SettingsSection(
-      children: [
-        // Identity row → profile screen
-        SettingsNavRowShell(
-          onTap: () => context.push(AppRoutes.profile),
-          child: Row(
+    return GestureDetector(
+      behavior: HitTestBehavior.opaque,
+      onTap: () => context.push(AppRoutes.profile),
+      child: Column(
+        children: [
+          Container(
+            padding: EdgeInsets.all(3.w),
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              border: Border.all(
+                color: colors.textPrimary.withValues(alpha: 0.10),
+                width: 1,
+              ),
+            ),
+            child: UserAvatar(
+              size: 74,
+              url: profile?.avatarUrl,
+              iconColor: colors.textPrimary,
+            ),
+          ),
+          SizedBox(height: 10.h),
+          Row(
+            mainAxisSize: MainAxisSize.min,
             children: [
-              Container(
-                padding: EdgeInsets.all(2.5.w),
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  gradient: LinearGradient(
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                    colors: [
-                      colors.accent,
-                      colors.accent.withValues(alpha: 0.25),
-                    ],
-                  ),
-                ),
-                child: UserAvatar(
-                  size: 52,
-                  url: p?.avatarUrl,
-                  iconColor: colors.textPrimary,
+              Text(
+                profile?.displayName ?? 'User',
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(
+                  fontSize: 20.sp,
+                  fontWeight: FontWeight.w700,
+                  letterSpacing: -0.3,
+                  color: colors.textPrimary,
                 ),
               ),
-              SizedBox(width: 12.w),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      p?.displayName ?? 'User',
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: TextStyle(
-                        fontSize: 16.sp,
-                        fontWeight: FontWeight.w700,
-                        color: colors.textPrimary,
-                      ),
-                    ),
-                    SizedBox(height: 2.h),
-                    Text(
-                      _planLabel(p?.subscriptionStatus, l10n),
-                      style: TextStyle(
-                        fontSize: 11.sp,
-                        fontWeight: FontWeight.w600,
-                        color: colors.subtitleText,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
+              SizedBox(width: 3.w),
               Icon(
                 Icons.chevron_right_rounded,
-                color: colors.textSecondary.withValues(alpha: 0.7),
-                size: 18.sp,
+                color: colors.textSecondary.withValues(alpha: 0.6),
+                size: 20.sp,
               ),
             ],
           ),
-        ),
-
-        // Premium banner → paywall (hosts Restore Purchases)
-        SettingsNavRowShell(
-          onTap: () => context.push(AppRoutes.paywall),
-          child: Container(
-            padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 11.h),
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(16.r),
-              gradient: LinearGradient(
-                begin: Alignment.centerLeft,
-                end: Alignment.centerRight,
-                colors: [
-                  colors.accent,
-                  Color.lerp(colors.accent, colors.amber, 0.55)!,
-                ],
-              ),
-            ),
-            child: Row(
-              children: [
-                Icon(
-                  Icons.workspace_premium_rounded,
-                  color: colors.todayPillText,
-                  size: 20.sp,
-                ),
-                SizedBox(width: 8.w),
-                Expanded(
-                  child: Text(
-                    l10n.manageSubscription,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: TextStyle(
-                      fontSize: 13.sp,
-                      fontWeight: FontWeight.w700,
-                      color: colors.todayPillText,
-                    ),
-                  ),
-                ),
-                Container(
-                  padding:
-                      EdgeInsets.symmetric(horizontal: 9.w, vertical: 4.h),
-                  decoration: BoxDecoration(
-                    color: colors.todayPillText.withValues(alpha: 0.14),
-                    borderRadius: BorderRadius.circular(20.r),
-                  ),
-                  child: Builder(builder: (context) {
-                    final status = p?.subscriptionStatus;
-                    final daysLeft = ref.watch(trialDaysLeftProvider);
-                    final label = status == 'active'
-                        ? l10n.planPremium
-                        : (daysLeft != null
-                            ? l10n.trialDaysLeft(daysLeft)
-                            : l10n.freeTrial);
-                    return Text(
-                      label,
-                      style: TextStyle(
-                        fontSize: 11.sp,
-                        fontWeight: FontWeight.w700,
-                        color: colors.todayPillText,
-                      ),
-                    );
-                  }),
-                ),
-                SizedBox(width: 2.w),
-                Icon(
-                  Icons.chevron_right_rounded,
-                  color: colors.todayPillText.withValues(alpha: 0.7),
-                  size: 18.sp,
-                ),
-              ],
+          SizedBox(height: 2.h),
+          Text(
+            _planLabel(profile?.subscriptionStatus, l10n),
+            style: TextStyle(
+              fontSize: 12.sp,
+              fontWeight: FontWeight.w500,
+              color: colors.subtitleText,
             ),
           ),
-        ),
-      ],
+        ],
+      ),
     );
   }
 
@@ -787,8 +770,6 @@ class _ProfileCard extends ConsumerWidget {
         return l10n.planPremium;
       case 'expired':
         return l10n.subscriptionExpired;
-      case 'trial':
-        return l10n.freeTrial;
       default:
         return l10n.freeTrial;
     }
@@ -796,34 +777,86 @@ class _ProfileCard extends ConsumerWidget {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Ambient backdrop blob — soft radial glow the glass cards frost over
+// Subscription feature card → paywall (hosts Restore Purchases)
 // ─────────────────────────────────────────────────────────────────────────────
 
-class _AuroraBlob extends StatelessWidget {
-  const _AuroraBlob({
-    required this.color,
-    required this.size,
-    required this.alpha,
-  });
+class _SubscriptionCard extends ConsumerWidget {
+  const _SubscriptionCard({required this.profile});
 
-  final Color color;
-  final double size;
-  final double alpha;
+  final UserProfile? profile;
 
   @override
-  Widget build(BuildContext context) {
-    return IgnorePointer(
-      child: Container(
-        width: size,
-        height: size,
-        decoration: BoxDecoration(
-          shape: BoxShape.circle,
-          gradient: RadialGradient(
-            colors: [
-              color.withValues(alpha: alpha),
-              color.withValues(alpha: 0),
-            ],
-          ),
+  Widget build(BuildContext context, WidgetRef ref) {
+    final colors = AppColors.of(context);
+    final l10n = AppLocalizations.of(context);
+
+    final status = profile?.subscriptionStatus;
+    final daysLeft = ref.watch(trialDaysLeftProvider);
+    final planText = status == 'active'
+        ? l10n.planPremium
+        : (daysLeft != null ? l10n.trialDaysLeft(daysLeft) : l10n.freeTrial);
+
+    return GlassSurface(
+      width: double.infinity,
+      radius: 22.r,
+      child: SettingsNavRowShell(
+        onTap: () => context.push(AppRoutes.paywall),
+        child: Row(
+          children: [
+            Container(
+              width: 40.w,
+              height: 40.w,
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(12.r),
+                gradient: LinearGradient(
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  colors: [
+                    colors.accent,
+                    Color.lerp(colors.accent, colors.amber, 0.55)!,
+                  ],
+                ),
+              ),
+              child: Icon(
+                Icons.workspace_premium_rounded,
+                color: colors.todayPillText,
+                size: 22.sp,
+              ),
+            ),
+            SizedBox(width: 12.w),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    l10n.manageSubscription,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                      fontSize: 15.sp,
+                      fontWeight: FontWeight.w600,
+                      color: colors.textPrimary,
+                    ),
+                  ),
+                  SizedBox(height: 2.h),
+                  Text(
+                    planText,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                      fontSize: 12.sp,
+                      color: colors.subtitleText,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            Icon(
+              Icons.chevron_right_rounded,
+              color: colors.textSecondary.withValues(alpha: 0.6),
+              size: 18.sp,
+            ),
+          ],
         ),
       ),
     );

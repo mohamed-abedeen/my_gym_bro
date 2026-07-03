@@ -1163,4 +1163,13 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get languageSystem => 'Sistema';
+
+  @override
+  String get settingsWorkoutFooter => 'Valores predeterminados para temporizadores de descanso, registro y estimación de calorías.';
+
+  @override
+  String get settingsNotificationsFooter => 'Los recordatorios de entrenamiento protegen tu racha.';
+
+  @override
+  String get settingsDataFooter => 'Eliminar tu cuenta borra permanentemente tus datos de nuestros servidores.';
 }
