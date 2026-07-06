@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:math' as math;
 
 import 'package:flutter/foundation.dart' show compute, immutable;
 import 'package:flutter/material.dart';
@@ -48,8 +49,10 @@ final workoutLogRepositoryProvider = Provider<WorkoutLogRepository>((ref) {
 /// Volume per past session for an exercise ID, oldest→newest, up to 10 entries.
 final exerciseVolumeHistoryProvider =
     FutureProvider.family<List<double>, String>((ref, exerciseId) {
-  return ref.watch(sessionDaoProvider).getVolumeHistoryForExercise(exerciseId);
-});
+      return ref
+          .watch(sessionDaoProvider)
+          .getVolumeHistoryForExercise(exerciseId);
+    });
 
 @immutable
 class ExerciseVolumeParams {
@@ -68,28 +71,30 @@ class ExerciseVolumeParams {
 }
 
 /// Volume history with dates for a given exercise and optional start date.
-final exerciseVolumeWithDatesProvider = FutureProvider.family<
-    List<({DateTime date, double volume})>,
-    ExerciseVolumeParams>((ref, params) {
-  return ref.watch(sessionDaoProvider).getVolumeHistoryWithDates(
-        params.exerciseId,
-        from: params.from,
-      );
-});
+final exerciseVolumeWithDatesProvider =
+    FutureProvider.family<
+      List<({DateTime date, double volume})>,
+      ExerciseVolumeParams
+    >((ref, params) {
+      return ref
+          .watch(sessionDaoProvider)
+          .getVolumeHistoryWithDates(params.exerciseId, from: params.from);
+    });
 
 /// Personal records for a given exercise.
 final exercisePersonalRecordsProvider =
-    FutureProvider.family<ExercisePersonalRecords, String>(
-        (ref, exerciseId) {
-  return ref.watch(sessionDaoProvider).getPersonalRecords(exerciseId);
-});
+    FutureProvider.family<ExercisePersonalRecords, String>((ref, exerciseId) {
+      return ref.watch(sessionDaoProvider).getPersonalRecords(exerciseId);
+    });
 
 /// Session history (with sets) for a given exercise, newest first.
 final exerciseSessionHistoryProvider =
-    FutureProvider.family<List<ExerciseHistoryEntry>, String>(
-        (ref, exerciseId) {
-  return ref.watch(sessionDaoProvider).getSessionsForExercise(exerciseId);
-});
+    FutureProvider.family<List<ExerciseHistoryEntry>, String>((
+      ref,
+      exerciseId,
+    ) {
+      return ref.watch(sessionDaoProvider).getSessionsForExercise(exerciseId);
+    });
 
 // ── Schedules ─────────────────────────────────
 
@@ -105,8 +110,10 @@ final allSchedulesProvider = StreamProvider<List<Schedule>>((ref) {
 /// Schedule days for a given schedule — reactive stream backed by Drift.
 /// Emits a new list automatically whenever a day is inserted, updated, or deleted,
 /// so the workout card and share sheet rebuild without manual invalidation.
-final scheduleDaysProvider =
-    StreamProvider.family<List<ScheduleDay>, int>((ref, scheduleId) {
+final scheduleDaysProvider = StreamProvider.family<List<ScheduleDay>, int>((
+  ref,
+  scheduleId,
+) {
   return ref.watch(scheduleDaoProvider).watchDays(scheduleId);
 });
 
@@ -114,7 +121,6 @@ final scheduleDaysProvider =
 
 /// Persists the selected schedule ID and page index across tab switches.
 class WorkoutCardState {
-
   const WorkoutCardState({this.selectedScheduleId, this.currentPage = 0});
   final int? selectedScheduleId;
   final int currentPage;
@@ -127,8 +133,9 @@ class WorkoutCardState {
   }
 }
 
-final workoutCardStateProvider =
-    StateProvider<WorkoutCardState>((ref) => const WorkoutCardState());
+final workoutCardStateProvider = StateProvider<WorkoutCardState>(
+  (ref) => const WorkoutCardState(),
+);
 
 // ── Next training day index ──────────────────
 
@@ -140,8 +147,10 @@ bool _isRestScheduleDay(ScheduleDay d) =>
 ///
 /// Logic: nextIndex = completedSessions % trainingDays.length
 /// Returns 0 if no sessions exist yet (start from the first day).
-final nextTrainingDayIndexProvider =
-    FutureProvider.family<int, int>((ref, scheduleId) async {
+final nextTrainingDayIndexProvider = FutureProvider.family<int, int>((
+  ref,
+  scheduleId,
+) async {
   final sessionDao = ref.watch(sessionDaoProvider);
   final scheduleDao = ref.watch(scheduleDaoProvider);
 
@@ -166,8 +175,10 @@ final nextTrainingDayIndexProvider =
 /// 5. If the gap has passed → return 0 (ready to train).
 ///
 /// Returns null if no sessions exist yet.
-final nextSessionHoursProvider =
-    FutureProvider.family<int?, int>((ref, scheduleId) async {
+final nextSessionHoursProvider = FutureProvider.family<int?, int>((
+  ref,
+  scheduleId,
+) async {
   final sessionDao = ref.watch(sessionDaoProvider);
   final scheduleDao = ref.watch(scheduleDaoProvider);
 
@@ -225,8 +236,8 @@ final nextSessionHoursProvider =
 
 /// Recovery status for a specific training day, based on the muscles it targets.
 class DayRecoveryStatus {
-
   const DayRecoveryStatus({this.hoursRemaining, this.bottleneckMuscle});
+
   /// Hours remaining until the bottleneck muscle is fully recovered.
   /// 0 = all muscles ready. null = never trained (ready to go).
   final int? hoursRemaining;
@@ -245,80 +256,83 @@ class DayRecoveryStatus {
 /// 3. Checks each muscle's recovery % via MuscleRecoveryService.
 /// 4. Finds the bottleneck (least recovered muscle).
 /// 5. Calculates remaining hours until that muscle hits 100%.
-final dayRecoveryStatusProvider =
-    FutureProvider.family<DayRecoveryStatus, int>((ref, scheduleDayId) async {
-  final scheduleDao = ref.watch(scheduleDaoProvider);
-  final exerciseDao = ref.watch(exerciseDaoProvider);
-  final sessionDao = ref.watch(sessionDaoProvider);
+final dayRecoveryStatusProvider = FutureProvider.family<DayRecoveryStatus, int>(
+  (ref, scheduleDayId) async {
+    final scheduleDao = ref.watch(scheduleDaoProvider);
+    final exerciseDao = ref.watch(exerciseDaoProvider);
+    final sessionDao = ref.watch(sessionDaoProvider);
 
-  // 1. Get exercises for this training day
-  final scheduledExercises = await scheduleDao.getExercises(scheduleDayId);
-  if (scheduledExercises.isEmpty) {
-    return const DayRecoveryStatus(); // no exercises → ready
-  }
-
-  // 2. Look up the actual exercise data to get muscle groups
-  final exerciseIds =
-      scheduledExercises.map((se) => se.exerciseId).toSet().toList();
-  final exercises = await exerciseDao.findByExerciseIds(exerciseIds);
-
-  // Extract unique muscle groups involved in this day
-  final muscleGroups = <String>{};
-  for (final ex in exercises) {
-    if (ex.muscleGroup != null && ex.muscleGroup!.isNotEmpty) {
-      muscleGroups.add(ex.muscleGroup!);
-    }
-  }
-
-  if (muscleGroups.isEmpty) {
-    return const DayRecoveryStatus(); // no muscle data → ready
-  }
-
-  // 3. Get recovery state for all muscles
-  final recoveryService = MuscleRecoveryService(sessionDao, exerciseDao);
-  final allStates = await recoveryService.getAllMuscleStates();
-
-  // 4. Find the bottleneck among the muscles used in this day
-  String? bottleneck;
-  var maxRemainingHours = 0;
-
-  for (final group in muscleGroups) {
-    final state = allStates.firstWhere(
-      (s) => s.muscleGroup == group,
-      orElse: () => MuscleStateInfo(
-        muscleGroup: group,
-        state: MuscleState.undertrained,
-      ),
-    );
-
-    // Undertrained or fully recovered → 0 hours remaining
-    if (state.state == MuscleState.undertrained ||
-        state.state == MuscleState.recovered) {
-      continue;
+    // 1. Get exercises for this training day
+    final scheduledExercises = await scheduleDao.getExercises(scheduleDayId);
+    if (scheduledExercises.isEmpty) {
+      return const DayRecoveryStatus(); // no exercises → ready
     }
 
-    // Recovering → remaining hours until the dose-adjusted window closes.
-    final recoveredAt = state.recoveredAt;
-    if (recoveredAt != null) {
-      final remaining =
-          (recoveredAt.difference(DateTime.now()).inMinutes / 60.0).ceil();
+    // 2. Look up the actual exercise data to get muscle groups
+    final exerciseIds = scheduledExercises
+        .map((se) => se.exerciseId)
+        .toSet()
+        .toList();
+    final exercises = await exerciseDao.findByExerciseIds(exerciseIds);
 
-      if (remaining > maxRemainingHours) {
-        maxRemainingHours = remaining;
-        bottleneck = group;
+    // Extract unique muscle groups involved in this day
+    final muscleGroups = <String>{};
+    for (final ex in exercises) {
+      if (ex.muscleGroup != null && ex.muscleGroup!.isNotEmpty) {
+        muscleGroups.add(ex.muscleGroup!);
       }
     }
-  }
 
-  if (maxRemainingHours <= 0) {
-    return const DayRecoveryStatus(); // all muscles ready
-  }
+    if (muscleGroups.isEmpty) {
+      return const DayRecoveryStatus(); // no muscle data → ready
+    }
 
-  return DayRecoveryStatus(
-    hoursRemaining: maxRemainingHours,
-    bottleneckMuscle: bottleneck,
-  );
-});
+    // 3. Get recovery state for all muscles
+    final recoveryService = MuscleRecoveryService(sessionDao, exerciseDao);
+    final allStates = await recoveryService.getAllMuscleStates();
+
+    // 4. Find the bottleneck among the muscles used in this day
+    String? bottleneck;
+    var maxRemainingHours = 0;
+
+    for (final group in muscleGroups) {
+      final state = allStates.firstWhere(
+        (s) => s.muscleGroup == group,
+        orElse: () => MuscleStateInfo(
+          muscleGroup: group,
+          state: MuscleState.undertrained,
+        ),
+      );
+
+      // Undertrained or fully recovered → 0 hours remaining
+      if (state.state == MuscleState.undertrained ||
+          state.state == MuscleState.recovered) {
+        continue;
+      }
+
+      // Recovering → remaining hours until the dose-adjusted window closes.
+      final recoveredAt = state.recoveredAt;
+      if (recoveredAt != null) {
+        final remaining =
+            (recoveredAt.difference(DateTime.now()).inMinutes / 60.0).ceil();
+
+        if (remaining > maxRemainingHours) {
+          maxRemainingHours = remaining;
+          bottleneck = group;
+        }
+      }
+    }
+
+    if (maxRemainingHours <= 0) {
+      return const DayRecoveryStatus(); // all muscles ready
+    }
+
+    return DayRecoveryStatus(
+      hoursRemaining: maxRemainingHours,
+      bottleneckMuscle: bottleneck,
+    );
+  },
+);
 
 // ── User profile ──────────────────────────────
 
@@ -382,7 +396,6 @@ DateTime _startOfWeek(DateTime now) =>
     DateTime(now.year, now.month, now.day - (now.weekday - 1));
 
 class DayData {
-
   const DayData({
     required this.date,
     required this.abbreviation,
@@ -397,45 +410,52 @@ class DayData {
   final bool hasSession;
 }
 
-final weekStripProvider = FutureProvider.family<List<DayData>, Locale>(
-  (ref, locale) async {
-    final now = DateTime.now();
-    // Monday 00:00 of this week through next Monday 00:00 (exclusive).
-    final mondayMidnight = _startOfWeek(now);
-    final nextMondayMidnight = mondayMidnight.add(const Duration(days: 7));
-    final sessionDao = ref.watch(sessionDaoProvider);
+final weekStripProvider = FutureProvider.family<List<DayData>, Locale>((
+  ref,
+  locale,
+) async {
+  final now = DateTime.now();
+  // Monday 00:00 of this week through next Monday 00:00 (exclusive).
+  final mondayMidnight = _startOfWeek(now);
+  final nextMondayMidnight = mondayMidnight.add(const Duration(days: 7));
+  final sessionDao = ref.watch(sessionDaoProvider);
 
-    // Single range query instead of 7 sequential hasSessionOnDate calls.
-    final sessions =
-        await sessionDao.getInRange(mondayMidnight, nextMondayMidnight);
-    final sessionDays = <int>{
-      for (final s in sessions)
-        DateTime(s.startedAt.year, s.startedAt.month, s.startedAt.day)
-            .millisecondsSinceEpoch,
-    };
+  // Single range query instead of 7 sequential hasSessionOnDate calls.
+  final sessions = await sessionDao.getInRange(
+    mondayMidnight,
+    nextMondayMidnight,
+  );
+  final sessionDays = <int>{
+    for (final s in sessions)
+      DateTime(
+        s.startedAt.year,
+        s.startedAt.month,
+        s.startedAt.day,
+      ).millisecondsSinceEpoch,
+  };
 
-    return [
-      for (var i = 0; i < 7; i++)
-        () {
-          final date = DateTime(
-            mondayMidnight.year,
-            mondayMidnight.month,
-            mondayMidnight.day + i,
-          );
-          final abbr = DateFormat.E(locale.languageCode).format(date);
-          return DayData(
-            date: date,
-            abbreviation: abbr.substring(0, abbr.length.clamp(0, 3)),
-            dayNumber: date.day,
-            isToday: date.year == now.year &&
-                date.month == now.month &&
-                date.day == now.day,
-            hasSession: sessionDays.contains(date.millisecondsSinceEpoch),
-          );
-        }(),
-    ];
-  },
-);
+  return [
+    for (var i = 0; i < 7; i++)
+      () {
+        final date = DateTime(
+          mondayMidnight.year,
+          mondayMidnight.month,
+          mondayMidnight.day + i,
+        );
+        final abbr = DateFormat.E(locale.languageCode).format(date);
+        return DayData(
+          date: date,
+          abbreviation: abbr.substring(0, abbr.length.clamp(0, 3)),
+          dayNumber: date.day,
+          isToday:
+              date.year == now.year &&
+              date.month == now.month &&
+              date.day == now.day,
+          hasSession: sessionDays.contains(date.millisecondsSinceEpoch),
+        );
+      }(),
+  ];
+});
 
 // ── Weekly stats ──────────────────────────────
 
@@ -455,8 +475,9 @@ Future<double> _avgBestE1Rm(
 ) async {
   if (sessions.isEmpty) return 0;
 
-  final sessionExercises = await sessionDao
-      .getSessionExercisesForSessions(sessions.map((s) => s.localId).toList());
+  final sessionExercises = await sessionDao.getSessionExercisesForSessions(
+    sessions.map((s) => s.localId).toList(),
+  );
   if (sessionExercises.isEmpty) return 0;
 
   final sets = await sessionDao.getSetsForSessionExercises(
@@ -486,7 +507,6 @@ Future<double> _avgBestE1Rm(
 }
 
 class WeeklyStats {
-
   const WeeklyStats({
     this.totalVolume = 0,
     this.totalDurationSeconds = 0,
@@ -654,8 +674,9 @@ Future<Map<int, int>> _sessionCaloriesBatch(
   required double bodyWeightKg,
   String? gender,
 }) async {
-  final finished =
-      sessions.where((s) => s.finishedAt != null).toList(growable: false);
+  final finished = sessions
+      .where((s) => s.finishedAt != null)
+      .toList(growable: false);
   if (finished.isEmpty) return {};
 
   final sessionExercises = await sessionDao.getSessionExercisesForSessions(
@@ -666,8 +687,10 @@ Future<Map<int, int>> _sessionCaloriesBatch(
       : await sessionDao.getSetsForSessionExercises(
           sessionExercises.map((se) => se.localId).toList(),
         );
-  final exerciseIds =
-      sessionExercises.map((se) => se.exerciseId).toSet().toList();
+  final exerciseIds = sessionExercises
+      .map((se) => se.exerciseId)
+      .toSet()
+      .toList();
   final exercises = exerciseIds.isEmpty
       ? <Exercise>[]
       : await exerciseDao.findByExerciseIds(exerciseIds);
@@ -679,7 +702,7 @@ Future<Map<int, int>> _sessionCaloriesBatch(
     if (!s.isCompleted) continue;
     activeSecondsBySeId[s.sessionExerciseId] =
         (activeSecondsBySeId[s.sessionExerciseId] ?? 0) +
-            (s.durationSeconds ?? CalorieService.assumedSetSeconds);
+        (s.durationSeconds ?? CalorieService.assumedSetSeconds);
   }
 
   final effortsBySessionId = <int, List<ExerciseEffort>>{};
@@ -689,9 +712,9 @@ Future<Map<int, int>> _sessionCaloriesBatch(
     final met = CalorieService.metForExercise(
       muscleGroup: exerciseMap[se.exerciseId]?.muscleGroup,
     );
-    effortsBySessionId.putIfAbsent(se.sessionId, () => []).add(
-          ExerciseEffort(met: met, activeSeconds: activeSeconds),
-        );
+    effortsBySessionId
+        .putIfAbsent(se.sessionId, () => [])
+        .add(ExerciseEffort(met: met, activeSeconds: activeSeconds));
   }
 
   return {
@@ -712,8 +735,7 @@ final activityStatsProvider = FutureProvider<ActivityStats>((ref) async {
   final sessionDao = ref.watch(sessionDaoProvider);
   final exerciseDao = ref.watch(exerciseDaoProvider);
   final profile = await ref.watch(userProfileProvider.future);
-  final bodyWeight =
-      profile?.bodyWeightKg ?? _kFallbackBodyWeightKg;
+  final bodyWeight = profile?.bodyWeightKg ?? _kFallbackBodyWeightKg;
 
   final now = DateTime.now();
   final today = DateTime(now.year, now.month, now.day);
@@ -722,8 +744,7 @@ final activityStatsProvider = FutureProvider<ActivityStats>((ref) async {
   final monthStart = DateTime(now.year, now.month);
   // The week can straddle a month boundary — fetch from the earlier of the
   // two starts so both rollups see every session they need.
-  final rangeStart =
-      weekStart.isBefore(monthStart) ? weekStart : monthStart;
+  final rangeStart = weekStart.isBefore(monthStart) ? weekStart : monthStart;
 
   final rangeSessions = await sessionDao.getInRange(rangeStart, tomorrow);
   final calories = await _sessionCaloriesBatch(
@@ -770,7 +791,6 @@ final activityStatsProvider = FutureProvider<ActivityStats>((ref) async {
 // ── Enriched sessions (with derived workout name) ──
 
 class EnrichedSession {
-
   const EnrichedSession({
     required this.session,
     required this.workoutName,
@@ -784,7 +804,6 @@ class EnrichedSession {
 }
 
 class SessionExerciseDetail {
-
   const SessionExerciseDetail({
     required this.name,
     required this.exerciseId,
@@ -807,7 +826,6 @@ class SessionExerciseDetail {
 
 /// Individual set data for exercise detail view.
 class SetDetail {
-
   const SetDetail({
     required this.setIndex,
     this.weight,
@@ -871,24 +889,28 @@ List<EnrichedSession> _enrichSessionsIsolate(_EnrichInput input) {
       }
 
       if (exercise != null) {
-        details.add(SessionExerciseDetail(
-          name: exercise.name,
-          exerciseId: se.exerciseId,
-          gifUrl: exercise.gifUrl,
-          muscleGroup: exercise.muscleGroup,
-          sets: completedSets,
-          totalVolume: vol,
-          startedAt: se.createdAt,
-          setDetails: sets
-              .map((s) => SetDetail(
+        details.add(
+          SessionExerciseDetail(
+            name: exercise.name,
+            exerciseId: se.exerciseId,
+            gifUrl: exercise.gifUrl,
+            muscleGroup: exercise.muscleGroup,
+            sets: completedSets,
+            totalVolume: vol,
+            startedAt: se.createdAt,
+            setDetails: sets
+                .map(
+                  (s) => SetDetail(
                     setIndex: s.setIndex,
                     weight: s.weight,
                     reps: s.reps,
                     isWarmup: s.isWarmup,
                     isDropset: s.isDropset,
-                  ))
-              .toList(),
-        ));
+                  ),
+                )
+                .toList(),
+          ),
+        );
 
         final mg = exercise.muscleGroup ?? 'General';
         muscleGroupCounts[mg] = (muscleGroupCounts[mg] ?? 0) + 1;
@@ -905,12 +927,14 @@ List<EnrichedSession> _enrichSessionsIsolate(_EnrichInput input) {
       workoutName = 'Workout';
     }
 
-    enriched.add(EnrichedSession(
-      session: session,
-      workoutName: workoutName,
-      exercises: details,
-      targetedMuscleGroups: muscleGroupCounts.keys.toList(),
-    ));
+    enriched.add(
+      EnrichedSession(
+        session: session,
+        workoutName: workoutName,
+        exercises: details,
+        targetedMuscleGroups: muscleGroupCounts.keys.toList(),
+      ),
+    );
   }
 
   return enriched;
@@ -929,8 +953,9 @@ Future<List<EnrichedSession>> _enrichSessionsBatch(
 
   // 1) One query: get ALL session exercises for all sessions
   final sessionIds = sessions.map((s) => s.localId).toList();
-  final allSessionExercises =
-      await sessionDao.getSessionExercisesForSessions(sessionIds);
+  final allSessionExercises = await sessionDao.getSessionExercisesForSessions(
+    sessionIds,
+  );
 
   // 2) One query: get ALL sets for all session exercises
   final seIds = allSessionExercises.map((se) => se.localId).toList();
@@ -939,8 +964,10 @@ Future<List<EnrichedSession>> _enrichSessionsBatch(
       : <WorkoutSet>[];
 
   // 3) One query: get ALL unique exercises
-  final uniqueExerciseIds =
-      allSessionExercises.map((se) => se.exerciseId).toSet().toList();
+  final uniqueExerciseIds = allSessionExercises
+      .map((se) => se.exerciseId)
+      .toSet()
+      .toList();
   final exerciseList = uniqueExerciseIds.isNotEmpty
       ? await exerciseDao.findByExerciseIds(uniqueExerciseIds)
       : <Exercise>[];
@@ -951,8 +978,9 @@ Future<List<EnrichedSession>> _enrichSessionsBatch(
   );
 }
 
-final enrichedRecentSessionsProvider =
-    FutureProvider<List<EnrichedSession>>((ref) async {
+final enrichedRecentSessionsProvider = FutureProvider<List<EnrichedSession>>((
+  ref,
+) async {
   final sessionDao = ref.watch(sessionDaoProvider);
   final exerciseDao = ref.watch(exerciseDaoProvider);
   final sessions = await sessionDao.getRecent(3);
@@ -960,8 +988,9 @@ final enrichedRecentSessionsProvider =
 });
 
 /// All completed sessions enriched (for Log bottom sheet).
-final enrichedAllSessionsProvider =
-    FutureProvider<List<EnrichedSession>>((ref) async {
+final enrichedAllSessionsProvider = FutureProvider<List<EnrichedSession>>((
+  ref,
+) async {
   final sessionDao = ref.watch(sessionDaoProvider);
   final exerciseDao = ref.watch(exerciseDaoProvider);
   final sessions = await sessionDao.getAll();
@@ -982,8 +1011,7 @@ final muscleRecoveryProvider = FutureProvider<List<MuscleStateInfo>>((ref) {
 /// recovery dose model. Powers the per-muscle weekly volume line in the
 /// muscle detail sheet (evidence-based hypertrophy guideline: ~10–20
 /// weekly sets per muscle).
-final weeklySetsPerMuscleProvider =
-    FutureProvider<Map<String, double>>((ref) {
+final weeklySetsPerMuscleProvider = FutureProvider<Map<String, double>>((ref) {
   final sessionDao = ref.watch(sessionDaoProvider);
   final exerciseDao = ref.watch(exerciseDaoProvider);
   final weekStart = _startOfWeek(DateTime.now());
@@ -1001,8 +1029,11 @@ final consecutiveRestDaysProvider = FutureProvider<int>((ref) async {
   final sessionDao = ref.watch(sessionDaoProvider);
   final days = await sessionDao.getDistinctSessionDatesDescending(limit: 1);
   if (days.isEmpty) return 0;
-  final lastWorkout =
-      DateTime(days.first.year, days.first.month, days.first.day);
+  final lastWorkout = DateTime(
+    days.first.year,
+    days.first.month,
+    days.first.day,
+  );
   final now = DateTime.now();
   final today = DateTime(now.year, now.month, now.day);
   // Round hours/24 instead of using inDays so a DST transition (a 23h or
@@ -1030,8 +1061,10 @@ final widgetSyncProvider = Provider<void>((ref) {
     }
   });
 
-  ref.listen<AsyncValue<List<MuscleStateInfo>>>(muscleRecoveryProvider,
-      (_, next) {
+  ref.listen<AsyncValue<List<MuscleStateInfo>>>(muscleRecoveryProvider, (
+    _,
+    next,
+  ) {
     final states = next.valueOrNull;
     if (states == null) return;
     // Pick the highest-priority under-trained muscle group as "next focus".
@@ -1044,14 +1077,14 @@ final widgetSyncProvider = Provider<void>((ref) {
     final focus = underTrained.isNotEmpty
         ? underTrained.first
         : states
-            .firstWhere(
-              (s) => s.state == MuscleState.recovered,
-              orElse: () => const MuscleStateInfo(
-                muscleGroup: '',
-                state: MuscleState.undertrained,
-              ),
-            )
-            .muscleGroup;
+              .firstWhere(
+                (s) => s.state == MuscleState.recovered,
+                orElse: () => const MuscleStateInfo(
+                  muscleGroup: '',
+                  state: MuscleState.undertrained,
+                ),
+              )
+              .muscleGroup;
     WidgetSyncService.updateNextFocus(
       muscleGroup: focus.isEmpty ? null : focus,
       cta: focus.isEmpty ? 'Tap to open MyGymBro' : 'Open the app to start',
@@ -1110,8 +1143,7 @@ final streakProvider = FutureProvider<int>((ref) async {
   // this provider reschedule the timer.
   final now = DateTime.now();
   final nextMidnight = DateTime(now.year, now.month, now.day + 1);
-  final midnightTimer =
-      Timer(nextMidnight.difference(now), ref.invalidateSelf);
+  final midnightTimer = Timer(nextMidnight.difference(now), ref.invalidateSelf);
   ref.onDispose(midnightTimer.cancel);
 
   final sessionDao = ref.watch(sessionDaoProvider);
@@ -1132,10 +1164,12 @@ final streakProvider = FutureProvider<int>((ref) async {
   // Calendar-day difference at local midnight; round hours/24 so a DST
   // transition (23h/25h day) still counts as one calendar day.
   int dayDiff(DateTime a, DateTime b) =>
-      (DateTime(a.year, a.month, a.day)
-              .difference(DateTime(b.year, b.month, b.day))
-              .inHours /
-          24)
+      (DateTime(
+                a.year,
+                a.month,
+                a.day,
+              ).difference(DateTime(b.year, b.month, b.day)).inHours /
+              24)
           .round();
 
   // Streak is dead when the workout-free run since the last session already
@@ -1195,11 +1229,13 @@ final weeklyStreakProvider = FutureProvider<WeeklyStreakData>((ref) async {
   var target = _kDefaultWeeklyTarget;
   final active = await ref.watch(activeScheduleProvider.future);
   if (active != null) {
-    final schedDays =
-        await ref.watch(scheduleDaysProvider(active.localId).future);
+    final schedDays = await ref.watch(
+      scheduleDaysProvider(active.localId).future,
+    );
     if (schedDays.isNotEmpty) {
-      final trainingDays =
-          schedDays.where((d) => !_isRestScheduleDay(d)).length;
+      final trainingDays = schedDays
+          .where((d) => !_isRestScheduleDay(d))
+          .length;
       if (trainingDays > 0) {
         target = ((trainingDays / schedDays.length) * 7).round().clamp(1, 7);
       }
@@ -1217,8 +1253,7 @@ final weeklyStreakProvider = FutureProvider<WeeklyStreakData>((ref) async {
   }
 
   final thisWeekStart = _startOfWeek(DateTime.now());
-  final thisWeekDays =
-      daysPerWeek[thisWeekStart.millisecondsSinceEpoch] ?? 0;
+  final thisWeekDays = daysPerWeek[thisWeekStart.millisecondsSinceEpoch] ?? 0;
 
   var weeks = 0;
   if (thisWeekDays >= target) weeks++;
@@ -1258,8 +1293,9 @@ final recordsProvider = FutureProvider<RecordsData>((ref) async {
 
   // 1 query: all session-exercises for those sessions
   final sessionIds = finished.map((s) => s.localId).toList();
-  final allExercises =
-      await sessionDao.getSessionExercisesForSessions(sessionIds);
+  final allExercises = await sessionDao.getSessionExercisesForSessions(
+    sessionIds,
+  );
   if (allExercises.isEmpty) return const RecordsData();
 
   // 1 query: all sets for those session-exercises
@@ -1318,3 +1354,382 @@ final weeklyCaloriesProvider = FutureProvider<int>((ref) async {
   }
   return total;
 });
+
+/// Calories burned per day of the current week (Monday-anchored) — 7 entries,
+/// Monday..Sunday. Powers the Weekly Reports bars in the Status sheet.
+final dailyCaloriesThisWeekProvider = FutureProvider<List<int>>((ref) async {
+  final sessionDao = ref.watch(sessionDaoProvider);
+  final exerciseDao = ref.watch(exerciseDaoProvider);
+  final profile = await ref.watch(userProfileProvider.future);
+  final bodyWeight = profile?.bodyWeightKg ?? _kFallbackBodyWeightKg;
+
+  final weekStart = _startOfWeek(DateTime.now());
+  final sessions = await sessionDao.getInRange(
+    weekStart,
+    weekStart.add(const Duration(days: 7)),
+  );
+  final calories = await _sessionCaloriesBatch(
+    sessionDao,
+    exerciseDao,
+    sessions,
+    bodyWeightKg: bodyWeight,
+    gender: profile?.gender,
+  );
+
+  final days = List<int>.filled(7, 0);
+  for (final s in sessions) {
+    final kcal = calories[s.localId];
+    if (kcal == null) continue;
+    days[s.startedAt.weekday - 1] += kcal;
+  }
+  return days;
+});
+
+// ── Lifetime chart data (Status sheet) ────────
+
+/// One calendar month of training totals for the Reps-vs-Weight chart.
+class MonthlyTraining {
+  const MonthlyTraining({
+    required this.month,
+    required this.reps,
+    required this.volume,
+  });
+  final DateTime month;
+  final int reps;
+  final double volume;
+}
+
+/// Everything the lifetime charts in the Status sheet need, computed in one
+/// pass over the full session history: cumulative tonnage per session,
+/// monthly reps/volume totals, and total estimated calories.
+class LifetimeChartData {
+  const LifetimeChartData({
+    this.cumulativeVolume = const [],
+    this.monthly = const [],
+    this.totalCalories = 0,
+    this.totalReps = 0,
+  });
+  final List<double> cumulativeVolume;
+  final List<MonthlyTraining> monthly;
+  final int totalCalories;
+
+  /// Completed reps across the entire history (not just the charted
+  /// months) — fallback caption when monthly volume hasn't grown.
+  final int totalReps;
+
+  double get totalVolume =>
+      cumulativeVolume.isEmpty ? 0 : cumulativeVolume.last;
+
+  /// Whole-percent growth of monthly volume, first charted month vs latest.
+  /// Null when there aren't two months to compare or the first is zero.
+  int? get volumeIncreasePct {
+    if (monthly.length < 2) return null;
+    final first = monthly.first.volume;
+    if (first <= 0) return null;
+    return ((monthly.last.volume - first) / first * 100).round();
+  }
+}
+
+final lifetimeChartDataProvider = FutureProvider<LifetimeChartData>((
+  ref,
+) async {
+  final sessionDao = ref.watch(sessionDaoProvider);
+  final exerciseDao = ref.watch(exerciseDaoProvider);
+  final profile = await ref.watch(userProfileProvider.future);
+  final bodyWeight = profile?.bodyWeightKg ?? _kFallbackBodyWeightKg;
+
+  final all =
+      (await sessionDao.getAll()).where((s) => s.finishedAt != null).toList()
+        ..sort((a, b) => a.startedAt.compareTo(b.startedAt));
+  if (all.isEmpty) return const LifetimeChartData();
+
+  // Cumulative tonnage, one point per session.
+  final cumulative = <double>[];
+  var running = 0.0;
+  for (final s in all) {
+    running += s.totalVolume ?? 0;
+    cumulative.add(running);
+  }
+
+  // Calories over the whole history in one batch.
+  final calories = await _sessionCaloriesBatch(
+    sessionDao,
+    exerciseDao,
+    all,
+    bodyWeightKg: bodyWeight,
+    gender: profile?.gender,
+  );
+  var totalKcal = 0;
+  for (final c in calories.values) {
+    totalKcal += c;
+  }
+
+  // Completed reps per session, via the same batch queries the calorie
+  // model uses.
+  final sessionExercises = await sessionDao.getSessionExercisesForSessions(
+    all.map((s) => s.localId).toList(),
+  );
+  final sets = sessionExercises.isEmpty
+      ? <WorkoutSet>[]
+      : await sessionDao.getSetsForSessionExercises(
+          sessionExercises.map((se) => se.localId).toList(),
+        );
+  final sessionBySeId = {
+    for (final se in sessionExercises) se.localId: se.sessionId,
+  };
+  final repsBySession = <int, int>{};
+  for (final s in sets) {
+    if (!s.isCompleted) continue;
+    final sid = sessionBySeId[s.sessionExerciseId];
+    if (sid == null) continue;
+    repsBySession[sid] = (repsBySession[sid] ?? 0) + (s.reps ?? 0);
+  }
+
+  // Roll up per calendar month, keeping the last 7 months with training —
+  // the chart gets unreadable past that.
+  final monthReps = <int, int>{};
+  final monthVol = <int, double>{};
+  for (final s in all) {
+    final key = s.startedAt.year * 12 + (s.startedAt.month - 1);
+    monthVol[key] = (monthVol[key] ?? 0) + (s.totalVolume ?? 0);
+    monthReps[key] = (monthReps[key] ?? 0) + (repsBySession[s.localId] ?? 0);
+  }
+  final keys = monthVol.keys.toList()..sort();
+  final visible = keys.length <= 7 ? keys : keys.sublist(keys.length - 7);
+  final monthly = [
+    for (final k in visible)
+      MonthlyTraining(
+        month: DateTime(k ~/ 12, k % 12 + 1),
+        reps: monthReps[k] ?? 0,
+        volume: monthVol[k] ?? 0,
+      ),
+  ];
+
+  var totalReps = 0;
+  for (final r in repsBySession.values) {
+    totalReps += r;
+  }
+
+  return LifetimeChartData(
+    cumulativeVolume: cumulative,
+    monthly: monthly,
+    totalCalories: totalKcal,
+    totalReps: totalReps,
+  );
+});
+
+// ── Reports screen ────────────────────────────
+
+/// Local midnight of [d].
+DateTime _dayStart(DateTime d) => DateTime(d.year, d.month, d.day);
+
+/// One exercise's numbers within a single day's report.
+class DayExerciseReport {
+  const DayExerciseReport({
+    required this.exerciseId,
+    required this.name,
+    required this.topWeightKg,
+    required this.calories,
+    required this.durationSeconds,
+    required this.lastWeekTopWeightKg,
+  });
+  final String exerciseId;
+  final String name;
+
+  /// Heaviest completed working-set weight (kg) for this exercise that day.
+  final double topWeightKg;
+  final int calories;
+
+  /// Time under load (sum of completed sets' durations, strength sets billed
+  /// at [CalorieService.assumedSetSeconds]).
+  final int durationSeconds;
+
+  /// Same exercise's top weight on the same weekday one week earlier — the
+  /// "Last Week" comparison line. 0 if it wasn't trained.
+  final double lastWeekTopWeightKg;
+}
+
+/// Everything the Reports screen shows for one selected day, per exercise
+/// plus day totals. Compares against the same weekday of the previous week.
+class DayReport {
+  const DayReport({
+    this.exercises = const [],
+    this.totalCalories = 0,
+    this.lastWeekTotalCalories = 0,
+  });
+  final List<DayExerciseReport> exercises;
+  final int totalCalories;
+  final int lastWeekTotalCalories;
+
+  bool get hasData => exercises.isNotEmpty;
+}
+
+/// Per-exercise aggregation for a single day range, keyed by exerciseId.
+/// Returns (name, orderIndex, topWeightKg, activeSeconds, calories).
+Future<
+  Map<
+    String,
+    ({
+      String name,
+      int orderIndex,
+      double topWeightKg,
+      int activeSeconds,
+      int calories,
+    })
+  >
+>
+_dayExerciseTotals(
+  SessionDao sessionDao,
+  ExerciseDao exerciseDao,
+  DateTime from,
+  DateTime to, {
+  required double bodyWeightKg,
+  String? gender,
+}) async {
+  final sessions = await sessionDao.getInRange(from, to);
+  if (sessions.isEmpty) return {};
+
+  final sessionExercises = await sessionDao.getSessionExercisesForSessions(
+    sessions.map((s) => s.localId).toList(),
+  );
+  if (sessionExercises.isEmpty) return {};
+
+  final sets = await sessionDao.getSetsForSessionExercises(
+    sessionExercises.map((se) => se.localId).toList(),
+  );
+  final exercises = await exerciseDao.findByExerciseIds(
+    sessionExercises.map((se) => se.exerciseId).toSet().toList(),
+  );
+  final exerciseMap = {for (final e in exercises) e.exerciseId: e};
+  final seById = {for (final se in sessionExercises) se.localId: se};
+
+  // Aggregate by exerciseId (an exercise can recur across day sessions).
+  final acc =
+      <
+        String,
+        ({String name, int orderIndex, double topWeightKg, int activeSeconds})
+      >{};
+
+  for (final s in sets) {
+    if (!s.isCompleted) continue;
+    final se = seById[s.sessionExerciseId];
+    if (se == null) continue;
+    final ex = exerciseMap[se.exerciseId];
+    final prev = acc[se.exerciseId];
+    final weight = (!s.isWarmup && s.weight != null) ? s.weight! : 0.0;
+    acc[se.exerciseId] = (
+      name: ex?.name ?? se.exerciseId,
+      orderIndex: prev?.orderIndex ?? se.orderIndex,
+      topWeightKg: math.max(prev?.topWeightKg ?? 0, weight),
+      activeSeconds:
+          (prev?.activeSeconds ?? 0) +
+          (s.durationSeconds ?? CalorieService.assumedSetSeconds),
+    );
+  }
+
+  final femaleAdj = gender == 'female' ? CalorieService.femaleAdjustment : 1.0;
+
+  return {
+    for (final e in acc.entries)
+      e.key: (
+        name: e.value.name,
+        orderIndex: e.value.orderIndex,
+        topWeightKg: e.value.topWeightKg,
+        activeSeconds: e.value.activeSeconds,
+        calories:
+            (CalorieService.metForExercise(
+                      muscleGroup: exerciseMap[e.key]?.muscleGroup,
+                    ) *
+                    bodyWeightKg *
+                    e.value.activeSeconds /
+                    3600 *
+                    femaleAdj)
+                .round(),
+      ),
+  };
+}
+
+/// Report for a single day (pass local midnight). Compares each exercise's
+/// top weight and the day's total calories against the same weekday one
+/// week earlier.
+final dayReportProvider = FutureProvider.family<DayReport, DateTime>((
+  ref,
+  day,
+) async {
+  final sessionDao = ref.watch(sessionDaoProvider);
+  final exerciseDao = ref.watch(exerciseDaoProvider);
+  final profile = await ref.watch(userProfileProvider.future);
+  final bw = profile?.bodyWeightKg ?? _kFallbackBodyWeightKg;
+
+  final start = _dayStart(day);
+  final end = start.add(const Duration(days: 1));
+  final lastStart = start.subtract(const Duration(days: 7));
+
+  final thisDay = await _dayExerciseTotals(
+    sessionDao,
+    exerciseDao,
+    start,
+    end,
+    bodyWeightKg: bw,
+    gender: profile?.gender,
+  );
+  final lastWeek = await _dayExerciseTotals(
+    sessionDao,
+    exerciseDao,
+    lastStart,
+    lastStart.add(const Duration(days: 1)),
+    bodyWeightKg: bw,
+    gender: profile?.gender,
+  );
+
+  final entries = thisDay.entries.toList()
+    ..sort((a, b) => a.value.orderIndex.compareTo(b.value.orderIndex));
+
+  final exercises = [
+    for (final e in entries)
+      DayExerciseReport(
+        exerciseId: e.key,
+        name: e.value.name,
+        topWeightKg: e.value.topWeightKg,
+        calories: e.value.calories,
+        durationSeconds: e.value.activeSeconds,
+        lastWeekTopWeightKg: lastWeek[e.key]?.topWeightKg ?? 0,
+      ),
+  ];
+
+  var total = 0;
+  for (final e in thisDay.values) {
+    total += e.calories;
+  }
+  var lastTotal = 0;
+  for (final e in lastWeek.values) {
+    lastTotal += e.calories;
+  }
+
+  return DayReport(
+    exercises: exercises,
+    totalCalories: total,
+    lastWeekTotalCalories: lastTotal,
+  );
+});
+
+/// Distinct local calendar days (as millisecondsSinceEpoch of midnight) with
+/// at least one completed session in [range.from, range.to). Powers the
+/// week-picker calendar's "trained week" dots.
+final trainedDaysInRangeProvider =
+    FutureProvider.family<Set<int>, ({DateTime from, DateTime to})>((
+      ref,
+      range,
+    ) async {
+      final sessions = await ref
+          .watch(sessionDaoProvider)
+          .getInRange(range.from, range.to);
+      return {
+        for (final s in sessions)
+          DateTime(
+            s.startedAt.year,
+            s.startedAt.month,
+            s.startedAt.day,
+          ).millisecondsSinceEpoch,
+      };
+    });

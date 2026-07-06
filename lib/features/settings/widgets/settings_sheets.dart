@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:my_gym_bro/core/database/app_database.dart';
 import 'package:my_gym_bro/core/providers/providers.dart';
 import 'package:my_gym_bro/core/services/notification_tone.dart';
+import 'package:my_gym_bro/features/settings/app_settings_provider.dart';
 import 'package:my_gym_bro/features/workout/workout_providers.dart';
 import 'package:my_gym_bro/l10n/app_localizations.dart';
 import 'package:my_gym_bro/shared/constants.dart';
@@ -380,6 +381,177 @@ class _BodyWeightSheetState extends ConsumerState<BodyWeightSheet> {
             ),
             decoration: InputDecoration(
               suffixText: unit,
+              suffixStyle: TextStyle(
+                color: colors.textSecondary,
+                fontSize: 14.sp,
+              ),
+              enabledBorder: UnderlineInputBorder(
+                borderSide: BorderSide(color: colors.divider),
+              ),
+              focusedBorder: UnderlineInputBorder(
+                borderSide: BorderSide(color: colors.accent, width: 2),
+              ),
+            ),
+            onSubmitted: (_) => _save(),
+          ),
+          SizedBox(height: 18.h),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.end,
+            children: [
+              TextButton(
+                onPressed: () => Navigator.of(context).pop(),
+                child: Text(
+                  l10n.cancel,
+                  style: TextStyle(color: colors.textSecondary),
+                ),
+              ),
+              SizedBox(width: 8.w),
+              TextButton(
+                onPressed: _save,
+                child: Text(
+                  l10n.save,
+                  style: TextStyle(
+                    color: colors.accent,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Calorie goal + body fat — plain numeric prefs (SecureStorage-backed)
+// ─────────────────────────────────────────────────────────────────────────────
+
+void showCalorieGoalSheet(BuildContext context, WidgetRef ref) {
+  final l10n = AppLocalizations.of(context);
+  _showGlassSheet(
+    context,
+    (_) => _NumberSheet(
+      title: l10n.calorieGoal,
+      suffix: 'kcal',
+      initial: ref.read(weeklyCalorieGoalProvider),
+      min: 100,
+      max: 100000,
+      decimals: 0,
+      onSave: (ref, value) =>
+          ref.read(weeklyCalorieGoalProvider.notifier).set(value),
+    ),
+  );
+}
+
+void showBodyFatSheet(BuildContext context, WidgetRef ref) {
+  final l10n = AppLocalizations.of(context);
+  _showGlassSheet(
+    context,
+    (_) => _NumberSheet(
+      title: l10n.bodyFat,
+      suffix: '%',
+      initial: ref.read(bodyFatPctProvider),
+      min: 3,
+      max: 60,
+      decimals: 1,
+      onSave: (ref, value) async {
+        await ref.read(bodyFatPctProvider.notifier).set(value);
+        // First-ever entry becomes the baseline for the "dropped X% body
+        // fat" stat in the Status sheet.
+        if (value != null && ref.read(bodyFatStartPctProvider) == null) {
+          await ref.read(bodyFatStartPctProvider.notifier).set(value);
+        }
+      },
+    ),
+  );
+}
+
+/// Numeric-input sheet shared by the calorie-goal and body-fat settings.
+/// Values outside [min]..[max] are treated as "clear" (null), mirroring
+/// [BodyWeightSheet]'s garbage-input handling.
+class _NumberSheet extends ConsumerStatefulWidget {
+  const _NumberSheet({
+    required this.title,
+    required this.suffix,
+    required this.initial,
+    required this.min,
+    required this.max,
+    required this.decimals,
+    required this.onSave,
+  });
+
+  final String title;
+  final String suffix;
+  final double? initial;
+  final double min;
+  final double max;
+  final int decimals;
+  final Future<void> Function(WidgetRef ref, double? value) onSave;
+
+  @override
+  ConsumerState<_NumberSheet> createState() => _NumberSheetState();
+}
+
+class _NumberSheetState extends ConsumerState<_NumberSheet> {
+  late final TextEditingController _ctrl;
+
+  @override
+  void initState() {
+    super.initState();
+    final v = widget.initial;
+    _ctrl = TextEditingController(
+      text: v == null
+          ? ''
+          : (widget.decimals == 0 || v == v.roundToDouble()
+              ? v.round().toString()
+              : v.toStringAsFixed(widget.decimals)),
+    );
+  }
+
+  @override
+  void dispose() {
+    _ctrl.dispose();
+    super.dispose();
+  }
+
+  Future<void> _save() async {
+    final raw = _ctrl.text.trim();
+    double? value;
+    if (raw.isNotEmpty) {
+      final parsed = double.tryParse(raw.replaceAll(',', '.'));
+      if (parsed != null && parsed >= widget.min && parsed <= widget.max) {
+        value = parsed;
+      }
+    }
+    await widget.onSave(ref, value);
+    if (mounted) Navigator.of(context).pop();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = AppColors.of(context);
+    final l10n = AppLocalizations.of(context);
+
+    return _SheetShell(
+      title: widget.title,
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          TextField(
+            controller: _ctrl,
+            autofocus: true,
+            keyboardType:
+                const TextInputType.numberWithOptions(decimal: true),
+            style: TextStyle(
+              color: colors.textPrimary,
+              fontSize: 18.sp,
+              fontWeight: FontWeight.w700,
+            ),
+            decoration: InputDecoration(
+              suffixText: widget.suffix,
               suffixStyle: TextStyle(
                 color: colors.textSecondary,
                 fontSize: 14.sp,

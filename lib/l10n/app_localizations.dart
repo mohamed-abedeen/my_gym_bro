@@ -282,6 +282,132 @@ abstract class AppLocalizations {
   /// **'Cal Burned this week'**
   String get calBurnedThisWeek;
 
+  /// No description provided for @weeklyReports.
+  ///
+  /// In en, this message translates to:
+  /// **'Weekly Reports'**
+  String get weeklyReports;
+
+  /// No description provided for @reports.
+  ///
+  /// In en, this message translates to:
+  /// **'Reports'**
+  String get reports;
+
+  /// No description provided for @week.
+  ///
+  /// In en, this message translates to:
+  /// **'Week'**
+  String get week;
+
+  /// No description provided for @weights.
+  ///
+  /// In en, this message translates to:
+  /// **'Weights'**
+  String get weights;
+
+  /// No description provided for @calUnit.
+  ///
+  /// In en, this message translates to:
+  /// **'Cal'**
+  String get calUnit;
+
+  /// No description provided for @minUnit.
+  ///
+  /// In en, this message translates to:
+  /// **'Min'**
+  String get minUnit;
+
+  /// No description provided for @reportNoData.
+  ///
+  /// In en, this message translates to:
+  /// **'No workout on this day'**
+  String get reportNoData;
+
+  /// No description provided for @statusKcalProgress.
+  ///
+  /// In en, this message translates to:
+  /// **'{burned}/{goal} KCAL'**
+  String statusKcalProgress(int burned, int goal);
+
+  /// No description provided for @statusKcalNoGoal.
+  ///
+  /// In en, this message translates to:
+  /// **'{burned} KCAL'**
+  String statusKcalNoGoal(int burned);
+
+  /// No description provided for @shoulders.
+  ///
+  /// In en, this message translates to:
+  /// **'Shoulders'**
+  String get shoulders;
+
+  /// No description provided for @chest.
+  ///
+  /// In en, this message translates to:
+  /// **'Chest'**
+  String get chest;
+
+  /// No description provided for @core.
+  ///
+  /// In en, this message translates to:
+  /// **'Core'**
+  String get core;
+
+  /// No description provided for @target.
+  ///
+  /// In en, this message translates to:
+  /// **'Target'**
+  String get target;
+
+  /// No description provided for @achieved.
+  ///
+  /// In en, this message translates to:
+  /// **'Achieved'**
+  String get achieved;
+
+  /// No description provided for @statusLiftedTotal.
+  ///
+  /// In en, this message translates to:
+  /// **'You\'ve lifted {amount} since day one!'**
+  String statusLiftedTotal(String amount);
+
+  /// No description provided for @statusVolumeIncrease.
+  ///
+  /// In en, this message translates to:
+  /// **'Your lifted weight increased by {pct}% since day one!'**
+  String statusVolumeIncrease(int pct);
+
+  /// No description provided for @statusRepsTotal.
+  ///
+  /// In en, this message translates to:
+  /// **'You\'ve done {reps} reps since day one!'**
+  String statusRepsTotal(String reps);
+
+  /// No description provided for @statusCaloriesBurnedTotal.
+  ///
+  /// In en, this message translates to:
+  /// **'You\'ve burned over {kcal} calories!'**
+  String statusCaloriesBurnedTotal(String kcal);
+
+  /// No description provided for @statusCaloriesBodyFat.
+  ///
+  /// In en, this message translates to:
+  /// **'You\'ve burned over {kcal} calories and dropped {pct}% body fat!'**
+  String statusCaloriesBodyFat(String kcal, String pct);
+
+  /// No description provided for @calorieGoal.
+  ///
+  /// In en, this message translates to:
+  /// **'Calorie Goal'**
+  String get calorieGoal;
+
+  /// No description provided for @bodyFat.
+  ///
+  /// In en, this message translates to:
+  /// **'Body Fat'**
+  String get bodyFat;
+
   /// No description provided for @totalDuration.
   ///
   /// In en, this message translates to:

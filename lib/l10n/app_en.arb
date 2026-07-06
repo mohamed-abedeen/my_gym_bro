@@ -35,6 +35,64 @@
   "calBurned": "Cal Burned",
   "calBurnedLastWeek": "Cal Burned last week",
   "calBurnedThisWeek": "Cal Burned this week",
+  "weeklyReports": "Weekly Reports",
+  "reports": "Reports",
+  "week": "Week",
+  "weights": "Weights",
+  "calUnit": "Cal",
+  "minUnit": "Min",
+  "reportNoData": "No workout on this day",
+  "statusKcalProgress": "{burned}/{goal} KCAL",
+  "@statusKcalProgress": {
+    "placeholders": {
+      "burned": { "type": "int" },
+      "goal": { "type": "int" }
+    }
+  },
+  "statusKcalNoGoal": "{burned} KCAL",
+  "@statusKcalNoGoal": {
+    "placeholders": {
+      "burned": { "type": "int" }
+    }
+  },
+  "shoulders": "Shoulders",
+  "chest": "Chest",
+  "core": "Core",
+  "target": "Target",
+  "achieved": "Achieved",
+  "statusLiftedTotal": "You've lifted {amount} since day one!",
+  "@statusLiftedTotal": {
+    "placeholders": {
+      "amount": { "type": "String" }
+    }
+  },
+  "statusVolumeIncrease": "Your lifted weight increased by {pct}% since day one!",
+  "@statusVolumeIncrease": {
+    "placeholders": {
+      "pct": { "type": "int" }
+    }
+  },
+  "statusRepsTotal": "You've done {reps} reps since day one!",
+  "@statusRepsTotal": {
+    "placeholders": {
+      "reps": { "type": "String" }
+    }
+  },
+  "statusCaloriesBurnedTotal": "You've burned over {kcal} calories!",
+  "@statusCaloriesBurnedTotal": {
+    "placeholders": {
+      "kcal": { "type": "String" }
+    }
+  },
+  "statusCaloriesBodyFat": "You've burned over {kcal} calories and dropped {pct}% body fat!",
+  "@statusCaloriesBodyFat": {
+    "placeholders": {
+      "kcal": { "type": "String" },
+      "pct": { "type": "String" }
+    }
+  },
+  "calorieGoal": "Calorie Goal",
+  "bodyFat": "Body Fat",
   "totalDuration": "Total Duration",
   "avgStrength": "Avg Strength",
   "records": "Records",

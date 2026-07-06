@@ -199,6 +199,22 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                         onTap: () => BodyWeightSheet.show(context),
                       ),
                       SettingsNavRow(
+                        label: l10n.calorieGoal,
+                        value: _calorieGoalLabel(
+                          ref.watch(weeklyCalorieGoalProvider),
+                          l10n,
+                        ),
+                        onTap: () => showCalorieGoalSheet(context, ref),
+                      ),
+                      SettingsNavRow(
+                        label: l10n.bodyFat,
+                        value: _bodyFatLabel(
+                          ref.watch(bodyFatPctProvider),
+                          l10n,
+                        ),
+                        onTap: () => showBodyFatSheet(context, ref),
+                      ),
+                      SettingsNavRow(
                         label: l10n.defaultRestTime,
                         value: _restLabel(
                           profile.valueOrNull?.defaultRestSeconds ?? 90,
@@ -504,6 +520,18 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     return unit == 'lbs'
         ? '${(kg * 2.20462).round()} lbs'
         : '${kg.round()} kg';
+  }
+
+  static String _calorieGoalLabel(double? goal, AppLocalizations l10n) {
+    if (goal == null) return l10n.notSet;
+    return '${goal.round()} kcal';
+  }
+
+  static String _bodyFatLabel(double? pct, AppLocalizations l10n) {
+    if (pct == null) return l10n.notSet;
+    return pct == pct.roundToDouble()
+        ? '${pct.round()}%'
+        : '${pct.toStringAsFixed(1)}%';
   }
 
   static String _restLabel(int seconds) {

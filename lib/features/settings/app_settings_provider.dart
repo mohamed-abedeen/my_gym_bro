@@ -31,6 +31,52 @@ class _BoolPrefNotifier extends StateNotifier<bool> {
   Future<void> toggle() => set(!state);
 }
 
+class _DoublePrefNotifier extends StateNotifier<double?> {
+  _DoublePrefNotifier({required this.key}) : super(null) {
+    _load();
+  }
+
+  final String key;
+
+  Future<void> _load() async {
+    final raw = await SecureStorage().read(key);
+    final v = raw == null ? null : double.tryParse(raw);
+    if (v != null) state = v;
+  }
+
+  Future<void> set(double? value) async {
+    state = value;
+    if (value == null) {
+      await SecureStorage().delete(key);
+    } else {
+      await SecureStorage().write(key, value.toString());
+    }
+  }
+}
+
+// ponytail: calorie goal + body fat live in SecureStorage for now; move to
+// UserProfile (DB + sync + onboarding) when onboarding collects them.
+
+/// Weekly calorie-burn goal (kcal). Null = not set.
+final weeklyCalorieGoalProvider =
+    StateNotifierProvider<_DoublePrefNotifier, double?>(
+  (ref) => _DoublePrefNotifier(key: 'setting_weekly_calorie_goal'),
+);
+
+/// Current body fat percentage. Null = not set.
+final bodyFatPctProvider =
+    StateNotifierProvider<_DoublePrefNotifier, double?>(
+  (ref) => _DoublePrefNotifier(key: 'setting_body_fat_pct'),
+);
+
+/// Body fat percentage the first time the user ever entered it — the
+/// baseline for the "dropped X% body fat" stat. Written once by the
+/// body-fat settings sheet, never edited from the UI.
+final bodyFatStartPctProvider =
+    StateNotifierProvider<_DoublePrefNotifier, double?>(
+  (ref) => _DoublePrefNotifier(key: 'setting_body_fat_start_pct'),
+);
+
 /// Whether to fire the daily training-reminder local notification.
 final trainingRemindersEnabledProvider =
     StateNotifierProvider<_BoolPrefNotifier, bool>(

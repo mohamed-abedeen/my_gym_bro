@@ -586,4 +586,102 @@ void main() {
       expect(stats.avgStrength, 0);
     });
   });
+
+  group('LifetimeChartData', () {
+    MonthlyTraining month(int m, double volume) => MonthlyTraining(
+          month: DateTime(2026, m),
+          reps: 0,
+          volume: volume,
+        );
+
+    test('totalVolume is the last cumulative point', () {
+      const data = LifetimeChartData(cumulativeVolume: [100, 250, 400]);
+      expect(data.totalVolume, 400);
+      expect(const LifetimeChartData().totalVolume, 0);
+    });
+
+    test('volumeIncreasePct compares first vs last charted month', () {
+      final data = LifetimeChartData(
+        monthly: [month(1, 1000), month(2, 2500), month(3, 4500)],
+      );
+      expect(data.volumeIncreasePct, 350);
+    });
+
+    test('volumeIncreasePct is null without two months or a zero start', () {
+      expect(const LifetimeChartData().volumeIncreasePct, isNull);
+      expect(
+        LifetimeChartData(monthly: [month(1, 1000)]).volumeIncreasePct,
+        isNull,
+      );
+      expect(
+        LifetimeChartData(monthly: [month(1, 0), month(2, 500)])
+            .volumeIncreasePct,
+        isNull,
+      );
+    });
+  });
+
+  group('dayReportProvider', () {
+    test('aggregates a day: top working weight, per-exercise cals + duration',
+        () async {
+      // Same session returned for both the selected day and last-week ranges.
+      when(() => sessionDao.getInRange(any(), any())).thenAnswer(
+        (_) async => [_session(id: 1, startedAt: today)],
+      );
+      when(() => sessionDao.getSessionExercisesForSessions(any()))
+          .thenAnswer((_) async => [
+                _sessionExercise(id: 10, sessionId: 1, exerciseId: 'squat'),
+              ]);
+      // 3 completed working sets @ 100kg + one heavier warmup that must NOT
+      // count toward the top working weight.
+      when(() => sessionDao.getSetsForSessionExercises(any())).thenAnswer(
+        (_) async => [
+          _set(sessionExerciseId: 10, weight: 100, reps: 5),
+          _set(sessionExerciseId: 10, weight: 100, reps: 5),
+          _set(sessionExerciseId: 10, weight: 100, reps: 5),
+          _set(sessionExerciseId: 10, weight: 200, reps: 1, isWarmup: true),
+        ],
+      );
+      when(() => exerciseDao.findByExerciseIds(any())).thenAnswer(
+        (_) async => [
+          const Exercise(
+            localId: 1,
+            syncStatus: 'synced',
+            exerciseId: 'squat',
+            name: 'Barbell Squat',
+            muscleGroup: 'Quads', // large muscle → MET 6.0
+            isCustom: false,
+            usageCount: 0,
+            isFavorite: false,
+          ),
+        ],
+      );
+
+      final container = makeContainer(profile: _profile(bodyWeightKg: 80));
+      final report = await container.read(dayReportProvider(today).future);
+
+      expect(report.hasData, isTrue);
+      expect(report.exercises, hasLength(1));
+      final ex = report.exercises.single;
+      expect(ex.name, 'Barbell Squat');
+      // Warmup 200kg excluded; heaviest working set is 100kg.
+      expect(ex.topWeightKg, 100);
+      // 4 completed sets × 45s assumed each = 180s under load.
+      expect(ex.durationSeconds, 180);
+      // 6.0 MET × 80kg × 180/3600 h = 24 kcal.
+      expect(ex.calories, 24);
+      expect(report.totalCalories, 24);
+      // Same data stubbed for last week → comparison equals this day.
+      expect(ex.lastWeekTopWeightKg, 100);
+    });
+
+    test('empty day has no exercises', () async {
+      when(() => sessionDao.getInRange(any(), any()))
+          .thenAnswer((_) async => []);
+      final container = makeContainer(profile: _profile(bodyWeightKg: 80));
+      final report = await container.read(dayReportProvider(today).future);
+      expect(report.hasData, isFalse);
+      expect(report.totalCalories, 0);
+    });
+  });
 }

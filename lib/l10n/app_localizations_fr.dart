@@ -101,6 +101,83 @@ class AppLocalizationsFr extends AppLocalizations {
   String get calBurnedThisWeek => 'Calories brûlées cette semaine';
 
   @override
+  String get weeklyReports => 'Rapports hebdomadaires';
+
+  @override
+  String get reports => 'Rapports';
+
+  @override
+  String get week => 'Semaine';
+
+  @override
+  String get weights => 'Poids';
+
+  @override
+  String get calUnit => 'Cal';
+
+  @override
+  String get minUnit => 'Min';
+
+  @override
+  String get reportNoData => 'Pas d\'entraînement ce jour';
+
+  @override
+  String statusKcalProgress(int burned, int goal) {
+    return '$burned/$goal KCAL';
+  }
+
+  @override
+  String statusKcalNoGoal(int burned) {
+    return '$burned KCAL';
+  }
+
+  @override
+  String get shoulders => 'Épaules';
+
+  @override
+  String get chest => 'Pectoraux';
+
+  @override
+  String get core => 'Gainage';
+
+  @override
+  String get target => 'Objectif';
+
+  @override
+  String get achieved => 'Atteint';
+
+  @override
+  String statusLiftedTotal(String amount) {
+    return 'Tu as soulevé $amount depuis le premier jour !';
+  }
+
+  @override
+  String statusVolumeIncrease(int pct) {
+    return 'Ton poids soulevé a augmenté de $pct% depuis le premier jour !';
+  }
+
+  @override
+  String statusRepsTotal(String reps) {
+    return 'Tu as fait $reps répétitions depuis le premier jour !';
+  }
+
+  @override
+  String statusCaloriesBurnedTotal(String kcal) {
+    return 'Tu as brûlé plus de $kcal calories !';
+  }
+
+  @override
+  String statusCaloriesBodyFat(String kcal, String pct) {
+    return 'Tu as brûlé plus de $kcal calories et perdu $pct% de masse grasse !';
+  }
+
+  @override
+  String get calorieGoal => 'Objectif calorique';
+
+  @override
+  String get bodyFat => 'Masse grasse';
+
+  @override
   String get totalDuration => 'Durée totale';
 
   @override
@@ -1143,7 +1220,8 @@ class AppLocalizationsFr extends AppLocalizations {
   String get signOut => 'Se déconnecter';
 
   @override
-  String get signOutConfirm => 'Se déconnecter de votre compte ? Vos données locales restent sur cet appareil.';
+  String get signOutConfirm =>
+      'Se déconnecter de votre compte ? Vos données locales restent sur cet appareil.';
 
   @override
   String get cacheCleared => 'Cache vidé';
@@ -1158,7 +1236,8 @@ class AppLocalizationsFr extends AppLocalizations {
   String get exportComingSoon => 'Export bientôt disponible';
 
   @override
-  String get deleteAccountFailed => 'Impossible de supprimer le compte. Veuillez réessayer.';
+  String get deleteAccountFailed =>
+      'Impossible de supprimer le compte. Veuillez réessayer.';
 
   @override
   String get planPremium => 'Premium';
@@ -1170,11 +1249,14 @@ class AppLocalizationsFr extends AppLocalizations {
   String get languageSystem => 'Système';
 
   @override
-  String get settingsWorkoutFooter => 'Valeurs par défaut pour les minuteurs de repos, le suivi et l\'estimation des calories.';
+  String get settingsWorkoutFooter =>
+      'Valeurs par défaut pour les minuteurs de repos, le suivi et l\'estimation des calories.';
 
   @override
-  String get settingsNotificationsFooter => 'Les rappels d\'entraînement protègent votre série.';
+  String get settingsNotificationsFooter =>
+      'Les rappels d\'entraînement protègent votre série.';
 
   @override
-  String get settingsDataFooter => 'La suppression de votre compte efface définitivement vos données de nos serveurs.';
+  String get settingsDataFooter =>
+      'La suppression de votre compte efface définitivement vos données de nos serveurs.';
 }
