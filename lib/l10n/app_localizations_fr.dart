@@ -1085,6 +1085,25 @@ class AppLocalizationsFr extends AppLocalizations {
   String get removeSet => 'Supprimer la série';
 
   @override
+  String get superSet => 'Superset';
+
+  @override
+  String get pressToDelete => 'Appuyer pour supprimer';
+
+  @override
+  String get time => 'Temps';
+
+  @override
+  String get finish => 'Terminer';
+
+  @override
+  String get discard => 'Abandonner';
+
+  @override
+  String get discardWorkoutConfirm =>
+      'Abandonner cet entraînement ? Toute la progression sera perdue.';
+
+  @override
   String get completeSet => 'Compléter la série';
 
   @override

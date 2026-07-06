@@ -17,7 +17,11 @@ import 'package:my_gym_bro/features/workout/workout_providers.dart';
 
 // ── Set type ──────────────────────────────────
 
-enum SetType { normal, warmUp, failure, dropset }
+/// Set types. [superset] has no dedicated DB column — it is persisted as the
+/// (otherwise impossible) `isDropset && isFailure` combination so no schema
+/// migration is needed. Stats are unaffected: working-set filters only
+/// exclude `isWarmup`, so supersets still count toward volume and PRs.
+enum SetType { normal, warmUp, failure, dropset, superset }
 
 // ── Models ────────────────────────────────────
 
@@ -81,6 +85,7 @@ class ActiveSet {
 
   SetType get setType {
     if (isWarmup) return SetType.warmUp;
+    if (isDropset && isFailure) return SetType.superset;
     if (isDropset) return SetType.dropset;
     if (isFailure) return SetType.failure;
     return SetType.normal;
@@ -907,12 +912,15 @@ class ActiveSessionNotifier extends StateNotifier<ActiveSessionState> {
       final idx = ex.sets.indexWhere((s) => s.localId == setLocalId);
       if (idx < 0) continue;
 
+      // Superset is stored as isDropset + isFailure (see SetType docs).
+      final asDropset = type == SetType.dropset || type == SetType.superset;
+      final asFailure = type == SetType.failure || type == SetType.superset;
       final updatedSets = ex.sets.map((s) {
         if (s.localId != setLocalId) return s;
         return s.copyWith(
           isWarmup: type == SetType.warmUp,
-          isDropset: type == SetType.dropset,
-          isFailure: type == SetType.failure,
+          isDropset: asDropset,
+          isFailure: asFailure,
         );
       }).toList();
       _updateExercise(ex.copyWith(sets: updatedSets));
@@ -921,8 +929,8 @@ class ActiveSessionNotifier extends StateNotifier<ActiveSessionState> {
         sessionExerciseId: ex.sessionExerciseId,
         setLocalId: setLocalId,
         isWarmup: type == SetType.warmUp,
-        isDropset: type == SetType.dropset,
-        isFailure: type == SetType.failure,
+        isDropset: asDropset,
+        isFailure: asFailure,
       ));
       return;
     }
@@ -976,6 +984,28 @@ class ActiveSessionNotifier extends StateNotifier<ActiveSessionState> {
     // Subscribe to the tick stream so the notification updates every second.
     _restTickSub?.cancel();
     _restTickSub = restTimerService.stream?.listen(_updateRestTimerNotification);
+  }
+
+  /// Un-mark a completed set (mis-tap recovery). Does not touch the rest
+  /// timer — if one is running it keeps counting.
+  Future<void> uncompleteSet(int setLocalId) async {
+    final ex = state.currentExercise;
+    if (ex == null) return;
+
+    final updatedSets = ex.sets.map((s) {
+      if (s.localId == setLocalId) {
+        return s.copyWith(isCompleted: false);
+      }
+      return s;
+    }).toList();
+    _updateExercise(ex.copyWith(sets: updatedSets));
+
+    unawaited(_repository.setCompletion(
+      sessionExerciseId: ex.sessionExerciseId,
+      setLocalId: setLocalId,
+      isCompleted: false,
+    ));
+    if (!state.showRestTimer) _updateActiveSetNotification();
   }
 
   void _onRestComplete() {
@@ -1182,6 +1212,9 @@ class ActiveSessionNotifier extends StateNotifier<ActiveSessionState> {
   }
 
   String get weightUnit => _weightUnit;
+
+  /// Default rest duration, for UI that surfaces the rest timer.
+  int get defaultRestSeconds => _defaultRestSeconds;
 
   /// Display weight: convert kg to lbs if needed.
   String displayWeight(double? weightKg) {

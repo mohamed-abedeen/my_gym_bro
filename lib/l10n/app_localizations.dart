@@ -2094,6 +2094,42 @@ abstract class AppLocalizations {
   /// **'Remove Set'**
   String get removeSet;
 
+  /// No description provided for @superSet.
+  ///
+  /// In en, this message translates to:
+  /// **'Super Set'**
+  String get superSet;
+
+  /// No description provided for @pressToDelete.
+  ///
+  /// In en, this message translates to:
+  /// **'Press To Delete'**
+  String get pressToDelete;
+
+  /// No description provided for @time.
+  ///
+  /// In en, this message translates to:
+  /// **'Time'**
+  String get time;
+
+  /// No description provided for @finish.
+  ///
+  /// In en, this message translates to:
+  /// **'Finish'**
+  String get finish;
+
+  /// No description provided for @discard.
+  ///
+  /// In en, this message translates to:
+  /// **'Discard'**
+  String get discard;
+
+  /// No description provided for @discardWorkoutConfirm.
+  ///
+  /// In en, this message translates to:
+  /// **'Discard this workout? All progress will be lost.'**
+  String get discardWorkoutConfirm;
+
   /// No description provided for @completeSet.
   ///
   /// In en, this message translates to:

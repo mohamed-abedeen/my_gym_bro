@@ -13,12 +13,24 @@ class InlineEditableField extends StatelessWidget {
     required this.onChanged,
     this.suffix,
     this.allowDecimal = true,
+    this.style,
+    this.padding,
+    this.constraints,
     super.key,
   });
   final String value;
   final String? suffix;
   final ValueChanged<String> onChanged;
   final bool allowDecimal;
+
+  /// Optional override for the inline text style (numpad sheet unaffected).
+  final TextStyle? style;
+
+  /// Optional override for the inline tap-target padding.
+  final EdgeInsetsGeometry? padding;
+
+  /// Optional override for the minimum tap-target size.
+  final BoxConstraints? constraints;
 
   @override
   Widget build(BuildContext context) {
@@ -27,19 +39,22 @@ class InlineEditableField extends StatelessWidget {
       onTap: () => _showNumpad(context),
       behavior: HitTestBehavior.opaque,
       child: ConstrainedBox(
-        constraints: BoxConstraints(minWidth: 44.w, minHeight: 44.h),
+        constraints:
+            constraints ?? BoxConstraints(minWidth: 44.w, minHeight: 44.h),
         child: Center(
           widthFactor: 1,
           child: Padding(
-            padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 4.h),
+            padding: padding ??
+                EdgeInsets.symmetric(horizontal: 12.w, vertical: 4.h),
             child: Text(
               suffix != null ? '$value $suffix' : value,
-              style: TextStyle(
-                color: colors.textPrimary,
-                fontSize: 16.sp,
-                fontWeight: FontWeight.w700,
-                fontFeatures: const [FontFeature('ss15')],
-              ),
+              style: style ??
+                  TextStyle(
+                    color: colors.textPrimary,
+                    fontSize: 16.sp,
+                    fontWeight: FontWeight.w700,
+                    fontFeatures: const [FontFeature('ss15')],
+                  ),
             ),
           ),
         ),

@@ -771,6 +771,10 @@ class _SetRow extends StatelessWidget {
     if (set.isWarmup) {
       indicator = 'W';
       indicatorColor = colors.amber;
+    } else if (set.isDropset && isFailure) {
+      // Superset — stored as the isDropset+isFailure combination.
+      indicator = 'S';
+      indicatorColor = const Color(0xFFE040D9);
     } else if (set.isDropset) {
       indicator = 'D';
       indicatorColor = colors.textSecondary;

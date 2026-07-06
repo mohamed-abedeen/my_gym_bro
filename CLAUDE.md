@@ -28,7 +28,7 @@ When the user says **"make X glassy"** (or "glass", "glassify"), the look is **c
 The `oc_liquid_glass` shader look (iOS-26-ish refraction + specular). Use it for prominent, nav-like chrome (floating bars, hero buttons, the nav family) to match the bottom nav + active-workout chrome — or whenever the user asks for the "refractive / liquid / like-the-nav" look.
 
 - Widget: `lib/shared/widgets/refractive_glass.dart` (wraps `oc_liquid_glass`; settings matched to the nav).
-- Currently used by: the active-workout chrome (menu button, both hint buttons, the Add Set bar). (The non-iOS nav pill *was* refractive but is now **frosted**, rebuilt to a Figma spec — see the nav section.)
+- Currently used by: the active-workout Add Set bar. (The active-workout menu/hint buttons were removed in the Figma set-row redesign — set rows and check buttons are now frosted `GlassSurface` pills. The non-iOS nav pill *was* refractive but is now **frosted**, rebuilt to a Figma spec — see the nav section.)
 - It's a Flutter fragment shader (not a platform view), so it's safe inside lists — unlike native glass.
 - `oc_liquid_glass` is retained **only** for this refractive look. Don't add it to new surfaces unless you're deliberately going refractive.
 
