@@ -41,6 +41,7 @@
   "weights": "Weights",
   "calUnit": "Cal",
   "minUnit": "Min",
+  "exercisePrefix": "Exe",
   "reportNoData": "No workout on this day",
   "statusKcalProgress": "{burned}/{goal} KCAL",
   "@statusKcalProgress": {

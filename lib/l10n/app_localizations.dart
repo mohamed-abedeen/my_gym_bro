@@ -318,6 +318,12 @@ abstract class AppLocalizations {
   /// **'Min'**
   String get minUnit;
 
+  /// No description provided for @exercisePrefix.
+  ///
+  /// In en, this message translates to:
+  /// **'Exe'**
+  String get exercisePrefix;
+
   /// No description provided for @reportNoData.
   ///
   /// In en, this message translates to:

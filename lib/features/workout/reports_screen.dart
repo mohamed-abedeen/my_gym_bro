@@ -9,6 +9,7 @@ import 'package:my_gym_bro/features/workout/workout_providers.dart';
 import 'package:my_gym_bro/l10n/app_localizations.dart';
 import 'package:my_gym_bro/shared/constants.dart';
 import 'package:my_gym_bro/shared/responsive.dart';
+import 'package:my_gym_bro/shared/widgets/glass_surface.dart';
 import 'package:my_gym_bro/shared/widgets/liquid_glass_button.dart';
 
 /// Full-screen "Reports" view opened from the Weekly Reports card in the
@@ -195,6 +196,11 @@ class _DaySelector extends StatelessWidget {
     final colors = AppColors.of(context);
     final now = DateTime.now();
     final today = DateTime(now.year, now.month, now.day);
+    // Unselected chips carry a faint accent wash (the olive look in the mock).
+    final chipColor = Color.alphaBlend(
+      colors.accent.withValues(alpha: 0.13),
+      colors.cardElevated,
+    );
 
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -216,7 +222,7 @@ class _DaySelector extends StatelessWidget {
                 alignment: Alignment.center,
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
-                  color: selected ? colors.accent : colors.cardElevated,
+                  color: selected ? colors.accent : chipColor,
                   border: date == today && !selected
                       ? Border.all(color: colors.accent, width: 1.5)
                       : null,
@@ -244,7 +250,7 @@ class _DaySelector extends StatelessWidget {
             padding: EdgeInsets.symmetric(horizontal: 12.w),
             alignment: Alignment.center,
             decoration: BoxDecoration(
-              color: colors.cardElevated,
+              color: chipColor,
               borderRadius: BorderRadius.circular(16.w),
             ),
             child: Row(
@@ -313,16 +319,19 @@ class _SectionHeader extends StatelessWidget {
 }
 
 /// Horizontal stat bar: label, filled track, trailing value — the repeated
-/// "Squats ▬▬▬ 50 Kg" rows in the mock.
+/// "Squats ▬▬▬ 50 Kg" rows in the mock. The unit renders smaller than the
+/// number, matching the mock's "50 ᴋɢ" treatment.
 class _StatBar extends StatelessWidget {
   const _StatBar({
     required this.label,
     required this.fraction,
     required this.value,
+    required this.unit,
   });
   final String label;
   final double fraction;
   final String value;
+  final String unit;
 
   @override
   Widget build(BuildContext context) {
@@ -367,14 +376,28 @@ class _StatBar extends StatelessWidget {
           SizedBox(width: 10.w),
           SizedBox(
             width: 58.w,
-            child: Text(
-              value,
-              textAlign: TextAlign.right,
-              style: TextStyle(
-                color: colors.textSecondary,
-                fontSize: 11.sp,
-                fontWeight: FontWeight.w600,
+            child: Text.rich(
+              TextSpan(
+                children: [
+                  TextSpan(
+                    text: value,
+                    style: TextStyle(
+                      color: colors.textPrimary,
+                      fontSize: 11.sp,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                  TextSpan(
+                    text: ' $unit',
+                    style: TextStyle(
+                      color: colors.textSecondary,
+                      fontSize: 8.5.sp,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ],
               ),
+              textAlign: TextAlign.right,
             ),
           ),
         ],
@@ -427,6 +450,7 @@ class _WeightsSection extends StatelessWidget {
               gridColor: colors.textSecondary.withValues(alpha: 0.25),
               axisTextColor: colors.textPrimary,
               textSize: 10.sp,
+              xLabelPrefix: l10n.exercisePrefix,
             ),
           ),
         ),
@@ -435,12 +459,8 @@ class _WeightsSection extends StatelessWidget {
           _StatBar(
             label: e.name,
             fraction: maxTop <= 0 ? 0 : e.topWeightKg / maxTop,
-            value: formatWeight(
-              e.topWeightKg,
-              unit,
-              decimals: 0,
-              withUnit: true,
-            ),
+            value: formatWeight(e.topWeightKg, unit, decimals: 0),
+            unit: weightUnitLabel(unit),
           ),
       ],
     );
@@ -470,14 +490,18 @@ class _CalBurnedSection extends StatelessWidget {
     );
     final total = report.totalCalories;
 
-    // Ring fills toward the daily goal if set; else improvement over the
-    // same day last week; else full when there's any burn.
+    // Outer ring fills toward the daily goal if set; else improvement over
+    // the same day last week; else full when there's any burn. The inner gray
+    // ring shows the same day last week against the same reference.
     final reference =
         dailyGoal ??
         (report.lastWeekTotalCalories > 0
             ? report.lastWeekTotalCalories.toDouble()
             : total.toDouble());
     final fraction = reference <= 0 ? 0.0 : (total / reference).clamp(0.0, 1.0);
+    final lastFraction = reference <= 0
+        ? 0.0
+        : (report.lastWeekTotalCalories / reference).clamp(0.0, 1.0);
     final compact = NumberFormat.compact(locale: locale.toString());
 
     return Column(
@@ -486,13 +510,15 @@ class _CalBurnedSection extends StatelessWidget {
         _SectionHeader(l10n.calBurned),
         Center(
           child: SizedBox(
-            width: 170.w,
-            height: 170.w,
+            width: 180.w,
+            height: 180.w,
             child: CustomPaint(
               painter: _RingPainter(
                 fraction: fraction,
+                lastFraction: lastFraction,
                 color: colors.accent,
-                trackColor: colors.textSecondary.withValues(alpha: 0.25),
+                lastColor: colors.textSecondary,
+                trackColor: colors.textSecondary.withValues(alpha: 0.18),
               ),
               child: Center(
                 child: Column(
@@ -502,7 +528,7 @@ class _CalBurnedSection extends StatelessWidget {
                       compact.format(total),
                       style: TextStyle(
                         color: colors.textPrimary,
-                        fontSize: 30.sp,
+                        fontSize: 32.sp,
                         fontWeight: FontWeight.w800,
                       ),
                     ),
@@ -511,6 +537,7 @@ class _CalBurnedSection extends StatelessWidget {
                       style: TextStyle(
                         color: colors.textSecondary,
                         fontSize: 10.sp,
+                        fontWeight: FontWeight.w600,
                       ),
                     ),
                   ],
@@ -524,7 +551,8 @@ class _CalBurnedSection extends StatelessWidget {
           _StatBar(
             label: e.name,
             fraction: maxCal <= 0 ? 0 : e.calories / maxCal,
-            value: '${e.calories} ${l10n.calUnit}',
+            value: '${e.calories}',
+            unit: l10n.calUnit,
           ),
       ],
     );
@@ -560,7 +588,7 @@ class _DurationSection extends StatelessWidget {
                     fraction: maxDur <= 0
                         ? 0
                         : report.exercises[i].durationSeconds / maxDur,
-                    label: 'E${i + 1}',
+                    label: '${l10n.exercisePrefix} ${i + 1}',
                   ),
                 ),
             ],
@@ -571,13 +599,16 @@ class _DurationSection extends StatelessWidget {
           _StatBar(
             label: e.name,
             fraction: maxDur <= 0 ? 0 : e.durationSeconds / maxDur,
-            value: '${(e.durationSeconds / 60).round()} ${l10n.minUnit}',
+            value: '${(e.durationSeconds / 60).round()}',
+            unit: l10n.minUnit,
           ),
       ],
     );
   }
 }
 
+/// Thick rounded bar over a faint full-height track — the pill-style duration
+/// bars in the mock.
 class _VerticalBar extends StatelessWidget {
   const _VerticalBar({required this.fraction, required this.label});
   final double fraction;
@@ -586,35 +617,49 @@ class _VerticalBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final colors = AppColors.of(context);
+    final radius = BorderRadius.circular(100.r);
     return Column(
       mainAxisAlignment: MainAxisAlignment.end,
       children: [
         Expanded(
-          child: Align(
+          child: Stack(
             alignment: Alignment.bottomCenter,
-            child: FractionallySizedBox(
-              heightFactor: fraction.clamp(0.04, 1.0),
-              child: Container(
-                width: 9.w,
+            children: [
+              Container(
+                width: 14.w,
                 decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    begin: Alignment.topCenter,
-                    end: Alignment.bottomCenter,
-                    colors: [
-                      colors.accent,
-                      colors.accent.withValues(alpha: 0.35),
-                    ],
-                  ),
-                  borderRadius: BorderRadius.circular(5.r),
+                  color: colors.accent.withValues(alpha: 0.10),
+                  borderRadius: radius,
                 ),
               ),
-            ),
+              FractionallySizedBox(
+                heightFactor: fraction.clamp(0.06, 1.0),
+                child: Container(
+                  width: 14.w,
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      begin: Alignment.topCenter,
+                      end: Alignment.bottomCenter,
+                      colors: [
+                        colors.accent,
+                        colors.accent.withValues(alpha: 0.55),
+                      ],
+                    ),
+                    borderRadius: radius,
+                  ),
+                ),
+              ),
+            ],
           ),
         ),
-        SizedBox(height: 8.h),
+        SizedBox(height: 10.h),
         Text(
           label,
-          style: TextStyle(color: colors.textSecondary, fontSize: 9.sp),
+          style: TextStyle(
+            color: colors.textSecondary,
+            fontSize: 9.sp,
+            fontWeight: FontWeight.w700,
+          ),
         ),
       ],
     );
@@ -636,6 +681,7 @@ class _WeightComparePainter extends CustomPainter {
     required this.gridColor,
     required this.axisTextColor,
     required this.textSize,
+    required this.xLabelPrefix,
   });
   final List<double> thisWeek;
   final List<double> lastWeek;
@@ -646,6 +692,7 @@ class _WeightComparePainter extends CustomPainter {
   final Color gridColor;
   final Color axisTextColor;
   final double textSize;
+  final String xLabelPrefix;
 
   TextPainter _tp(String s, Color c, {FontWeight? w}) => TextPainter(
     text: TextSpan(
@@ -703,14 +750,20 @@ class _WeightComparePainter extends CustomPainter {
       return p;
     }
 
-    // Last week: filled area + line.
-    final lastPath = lineOf(lastWeek);
-    final area = Path.from(lastPath)
+    Path areaOf(Path line) => Path.from(line)
       ..lineTo(xAt(n - 1), chart.bottom)
       ..lineTo(chart.left, chart.bottom)
       ..close();
+
+    // Last week: soft filled area + line.
+    final lastPath = lineOf(lastWeek);
+    // This week: accent gradient area + bright line on top.
+    final thisPath = lineOf(thisWeek);
     canvas
-      ..drawPath(area, Paint()..color = lastColor.withValues(alpha: 0.18))
+      ..drawPath(
+        areaOf(lastPath),
+        Paint()..color = lastColor.withValues(alpha: 0.18),
+      )
       ..drawPath(
         lastPath,
         Paint()
@@ -719,9 +772,20 @@ class _WeightComparePainter extends CustomPainter {
           ..strokeJoin = StrokeJoin.round
           ..color = lastColor,
       )
-      // This week: bright line.
       ..drawPath(
-        lineOf(thisWeek),
+        areaOf(thisPath),
+        Paint()
+          ..shader = LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: [
+              thisColor.withValues(alpha: 0.28),
+              thisColor.withValues(alpha: 0.0),
+            ],
+          ).createShader(chart),
+      )
+      ..drawPath(
+        thisPath,
         Paint()
           ..style = PaintingStyle.stroke
           ..strokeWidth = 2.5
@@ -746,9 +810,10 @@ class _WeightComparePainter extends CustomPainter {
     if (lastWeek.any((v) => v > 0)) peakLabel(lastLabel, lastColor, lastWeek);
     peakLabel(thisLabel, thisColor, thisWeek);
 
-    // x labels: exercise index.
+    // x labels: "Exe 1", "Exe 2", … (bare index when crowded).
     for (var i = 0; i < n; i++) {
-      final tp = _tp('${i + 1}', axisTextColor);
+      final label = n <= 8 ? '$xLabelPrefix ${i + 1}' : '${i + 1}';
+      final tp = _tp(label, axisTextColor);
       final x = (xAt(i) - tp.width / 2).clamp(
         chart.left - leftGutter,
         size.width - tp.width,
@@ -762,38 +827,59 @@ class _WeightComparePainter extends CustomPainter {
       old.thisWeek != thisWeek || old.lastWeek != lastWeek;
 }
 
-/// Single progress ring with a rounded cap.
+/// Double progress ring with rounded caps — thick accent outer ring for the
+/// selected day, thinner gray inner ring for the same day last week.
 class _RingPainter extends CustomPainter {
   _RingPainter({
     required this.fraction,
+    required this.lastFraction,
     required this.color,
+    required this.lastColor,
     required this.trackColor,
   });
   final double fraction;
+  final double lastFraction;
   final Color color;
+  final Color lastColor;
   final Color trackColor;
 
-  @override
-  void paint(Canvas canvas, Size size) {
-    final center = Offset(size.width / 2, size.height / 2);
-    final radius = size.width / 2 - 8;
+  void _ring(
+    Canvas canvas,
+    Offset center,
+    double radius,
+    double width,
+    double frac,
+    Color arcColor,
+  ) {
     final stroke = Paint()
       ..style = PaintingStyle.stroke
-      ..strokeWidth = 14
+      ..strokeWidth = width
       ..strokeCap = StrokeCap.round;
     canvas.drawCircle(center, radius, stroke..color = trackColor);
-    if (fraction <= 0) return;
+    if (frac <= 0) return;
     canvas.drawArc(
       Rect.fromCircle(center: center, radius: radius),
       -math.pi / 2,
-      2 * math.pi * fraction,
+      2 * math.pi * frac,
       false,
-      stroke..color = color,
+      stroke..color = arcColor,
     );
   }
 
   @override
-  bool shouldRepaint(_RingPainter old) => old.fraction != fraction;
+  void paint(Canvas canvas, Size size) {
+    final center = Offset(size.width / 2, size.height / 2);
+    const outerWidth = 15.0;
+    const innerWidth = 9.0;
+    final outerRadius = size.width / 2 - outerWidth / 2 - 1;
+    final innerRadius = outerRadius - outerWidth / 2 - innerWidth / 2 - 5;
+    _ring(canvas, center, outerRadius, outerWidth, fraction, color);
+    _ring(canvas, center, innerRadius, innerWidth, lastFraction, lastColor);
+  }
+
+  @override
+  bool shouldRepaint(_RingPainter old) =>
+      old.fraction != fraction || old.lastFraction != lastFraction;
 }
 
 // ── Week picker calendar ─────────────────────────────────────────────
@@ -844,11 +930,10 @@ class _WeekPickerSheetState extends ConsumerState<_WeekPickerSheet> {
       padding: EdgeInsets.fromLTRB(10.w, 0, 10.w, 12.h),
       child: SafeArea(
         top: false,
-        child: Container(
-          decoration: BoxDecoration(
-            color: colors.panelBackground,
-            borderRadius: BorderRadius.circular(28.r),
-          ),
+        // Frosted glass sheet (house style for sheets/panels).
+        child: GlassSurface(
+          radius: 28.r,
+          tint: colors.panelBackground.withValues(alpha: 0.78),
           padding: EdgeInsets.fromLTRB(16.w, 12.h, 16.w, 16.h),
           child: Column(
             mainAxisSize: MainAxisSize.min,
@@ -864,15 +949,22 @@ class _WeekPickerSheetState extends ConsumerState<_WeekPickerSheet> {
                 ),
               ),
               SizedBox(height: 14.h),
-              // Month navigation.
+              // Month navigation. Tapping the title jumps back to the
+              // current month.
               Row(
                 children: [
-                  Text(
-                    DateFormat.yMMMM(locale.languageCode).format(_month),
-                    style: TextStyle(
-                      color: colors.textPrimary,
-                      fontSize: 16.sp,
-                      fontWeight: FontWeight.w700,
+                  GestureDetector(
+                    onTap: () => setState(
+                      () => _month = DateTime(today.year, today.month),
+                    ),
+                    behavior: HitTestBehavior.opaque,
+                    child: Text(
+                      DateFormat.yMMMM(locale.languageCode).format(_month),
+                      style: TextStyle(
+                        color: colors.textPrimary,
+                        fontSize: 16.sp,
+                        fontWeight: FontWeight.w700,
+                      ),
                     ),
                   ),
                   const Spacer(),
@@ -888,80 +980,86 @@ class _WeekPickerSheetState extends ConsumerState<_WeekPickerSheet> {
                 ],
               ),
               SizedBox(height: 12.h),
-              // Weekday header (Mon-anchored).
-              Row(
-                children: [
-                  for (var i = 0; i < 7; i++)
-                    Expanded(
-                      child: Text(
-                        DateFormat.E(locale.languageCode)
-                            .format(gridStart.add(Duration(days: i)))
-                            .substring(0, 1)
-                            .toUpperCase(),
-                        textAlign: TextAlign.center,
-                        style: TextStyle(
-                          color: colors.textSecondary,
-                          fontSize: 10.sp,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                    ),
-                  SizedBox(width: 18.w),
-                ],
-              ),
-              SizedBox(height: 4.h),
-              // Week rows.
-              for (var w = 0; w < 6; w++)
-                () {
-                  final rowMonday = gridStart.add(Duration(days: w * 7));
-                  final weekTrained = List.generate(
-                    7,
-                    (i) => rowMonday.add(Duration(days: i)),
-                  ).any((d) => trained.contains(d.millisecondsSinceEpoch));
-                  final isSelected = rowMonday == selectedWeek;
-                  return GestureDetector(
-                    onTap: () => Navigator.of(context).pop(rowMonday),
-                    behavior: HitTestBehavior.opaque,
-                    child: Container(
-                      margin: EdgeInsets.symmetric(vertical: 2.h),
-                      decoration: BoxDecoration(
-                        color: isSelected
-                            ? colors.accent.withValues(alpha: 0.16)
-                            : null,
-                        borderRadius: BorderRadius.circular(10.r),
-                      ),
-                      child: Row(
-                        children: [
-                          for (var i = 0; i < 7; i++)
-                            Expanded(
-                              child: _DayCell(
-                                date: rowMonday.add(Duration(days: i)),
-                                month: _month.month,
-                                today: today,
-                                colors: colors,
+              // Swipe left/right anywhere on the grid to change months.
+              GestureDetector(
+                behavior: HitTestBehavior.opaque,
+                onHorizontalDragEnd: (details) {
+                  final v = details.primaryVelocity ?? 0;
+                  if (v.abs() < 100) return;
+                  _shiftMonth(v < 0 ? 1 : -1);
+                },
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    // Weekday header (Mon-anchored).
+                    Row(
+                      children: [
+                        for (var i = 0; i < 7; i++)
+                          Expanded(
+                            child: Text(
+                              DateFormat.E(locale.languageCode)
+                                  .format(gridStart.add(Duration(days: i)))
+                                  .substring(0, 1)
+                                  .toUpperCase(),
+                              textAlign: TextAlign.center,
+                              style: TextStyle(
+                                color: colors.textSecondary,
+                                fontSize: 10.sp,
+                                fontWeight: FontWeight.w600,
                               ),
                             ),
-                          // Trained-week dot.
-                          SizedBox(
-                            width: 18.w,
-                            child: weekTrained
-                                ? Center(
-                                    child: Container(
-                                      width: 6.w,
-                                      height: 6.w,
-                                      decoration: BoxDecoration(
-                                        color: colors.accent,
-                                        shape: BoxShape.circle,
-                                      ),
-                                    ),
-                                  )
-                                : null,
                           ),
-                        ],
-                      ),
+                      ],
                     ),
-                  );
-                }(),
+                    SizedBox(height: 4.h),
+                    // Week rows.
+                    for (var w = 0; w < 6; w++)
+                      () {
+                        final rowMonday = gridStart.add(Duration(days: w * 7));
+                        final isSelected = rowMonday == selectedWeek;
+                        return GestureDetector(
+                          onTap: () => Navigator.of(context).pop(rowMonday),
+                          behavior: HitTestBehavior.opaque,
+                          child: Container(
+                            margin: EdgeInsets.symmetric(vertical: 2.h),
+                            decoration: BoxDecoration(
+                              color: isSelected
+                                  ? colors.accent.withValues(alpha: 0.14)
+                                  : null,
+                              border: isSelected
+                                  ? Border.all(
+                                      color: colors.accent.withValues(
+                                        alpha: 0.35,
+                                      ),
+                                      width: 1,
+                                    )
+                                  : null,
+                              borderRadius: BorderRadius.circular(100.r),
+                            ),
+                            child: Row(
+                              children: [
+                                for (var i = 0; i < 7; i++)
+                                  Expanded(
+                                    child: _DayCell(
+                                      date: rowMonday.add(Duration(days: i)),
+                                      month: _month.month,
+                                      today: today,
+                                      trained: trained.contains(
+                                        rowMonday
+                                            .add(Duration(days: i))
+                                            .millisecondsSinceEpoch,
+                                      ),
+                                      colors: colors,
+                                    ),
+                                  ),
+                              ],
+                            ),
+                          ),
+                        );
+                      }(),
+                  ],
+                ),
+              ),
             ],
           ),
         ),
@@ -999,11 +1097,13 @@ class _DayCell extends StatelessWidget {
     required this.date,
     required this.month,
     required this.today,
+    required this.trained,
     required this.colors,
   });
   final DateTime date;
   final int month;
   final DateTime today;
+  final bool trained;
   final AppColorsTheme colors;
 
   @override
@@ -1011,20 +1111,44 @@ class _DayCell extends StatelessWidget {
     final inMonth = date.month == month;
     final isToday = date == today;
     return Padding(
-      padding: EdgeInsets.symmetric(vertical: 8.h),
-      child: Center(
-        child: Text(
-          '${date.day}',
-          style: TextStyle(
-            color: isToday
-                ? colors.accent
-                : inMonth
-                ? colors.textPrimary
-                : colors.textSecondary.withValues(alpha: 0.4),
-            fontSize: 12.sp,
-            fontWeight: isToday ? FontWeight.w800 : FontWeight.w500,
+      padding: EdgeInsets.symmetric(vertical: 5.h),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Container(
+            width: 24.w,
+            height: 24.w,
+            alignment: Alignment.center,
+            decoration: isToday
+                ? BoxDecoration(
+                    shape: BoxShape.circle,
+                    border: Border.all(color: colors.accent, width: 1.5),
+                  )
+                : null,
+            child: Text(
+              '${date.day}',
+              style: TextStyle(
+                color: isToday
+                    ? colors.accent
+                    : inMonth
+                    ? colors.textPrimary
+                    : colors.textSecondary.withValues(alpha: 0.4),
+                fontSize: 12.sp,
+                fontWeight: isToday ? FontWeight.w800 : FontWeight.w500,
+              ),
+            ),
           ),
-        ),
+          SizedBox(height: 2.h),
+          // Trained-day dot.
+          Container(
+            width: 4.w,
+            height: 4.w,
+            decoration: BoxDecoration(
+              color: trained ? colors.accent : Colors.transparent,
+              shape: BoxShape.circle,
+            ),
+          ),
+        ],
       ),
     );
   }

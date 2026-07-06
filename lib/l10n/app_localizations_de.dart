@@ -120,6 +120,9 @@ class AppLocalizationsDe extends AppLocalizations {
   String get minUnit => 'Min';
 
   @override
+  String get exercisePrefix => 'Üb';
+
+  @override
   String get reportNoData => 'Kein Training an diesem Tag';
 
   @override

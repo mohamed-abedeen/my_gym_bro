@@ -42,6 +42,7 @@
   "weights": "Gewichte",
   "calUnit": "kcal",
   "minUnit": "Min",
+  "exercisePrefix": "Üb",
   "reportNoData": "Kein Training an diesem Tag",
   "statusKcalProgress": "{burned}/{goal} KCAL",
   "statusKcalNoGoal": "{burned} KCAL",

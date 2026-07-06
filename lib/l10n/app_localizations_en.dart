@@ -119,6 +119,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get minUnit => 'Min';
 
   @override
+  String get exercisePrefix => 'Exe';
+
+  @override
   String get reportNoData => 'No workout on this day';
 
   @override
