@@ -1,6 +1,7 @@
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart' show HapticFeedback;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart' hide TextDirection;
 import 'package:my_gym_bro/core/services/units.dart';
@@ -9,6 +10,7 @@ import 'package:my_gym_bro/features/workout/workout_providers.dart';
 import 'package:my_gym_bro/l10n/app_localizations.dart';
 import 'package:my_gym_bro/shared/constants.dart';
 import 'package:my_gym_bro/shared/responsive.dart';
+import 'package:my_gym_bro/shared/widgets/glass_decoration.dart';
 import 'package:my_gym_bro/shared/widgets/glass_surface.dart';
 import 'package:my_gym_bro/shared/widgets/liquid_glass_button.dart';
 
@@ -894,6 +896,7 @@ class _WeekPickerSheet extends ConsumerStatefulWidget {
 
 class _WeekPickerSheetState extends ConsumerState<_WeekPickerSheet> {
   late DateTime _month; // first day of the visible month
+  int _dir = 1; // last month-shift direction, drives the slide animation
 
   @override
   void initState() {
@@ -904,12 +907,32 @@ class _WeekPickerSheetState extends ConsumerState<_WeekPickerSheet> {
     );
   }
 
-  void _shiftMonth(int delta) =>
-      setState(() => _month = DateTime(_month.year, _month.month + delta));
+  void _shiftMonth(int delta) {
+    HapticFeedback.selectionClick();
+    setState(() {
+      _dir = delta.sign;
+      _month = DateTime(_month.year, _month.month + delta);
+    });
+  }
+
+  void _jumpToMonth(DateTime target) {
+    if (target.year == _month.year && target.month == _month.month) return;
+    HapticFeedback.selectionClick();
+    setState(() {
+      _dir = target.isBefore(_month) ? -1 : 1;
+      _month = target;
+    });
+  }
+
+  void _pickWeek(DateTime monday) {
+    HapticFeedback.selectionClick();
+    Navigator.of(context).pop(monday);
+  }
 
   @override
   Widget build(BuildContext context) {
     final colors = AppColors.of(context);
+    final l10n = AppLocalizations.of(context);
     final locale = Localizations.localeOf(context);
 
     // 6-week grid starting on the Monday on/before the 1st.
@@ -932,9 +955,10 @@ class _WeekPickerSheetState extends ConsumerState<_WeekPickerSheet> {
         top: false,
         // Frosted glass sheet (house style for sheets/panels).
         child: GlassSurface(
-          radius: 28.r,
+          radius: 32.r,
           tint: colors.panelBackground.withValues(alpha: 0.78),
-          padding: EdgeInsets.fromLTRB(16.w, 12.h, 16.w, 16.h),
+          shadow: GlassDecoration.cardShadow(),
+          padding: EdgeInsets.fromLTRB(18.w, 12.h, 18.w, 18.h),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
@@ -948,39 +972,96 @@ class _WeekPickerSheetState extends ConsumerState<_WeekPickerSheet> {
                   ),
                 ),
               ),
-              SizedBox(height: 14.h),
-              // Month navigation. Tapping the title jumps back to the
-              // current month.
+              SizedBox(height: 16.h),
+              // Month navigation: bold month + dim year; tapping the title
+              // jumps back to the current month.
               Row(
                 children: [
                   GestureDetector(
-                    onTap: () => setState(
-                      () => _month = DateTime(today.year, today.month),
-                    ),
+                    onTap: () =>
+                        _jumpToMonth(DateTime(today.year, today.month)),
                     behavior: HitTestBehavior.opaque,
-                    child: Text(
-                      DateFormat.yMMMM(locale.languageCode).format(_month),
-                      style: TextStyle(
-                        color: colors.textPrimary,
-                        fontSize: 16.sp,
-                        fontWeight: FontWeight.w700,
+                    child: AnimatedSwitcher(
+                      duration: const Duration(milliseconds: 220),
+                      child: Text.rich(
+                        key: ValueKey(_month),
+                        TextSpan(
+                          children: [
+                            TextSpan(
+                              text: DateFormat.MMMM(
+                                locale.languageCode,
+                              ).format(_month),
+                              style: TextStyle(
+                                color: colors.textPrimary,
+                                fontSize: 20.sp,
+                                fontWeight: FontWeight.w800,
+                              ),
+                            ),
+                            TextSpan(
+                              text:
+                                  '  ${DateFormat.y(locale.languageCode).format(_month)}',
+                              style: TextStyle(
+                                color: colors.textSecondary,
+                                fontSize: 15.sp,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
                     ),
                   ),
                   const Spacer(),
-                  _NavArrow(
-                    icon: Icons.chevron_left_rounded,
+                  LiquidGlassButton(
+                    width: 34.w,
+                    height: 34.w,
+                    radius: 17.r,
                     onTap: () => _shiftMonth(-1),
+                    child: Icon(
+                      Icons.chevron_left_rounded,
+                      color: colors.textPrimary,
+                      size: 20.sp,
+                    ),
                   ),
-                  SizedBox(width: 6.w),
-                  _NavArrow(
-                    icon: Icons.chevron_right_rounded,
+                  SizedBox(width: 8.w),
+                  LiquidGlassButton(
+                    width: 34.w,
+                    height: 34.w,
+                    radius: 17.r,
                     onTap: () => _shiftMonth(1),
+                    child: Icon(
+                      Icons.chevron_right_rounded,
+                      color: colors.textPrimary,
+                      size: 20.sp,
+                    ),
                   ),
                 ],
               ),
-              SizedBox(height: 12.h),
-              // Swipe left/right anywhere on the grid to change months.
+              SizedBox(height: 14.h),
+              // Weekday header (Mon-anchored).
+              Row(
+                children: [
+                  for (var i = 0; i < 7; i++)
+                    Expanded(
+                      child: Text(
+                        DateFormat.E(locale.languageCode)
+                            .format(gridStart.add(Duration(days: i)))
+                            .substring(0, 1)
+                            .toUpperCase(),
+                        textAlign: TextAlign.center,
+                        style: TextStyle(
+                          color: colors.textSecondary.withValues(alpha: 0.8),
+                          fontSize: 10.sp,
+                          fontWeight: FontWeight.w700,
+                          letterSpacing: 1.2,
+                        ),
+                      ),
+                    ),
+                ],
+              ),
+              SizedBox(height: 6.h),
+              // Swipe left/right anywhere on the grid to change months;
+              // month swaps slide in from the direction of travel.
               GestureDetector(
                 behavior: HitTestBehavior.opaque,
                 onHorizontalDragEnd: (details) {
@@ -988,105 +1069,132 @@ class _WeekPickerSheetState extends ConsumerState<_WeekPickerSheet> {
                   if (v.abs() < 100) return;
                   _shiftMonth(v < 0 ? 1 : -1);
                 },
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    // Weekday header (Mon-anchored).
-                    Row(
-                      children: [
-                        for (var i = 0; i < 7; i++)
-                          Expanded(
-                            child: Text(
-                              DateFormat.E(locale.languageCode)
-                                  .format(gridStart.add(Duration(days: i)))
-                                  .substring(0, 1)
-                                  .toUpperCase(),
-                              textAlign: TextAlign.center,
-                              style: TextStyle(
-                                color: colors.textSecondary,
-                                fontSize: 10.sp,
-                                fontWeight: FontWeight.w600,
-                              ),
-                            ),
-                          ),
-                      ],
+                child: AnimatedSwitcher(
+                  duration: const Duration(milliseconds: 240),
+                  switchInCurve: Curves.easeOutCubic,
+                  switchOutCurve: Curves.easeInCubic,
+                  transitionBuilder: (child, animation) => FadeTransition(
+                    opacity: animation,
+                    child: SlideTransition(
+                      position: Tween<Offset>(
+                        begin: Offset(0.08 * _dir, 0),
+                        end: Offset.zero,
+                      ).animate(animation),
+                      child: child,
                     ),
-                    SizedBox(height: 4.h),
-                    // Week rows.
-                    for (var w = 0; w < 6; w++)
-                      () {
-                        final rowMonday = gridStart.add(Duration(days: w * 7));
-                        final isSelected = rowMonday == selectedWeek;
-                        return GestureDetector(
-                          onTap: () => Navigator.of(context).pop(rowMonday),
-                          behavior: HitTestBehavior.opaque,
-                          child: Container(
-                            margin: EdgeInsets.symmetric(vertical: 2.h),
-                            decoration: BoxDecoration(
-                              color: isSelected
-                                  ? colors.accent.withValues(alpha: 0.14)
-                                  : null,
-                              border: isSelected
-                                  ? Border.all(
-                                      color: colors.accent.withValues(
-                                        alpha: 0.35,
+                  ),
+                  child: Column(
+                    key: ValueKey(_month),
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      for (var w = 0; w < 6; w++)
+                        () {
+                          final rowMonday = gridStart.add(
+                            Duration(days: w * 7),
+                          );
+                          final isSelected = rowMonday == selectedWeek;
+                          return GestureDetector(
+                            onTap: () => _pickWeek(rowMonday),
+                            behavior: HitTestBehavior.opaque,
+                            child: Container(
+                              margin: EdgeInsets.symmetric(vertical: 2.h),
+                              decoration: isSelected
+                                  ? BoxDecoration(
+                                      gradient: LinearGradient(
+                                        colors: [
+                                          colors.accent.withValues(
+                                            alpha: 0.20,
+                                          ),
+                                          colors.accent.withValues(
+                                            alpha: 0.06,
+                                          ),
+                                        ],
                                       ),
-                                      width: 1,
+                                      border: Border.all(
+                                        color: colors.accent.withValues(
+                                          alpha: 0.38,
+                                        ),
+                                        width: 1,
+                                      ),
+                                      borderRadius: BorderRadius.circular(
+                                        100.r,
+                                      ),
+                                      boxShadow: [
+                                        BoxShadow(
+                                          color: colors.accent.withValues(
+                                            alpha: 0.15,
+                                          ),
+                                          blurRadius: 14.w,
+                                        ),
+                                      ],
                                     )
                                   : null,
-                              borderRadius: BorderRadius.circular(100.r),
-                            ),
-                            child: Row(
-                              children: [
-                                for (var i = 0; i < 7; i++)
-                                  Expanded(
-                                    child: _DayCell(
-                                      date: rowMonday.add(Duration(days: i)),
-                                      month: _month.month,
-                                      today: today,
-                                      trained: trained.contains(
-                                        rowMonday
-                                            .add(Duration(days: i))
-                                            .millisecondsSinceEpoch,
+                              child: Row(
+                                children: [
+                                  for (var i = 0; i < 7; i++)
+                                    Expanded(
+                                      child: _DayCell(
+                                        date: rowMonday.add(Duration(days: i)),
+                                        month: _month.month,
+                                        today: today,
+                                        trained: trained.contains(
+                                          rowMonday
+                                              .add(Duration(days: i))
+                                              .millisecondsSinceEpoch,
+                                        ),
+                                        colors: colors,
                                       ),
-                                      colors: colors,
                                     ),
-                                  ),
-                              ],
+                                ],
+                              ),
                             ),
-                          ),
-                        );
-                      }(),
-                  ],
+                          );
+                        }(),
+                    ],
+                  ),
+                ),
+              ),
+              SizedBox(height: 12.h),
+              // Quick jump: select the current week.
+              GestureDetector(
+                onTap: () => _pickWeek(_mondayOf(today)),
+                behavior: HitTestBehavior.opaque,
+                child: Container(
+                  height: 36.h,
+                  padding: EdgeInsets.symmetric(horizontal: 18.w),
+                  alignment: Alignment.center,
+                  decoration: BoxDecoration(
+                    color: colors.accent.withValues(alpha: 0.14),
+                    border: Border.all(
+                      color: colors.accent.withValues(alpha: 0.30),
+                      width: 1,
+                    ),
+                    borderRadius: BorderRadius.circular(100.r),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(
+                        Icons.today_rounded,
+                        color: colors.accent,
+                        size: 14.sp,
+                      ),
+                      SizedBox(width: 6.w),
+                      Text(
+                        l10n.thisWeek,
+                        style: TextStyle(
+                          color: colors.accent,
+                          fontSize: 12.sp,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
               ),
             ],
           ),
         ),
-      ),
-    );
-  }
-}
-
-class _NavArrow extends StatelessWidget {
-  const _NavArrow({required this.icon, required this.onTap});
-  final IconData icon;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    final colors = AppColors.of(context);
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        width: 32.w,
-        height: 32.w,
-        alignment: Alignment.center,
-        decoration: BoxDecoration(
-          color: colors.cardElevated,
-          shape: BoxShape.circle,
-        ),
-        child: Icon(icon, color: colors.textPrimary, size: 20.sp),
       ),
     );
   }
@@ -1111,40 +1219,49 @@ class _DayCell extends StatelessWidget {
     final inMonth = date.month == month;
     final isToday = date == today;
     return Padding(
-      padding: EdgeInsets.symmetric(vertical: 5.h),
+      padding: EdgeInsets.symmetric(vertical: 6.h),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
+          // Today gets a filled accent circle; other days plain numbers.
           Container(
-            width: 24.w,
-            height: 24.w,
+            width: 26.w,
+            height: 26.w,
             alignment: Alignment.center,
             decoration: isToday
                 ? BoxDecoration(
                     shape: BoxShape.circle,
-                    border: Border.all(color: colors.accent, width: 1.5),
+                    color: colors.accent,
+                    boxShadow: [
+                      BoxShadow(
+                        color: colors.accent.withValues(alpha: 0.35),
+                        blurRadius: 10.w,
+                      ),
+                    ],
                   )
                 : null,
             child: Text(
               '${date.day}',
               style: TextStyle(
                 color: isToday
-                    ? colors.accent
+                    ? colors.background
                     : inMonth
                     ? colors.textPrimary
-                    : colors.textSecondary.withValues(alpha: 0.4),
+                    : colors.textSecondary.withValues(alpha: 0.35),
                 fontSize: 12.sp,
                 fontWeight: isToday ? FontWeight.w800 : FontWeight.w500,
               ),
             ),
           ),
-          SizedBox(height: 2.h),
-          // Trained-day dot.
+          SizedBox(height: 3.h),
+          // Trained-day dot (dimmed outside the visible month).
           Container(
-            width: 4.w,
-            height: 4.w,
+            width: 4.5.w,
+            height: 4.5.w,
             decoration: BoxDecoration(
-              color: trained ? colors.accent : Colors.transparent,
+              color: trained
+                  ? colors.accent.withValues(alpha: inMonth ? 1.0 : 0.4)
+                  : Colors.transparent,
               shape: BoxShape.circle,
             ),
           ),
