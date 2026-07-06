@@ -113,6 +113,13 @@ class SessionDao extends DatabaseAccessor<AppDatabase>
     await (delete(sessions)..where((t) => t.localId.equals(sessionId))).go();
   }
 
+  /// Persist a new display order for a session exercise.
+  Future<void> updateSessionExerciseOrder(
+          int sessionExerciseId, int orderIndex) =>
+      (update(sessionExercises)
+            ..where((t) => t.localId.equals(sessionExerciseId)))
+          .write(SessionExercisesCompanion(orderIndex: Value(orderIndex)));
+
   /// Delete a session exercise and all its sets.
   Future<void> deleteSessionExercise(int sessionExerciseId) async {
     await (delete(workoutSets)

@@ -235,6 +235,9 @@ class AppLocalizationsDe extends AppLocalizations {
   String get addExercise => 'Übung hinzufügen';
 
   @override
+  String get editExercises => 'Übungen bearbeiten';
+
+  @override
   String get addDay => 'Tag hinzufügen';
 
   @override

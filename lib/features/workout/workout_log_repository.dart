@@ -318,6 +318,12 @@ class WorkoutLogRepository {
     return _sessionDao.deleteSessionExercise(sessionExerciseId);
   }
 
+  /// Persist a new display order for a session exercise.
+  Future<void> updateSessionExerciseOrder(
+      int sessionExerciseId, int orderIndex) {
+    return _sessionDao.updateSessionExerciseOrder(sessionExerciseId, orderIndex);
+  }
+
   /// Delete an entire session and cascade to its exercises and sets.
   Future<void> deleteSession(int sessionId) {
     return _sessionDao.deleteSession(sessionId);

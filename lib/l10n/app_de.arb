@@ -75,6 +75,7 @@
   "bestSet": "Bestes: {weight}kg × {reps} Wdh.",
   "addSet": "Satz hinzufügen",
   "addExercise": "Übung hinzufügen",
+  "editExercises": "Übungen bearbeiten",
   "addDay": "Tag hinzufügen",
   "scheduleName": "Planname",
   "todaySession": "Heutige Einheit",

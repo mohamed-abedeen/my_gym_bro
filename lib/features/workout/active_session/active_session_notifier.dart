@@ -704,16 +704,18 @@ class ActiveSessionNotifier extends StateNotifier<ActiveSessionState> {
   }
 
   /// Remove the currently active exercise (and all its sets) from the session.
-  Future<void> removeCurrentExercise() async {
-    final ex = state.currentExercise;
-    if (ex == null) return;
+  Future<void> removeCurrentExercise() =>
+      removeExercise(state.currentExerciseIndex);
 
-    final exercises = [...state.exercises]
-      ..removeAt(state.currentExerciseIndex);
-    final newIndex =
-        state.currentExerciseIndex >= exercises.length && exercises.isNotEmpty
-            ? exercises.length - 1
-            : state.currentExerciseIndex.clamp(0, exercises.isEmpty ? 0 : exercises.length - 1);
+  /// Remove the exercise at [index] (and all its sets) from the session.
+  Future<void> removeExercise(int index) async {
+    if (index < 0 || index >= state.exercises.length) return;
+    final ex = state.exercises[index];
+
+    final exercises = [...state.exercises]..removeAt(index);
+    var newIndex = state.currentExerciseIndex;
+    if (index < newIndex) newIndex -= 1;
+    newIndex = exercises.isEmpty ? 0 : newIndex.clamp(0, exercises.length - 1);
 
     state = state.copyWith(
       exercises: exercises,
@@ -721,6 +723,36 @@ class ActiveSessionNotifier extends StateNotifier<ActiveSessionState> {
     );
 
     await _repository.deleteSessionExercise(ex.sessionExerciseId);
+  }
+
+  /// Move an exercise from [oldIndex] to [newIndex], keeping the current
+  /// selection pinned to the same exercise, and persist the new order.
+  Future<void> reorderExercises(int oldIndex, int newIndex) async {
+    if (oldIndex < 0 || oldIndex >= state.exercises.length) return;
+    if (oldIndex == newIndex) return;
+
+    final exercises = [...state.exercises];
+    final moved = exercises.removeAt(oldIndex);
+    exercises.insert(newIndex.clamp(0, exercises.length), moved);
+
+    final currentId = state.currentExercise?.sessionExerciseId;
+    final newCurrent = currentId == null
+        ? 0
+        : exercises
+            .indexWhere((e) => e.sessionExerciseId == currentId)
+            .clamp(0, exercises.length - 1);
+
+    state = state.copyWith(
+      exercises: exercises,
+      currentExerciseIndex: newCurrent,
+    );
+
+    for (var i = 0; i < exercises.length; i++) {
+      await _repository.updateSessionExerciseOrder(
+        exercises[i].sessionExerciseId,
+        i,
+      );
+    }
   }
 
   /// Delete a set by its local id, removing it from both state and the DB.

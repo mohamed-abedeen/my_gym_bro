@@ -117,6 +117,7 @@
   },
   "addSet": "Add set",
   "addExercise": "Add Exercise",
+  "editExercises": "Edit Exercises",
   "addDay": "Add Days",
   "scheduleName": "Schedule Name",
   "todaySession": "Today's Session",

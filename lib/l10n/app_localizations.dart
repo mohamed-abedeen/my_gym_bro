@@ -516,6 +516,12 @@ abstract class AppLocalizations {
   /// **'Add Exercise'**
   String get addExercise;
 
+  /// No description provided for @editExercises.
+  ///
+  /// In en, this message translates to:
+  /// **'Edit Exercises'**
+  String get editExercises;
+
   /// No description provided for @addDay.
   ///
   /// In en, this message translates to:

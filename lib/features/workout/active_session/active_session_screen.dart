@@ -229,7 +229,7 @@ class _ActiveSessionScreenState extends ConsumerState<ActiveSessionScreen> {
                         exercise: exercise,
                         notifier: notifier,
                         l10n: l10n,
-                        bottomPadding: 160.h + bottomPad,
+                        bottomPadding: 176.h + bottomPad,
                       )
                     : Center(
                         child: Column(
@@ -272,67 +272,113 @@ class _ActiveSessionScreenState extends ConsumerState<ActiveSessionScreen> {
             Positioned(
               left: 20.w,
               right: 20.w,
-              bottom: bottomPad + 80.h,
+              bottom: bottomPad + 96.h,
               child: _RestPill(notifier: notifier, onTap: _showRestSheet),
             ),
 
-          // ── Finish / Discard ──
+          // ── Finish / Discard + swipe-up actions drawer handle ──
           Positioned(
             left: 20.w,
             right: 20.w,
             bottom: bottomPad + 12.h,
-            child: Row(
-              children: [
-                Expanded(
-                  child: GestureDetector(
-                    onTap: _finish,
-                    child: Container(
-                      height: 56.h,
-                      decoration: BoxDecoration(
-                        color: colors.cardElevated,
-                        borderRadius: BorderRadius.circular(28.r),
-                      ),
-                      child: Center(
-                        child: Text(
-                          l10n.finish,
-                          style: TextStyle(
-                            color: colors.textPrimary,
-                            fontSize: 17.sp,
-                            fontWeight: FontWeight.w700,
-                          ),
+            child: GestureDetector(
+              behavior: HitTestBehavior.translucent,
+              onVerticalDragEnd: (details) {
+                if ((details.primaryVelocity ?? 0) < -200) {
+                  _showActionsSheet();
+                }
+              },
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  // Drag handle — swipe up (or tap) to open the drawer.
+                  GestureDetector(
+                    onTap: _showActionsSheet,
+                    behavior: HitTestBehavior.opaque,
+                    child: Padding(
+                      padding: EdgeInsets.symmetric(
+                          horizontal: 40.w, vertical: 6.h),
+                      child: Container(
+                        width: 48.w,
+                        height: 4.h,
+                        decoration: BoxDecoration(
+                          color: colors.textSecondary.withValues(alpha: 0.55),
+                          borderRadius: BorderRadius.circular(2.r),
                         ),
                       ),
                     ),
                   ),
-                ),
-                SizedBox(width: 12.w),
-                Expanded(
-                  child: GestureDetector(
-                    onTap: _discard,
-                    child: Container(
-                      height: 56.h,
-                      decoration: BoxDecoration(
-                        color: const Color(0xFF3E1418),
-                        borderRadius: BorderRadius.circular(28.r),
-                      ),
-                      child: Center(
-                        child: Text(
-                          l10n.discard,
-                          style: TextStyle(
-                            color: const Color(0xFFFF453A),
-                            fontSize: 17.sp,
-                            fontWeight: FontWeight.w700,
-                          ),
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
-              ],
+                  SizedBox(height: 4.h),
+                  _finishDiscardRow(colors, l10n),
+                ],
+              ),
             ),
           ),
         ],
       ),
+    );
+  }
+
+  /// Finish + Discard pill row — shown at the bottom of the screen and again
+  /// inside the swipe-up actions drawer. When shown in the drawer, pass the
+  /// sheet's [sheetCtx] so it closes before finish/discard runs — otherwise
+  /// the screen-level `context.pop()` would pop the sheet, not the screen.
+  Widget _finishDiscardRow(AppColorsTheme colors, AppLocalizations l10n,
+      {BuildContext? sheetCtx}) {
+    return Row(
+      children: [
+        Expanded(
+          child: GestureDetector(
+            onTap: () {
+              if (sheetCtx != null) Navigator.pop(sheetCtx);
+              unawaited(_finish());
+            },
+            child: Container(
+              height: 56.h,
+              decoration: BoxDecoration(
+                color: colors.cardElevated,
+                borderRadius: BorderRadius.circular(28.r),
+              ),
+              child: Center(
+                child: Text(
+                  l10n.finish,
+                  style: TextStyle(
+                    color: colors.textPrimary,
+                    fontSize: 17.sp,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ),
+        SizedBox(width: 12.w),
+        Expanded(
+          child: GestureDetector(
+            onTap: () {
+              if (sheetCtx != null) Navigator.pop(sheetCtx);
+              unawaited(_discard());
+            },
+            child: Container(
+              height: 56.h,
+              decoration: BoxDecoration(
+                color: const Color(0xFF3E1418),
+                borderRadius: BorderRadius.circular(28.r),
+              ),
+              child: Center(
+                child: Text(
+                  l10n.discard,
+                  style: TextStyle(
+                    color: const Color(0xFFFF453A),
+                    fontSize: 17.sp,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ),
+      ],
     );
   }
 
@@ -432,6 +478,212 @@ class _ActiveSessionScreenState extends ConsumerState<ActiveSessionScreen> {
     );
   }
 
+  Future<void> _addExerciseFlow() async {
+    final notifier = ref.read(activeSessionProvider.notifier);
+    final exerciseId = await context.push<String>(AppRoutes.exerciseBrowser);
+    if (exerciseId != null) {
+      await notifier.addExercise(exerciseId);
+    }
+  }
+
+  /// The swipe-up actions drawer: Add Exercise / Edit Exercises / Settings
+  /// pills with the Finish + Discard row at the bottom.
+  void _showActionsSheet() {
+    final colors = AppColors.of(context);
+    final l10n = AppLocalizations.of(context);
+
+    Widget actionPill(String label, VoidCallback onTap) {
+      return GestureDetector(
+        onTap: onTap,
+        child: Container(
+          width: double.infinity,
+          height: 56.h,
+          margin: EdgeInsets.only(bottom: 12.h),
+          decoration: BoxDecoration(
+            color: colors.cardElevated,
+            borderRadius: BorderRadius.circular(28.r),
+          ),
+          child: Center(
+            child: Text(
+              label,
+              style: TextStyle(
+                color: colors.textPrimary,
+                fontSize: 17.sp,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+          ),
+        ),
+      );
+    }
+
+    showModalBottomSheet<void>(
+      context: context,
+      backgroundColor: colors.card,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(28.r)),
+      ),
+      builder: (ctx) => SafeArea(
+        child: Padding(
+          padding: EdgeInsets.fromLTRB(20.w, 8.h, 20.w, 12.h),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                width: 48.w,
+                height: 4.h,
+                decoration: BoxDecoration(
+                  color: colors.textSecondary.withValues(alpha: 0.55),
+                  borderRadius: BorderRadius.circular(2.r),
+                ),
+              ),
+              SizedBox(height: 20.h),
+              actionPill(l10n.addExercise, () {
+                Navigator.pop(ctx);
+                unawaited(_addExerciseFlow());
+              }),
+              actionPill(l10n.editExercises, () {
+                Navigator.pop(ctx);
+                _showEditExercisesSheet();
+              }),
+              actionPill(l10n.settings, () {
+                Navigator.pop(ctx);
+                unawaited(context.push(AppRoutes.settings));
+              }),
+              SizedBox(height: 4.h),
+              _finishDiscardRow(colors, l10n, sheetCtx: ctx),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  /// Edit Exercises sheet: drag to reorder the session's exercises, tap the
+  /// trash icon to remove one, tap a row to jump to it.
+  void _showEditExercisesSheet() {
+    final colors = AppColors.of(context);
+    final l10n = AppLocalizations.of(context);
+
+    showModalBottomSheet<void>(
+      context: context,
+      backgroundColor: colors.card,
+      isScrollControlled: true,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(28.r)),
+      ),
+      builder: (ctx) => SafeArea(
+        child: Consumer(
+          builder: (ctx, ref, _) {
+            final session = ref.watch(activeSessionProvider);
+            final notifier = ref.read(activeSessionProvider.notifier);
+            final exercises = session.exercises;
+            return ConstrainedBox(
+              constraints: BoxConstraints(
+                maxHeight: MediaQuery.of(ctx).size.height * 0.6,
+              ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  SizedBox(height: 8.h),
+                  Container(
+                    width: 48.w,
+                    height: 4.h,
+                    decoration: BoxDecoration(
+                      color: colors.textSecondary.withValues(alpha: 0.55),
+                      borderRadius: BorderRadius.circular(2.r),
+                    ),
+                  ),
+                  SizedBox(height: 16.h),
+                  Text(
+                    l10n.editExercises,
+                    style: TextStyle(
+                      color: colors.textPrimary,
+                      fontSize: 18.sp,
+                      fontWeight: FontWeight.w800,
+                    ),
+                  ),
+                  SizedBox(height: 12.h),
+                  Flexible(
+                    child: ReorderableListView.builder(
+                      shrinkWrap: true,
+                      buildDefaultDragHandles: false,
+                      padding: EdgeInsets.fromLTRB(20.w, 0, 20.w, 16.h),
+                      itemCount: exercises.length,
+                      onReorder: (oldIndex, newIndex) {
+                        if (newIndex > oldIndex) newIndex -= 1;
+                        unawaited(
+                            notifier.reorderExercises(oldIndex, newIndex));
+                      },
+                      proxyDecorator: (child, _, __) => Material(
+                        color: Colors.transparent,
+                        child: child,
+                      ),
+                      itemBuilder: (ctx, i) {
+                        final ex = exercises[i];
+                        return Container(
+                          key: ValueKey(ex.sessionExerciseId),
+                          margin: EdgeInsets.only(bottom: 8.h),
+                          decoration: BoxDecoration(
+                            color: colors.cardElevated,
+                            borderRadius: BorderRadius.circular(16.r),
+                          ),
+                          child: ListTile(
+                            onTap: () {
+                              notifier.selectExercise(i);
+                              Navigator.pop(ctx);
+                            },
+                            contentPadding: EdgeInsets.symmetric(
+                                horizontal: 12.w),
+                            leading: ReorderableDragStartListener(
+                              index: i,
+                              child: Icon(
+                                Icons.drag_indicator_rounded,
+                                color: colors.textSecondary,
+                                size: 22.sp,
+                              ),
+                            ),
+                            title: Text(
+                              ex.name,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: TextStyle(
+                                color: colors.textPrimary,
+                                fontSize: 15.sp,
+                                fontWeight: FontWeight.w700,
+                              ),
+                            ),
+                            subtitle: Text(
+                              '${ex.sets.length} ${l10n.sets}',
+                              style: TextStyle(
+                                color: colors.textSecondary,
+                                fontSize: 12.sp,
+                              ),
+                            ),
+                            trailing: GestureDetector(
+                              onTap: () =>
+                                  unawaited(notifier.removeExercise(i)),
+                              behavior: HitTestBehavior.opaque,
+                              child: Icon(
+                                Icons.delete_outline_rounded,
+                                color: colors.danger,
+                                size: 22.sp,
+                              ),
+                            ),
+                          ),
+                        );
+                      },
+                    ),
+                  ),
+                ],
+              ),
+            );
+          },
+        ),
+      ),
+    );
+  }
+
   void _showMenuSheet(BuildContext context, ActiveSessionState session,
       ActiveSessionNotifier notifier) {
     final colors = AppColors.of(context);
@@ -461,13 +713,9 @@ class _ActiveSessionScreenState extends ConsumerState<ActiveSessionScreen> {
               leading: Icon(Icons.add_rounded, color: colors.accent),
               title: Text(l10n.addExercise,
                   style: TextStyle(color: colors.textPrimary)),
-              onTap: () async {
+              onTap: () {
                 Navigator.pop(context);
-                final exerciseId =
-                    await context.push<String>(AppRoutes.exerciseBrowser);
-                if (exerciseId != null) {
-                  await notifier.addExercise(exerciseId);
-                }
+                unawaited(_addExerciseFlow());
               },
             ),
             if (exercise != null)

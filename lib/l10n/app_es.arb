@@ -75,6 +75,7 @@
   "bestSet": "Mejor: {weight}kg × {reps} reps",
   "addSet": "Añadir serie",
   "addExercise": "Añadir ejercicio",
+  "editExercises": "Editar ejercicios",
   "addDay": "Añadir días",
   "scheduleName": "Nombre del programa",
   "todaySession": "Sesión de hoy",
