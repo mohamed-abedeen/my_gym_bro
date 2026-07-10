@@ -1016,15 +1016,6 @@ class AppLocalizationsFr extends AppLocalizations {
   String get failedToLoadExercises => 'Impossible de charger les exercices';
 
   @override
-  String get sortMostUsed => 'Les plus utilisés';
-
-  @override
-  String get sortFavorites => 'Favoris';
-
-  @override
-  String get sortAZ => 'A–Z';
-
-  @override
   String get tabSummary => 'Summary';
 
   @override
@@ -1345,6 +1336,7 @@ class AppLocalizationsFr extends AppLocalizations {
   @override
   String get settingsDataFooter =>
       'La suppression de votre compte efface définitivement vos données de nos serveurs.';
+
   @override
   String get duration => 'Durée';
 

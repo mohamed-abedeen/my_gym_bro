@@ -1016,15 +1016,6 @@ class AppLocalizationsDe extends AppLocalizations {
   String get failedToLoadExercises => 'Übungen konnten nicht geladen werden';
 
   @override
-  String get sortMostUsed => 'Am häufigsten';
-
-  @override
-  String get sortFavorites => 'Favoriten';
-
-  @override
-  String get sortAZ => 'A–Z';
-
-  @override
   String get tabSummary => 'Summary';
 
   @override
@@ -1346,6 +1337,7 @@ class AppLocalizationsDe extends AppLocalizations {
   @override
   String get settingsDataFooter =>
       'Beim Löschen deines Kontos werden deine Daten dauerhaft von unseren Servern entfernt.';
+
   @override
   String get duration => 'Dauer';
 
@@ -1356,7 +1348,8 @@ class AppLocalizationsDe extends AppLocalizations {
   String get heatmapMore => 'Mehr';
 
   @override
-  String get tapDayToJump => 'Tippe auf einen Tag, um zu seiner Einheit zu springen';
+  String get tapDayToJump =>
+      'Tippe auf einen Tag, um zu seiner Einheit zu springen';
 
   @override
   String jumpedToDay(String date) {

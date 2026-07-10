@@ -300,9 +300,6 @@
   },
   "clearFilters": "Filter zurücksetzen",
   "failedToLoadExercises": "Übungen konnten nicht geladen werden",
-  "sortMostUsed": "Am häufigsten",
-  "sortFavorites": "Favoriten",
-  "sortAZ": "A–Z",
 
   "removeExercise": "Übung entfernen",
   "discardWorkout": "Dieses Training verwerfen?",

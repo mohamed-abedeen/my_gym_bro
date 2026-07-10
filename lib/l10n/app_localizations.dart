@@ -1956,24 +1956,6 @@ abstract class AppLocalizations {
   /// **'Failed to load exercises'**
   String get failedToLoadExercises;
 
-  /// No description provided for @sortMostUsed.
-  ///
-  /// In en, this message translates to:
-  /// **'Most Used'**
-  String get sortMostUsed;
-
-  /// No description provided for @sortFavorites.
-  ///
-  /// In en, this message translates to:
-  /// **'Favorites'**
-  String get sortFavorites;
-
-  /// No description provided for @sortAZ.
-  ///
-  /// In en, this message translates to:
-  /// **'A–Z'**
-  String get sortAZ;
-
   /// No description provided for @tabSummary.
   ///
   /// In en, this message translates to:

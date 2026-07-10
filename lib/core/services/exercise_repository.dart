@@ -41,6 +41,7 @@ class ExerciseRepository {
   String? _nextCursor;
   bool _syncStarted = false;
   int? _serverTotal;
+  Future<void>? _pageInFlight;
 
   /// Gap between page fetches while syncing. The API 429s after ~a dozen
   /// rapid requests; per-call bursts are small (a few pages), so this only
@@ -53,10 +54,18 @@ class ExerciseRepository {
   /// The API needs no key — network features are always possible.
   bool get isOnlineCapable => true;
 
-  /// Browse the catalogue, paginated, served from the local DB after an
-  /// incremental sync.
+  /// Fire-and-forget full-catalogue sync — call once at startup. The
+  /// catalogue is static, so after the first launch this completes with a
+  /// single request (learn the server total, see the DB already holds it)
+  /// and every browse/search is served from the DB without waiting.
+  Future<void> warmUp() => _syncUpTo(1 << 30);
+
+  /// Browse the catalogue, paginated. Served straight from the local DB when
+  /// it already holds the requested page (rows are static, so cached pages
+  /// are never stale); only a cold cache waits on the sync.
   Future<ExercisePage> browse({int offset = 0, int limit = 50}) async {
-    final fresh = await _syncUpTo(offset + limit);
+    var fresh = _syncDone || await _dao.countCatalogue() >= offset + limit;
+    if (!fresh) fresh = await _syncUpTo(offset + limit);
     final rows = await _dao.getPaged(limit: limit, offset: offset);
     final total = await _dao.count();
     return ExercisePage(total: total, items: rows, fromCache: !fresh);
@@ -111,11 +120,17 @@ class ExerciseRepository {
   /// local catalogue holds at least [target] rows, the server is exhausted,
   /// or the API errors (offline / rate limit). Returns true when the local
   /// data satisfies [target] — false means "serving a possibly-stale cache".
+  ///
+  /// Concurrent callers interleave fairly: page fetches are serialized (a
+  /// shared cursor walked by two loops would double-fetch pages and 429),
+  /// but each caller re-checks its own [target] between pages — so a browse
+  /// needing 50 rows returns after a couple of pages even while [warmUp] is
+  /// still walking the whole catalogue.
   Future<bool> _syncUpTo(int target) async {
-    if (_syncDone) return true;
     try {
-      var count = await _dao.countCatalogue();
       while (true) {
+        if (_syncDone) return true;
+        final count = await _dao.countCatalogue();
         if (_serverTotal != null && count >= _serverTotal!) {
           _syncDone = true;
           return true;
@@ -126,20 +141,38 @@ class ExerciseRepository {
           return true;
         }
         if (_serverTotal != null && count >= target) return true;
-        if (_syncStarted) await Future<void>.delayed(_pageDelay);
-        final page = await _api.browsePage(after: _nextCursor);
-        _syncStarted = true;
-        _serverTotal = page.total;
-        _nextCursor = page.nextCursor;
-        if (page.items.isEmpty && !page.hasNextPage) {
-          _syncDone = true;
-          return true;
-        }
-        await _dao.cacheAll(page.items.map((e) => e.toCompanion()).toList());
-        count = await _dao.countCatalogue();
+        await _syncNextPage();
       }
     } on ExerciseApiException {
       return false; // degrade to cache; a later call resumes from _nextCursor
     }
+  }
+
+  /// Fetch-and-cache exactly one catalogue page. Serialized: if another
+  /// caller's fetch is in flight, wait for it instead of starting a second
+  /// one, then let the caller re-check its target.
+  Future<void> _syncNextPage() async {
+    final inFlight = _pageInFlight;
+    if (inFlight != null) return inFlight;
+    final run = _fetchOnePage();
+    _pageInFlight = run;
+    try {
+      await run;
+    } finally {
+      _pageInFlight = null;
+    }
+  }
+
+  Future<void> _fetchOnePage() async {
+    if (_syncStarted) await Future<void>.delayed(_pageDelay);
+    final page = await _api.browsePage(after: _nextCursor);
+    _syncStarted = true;
+    _serverTotal = page.total;
+    _nextCursor = page.nextCursor;
+    if (page.items.isEmpty && !page.hasNextPage) {
+      _syncDone = true;
+      return;
+    }
+    await _dao.cacheAll(page.items.map((e) => e.toCompanion()).toList());
   }
 }

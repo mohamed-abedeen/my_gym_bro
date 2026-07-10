@@ -47,6 +47,7 @@ void main() {
   late MockExerciseDao dao;
   late List<Uri> requests;
   late bool rateLimited;
+  late http.Client client;
 
   setUpAll(() => registerFallbackValue(<ExercisesCompanion>[]));
 
@@ -78,7 +79,7 @@ void main() {
       return sorted().where((e) => e.name.contains(q)).toList();
     });
 
-    final client = MockClient((req) async {
+    client = MockClient((req) async {
       requests.add(req.url);
       if (rateLimited && requests.length > 1) {
         return http.Response('', 429);
@@ -124,5 +125,43 @@ void main() {
     expect(resumed.items, hasLength(4));
     // The retry resumed from the saved cursor instead of restarting.
     expect(requests.last.queryParameters['after'], 'bbb');
+  });
+
+  test('concurrent browse + search share one sync (no duplicate pages)',
+      () async {
+    final repo = buildRepo();
+    // Fire both without awaiting — pre-fix the two sync loops interleaved
+    // on the shared cursor and re-fetched the same pages.
+    final results = await Future.wait([
+      repo.browse(offset: 0, limit: 4),
+      repo.searchByName('cable'),
+    ]);
+    expect(requests, hasLength(3)); // whole catalogue fetched exactly once
+    expect(requests.map((u) => u.queryParameters['after']).toSet(),
+        hasLength(3)); // no cursor fetched twice
+    expect(results[1].items.map((e) => e.name), ['cable curl', 'cable fly']);
+  });
+
+  test('browse is served from the DB without waiting on a running warm-up',
+      () async {
+    final repo = buildRepo();
+    await repo.searchByName('cable'); // fills the whole catalogue (3 pages)
+    final before = requests.length;
+
+    // "Next app launch": fresh repo (session sync state reset), same DB.
+    final relaunch =
+        ExerciseRepository(ExerciseApiService(client: client), dao);
+    final page = await relaunch.browse(offset: 0, limit: 4);
+    expect(page.items, hasLength(4));
+    expect(page.fromCache, isFalse);
+    expect(requests.length, before); // no network at all
+
+    // Warm-up needs a single request to learn the catalogue is complete,
+    // after which search is fully local too.
+    await relaunch.warmUp();
+    expect(requests.length, before + 1);
+    final search = await relaunch.searchByName('cable');
+    expect(search.fromCache, isFalse);
+    expect(requests.length, before + 1);
   });
 }

@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:my_gym_bro/core/auth/auth_notifier.dart';
@@ -44,7 +46,11 @@ final exerciseApiServiceProvider = Provider<ExerciseApiService>((ref) {
 final exerciseRepositoryProvider = Provider<ExerciseRepository>((ref) {
   final api = ref.watch(exerciseApiServiceProvider);
   final dao = ExerciseDao(ref.watch(databaseProvider));
-  return ExerciseRepository(api, dao);
+  final repo = ExerciseRepository(api, dao);
+  // Sync the static catalogue once in the background so the exercise browser
+  // never makes the user wait on the network.
+  unawaited(repo.warmUp());
+  return repo;
 });
 
 /// Sync service provider.

@@ -20,6 +20,7 @@ import 'package:my_gym_bro/core/services/notification_service.dart';
 import 'package:my_gym_bro/core/services/program_seeder.dart';
 import 'package:my_gym_bro/core/services/subscription_sync_service.dart';
 import 'package:my_gym_bro/features/workout/workout_providers.dart';
+import 'package:my_gym_bro/shared/widgets/app_error_screen.dart';
 import 'package:purchases_flutter/purchases_flutter.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
@@ -43,6 +44,11 @@ Future<void> _bootstrap() async {
       debugPrint('[bootstrap] $step (+${stopwatch.elapsedMilliseconds}ms)');
 
   mark('start');
+  // Release builds show a branded screen instead of the grey crash screen.
+  // Debug keeps Flutter's red error surface for diagnostics.
+  if (!kDebugMode) {
+    ErrorWidget.builder = (details) => const AppErrorScreen();
+  }
   await SystemChrome.setPreferredOrientations([
     DeviceOrientation.portraitUp,
     DeviceOrientation.portraitDown,
@@ -78,8 +84,15 @@ Future<void> _bootstrap() async {
   if (supabaseUrl.isNotEmpty && supabaseKey.isNotEmpty) {
     try {
       mark('supabase init begin');
-      await Supabase.initialize(url: supabaseUrl, anonKey: supabaseKey)
-          .timeout(const Duration(seconds: 10));
+      // Session persisted via secure storage (Keychain / EncryptedSharedPrefs)
+      // instead of the default plaintext SharedPreferences.
+      await Supabase.initialize(
+        url: supabaseUrl,
+        anonKey: supabaseKey,
+        authOptions: const FlutterAuthClientOptions(
+          localStorage: SecureSessionStorage(),
+        ),
+      ).timeout(const Duration(seconds: 10));
       mark('supabase init done');
     } on Exception catch (_) {
       // Unreachable or timed out — app runs in local/offline mode.

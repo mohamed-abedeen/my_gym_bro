@@ -1,4 +1,5 @@
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 /// Wrapper around FlutterSecureStorage with platform-specific security options.
 ///
@@ -38,4 +39,30 @@ class SecureStorage {
 
   /// On delete account: wipe everything.
   Future<void> wipeAll() => _storage.deleteAll();
+}
+
+/// Supabase session persistence backed by [SecureStorage] instead of the
+/// default plaintext SharedPreferences. Stored under 'supabase_session' so
+/// [SecureStorage.clearTokens] covers it on logout.
+class SecureSessionStorage extends LocalStorage {
+  const SecureSessionStorage();
+
+  static const _key = 'supabase_session';
+
+  @override
+  Future<void> initialize() async {}
+
+  @override
+  Future<String?> accessToken() => SecureStorage().read(_key);
+
+  @override
+  Future<bool> hasAccessToken() async =>
+      await SecureStorage().read(_key) != null;
+
+  @override
+  Future<void> persistSession(String persistSessionString) =>
+      SecureStorage().write(_key, persistSessionString);
+
+  @override
+  Future<void> removePersistedSession() => SecureStorage().delete(_key);
 }

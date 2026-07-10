@@ -69,6 +69,11 @@ class _CatalogueNotifier extends StateNotifier<_CatalogueState> {
   final ExerciseRepository _repo;
   String _query = '';
 
+  /// Monotonic id per [_load]; a completed load only writes state when it is
+  /// still the newest one, so a slow search/browse can't clobber a newer one
+  /// (e.g. an in-flight loadMore appending browse rows into search results).
+  int _loadSeq = 0;
+
   /// When the API rate-limits us mid-pagination, back off briefly before
   /// retrying so repeated scrolling can't hammer the quota.
   DateTime? _retryAfter;
@@ -96,6 +101,7 @@ class _CatalogueNotifier extends StateNotifier<_CatalogueState> {
   }
 
   Future<void> _load({required bool reset}) async {
+    final seq = ++_loadSeq;
     if (reset) {
       state = state.copyWith(isLoading: true, clearError: true);
     } else {
@@ -107,6 +113,7 @@ class _CatalogueNotifier extends StateNotifier<_CatalogueState> {
       final page = _query.isEmpty
           ? await _repo.browse(offset: offset)
           : await _repo.searchByName(_query);
+      if (seq != _loadSeq || !mounted) return; // superseded by a newer load
 
       final prevLen = state.items.length;
       final merged =
@@ -141,6 +148,7 @@ class _CatalogueNotifier extends StateNotifier<_CatalogueState> {
         fromCache: page.fromCache,
       );
     } on Object catch (e) {
+      if (seq != _loadSeq || !mounted) return;
       // The repository falls back to cache internally, so this is rare.
       state = state.copyWith(
         isLoading: false,
@@ -235,8 +243,8 @@ final _filteredExercisesProvider =
 
   // 4. Search text — client-side narrowing over the loaded/cached items
   // (the catalogue notifier already issued the server-side search).
-  if (query.isNotEmpty) {
-    final q = query.toLowerCase();
+  if (query.trim().isNotEmpty) {
+    final q = query.trim().toLowerCase(); // match the server-side trim
     list = list.where((e) => e.name.toLowerCase().contains(q)).toList();
   }
 
@@ -469,24 +477,19 @@ class _ExerciseBrowserScreenState
     }
   }
 
-  /// The API returns small pages (the free plan caps at ~10 items), so a single
-  /// page often doesn't fill the screen — then there's nothing to scroll and
-  /// [_onScroll] never fires. Proactively fetch the next page until the list
-  /// overflows the viewport (or the catalogue is exhausted).
+  /// A single page often doesn't fill the screen — then there's nothing to
+  /// scroll and [_onScroll] never fires. Proactively fetch the next page until
+  /// the list overflows the viewport (or the catalogue is exhausted).
   ///
-  /// Gated to the plain browse view: with a filter/search active a narrow match
-  /// could otherwise page through the entire catalogue and burn API quota.
+  /// This also drives filtered views: a narrow filter (e.g. Muscle: Chest) may
+  /// match only a handful of the loaded rows, so keep paging — served from the
+  /// local DB once the warm-up sync has run — until the whole catalogue has
+  /// been considered. When the filter matches nothing yet there is no
+  /// scrollable at all, hence the no-clients case also pages on.
   void _maybeAutoPaginate() {
-    if (!_scrollController.hasClients) return;
-    final filtered = ref.read(_searchQueryProvider).isNotEmpty ||
-        ref.read(_muscleFilterProvider) != null ||
-        ref.read(_equipmentFilterProvider) != null ||
-        ref.read(_difficultyFilterProvider) != null;
-    if (filtered) return;
     final cat = ref.read(_catalogueProvider);
-    if (cat.hasMore &&
-        !cat.isLoading &&
-        !cat.isLoadingMore &&
+    if (!cat.hasMore || cat.isLoading || cat.isLoadingMore) return;
+    if (!_scrollController.hasClients ||
         _scrollController.position.maxScrollExtent <= 0) {
       ref.read(_catalogueProvider.notifier).loadMore();
     }
@@ -519,6 +522,15 @@ class _ExerciseBrowserScreenState
     widget.onMultiSelect?.call(_selectedExercises);
     Navigator.of(context).pop();
   }
+
+  Widget _buildSkeletonList() => ListView.builder(
+        padding: EdgeInsets.symmetric(horizontal: AppSizes.contentPaddingH.w),
+        itemCount: 8,
+        itemBuilder: (_, __) => Padding(
+          padding: EdgeInsets.only(bottom: 10.h),
+          child: _ExerciseTileSkeleton(),
+        ),
+      );
 
   Widget _buildSectionHeader(String title) {
     final colors = AppColors.of(context);
@@ -687,7 +699,16 @@ class _ExerciseBrowserScreenState
             Expanded(
               child: exercises.when(
                 data: (sections) {
+                  // Keep paging until the (possibly filtered) view has either
+                  // filled the screen or seen the whole catalogue.
+                  WidgetsBinding.instance
+                      .addPostFrameCallback((_) => _maybeAutoPaginate());
                   if (sections.isEmpty) {
+                    // Later pages may still hold matches — don't claim "no
+                    // exercises found" while the catalogue is still paging in.
+                    if (ref.watch(_catalogueProvider).hasMore) {
+                      return _buildSkeletonList();
+                    }
                     final hasFilters =
                         ref.watch(_muscleFilterProvider) != null ||
                         ref.watch(_equipmentFilterProvider) != null ||
@@ -761,9 +782,6 @@ class _ExerciseBrowserScreenState
                     items.addAll(sections.rest);
                   }
 
-                  // Fill the viewport when a small page doesn't overflow it.
-                  WidgetsBinding.instance
-                      .addPostFrameCallback((_) => _maybeAutoPaginate());
                   final loadingMore =
                       ref.watch(_catalogueProvider).isLoadingMore;
                   return ListView.builder(
@@ -794,18 +812,7 @@ class _ExerciseBrowserScreenState
                     },
                   );
                 },
-                loading:
-                    () => ListView.builder(
-                      padding: EdgeInsets.symmetric(
-                        horizontal: AppSizes.contentPaddingH.w,
-                      ),
-                      itemCount: 8,
-                      itemBuilder:
-                          (_, __) => Padding(
-                            padding: EdgeInsets.only(bottom: 10.h),
-                            child: _ExerciseTileSkeleton(),
-                          ),
-                    ),
+                loading: _buildSkeletonList,
                 error:
                     (_, __) => Center(
                       child: GestureDetector(
