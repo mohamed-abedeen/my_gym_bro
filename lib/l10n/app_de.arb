@@ -431,5 +431,10 @@
   "languageSystem": "System",
   "settingsWorkoutFooter": "Standardwerte für Pausen-Timer, Logging und Kalorienschätzungen.",
   "settingsNotificationsFooter": "Trainingserinnerungen schützen deine Serie.",
-  "settingsDataFooter": "Beim Löschen deines Kontos werden deine Daten dauerhaft von unseren Servern entfernt."
+  "settingsDataFooter": "Beim Löschen deines Kontos werden deine Daten dauerhaft von unseren Servern entfernt.",
+  "duration": "Dauer",
+  "heatmapLess": "Weniger",
+  "heatmapMore": "Mehr",
+  "tapDayToJump": "Tippe auf einen Tag, um zu seiner Einheit zu springen",
+  "jumpedToDay": "Zu {date} gesprungen"
 }

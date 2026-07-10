@@ -1339,4 +1339,20 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get settingsDataFooter =>
       'Deleting your account permanently removes your data from our servers.';
+  @override
+  String get duration => 'Duration';
+
+  @override
+  String get heatmapLess => 'Less';
+
+  @override
+  String get heatmapMore => 'More';
+
+  @override
+  String get tapDayToJump => 'Tap a day to jump to its session';
+
+  @override
+  String jumpedToDay(String date) {
+    return 'Jumped to $date';
+  }
 }

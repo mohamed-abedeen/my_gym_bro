@@ -1346,4 +1346,20 @@ class AppLocalizationsDe extends AppLocalizations {
   @override
   String get settingsDataFooter =>
       'Beim Löschen deines Kontos werden deine Daten dauerhaft von unseren Servern entfernt.';
+  @override
+  String get duration => 'Dauer';
+
+  @override
+  String get heatmapLess => 'Weniger';
+
+  @override
+  String get heatmapMore => 'Mehr';
+
+  @override
+  String get tapDayToJump => 'Tippe auf einen Tag, um zu seiner Einheit zu springen';
+
+  @override
+  String jumpedToDay(String date) {
+    return 'Zu $date gesprungen';
+  }
 }

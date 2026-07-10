@@ -2573,6 +2573,36 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Deleting your account permanently removes your data from our servers.'**
   String get settingsDataFooter;
+
+  /// No description provided for @duration.
+  ///
+  /// In en, this message translates to:
+  /// **'Duration'**
+  String get duration;
+
+  /// No description provided for @heatmapLess.
+  ///
+  /// In en, this message translates to:
+  /// **'Less'**
+  String get heatmapLess;
+
+  /// No description provided for @heatmapMore.
+  ///
+  /// In en, this message translates to:
+  /// **'More'**
+  String get heatmapMore;
+
+  /// No description provided for @tapDayToJump.
+  ///
+  /// In en, this message translates to:
+  /// **'Tap a day to jump to its session'**
+  String get tapDayToJump;
+
+  /// No description provided for @jumpedToDay.
+  ///
+  /// In en, this message translates to:
+  /// **'Jumped to {date}'**
+  String jumpedToDay(String date);
 }
 
 class _AppLocalizationsDelegate
