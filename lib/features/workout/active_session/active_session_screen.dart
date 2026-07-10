@@ -1172,7 +1172,7 @@ class _AnatomyPanel extends ConsumerWidget {
   /// Mock proportions: bodies sit just below the stats capsule, sized so
   /// ~5 muscle bars fit underneath with the reflection behind them.
   double get _kBodyTop => 62.h;
-  double get _kBodyHeight => 132.h;
+  double get _kBodyHeight => 150.h;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
