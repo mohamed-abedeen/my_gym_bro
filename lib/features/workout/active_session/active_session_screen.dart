@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:math' as math;
+import 'dart:ui' show ImageFilter;
 
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:drift/drift.dart' show Value;
@@ -1168,6 +1169,11 @@ class _AnatomyPanel extends ConsumerWidget {
   final ActiveSessionState session;
   final VoidCallback onTap;
 
+  /// Mock proportions: bodies sit just below the stats capsule, sized so
+  /// ~5 muscle bars fit underneath with the reflection behind them.
+  double get _kBodyTop => 62.h;
+  double get _kBodyHeight => 132.h;
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     // Completed sets per muscle group — only what THIS session targeted.
@@ -1192,6 +1198,9 @@ class _AnatomyPanel extends ConsumerWidget {
           recoveryPercent: 0,
         ),
     ];
+
+    final gender = ref.watch(anatomyGenderProvider);
+    final skinPath = ref.watch(activeSkinPathProvider);
 
     return GestureDetector(
       onTap: onTap,
@@ -1234,17 +1243,51 @@ class _AnatomyPanel extends ConsumerWidget {
                 ),
               ),
             ),
+            // Mirror-floor reflection under the bodies' feet — flipped,
+            // blurred and fading out, showing through behind the bars
+            // (per the mock).
+            Positioned(
+              top: _kBodyTop + _kBodyHeight,
+              left: 0,
+              right: 0,
+              child: IgnorePointer(
+                child: ShaderMask(
+                  shaderCallback: (rect) => LinearGradient(
+                    begin: Alignment.topCenter,
+                    end: Alignment.bottomCenter,
+                    colors: [
+                      Colors.white.withValues(alpha: 0.45),
+                      Colors.transparent,
+                    ],
+                    stops: const [0, 0.75],
+                  ).createShader(rect),
+                  blendMode: BlendMode.dstIn,
+                  child: ImageFiltered(
+                    imageFilter: ImageFilter.blur(sigmaX: 4, sigmaY: 4),
+                    child: Transform.scale(
+                      scaleY: -1,
+                      child: AnatomyBody(
+                        muscleStates: states,
+                        height: _kBodyHeight,
+                        gender: gender,
+                        basePngPath: skinPath,
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ),
             Column(
               children: [
                 // The floating stats capsule sits inside the card's top edge.
-                SizedBox(height: 68.h),
+                SizedBox(height: _kBodyTop),
                 AnatomyBody(
                   muscleStates: states,
-                  height: 150.h,
-                  gender: ref.watch(anatomyGenderProvider),
-                  basePngPath: ref.watch(activeSkinPathProvider),
+                  height: _kBodyHeight,
+                  gender: gender,
+                  basePngPath: skinPath,
                 ),
-                SizedBox(height: 12.h),
+                SizedBox(height: 16.h),
                 // Bars stay bright the whole way down (only the background
                 // fades). A tiny edge fade lets overflow rows hint-fade.
                 Expanded(
@@ -1278,7 +1321,7 @@ class _AnatomyPanel extends ConsumerWidget {
     final percentLabel = '${(fraction * 100).round()}%';
 
     return Padding(
-      padding: EdgeInsets.symmetric(vertical: 5.h),
+      padding: EdgeInsets.symmetric(vertical: 4.h),
       child: Row(
         children: [
           SizedBox(
@@ -1294,22 +1337,33 @@ class _AnatomyPanel extends ConsumerWidget {
               ),
             ),
           ),
+          SizedBox(width: 8.w),
+          // Pill bar per the mock: the unfilled remainder is a dim,
+          // olive version of the accent (not grey), and the fill is a
+          // fully-rounded capsule of its own.
           Expanded(
-            child: ClipRRect(
-              borderRadius: BorderRadius.circular(3.r),
-              child: SizedBox(
-                height: 6.h,
-                child: Stack(
-                  children: [
-                    Container(color: Colors.white.withValues(alpha: 0.15)),
-                    FractionallySizedBox(
-                      widthFactor: fraction,
-                      // Container (not a bare ColoredBox) so the fill
-                      // expands to the track height instead of collapsing.
-                      child: Container(color: AppColors.accent),
+            child: SizedBox(
+              height: 5.h,
+              child: Stack(
+                children: [
+                  Container(
+                    decoration: BoxDecoration(
+                      color: AppColors.accent.withValues(alpha: 0.28),
+                      borderRadius: BorderRadius.circular(2.5.r),
                     ),
-                  ],
-                ),
+                  ),
+                  FractionallySizedBox(
+                    widthFactor: fraction,
+                    // Container (not a bare ColoredBox) so the fill
+                    // expands to the track height instead of collapsing.
+                    child: Container(
+                      decoration: BoxDecoration(
+                        color: AppColors.accent,
+                        borderRadius: BorderRadius.circular(2.5.r),
+                      ),
+                    ),
+                  ),
+                ],
               ),
             ),
           ),
