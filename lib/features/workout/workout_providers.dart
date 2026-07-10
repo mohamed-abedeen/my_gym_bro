@@ -121,14 +121,29 @@ final scheduleDaysProvider = StreamProvider.family<List<ScheduleDay>, int>((
 
 /// Persists the selected schedule ID and page index across tab switches.
 class WorkoutCardState {
-  const WorkoutCardState({this.selectedScheduleId, this.currentPage = 0});
+  const WorkoutCardState({
+    this.selectedScheduleId,
+    this.currentPage = 0,
+    this.userPickedPage = false,
+  });
   final int? selectedScheduleId;
   final int currentPage;
 
-  WorkoutCardState copyWith({int? selectedScheduleId, int? currentPage}) {
+  /// True once the user manually swiped the card. Auto-advance (jump to the
+  /// next training day) only applies while this is false — using
+  /// `currentPage == 0` as the signal made page 0 unreachable, because
+  /// swiping back to it re-triggered the auto jump.
+  final bool userPickedPage;
+
+  WorkoutCardState copyWith({
+    int? selectedScheduleId,
+    int? currentPage,
+    bool? userPickedPage,
+  }) {
     return WorkoutCardState(
       selectedScheduleId: selectedScheduleId ?? this.selectedScheduleId,
       currentPage: currentPage ?? this.currentPage,
+      userPickedPage: userPickedPage ?? this.userPickedPage,
     );
   }
 }

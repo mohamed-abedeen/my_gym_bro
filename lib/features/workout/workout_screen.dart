@@ -725,6 +725,11 @@ class _ScheduleCardState extends ConsumerState<_ScheduleCard> {
   PageController? _pageController;
   int _lastSyncedPage = -1;
 
+  /// True while WE move the pager (auto-advance / program-change jumps) —
+  /// jumpToPage fires onPageChanged too, and those must not count as the
+  /// user picking a page.
+  bool _syncingPage = false;
+
   @override
   void dispose() {
     _pageController?.dispose();
@@ -774,10 +779,12 @@ class _ScheduleCardState extends ConsumerState<_ScheduleCard> {
     );
     final autoPage = nextDayAsync.valueOrNull;
 
-    // Use auto-advance page if the user hasn't manually changed the page yet,
-    // otherwise respect the user's persisted page choice.
+    // Use auto-advance page until the user manually swipes, then respect
+    // their choice. (Keyed on an explicit flag, NOT `currentPage == 0` —
+    // that made swiping back to the first card impossible, since landing
+    // on page 0 re-triggered the auto jump.)
     final effectivePage =
-        (cardState.currentPage == 0 && autoPage != null)
+        (!cardState.userPickedPage && autoPage != null)
             ? autoPage
             : cardState.currentPage;
     final safePage = effectivePage.clamp(0, totalPages - 1);
@@ -791,7 +798,9 @@ class _ScheduleCardState extends ConsumerState<_ScheduleCard> {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         final c = _pageController;
         if (c != null && c.hasClients && c.page?.round() != safePage) {
+          _syncingPage = true;
           c.jumpToPage(safePage);
+          _syncingPage = false;
         }
       });
     }
@@ -804,8 +813,13 @@ class _ScheduleCardState extends ConsumerState<_ScheduleCard> {
             controller: _pageController,
             itemCount: totalPages,
             onPageChanged: (i) {
-              ref.read(workoutCardStateProvider.notifier).state = cardState
-                  .copyWith(currentPage: i);
+              final notifier = ref.read(workoutCardStateProvider.notifier);
+              notifier.state = notifier.state.copyWith(
+                currentPage: i,
+                // Only a real user swipe locks the page; programmatic
+                // jumps keep auto-advance alive.
+                userPickedPage: _syncingPage ? null : true,
+              );
             },
             itemBuilder: (context, i) {
               // Last page = "Add Day"
@@ -842,7 +856,9 @@ class _ScheduleCardState extends ConsumerState<_ScheduleCard> {
     SecureStorage().write('last_selected_schedule_id', scheduleId.toString());
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (_pageController?.hasClients ?? false) {
+        _syncingPage = true;
         _pageController!.jumpToPage(0);
+        _syncingPage = false;
       }
     });
   }
