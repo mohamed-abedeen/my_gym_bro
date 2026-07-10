@@ -57,7 +57,7 @@ dev_dependencies:
   intl_utils: ^2.8.5
   mocktail: ^1.0.4
   riverpod_generator: ^2.4.0
-  very_good_analysis: ^7.0.0
+  very_good_analysis: ^10.3.0
 
 flutter_launcher_icons:
   image_path: assets/icons/app_icon_square.png
