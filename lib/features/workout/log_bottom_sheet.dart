@@ -340,6 +340,9 @@ class _SessionCardState extends ConsumerState<_SessionCard>
                     exercise: ex,
                     session: widget.enriched.session,
                   ),
+                  // Opaque so the empty space between text and arrow is
+                  // tappable too (deferToChild only hits painted children).
+                  behavior: HitTestBehavior.opaque,
                   child: Padding(
                     padding: EdgeInsets.fromLTRB(20.w, 0, 16.w, 12.h),
                     child: Row(

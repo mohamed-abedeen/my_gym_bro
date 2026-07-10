@@ -1,5 +1,20 @@
+// notify-social-challenge — when a user sets a PR, nudge the people who follow
+// them ("your gym bro just hit a PR").
+//
+// Hardening (was an open spam vector): the previous version let ANY authenticated
+// user broadcast an attacker-chosen, unsanitized name to the ENTIRE user base.
+// Now:
+//   • the record holder is the CALLER (from their JWT) — you can't fire a PR
+//     notification about someone else;
+//   • the display name is read server-side from the profile, never trusted from
+//     the client;
+//   • the exercise label is sanitized + length-capped;
+//   • the audience is the caller's FOLLOWERS, not everyone.
+// ponytail: add a per-user cooldown (last_pr_notified_at) if users spam PRs.
+
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { sendPush } from "../_shared/fcm.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -22,8 +37,15 @@ const CHALLENGE_MESSAGES = [
   "{name} just crushed a workout. Your move.",
 ];
 
-const FCM_ENDPOINT = "https://fcm.googleapis.com/fcm/send";
-const MAX_TOKENS_PER_BATCH = 500;
+/** Strip control chars, collapse whitespace, cap length. */
+function clean(s: string, max = 60): string {
+  return (s ?? "")
+    // deno-lint-ignore no-control-regex
+    .replace(/[\x00-\x1F\x7F]/g, " ")
+    .replace(/\s+/g, " ")
+    .trim()
+    .slice(0, max);
+}
 
 serve(async (req: Request) => {
   if (req.method === "OPTIONS") {
@@ -36,141 +58,84 @@ serve(async (req: Request) => {
       return jsonResponse({ error: "Missing authorization header" }, 401);
     }
 
-    // Verify the calling user's JWT
     const supabaseUser = createClient(
       Deno.env.get("SUPABASE_URL")!,
       Deno.env.get("SUPABASE_ANON_KEY")!,
-      {
-        global: { headers: { Authorization: authHeader } },
-      }
+      { global: { headers: { Authorization: authHeader } } },
     );
-
     const {
       data: { user },
       error: authError,
     } = await supabaseUser.auth.getUser();
-
     if (authError || !user) {
       return jsonResponse({ error: "Invalid or expired token" }, 401);
     }
 
-    const fcmServerKey = Deno.env.get("FCM_SERVER_KEY");
-    if (!fcmServerKey) {
-      return jsonResponse({ error: "FCM_SERVER_KEY not configured" }, 500);
+    const { exerciseName }: { exerciseName?: string } = await req.json();
+    const exercise = clean(exerciseName ?? "");
+    if (!exercise) {
+      return jsonResponse({ error: "exerciseName is required" }, 400);
     }
 
-    const {
-      recordHolderId,
-      recordHolderName,
-      exerciseName,
-    }: {
-      recordHolderId: string;
-      recordHolderName: string;
-      exerciseName: string;
-    } = await req.json();
-
-    if (!recordHolderId || !recordHolderName || !exerciseName) {
-      return jsonResponse(
-        {
-          error:
-            "recordHolderId, recordHolderName, and exerciseName are required",
-        },
-        400
-      );
-    }
+    const recordHolderId = user.id; // the caller — cannot be spoofed
 
     const supabaseAdmin = createClient(
       Deno.env.get("SUPABASE_URL")!,
-      Deno.env.get("SERVICE_ROLE_KEY")!
+      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
     );
 
-    // Find all users with active subscriptions EXCEPT the record holder
-    const { data: eligibleUsers, error: subError } = await supabaseAdmin
-      .from("subscriptions")
-      .select("user_id")
-      .eq("status", "active")
-      .neq("user_id", recordHolderId);
+    // Display name from the server, never from the client.
+    const { data: profile } = await supabaseAdmin
+      .from("user_profiles")
+      .select("display_name")
+      .eq("user_id", recordHolderId)
+      .maybeSingle();
+    const name = clean(profile?.display_name ?? "Someone", 40);
 
-    if (subError) {
-      console.error("Subscription query error:", subError);
+    // Audience: people who follow the record holder.
+    const { data: followers, error: followErr } = await supabaseAdmin
+      .from("follows")
+      .select("follower_id")
+      .eq("followee_id", recordHolderId);
+    if (followErr) {
+      console.error("Follower query error:", followErr);
       return jsonResponse({ error: "Database error" }, 500);
     }
-
-    if (!eligibleUsers || eligibleUsers.length === 0) {
+    const followerIds = (followers ?? []).map(
+      (f: { follower_id: string }) => f.follower_id,
+    );
+    if (followerIds.length === 0) {
       return jsonResponse({ notified: 0 });
     }
 
-    const eligibleUserIds = eligibleUsers.map(
-      (u: { user_id: string }) => u.user_id
-    );
-
-    // Fetch FCM tokens
-    const { data: profiles, error: tokenError } = await supabaseAdmin
+    const { data: profiles } = await supabaseAdmin
       .from("user_profiles")
       .select("fcm_token")
-      .in("user_id", eligibleUserIds)
+      .in("user_id", followerIds)
       .not("fcm_token", "is", null);
-
-    if (tokenError) {
-      console.error("Token fetch error:", tokenError);
-      return jsonResponse({ error: "Failed to fetch tokens" }, 500);
-    }
-
     const tokens = (profiles ?? [])
       .map((p: { fcm_token: string | null }) => p.fcm_token)
       .filter((t): t is string => !!t && t.trim().length > 0);
-
     if (tokens.length === 0) {
       return jsonResponse({ notified: 0 });
     }
 
-    // Pick a random challenge message
     const template =
-      CHALLENGE_MESSAGES[
-        Math.floor(Math.random() * CHALLENGE_MESSAGES.length)
-      ];
-    const message = template.replace(/\{name\}/g, recordHolderName);
+      CHALLENGE_MESSAGES[Math.floor(Math.random() * CHALLENGE_MESSAGES.length)];
+    const result = await sendPush(
+      tokens,
+      { title: `New PR on ${exercise}!`, body: template.replace(/\{name\}/g, name) },
+      { type: "social_challenge", record_holder_id: recordHolderId, exercise_name: exercise },
+    );
 
-    // Send FCM notifications in batches
-    let totalNotified = 0;
-
-    for (let i = 0; i < tokens.length; i += MAX_TOKENS_PER_BATCH) {
-      const batch = tokens.slice(i, i + MAX_TOKENS_PER_BATCH);
-      const payload = {
-        registration_ids: batch,
-        notification: {
-          title: `New PR on ${exerciseName}!`,
-          body: message,
-        },
-        data: {
-          type: "social_challenge",
-          record_holder_id: recordHolderId,
-          exercise_name: exerciseName,
-        },
-      };
-
-      try {
-        const res = await fetch(FCM_ENDPOINT, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `key=${fcmServerKey}`,
-          },
-          body: JSON.stringify(payload),
-        });
-
-        if (res.ok) {
-          const data = await res.json();
-          totalNotified += data.success ?? 0;
-        } else {
-          console.error("FCM batch failed:", res.status);
-        }
-      } catch (err) {
-        console.error("FCM batch error:", err);
-      }
+    if (result.staleTokens.length > 0) {
+      await supabaseAdmin
+        .from("user_profiles")
+        .update({ fcm_token: null })
+        .in("fcm_token", result.staleTokens);
     }
 
-    return jsonResponse({ notified: totalNotified });
+    return jsonResponse({ notified: result.sent });
   } catch (err) {
     console.error("notify-social-challenge error:", err);
     return jsonResponse({ error: "Internal server error" }, 500);

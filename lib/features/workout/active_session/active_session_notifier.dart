@@ -240,7 +240,7 @@ class ActiveSessionNotifier extends StateNotifier<ActiveSessionState> {
         super(const ActiveSessionState());
   final WorkoutLogRepository _repository;
 
-  /// Optional WorkoutX-backed cache. When present, logging an exercise ensures
+  /// Optional API-backed cache. When present, logging an exercise ensures
   /// it is cached locally (cache-on-log) so history/recovery resolve offline.
   final ExerciseRepository? _exerciseRepo;
   /// Refresh-and-read the streak. Invalidates the cached value first so the
@@ -294,8 +294,14 @@ class ActiveSessionNotifier extends StateNotifier<ActiveSessionState> {
   String _setProgressLabel() {
     final ex = state.currentExercise;
     if (ex == null || ex.sets.isEmpty) return '';
+    final total = ex.sets.length;
     final completed = ex.sets.where((s) => s.isCompleted).length;
-    return 'Set ${completed.clamp(1, ex.sets.length)} of ${ex.sets.length}';
+    final label = 'Set ${completed.clamp(1, total)} of $total';
+    // Set-progress dots — rendered as-is by the Dynamic Island / lock
+    // screen, matching the Android notification. Skipped for silly-long
+    // set lists to keep the island line tidy.
+    if (total > 8) return label;
+    return '$label  ${'●' * completed}${'○' * (total - completed)}';
   }
 
   String _liveActivityExerciseName() =>
@@ -481,6 +487,9 @@ class ActiveSessionNotifier extends StateNotifier<ActiveSessionState> {
     );
 
     restTimerService.completeSetFromNotification = completeNextSet;
+    // Register for notification actions for the whole session — "Complete
+    // Set" fires while no rest countdown is running.
+    RestTimerService.activeInstance = restTimerService;
 
     // Re-arm a persisted rest countdown if one survived; it resyncs the
     // ongoing notification itself. Otherwise rebuild the active-set view.
@@ -532,8 +541,10 @@ class ActiveSessionNotifier extends StateNotifier<ActiveSessionState> {
     ));
 
     // Allow the notification "Complete Set" action to call completeNextSet()
-    // without needing a Riverpod ref.
+    // without needing a Riverpod ref. Register the instance for the whole
+    // session — the action fires while no rest countdown is running.
     restTimerService.completeSetFromNotification = completeNextSet;
+    RestTimerService.activeInstance = restTimerService;
 
     // If a schedule day was provided, load its exercises into the session.
     if (scheduleDayId != null) {
@@ -993,6 +1004,12 @@ class ActiveSessionNotifier extends StateNotifier<ActiveSessionState> {
     // Haptic
     unawaited(HapticFeedback.mediumImpact());
 
+    // Rest timer "Off" (0s) — just refresh the ongoing notification.
+    if (_defaultRestSeconds <= 0) {
+      _updateActiveSetNotification();
+      return;
+    }
+
     // Start rest timer
     state = state.copyWith(showRestTimer: true);
     restTimerService.start(
@@ -1284,6 +1301,15 @@ class ActiveSessionNotifier extends StateNotifier<ActiveSessionState> {
 
   // ── Notification helpers ────────────────────────────────────────────────
 
+  /// Whole-session totals line pinned under the expanded notification,
+  /// e.g. "5 sets · 1,240 kg this session".
+  String get _sessionSummaryLine {
+    final vol = _weightUnit == 'lbs'
+        ? state.totalVolume * 2.20462
+        : state.totalVolume;
+    return '${state.totalCompletedSets} sets · ${vol.round()} $_weightUnit this session';
+  }
+
   /// Push the "active set" notification (State A).
   ///
   /// Shows the next incomplete set for the current exercise, or falls
@@ -1310,6 +1336,9 @@ class ActiveSessionNotifier extends StateNotifier<ActiveSessionState> {
       weight: '$weight$unit',
       reps: reps,
       sessionStartedAt: startedAt,
+      completedSets: ex.sets.where((s) => s.isCompleted).length,
+      muscleGroup: ex.muscleGroup,
+      sessionSummary: _sessionSummaryLine,
       tagline: activeSetTaglineForTone(_notificationTone),
       exerciseImagePath: _currentExerciseImagePath,
     ));
@@ -1341,6 +1370,9 @@ class ActiveSessionNotifier extends StateNotifier<ActiveSessionState> {
       remaining: remaining,
       totalSeconds: restTimerService.total,
       sessionStartedAt: startedAt,
+      completedSets: ex.sets.where((s) => s.isCompleted).length,
+      muscleGroup: ex.muscleGroup,
+      sessionSummary: _sessionSummaryLine,
       tagline: restCountdownTaglineForTone(_notificationTone),
       exerciseImagePath: _currentExerciseImagePath,
     ));

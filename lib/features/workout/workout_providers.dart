@@ -1603,6 +1603,27 @@ _dayExerciseTotals(
   final exerciseMap = {for (final e in exercises) e.exerciseId: e};
   final seById = {for (final se in sessionExercises) se.localId: se};
 
+  // Cap each session's assumed work time at its real wall-clock duration —
+  // the same rule as [CalorieService.estimateSessionCalories] — so a
+  // rapid-fire session (many sets ticked in minutes) can't bill more work
+  // than the session even lasted, and this report agrees with the weekly
+  // calorie stat.
+  final sessionById = {for (final s in sessions) s.localId: s};
+  final activeBySessionId = <int, int>{};
+  for (final s in sets) {
+    if (!s.isCompleted) continue;
+    final se = seById[s.sessionExerciseId];
+    if (se == null) continue;
+    activeBySessionId[se.sessionId] =
+        (activeBySessionId[se.sessionId] ?? 0) +
+        (s.durationSeconds ?? CalorieService.assumedSetSeconds);
+  }
+  double scaleFor(int sessionId) {
+    final duration = sessionById[sessionId]?.durationSeconds ?? 0;
+    final active = activeBySessionId[sessionId] ?? 0;
+    return duration > 0 && active > duration ? duration / active : 1.0;
+  }
+
   // Aggregate by exerciseId (an exercise can recur across day sessions).
   final acc =
       <
@@ -1623,7 +1644,9 @@ _dayExerciseTotals(
       topWeightKg: math.max(prev?.topWeightKg ?? 0, weight),
       activeSeconds:
           (prev?.activeSeconds ?? 0) +
-          (s.durationSeconds ?? CalorieService.assumedSetSeconds),
+          ((s.durationSeconds ?? CalorieService.assumedSetSeconds) *
+                  scaleFor(se.sessionId))
+              .round(),
     );
   }
 

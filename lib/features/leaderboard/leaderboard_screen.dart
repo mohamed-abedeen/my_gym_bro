@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:intl/intl.dart';
 import 'package:my_gym_bro/features/leaderboard/leaderboard_providers.dart';
+import 'package:my_gym_bro/features/leaderboard/rank.dart';
 import 'package:my_gym_bro/l10n/app_localizations.dart';
 import 'package:my_gym_bro/shared/constants.dart';
 import 'package:my_gym_bro/shared/responsive.dart';
@@ -44,13 +46,16 @@ class _Row {
 
 enum _Tier { elite, master, standing, movingUp, workHarder }
 
-/// Tier from a row's rank within the visible board: podium ranks get the
-/// medal tiers, the upper half is "moving up", the rest "work harder".
-_Tier _tierForRank(int rank, int total) {
-  if (rank == 1) return _Tier.elite;
-  if (rank == 2) return _Tier.master;
-  if (rank == 3) return _Tier.standing;
-  if (total > 0 && rank <= (total / 2).ceil()) return _Tier.movingUp;
+/// Tier from a row's 1-based *position within the visible list*: the podium
+/// gets the medal tiers, the upper half is "moving up", the rest "work
+/// harder". Position (not the row's rank number) matters because Rivals
+/// rows carry global ranks (e.g. 132–142) while the list is an ~11-row
+/// window — tiering by rank would mark the whole pod "work harder".
+_Tier _tierForPosition(int position, int total) {
+  if (position == 1) return _Tier.elite;
+  if (position == 2) return _Tier.master;
+  if (position == 3) return _Tier.standing;
+  if (total > 0 && position <= (total / 2).ceil()) return _Tier.movingUp;
   return _Tier.workHarder;
 }
 
@@ -71,6 +76,17 @@ class _Challenge {
 class _LeaderboardScreenState extends ConsumerState<LeaderboardScreen> {
   _Tab _tab = _Tab.leaderboard;
   LeaderboardScope _scope = LeaderboardScope.rivals;
+
+  @override
+  void initState() {
+    super.initState();
+    // The scaffold's rank listener keeps the global board provider alive for
+    // the whole session, so refetch on every screen open to stay fresh.
+    // Post-frame: ref can't touch the provider scope during initState.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) ref.invalidate(leaderboardProvider);
+    });
+  }
 
   static const _challenges = <_Challenge>[
     _Challenge(title: '1000 push up', percent: 30, rank: 20, daysLeft: 25),
@@ -263,17 +279,18 @@ class _LeaderboardTab extends ConsumerWidget {
     final colors = AppColors.of(context);
     final entries = ref.watch(leaderboardProvider(scope));
 
+    LeaderboardEntry? me;
+    for (final e in entries.valueOrNull ?? const <LeaderboardEntry>[]) {
+      if (e.isMe) {
+        me = e;
+        break;
+      }
+    }
+
     return ListView(
       padding: EdgeInsets.fromLTRB(10.w, 0, 10.w, 24.h),
       children: [
-        _CurrentLeagueCard(
-          me: entries.valueOrNull
-              ?.where((e) => e.isMe)
-              .cast<LeaderboardEntry?>()
-              .firstWhere((_) => true, orElse: () => null),
-          total: entries.valueOrNull?.length ?? 0,
-          l10n: l10n,
-        ),
+        _CurrentLeagueCard(me: me, l10n: l10n),
         SizedBox(height: 18.h),
         _ScopeSelector(scope: scope, onChange: onScope, l10n: l10n),
         SizedBox(height: 18.h),
@@ -298,14 +315,14 @@ class _LeaderboardTab extends ConsumerWidget {
               ];
             }
             final rows = [
-              for (final e in list)
+              for (var i = 0; i < list.length; i++)
                 _Row(
-                  rank: e.rank,
-                  name: e.name,
-                  volume: e.volume.round(),
-                  tier: _tierForRank(e.rank, list.length),
-                  avatarUrl: e.avatarUrl,
-                  isMe: e.isMe,
+                  rank: list[i].rank,
+                  name: list[i].name,
+                  volume: list[i].volume.round(),
+                  tier: _tierForPosition(i + 1, list.length),
+                  avatarUrl: list[i].avatarUrl,
+                  isMe: list[i].isMe,
                 ),
             ];
             return [
@@ -350,22 +367,27 @@ class _LeaderboardTab extends ConsumerWidget {
 
 // ── Current League card — 419x194, radius 36 ──
 
-class _CurrentLeagueCard extends StatelessWidget {
+class _CurrentLeagueCard extends ConsumerWidget {
   const _CurrentLeagueCard({
     required this.me,
-    required this.total,
     required this.l10n,
   });
 
   /// The caller's own row on the current board, when loaded and present.
   final LeaderboardEntry? me;
-  final int total;
   final AppLocalizations l10n;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final colors = AppColors.of(context);
-    final tier = me == null ? null : _tierForRank(me!.rank, total);
+    // Canonical rank: persisted + shield-resolved from the global board, so
+    // the badge matches Home, holds through demotion shields, works offline,
+    // and doesn't jump when switching scopes. Entry tier until first ranked.
+    final state = ref.watch(rankStateProvider);
+    final rank = ref.watch(myRankProvider) ?? const Rank(RankTier.bronze, 3);
+    final composite = ref.watch(myCompositeProvider) ?? 0.0;
+    final shielded = state?.shieldUntil != null;
+    final next = rank.next;
 
     return Container(
       height: 194.h,
@@ -376,15 +398,12 @@ class _CurrentLeagueCard extends StatelessWidget {
       clipBehavior: Clip.antiAlias,
       child: Stack(
         children: [
-          // Right-side trophy emblem (placeholder for the Figma "13 1" image)
+          // Right-side rank badge
           Positioned(
-            right: -10.w,
-            top: 20.h,
-            child: Icon(
-              Icons.workspace_premium_rounded,
-              size: 140.sp,
-              color: colors.accent.withValues(alpha: 0.85),
-            ),
+            right: 14.w,
+            top: 0,
+            bottom: 0,
+            child: Center(child: RankBadge(rank, size: 140.w)),
           ),
           // Left-side text content
           Padding(
@@ -402,13 +421,58 @@ class _CurrentLeagueCard extends StatelessWidget {
                   ),
                 ),
                 SizedBox(height: 4.h),
+                Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Flexible(
+                      child: Text(
+                        rank.label(l10n),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                          color: colors.textPrimary,
+                          fontSize: 24.sp,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                    ),
+                    if (shielded) ...[
+                      SizedBox(width: 6.w),
+                      Tooltip(
+                        message: l10n.rankShieldTooltip,
+                        triggerMode: TooltipTriggerMode.tap,
+                        child: Icon(
+                          Icons.shield_rounded,
+                          size: 18.sp,
+                          color: colors.accent,
+                        ),
+                      ),
+                    ],
+                  ],
+                ),
+                SizedBox(height: 10.h),
+                // Progress through the current band toward the next rank.
+                SizedBox(
+                  width: 170.w,
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(3.r),
+                    child: LinearProgressIndicator(
+                      value:
+                          next == null ? 1 : Rank.progressToNext(composite),
+                      minHeight: 6.h,
+                      backgroundColor:
+                          colors.textSecondary.withValues(alpha: 0.18),
+                      valueColor:
+                          AlwaysStoppedAnimation<Color>(colors.accent),
+                    ),
+                  ),
+                ),
+                SizedBox(height: 4.h),
                 Text(
-                  tier == null
-                      ? l10n.leagueMasterTitle
-                      : _LeaderboardRow._tierLabel(tier, l10n),
+                  next == null ? l10n.rankMax : l10n.rankNext(next.label(l10n)),
                   style: TextStyle(
-                    color: colors.textPrimary,
-                    fontSize: 24.sp,
+                    color: colors.textSecondary,
+                    fontSize: 10.sp,
                     fontWeight: FontWeight.w700,
                   ),
                 ),
@@ -603,7 +667,9 @@ class _LeaderboardRow extends StatelessWidget {
                   ),
                 ),
                 Text(
-                  _formatVolume(row.volume),
+                  NumberFormat.decimalPattern(
+                    Localizations.localeOf(context).toString(),
+                  ).format(row.volume),
                   style: TextStyle(
                     color: onBg,
                     fontSize: 13.sp,
@@ -625,15 +691,6 @@ class _LeaderboardRow extends StatelessWidget {
         ),
       ),
     );
-  }
-
-  static String _formatVolume(int v) {
-    if (v >= 1000) {
-      final thousands = v ~/ 1000;
-      final remainder = v % 1000;
-      return remainder == 0 ? '$thousands,000' : '$v';
-    }
-    return '$v';
   }
 
   static String _tierLabel(_Tier t, AppLocalizations l10n) => switch (t) {

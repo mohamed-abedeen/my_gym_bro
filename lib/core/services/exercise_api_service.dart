@@ -4,112 +4,91 @@ import 'dart:io';
 
 import 'package:http/http.dart' as http;
 
-import 'package:my_gym_bro/core/services/workoutx_exercise.dart';
+import 'package:my_gym_bro/core/services/api_exercise.dart';
 
-/// Base type for all WorkoutX API failures.
-class WorkoutXException implements Exception {
-  const WorkoutXException(this.message);
+/// Any exercise-API failure (offline, rate-limited, server error). Callers
+/// catch this and fall back to the local cache.
+class ExerciseApiException implements Exception {
+  const ExerciseApiException(this.message);
   final String message;
   @override
-  String toString() => 'WorkoutXException: $message';
+  String toString() => 'ExerciseApiException: $message';
 }
 
-/// Thrown when no API key is configured, or the key is rejected (401).
-class WorkoutXAuthException extends WorkoutXException {
-  const WorkoutXAuthException(super.message);
-}
+/// One page of the catalogue, cursor-paginated.
+class ExerciseApiPage {
+  const ExerciseApiPage({
+    required this.total,
+    required this.hasNextPage,
+    required this.nextCursor,
+    required this.items,
+  });
 
-/// Thrown when an endpoint/feature requires a higher plan (HTTP 402).
-/// On the free plan this is returned for search / multi-filter.
-class WorkoutXPlanException extends WorkoutXException {
-  const WorkoutXPlanException(super.message, {this.feature});
-  final String? feature;
-}
-
-/// Thrown when the per-minute rate limit or daily quota is exhausted (429).
-class WorkoutXRateLimitException extends WorkoutXException {
-  const WorkoutXRateLimitException(super.message);
-}
-
-/// Thrown when the device is offline or the request times out / fails at the
-/// transport layer. Distinct from API-level errors so callers can fall back to
-/// the local cache silently.
-class WorkoutXNetworkException extends WorkoutXException {
-  const WorkoutXNetworkException(super.message);
-}
-
-/// A page of browse/search results.
-class WorkoutXPage {
-  const WorkoutXPage({required this.total, required this.items});
-
-  /// Sentinel for [total] when the response is a bare array with no grand
-  /// total — callers should paginate until a page comes back empty.
-  static const int unknownTotal = -1;
-
-  /// Total number of exercises matching the query across all pages, or
-  /// [unknownTotal] when the API doesn't report one.
+  /// Total number of exercises in the catalogue.
   final int total;
-  final List<WorkoutXExercise> items;
+  final bool hasNextPage;
+
+  /// Pass as `after` to fetch the next page. Null on the last page.
+  final String? nextCursor;
+  final List<ApiExercise> items;
 }
 
-/// Thin HTTP client for the WorkoutX exercise API.
+/// Thin HTTP client for the ExerciseDB open-source v1 API.
 ///
-/// Contract (verified against the free plan):
-///   • Base `https://api.workoutxapp.com/v1`, auth header `X-WorkoutX-Key`.
-///   • `GET /exercises?offset&limit` → `{total,count,data:[…]}` (free).
-///   • `GET /exercises/{id}` → bare exercise object (free).
-///   • `GET /exercises/search?q=` → 402 on the free plan (paid `multiFilter`).
+/// Contract (verified against the live API, July 2026):
+///   • Base `https://oss.exercisedb.dev/api/v1` — free, no API key.
+///   • `GET /exercises?after=<id>&limit=N` → `{success, meta:{total,
+///     hasNextPage, nextCursor}, data:[…]}`. Cursor-paged (offset is
+///     ignored); pages cap at 25 items.
+///   • `GET /exercises/{exerciseId}` → `{success, data:{…}}`.
+///   • Aggressively rate-limited (429 after ~a dozen rapid requests) —
+///     callers must treat 429 as "stop and resume later", not retry-loop.
 ///
-/// This service performs no caching or fallback — that is the repository's job.
+/// This service performs no caching or fallback — that is the repository's
+/// job. TESTING ONLY: this dataset is licensed non-commercial; swap the data
+/// source for the purchased ExerciseDB.io dataset before any paid release.
 class ExerciseApiService {
-  ExerciseApiService({required String apiKey, http.Client? client})
-      : _apiKey = apiKey,
-        _client = client ?? http.Client();
+  ExerciseApiService({http.Client? client}) : _client = client ?? http.Client();
 
-  static const String baseUrl = 'https://api.workoutxapp.com/v1';
+  static const String baseUrl = 'https://oss.exercisedb.dev/api/v1';
   static const Duration _timeout = Duration(seconds: 15);
 
+  /// The API caps page size at 25 regardless of the requested limit.
+  static const int pageSize = 25;
+
   final http.Client _client;
-  final String _apiKey;
 
-  /// Whether an API key is present. When false, every call throws
-  /// [WorkoutXAuthException] without hitting the network.
-  bool get hasKey => _apiKey.isNotEmpty;
-
-  /// The configured key. Exposed so cached `gifUrl`s can be made
-  /// self-authenticating (WorkoutX media requires the key) — the GIF endpoint
-  /// returns 401 without it and `CachedNetworkImage` sends no auth header.
-  String get apiKey => _apiKey;
-
-  /// Browse the full exercise list, paginated.
-  Future<WorkoutXPage> browse({int offset = 0, int limit = 50}) async {
+  /// Fetch one catalogue page. [after] is the `nextCursor` of the previous
+  /// page (null for the first page).
+  Future<ExerciseApiPage> browsePage({String? after}) async {
     final json = await _getJson('/exercises', {
-      'offset': '$offset',
-      'limit': '$limit',
+      'limit': '$pageSize',
+      if (after != null) 'after': after,
     });
-    return _parsePage(json);
+    if (json is! Map<String, dynamic>) {
+      throw const ExerciseApiException('Unexpected response shape.');
+    }
+    final meta = (json['meta'] as Map<String, dynamic>?) ?? const {};
+    final data = (json['data'] as List?) ?? const [];
+    final items = data
+        .whereType<Map<String, dynamic>>()
+        .map(ApiExercise.fromJson)
+        .toList();
+    final hasNext = meta['hasNextPage'] == true;
+    return ExerciseApiPage(
+      total: (meta['total'] as num?)?.toInt() ?? items.length,
+      hasNextPage: hasNext,
+      nextCursor: hasNext ? meta['nextCursor'] as String? : null,
+      items: items,
+    );
   }
 
-  /// Search exercises by name/keyword.
-  ///
-  /// Hits the dedicated search endpoint, which is the correct contract for
-  /// paid plans. On the free plan this throws [WorkoutXPlanException]; callers
-  /// (the repository) catch it and fall back to local-cache filtering.
-  Future<WorkoutXPage> searchByName(String query, {int limit = 50}) async {
-    final json = await _getJson('/exercises/search', {
-      'q': query,
-      'limit': '$limit',
-    });
-    return _parsePage(json);
-  }
-
-  /// Fetch a single exercise by its WorkoutX id. Returns null on 404.
-  Future<WorkoutXExercise?> getById(String id) async {
+  /// Fetch a single exercise by its ExerciseDB id. Returns null on 404.
+  Future<ApiExercise?> getById(String id) async {
     try {
       final json = await _getJson('/exercises/$id', const {});
-      if (json is Map<String, dynamic>) {
-        return WorkoutXExercise.fromJson(json);
-      }
+      final data = (json is Map<String, dynamic>) ? json['data'] : null;
+      if (data is Map<String, dynamic>) return ApiExercise.fromJson(data);
       return null;
     } on _NotFound {
       return null;
@@ -118,82 +97,30 @@ class ExerciseApiService {
 
   // ── internals ────────────────────────────────────────────────────────
 
-  WorkoutXPage _parsePage(dynamic json) {
-    // The list endpoint returns a bare array: `[ {…}, {…} ]`.
-    if (json is List) {
-      final items = json
-          .whereType<Map<String, dynamic>>()
-          .map(WorkoutXExercise.fromJson)
-          .toList();
-      // A bare array carries no grand total — signal "unknown" with -1 so the
-      // caller paginates until a page comes back empty.
-      return WorkoutXPage(total: WorkoutXPage.unknownTotal, items: items);
-    }
-    // Be tolerant of a wrapped shape too: `{ data: [...], total: N }`.
-    if (json is Map<String, dynamic>) {
-      final data = (json['data'] as List?) ?? const [];
-      final items = data
-          .whereType<Map<String, dynamic>>()
-          .map(WorkoutXExercise.fromJson)
-          .toList();
-      final total = (json['total'] as num?)?.toInt() ?? items.length;
-      return WorkoutXPage(total: total, items: items);
-    }
-    return const WorkoutXPage(total: 0, items: []);
-  }
-
   Future<dynamic> _getJson(String path, Map<String, String> query) async {
-    if (!hasKey) {
-      throw const WorkoutXAuthException('No WorkoutX API key configured.');
-    }
-
     final uri = Uri.parse('$baseUrl$path')
         .replace(queryParameters: query.isEmpty ? null : query);
 
     http.Response res;
     try {
-      res = await _client
-          .get(uri, headers: {'X-WorkoutX-Key': _apiKey})
-          .timeout(_timeout);
+      res = await _client.get(uri).timeout(_timeout);
     } on SocketException {
-      throw const WorkoutXNetworkException('No internet connection.');
+      throw const ExerciseApiException('No internet connection.');
     } on TimeoutException {
-      throw const WorkoutXNetworkException('Request timed out.');
+      throw const ExerciseApiException('Request timed out.');
     } on http.ClientException catch (e) {
-      throw WorkoutXNetworkException(e.message);
+      throw ExerciseApiException(e.message);
     }
 
     switch (res.statusCode) {
       case 200:
         return jsonDecode(res.body);
-      case 401:
-        throw const WorkoutXAuthException('Invalid or missing API key.');
-      case 402:
-        final body = _tryDecodeMap(res.body);
-        throw WorkoutXPlanException(
-          (body?['message'] as String?) ?? 'A higher plan is required.',
-          feature: body?['feature'] as String?,
-        );
       case 404:
         throw const _NotFound();
       case 429:
-        throw const WorkoutXRateLimitException(
-            'Rate limit or daily quota exceeded. Try again later.');
+        throw const ExerciseApiException('Rate limited — resume later.');
       default:
-        final body = _tryDecodeMap(res.body);
-        throw WorkoutXException(
-          (body?['message'] as String?) ??
-              'Request failed (${res.statusCode}).',
-        );
-    }
-  }
-
-  Map<String, dynamic>? _tryDecodeMap(String body) {
-    try {
-      final decoded = jsonDecode(body);
-      return decoded is Map<String, dynamic> ? decoded : null;
-    } on Object {
-      return null;
+        throw ExerciseApiException('Request failed (${res.statusCode}).');
     }
   }
 

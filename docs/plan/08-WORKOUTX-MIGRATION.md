@@ -1,6 +1,17 @@
 # 08 — WorkoutX Exercise API Migration
 
-**Status:** Planned, not started.
+> **⚠️ SUPERSEDED (2026-07-08).** WorkoutX was implemented, then dropped: its metered
+> plans (500 req/mo free; paid tiers still request-capped) fight the offline-first
+> architecture and cost more over time than owning the data. Current state:
+> - **Testing:** the app now uses the **ExerciseDB OSS v1 API** (`oss.exercisedb.dev`,
+>   free, no key, ~1,500 exercises). Its license is **non-commercial** — fine for
+>   development/testing, NOT for release.
+> - **Deployment plan:** buy the **ExerciseDB.io one-time dataset license**
+>   (Mobile tier $299 — 1,394 exercises + GIFs, perpetual, commercial, offline
+>   bundling + self-hosting allowed) and swap the data source before launch.
+> The rest of this doc is kept for the WorkoutX research/appendices only.
+
+**Status:** Superseded — see banner above.
 **Audience:** Self-contained implementation brief. Assumes access to this Flutter repo
 and the project's Supabase backend, but no prior context.
 **Chosen path:** WorkoutX **Ultra API plan** ($24.99/mo), **direct client → WorkoutX**

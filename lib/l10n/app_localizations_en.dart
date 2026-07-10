@@ -547,7 +547,16 @@ class AppLocalizationsEn extends AppLocalizations {
   String get notificationToneExampleLabel => 'Example';
 
   @override
-  String get restTimer => 'Rest';
+  String get restTimer => 'Rest Timer';
+
+  @override
+  String get off => 'Off';
+
+  @override
+  String get reorderExercises => 'Reorder Exercises';
+
+  @override
+  String get replaceExercise => 'Replace Exercise';
 
   @override
   String get defaultRestTime => 'Default rest time';
@@ -1204,6 +1213,58 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get leagueMasterTitle => 'Master';
+
+  @override
+  String get rankBronze => 'Grinder';
+
+  @override
+  String get rankSilver => 'Warrior';
+
+  @override
+  String get rankGold => 'Beast';
+
+  @override
+  String get rankPlatinum => 'Titan';
+
+  @override
+  String get rankElite => 'Apex';
+
+  @override
+  String get rankUnranked => 'Unranked';
+
+  @override
+  String get rankUpTitle => 'RANK UP!';
+
+  @override
+  String get rankUpCta => 'Let\'s go!';
+
+  @override
+  String rankNext(String rank) {
+    return 'Next: $rank';
+  }
+
+  @override
+  String get rankMax => 'Max rank reached';
+
+  @override
+  String get rankShieldTooltip =>
+      'Demotion shield — your rank is protected while you climb back.';
+
+  @override
+  String get skinPremium => 'Premium';
+
+  @override
+  String get skinPremiumSoon => 'Premium skin — purchases coming soon';
+
+  @override
+  String skinWorkoutsShort(int count) {
+    return '$count workouts';
+  }
+
+  @override
+  String skinLockedProgress(int count) {
+    return 'Unlocks at $count workouts';
+  }
 
   @override
   String get noChallengesYet => 'No active challenges yet';

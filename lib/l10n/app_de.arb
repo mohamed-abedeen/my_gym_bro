@@ -175,7 +175,10 @@
   "notificationToneOnboardingTitle": "Wähle deine Stimme",
   "notificationToneOnboardingSubtitle": "Wie sollen wir während des Trainings mit dir sprechen?",
   "notificationToneExampleLabel": "Beispiel",
-  "restTimer": "Pause",
+  "restTimer": "Pausen-Timer",
+  "off": "Aus",
+  "reorderExercises": "Übungen neu anordnen",
+  "replaceExercise": "Übung ersetzen",
   "defaultRestTime": "Standard-Ruhezeit",
   "restTimerSound": "Ruhetimer-Ton",
   "trainingReminders": "Trainings-Erinnerungen",
@@ -373,6 +376,31 @@
     }
   },
   "leagueMasterTitle": "Meister",
+  "rankBronze": "Grinder",
+  "rankSilver": "Warrior",
+  "rankGold": "Beast",
+  "rankPlatinum": "Titan",
+  "rankElite": "Apex",
+  "rankUnranked": "Ohne Rang",
+  "rankUpTitle": "AUFGESTIEGEN!",
+  "rankUpCta": "Los geht's!",
+  "rankNext": "Als Nächstes: {rank}",
+  "rankMax": "Höchster Rang erreicht",
+  "rankShieldTooltip": "Abstiegsschutz — dein Rang ist geschützt, während du dich zurückkämpfst.",
+  "skinPremium": "Premium",
+  "skinPremiumSoon": "Premium-Skin — Kauf bald verfügbar",
+  "skinWorkoutsShort": "{count} Workouts",
+  "@skinWorkoutsShort": {
+    "placeholders": {
+      "count": { "type": "int" }
+    }
+  },
+  "skinLockedProgress": "Wird bei {count} Workouts freigeschaltet",
+  "@skinLockedProgress": {
+    "placeholders": {
+      "count": { "type": "int" }
+    }
+  },
   "noChallengesYet": "Keine aktiven Challenges",
   "widgetStreakStart": "Streak starten",
   "widgetStreakOneDay": "1-Tage-Streak",

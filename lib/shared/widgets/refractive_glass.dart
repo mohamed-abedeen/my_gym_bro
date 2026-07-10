@@ -5,10 +5,14 @@ import 'package:oc_liquid_glass/oc_liquid_glass.dart';
 /// the (non-iOS) bottom nav pill.
 ///
 /// Opt-in alternative to the frosted GlassSurface, for the few places the user
-/// wants the refractive look (currently the active-workout chrome). It's a
-/// Flutter fragment shader (not a platform view), so it composites in Flutter's
-/// own layer and is fine to use inside lists — unlike the native iOS glass.
+/// wants the refractive look (currently the active-workout chrome).
 /// Self-contained: wraps its own [OCLiquidGlassGroup].
+///
+/// Do NOT place inside a scrolling viewport: the shader is an unclipped
+/// BackdropFilter that force-writes opaque pixels across the whole enclosing
+/// clip, so inside a list on Android (Impeller) it paints the entire viewport
+/// black while scrolling (visible in light mode). Use frosted [GlassSurface]
+/// there instead.
 class RefractiveGlass extends StatelessWidget {
   const RefractiveGlass({
     required this.width,

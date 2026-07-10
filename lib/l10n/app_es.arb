@@ -175,7 +175,10 @@
   "notificationToneOnboardingTitle": "Elige tu voz",
   "notificationToneOnboardingSubtitle": "¿Cómo deberíamos hablarte durante el entrenamiento?",
   "notificationToneExampleLabel": "Ejemplo",
-  "restTimer": "Descanso",
+  "restTimer": "Temporizador de descanso",
+  "off": "No",
+  "reorderExercises": "Reordenar ejercicios",
+  "replaceExercise": "Reemplazar ejercicio",
   "defaultRestTime": "Tiempo de descanso predeterminado",
   "restTimerSound": "Sonido del temporizador",
   "trainingReminders": "Recordatorios de entrenamiento",
@@ -373,6 +376,31 @@
     }
   },
   "leagueMasterTitle": "Maestro",
+  "rankBronze": "Grinder",
+  "rankSilver": "Warrior",
+  "rankGold": "Beast",
+  "rankPlatinum": "Titan",
+  "rankElite": "Apex",
+  "rankUnranked": "Sin clasificar",
+  "rankUpTitle": "¡SUBISTE DE RANGO!",
+  "rankUpCta": "¡Vamos!",
+  "rankNext": "Siguiente: {rank}",
+  "rankMax": "Rango máximo alcanzado",
+  "rankShieldTooltip": "Escudo de descenso: tu rango está protegido mientras te recuperas.",
+  "skinPremium": "Premium",
+  "skinPremiumSoon": "Skin premium — compras disponibles pronto",
+  "skinWorkoutsShort": "{count} entrenos",
+  "@skinWorkoutsShort": {
+    "placeholders": {
+      "count": { "type": "int" }
+    }
+  },
+  "skinLockedProgress": "Se desbloquea a los {count} entrenamientos",
+  "@skinLockedProgress": {
+    "placeholders": {
+      "count": { "type": "int" }
+    }
+  },
   "noChallengesYet": "No hay retos activos",
   "widgetStreakStart": "Empieza una racha",
   "widgetStreakOneDay": "Racha de 1 día",

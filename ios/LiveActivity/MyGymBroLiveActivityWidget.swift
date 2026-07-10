@@ -35,23 +35,38 @@ public struct MyGymBroLiveActivityWidget: Widget {
             DynamicIsland {
                 // ── Expanded (long-press) ────────────────────────────
                 DynamicIslandExpandedRegion(.leading) {
-                    VStack(alignment: .leading, spacing: 2) {
+                    HStack(spacing: 8) {
+                        Image(systemName: context.state.isResting
+                              ? "timer"
+                              : "figure.strengthtraining.traditional")
+                            .font(.system(size: 18, weight: .semibold))
+                            .foregroundStyle(brandTint)
                         Text(context.state.exerciseName)
                             .font(.headline)
                             .lineLimit(1)
-                        Text(context.state.setProgress)
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
                     }
                 }
                 DynamicIslandExpandedRegion(.trailing) {
-                    TimerLabel(context: context)
-                        .font(.title3.monospacedDigit())
-                        .frame(maxWidth: .infinity, alignment: .trailing)
+                    VStack(alignment: .trailing, spacing: 2) {
+                        Text(context.state.isResting ? "REST" : "ELAPSED")
+                            .font(.system(size: 9, weight: .heavy))
+                            .tracking(1.2)
+                            .foregroundStyle(.secondary)
+                        TimerLabel(context: context)
+                            .font(.title3.monospacedDigit().weight(.bold))
+                    }
+                    .frame(maxWidth: .infinity, alignment: .trailing)
                 }
                 DynamicIslandExpandedRegion(.bottom) {
-                    StatusLine(context: context)
-                        .font(.subheadline)
+                    HStack {
+                        // "Set 2 of 4  ●●○○" — dots pushed from the app.
+                        Text(context.state.setProgress)
+                            .font(.subheadline.weight(.semibold))
+                            .foregroundStyle(brandTint)
+                        Spacer()
+                        StatusLine(context: context)
+                            .font(.caption)
+                    }
                 }
             } compactLeading: {
                 Image(systemName: context.state.isResting
@@ -75,7 +90,7 @@ public struct MyGymBroLiveActivityWidget: Widget {
     /// The MyGymBro accent — keep in sync with `AppColors.accent` so the
     /// Live Activity feels native to the app.
     private var brandTint: Color {
-        Color(red: 0.82, green: 1.0, blue: 0.0) // ~ #D2FF00
+        Color(red: 0.941, green: 1.0, blue: 0.0) // #F0FF00 — AppColors.accent (dark)
     }
 }
 
@@ -128,7 +143,7 @@ private struct LockScreenView: View {
     }
 
     private var brandTint: Color {
-        Color(red: 0.82, green: 1.0, blue: 0.0)
+        Color(red: 0.941, green: 1.0, blue: 0.0) // #F0FF00
     }
 }
 

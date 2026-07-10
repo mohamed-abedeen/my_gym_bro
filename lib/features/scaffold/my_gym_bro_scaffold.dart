@@ -5,6 +5,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:my_gym_bro/core/services/subscription_sync_service.dart';
 import 'package:my_gym_bro/features/community/community_screen.dart';
 import 'package:my_gym_bro/features/home/home_screen.dart';
+import 'package:my_gym_bro/features/leaderboard/leaderboard_providers.dart';
+import 'package:my_gym_bro/features/leaderboard/rank.dart';
+import 'package:my_gym_bro/features/leaderboard/rank_up_overlay.dart';
 import 'package:my_gym_bro/features/workout/active_session/active_session_notifier.dart';
 import 'package:my_gym_bro/features/workout/workout_providers.dart';
 import 'package:my_gym_bro/features/workout/workout_screen.dart';
@@ -78,6 +81,22 @@ class _MyGymBroScaffoldState extends ConsumerState<MyGymBroScaffold>
   @override
   Widget build(BuildContext context) {
     Responsive.init(context);
+
+    // Rank resolution: fold the live composite into the persisted rank state
+    // — celebrates promotions, arms/holds/expires demotion shields, and keeps
+    // the badge available offline. Lives on the scaffold (not a tab) because
+    // the AnimatedSwitcher below disposes tabs on switch.
+    ref.listen(myLiveCompositeProvider, (_, live) {
+      final store = ref.read(rankStateProvider.notifier);
+      if (live == null || !store.loaded) return;
+      final stored = ref.read(rankStateProvider);
+      final r = resolveRank(stored, live, DateTime.now());
+      if (r.rankedUp) {
+        unawaited(showRankUp(context, Rank.fromComposite(r.state.composite)));
+      }
+      if (r.state != stored) unawaited(store.save(r.state));
+    });
+
     final colors = AppColors.of(context);
     final idx = ref.watch(navIndexProvider);
 

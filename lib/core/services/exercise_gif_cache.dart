@@ -13,7 +13,9 @@ import 'package:flutter_cache_manager/flutter_cache_manager.dart';
 class ExerciseGifCache {
   ExerciseGifCache._();
 
-  static const String key = 'workoutxGifCache';
+  // Renamed from 'workoutxGifCache' on the ExerciseDB switch — the fresh box
+  // abandons stale WorkoutX GIFs (their auth'd URLs are dead without a key).
+  static const String key = 'exerciseGifCache';
 
   static final CacheManager instance = CacheManager(
     Config(

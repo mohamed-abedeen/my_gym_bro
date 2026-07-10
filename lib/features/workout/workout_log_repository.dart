@@ -292,7 +292,8 @@ class WorkoutLogRepository {
             'remote_id': remoteId,
             'finished_at': params.finishedAt.toIso8601String(),
             'duration_seconds': params.durationSeconds,
-            'total_volume': params.totalVolume,
+            // Supabase column is total_volume_kg (see 001_initial_schema).
+            'total_volume_kg': params.totalVolume,
           },
         );
       } on Exception catch (e) {

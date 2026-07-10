@@ -139,9 +139,17 @@ class _MuscleDetailSheet extends ConsumerWidget {
             endIndent: 20.w,
           ),
 
-          // Muscle list
+          // Muscle list — fades out at the bottom edge (mock behaviour).
           Expanded(
-            child: muscleStates.when(
+            child: ShaderMask(
+              shaderCallback: (rect) => const LinearGradient(
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
+                colors: [Colors.white, Colors.white, Colors.transparent],
+                stops: [0, 0.82, 1],
+              ).createShader(rect),
+              blendMode: BlendMode.dstIn,
+              child: muscleStates.when(
               data: (states) {
                 final weeklySets =
                     ref.watch(weeklySetsPerMuscleProvider).valueOrNull ??
@@ -175,13 +183,14 @@ class _MuscleDetailSheet extends ConsumerWidget {
                   ),
                 );
               },
-              loading: () => Center(
-                child: CircularProgressIndicator(
-                  color: colors.accent,
-                  strokeWidth: 2.w,
+                loading: () => Center(
+                  child: CircularProgressIndicator(
+                    color: colors.accent,
+                    strokeWidth: 2.w,
+                  ),
                 ),
+                error: (_, __) => const SizedBox.shrink(),
               ),
-              error: (_, __) => const SizedBox.shrink(),
             ),
           ),
         ],

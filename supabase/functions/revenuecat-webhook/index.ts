@@ -15,24 +15,19 @@ function jsonResponse(body: Record<string, unknown>, status = 200) {
   });
 }
 
-async function verifySignature(
-  payload: string,
-  signature: string,
-  secret: string
-): Promise<boolean> {
-  const encoder = new TextEncoder();
-  const key = await crypto.subtle.importKey(
-    "raw",
-    encoder.encode(secret),
-    { name: "HMAC", hash: "SHA-256" },
-    false,
-    ["sign"]
-  );
-  const sig = await crypto.subtle.sign("HMAC", key, encoder.encode(payload));
-  const computed = Array.from(new Uint8Array(sig))
-    .map((b) => b.toString(16).padStart(2, "0"))
-    .join("");
-  return computed === signature;
+// RevenueCat does NOT HMAC-sign webhook bodies. It sends the exact string you
+// put in the dashboard's "Authorization header value" field on every request.
+// So authentication is a constant-time equality check of that header against
+// the configured secret — the previous HMAC verification rejected every real
+// event, so subscriptions never updated from the webhook.
+function safeEqual(a: string, b: string): boolean {
+  const enc = new TextEncoder();
+  const ab = enc.encode(a);
+  const bb = enc.encode(b);
+  if (ab.length !== bb.length) return false;
+  let diff = 0;
+  for (let i = 0; i < ab.length; i++) diff |= ab[i] ^ bb[i];
+  return diff === 0;
 }
 
 type RevenueCatEventType =
@@ -74,22 +69,15 @@ serve(async (req: Request) => {
       return jsonResponse({ error: "Server misconfiguration" }, 500);
     }
 
-    const rawBody = await req.text();
-
-    // Verify HMAC-SHA256 signature
+    // Authenticate: the Authorization header must equal the configured secret
+    // (set REVENUECAT_WEBHOOK_SECRET to the exact value entered in RevenueCat's
+    // webhook "Authorization header value" field).
     const authHeader = req.headers.get("authorization") ?? "";
-    const signature = authHeader.replace(/^Bearer\s+/i, "").trim();
-
-    if (!signature) {
-      return jsonResponse({ error: "Missing signature" }, 401);
+    if (!safeEqual(authHeader, webhookSecret)) {
+      return jsonResponse({ error: "Invalid authorization" }, 401);
     }
 
-    const valid = await verifySignature(rawBody, signature, webhookSecret);
-    if (!valid) {
-      return jsonResponse({ error: "Invalid signature" }, 401);
-    }
-
-    const payload = JSON.parse(rawBody);
+    const payload = JSON.parse(await req.text());
     const event = payload.event;
 
     if (!event) {
@@ -112,7 +100,7 @@ serve(async (req: Request) => {
     // Use service_role key to bypass RLS
     const supabase = createClient(
       Deno.env.get("SUPABASE_URL")!,
-      Deno.env.get("SERVICE_ROLE_KEY")!
+      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
     );
 
     const upsertData: Record<string, unknown> = {

@@ -18,6 +18,16 @@ class ExerciseDao extends DatabaseAccessor<AppDatabase>
     return row.read(countExp)!;
   }
 
+  /// Count catalogue (non-custom) exercises — the sync-progress metric.
+  Future<int> countCatalogue() async {
+    final countExp = exercises.localId.count();
+    final query = selectOnly(exercises)
+      ..addColumns([countExp])
+      ..where(exercises.isCustom.equals(false));
+    final row = await query.getSingle();
+    return row.read(countExp)!;
+  }
+
   /// Get all exercises ordered by name.
   Future<List<Exercise>> getAll() =>
       (select(exercises)..orderBy([(t) => OrderingTerm.asc(t.name)])).get();

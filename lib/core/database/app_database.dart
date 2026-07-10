@@ -241,7 +241,7 @@ class AppDatabase extends _$AppDatabase {
   }
 
   @override
-  int get schemaVersion => 15;
+  int get schemaVersion => 16;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -329,6 +329,14 @@ class AppDatabase extends _$AppDatabase {
         if (!await _hasTable('follows')) {
           await m.createTable(follows);
         }
+      }
+      if (from < 16) {
+        // Exercise source switched from the WorkoutX API to the ExerciseDB
+        // OSS v1 API (testing until the ExerciseDB.io license is bought).
+        // WorkoutX ids ("0025") don't exist in the ExerciseDB scheme
+        // ("2gPfomN"), so wipe the cached catalogue; it re-syncs from the
+        // API on the next browse. Custom exercises are preserved.
+        await customStatement('DELETE FROM exercises WHERE is_custom = 0');
       }
     },
   );
