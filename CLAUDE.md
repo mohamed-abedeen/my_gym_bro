@@ -39,7 +39,6 @@ Real Apple Liquid Glass via `cupertino_native_better` (`CNTabBar`), **iOS only**
 | Widget | Look | Notes |
 |---|---|---|
 | `GlassSurface` | frosted | the primitive; everything frosted routes through it |
-| `GlassCard` | frosted | non-interactive cards (log rows, tables) |
 | `LiquidGlassButton` | frosted | pass `refractive: true` for the nav-matching refractive look |
 | `OcGlassBtn` | frosted | typed icon button (close/done/save/share/delete/hint); `refractive: true` opt-in |
 | `RefractiveGlass` | refractive | the `oc_liquid_glass` primitive |

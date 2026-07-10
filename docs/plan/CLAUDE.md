@@ -110,7 +110,7 @@ assets/
 4. Update `03-DATABASE.md` and `04-BACKEND.md`.
 
 ### Adding a screen/widget
-1. Reuse the glass component family (`GlassCard`, `GlassSurface`, `OcGlassBtn`) — don't invent new chrome.
+1. Reuse the glass component family (`GlassSurface`, `OcGlassBtn`) — don't invent new chrome.
 2. **Per the standing rule:** do **not** bulk-replace existing buttons with `OcGlassBtn` without per-change approval.
 3. Handle loading / empty / error states.
 4. Add all strings to the 4 ARB files.

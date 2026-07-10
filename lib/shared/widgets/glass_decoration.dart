@@ -4,9 +4,8 @@ import 'package:my_gym_bro/shared/responsive.dart';
 
 /// Shared visual language for the app's frosted-glass surfaces.
 ///
-/// Three sibling widgets used to inline-duplicate this shadow + tint math:
+/// Sibling widgets used to inline-duplicate this shadow + tint math:
 ///
-///   * `GlassCard` (non-interactive containers — session log rows, etc.)
 ///   * `LiquidGlassButton` (interactive buttons)
 ///   * `OcGlassBtn` (icon-typed buttons)
 ///
@@ -32,7 +31,7 @@ class GlassDecoration {
     );
   }
 
-  /// Heavier shadow variant used by static [GlassCard] surfaces, which sit
+  /// Heavier shadow variant for static card surfaces, which sit
   /// higher off the background than the interactive buttons.
   static BoxShadow cardShadow() => BoxShadow(
         color: const Color(0x33000000), // rgba(0,0,0,0.2)
