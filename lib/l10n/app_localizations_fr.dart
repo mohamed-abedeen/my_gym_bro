@@ -1345,4 +1345,20 @@ class AppLocalizationsFr extends AppLocalizations {
   @override
   String get settingsDataFooter =>
       'La suppression de votre compte efface définitivement vos données de nos serveurs.';
+  @override
+  String get duration => 'Durée';
+
+  @override
+  String get heatmapLess => 'Moins';
+
+  @override
+  String get heatmapMore => 'Plus';
+
+  @override
+  String get tapDayToJump => 'Touchez un jour pour ouvrir sa séance';
+
+  @override
+  String jumpedToDay(String date) {
+    return 'Passé au $date';
+  }
 }

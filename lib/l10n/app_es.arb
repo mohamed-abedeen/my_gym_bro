@@ -431,5 +431,10 @@
   "languageSystem": "Sistema",
   "settingsWorkoutFooter": "Valores predeterminados para temporizadores de descanso, registro y estimación de calorías.",
   "settingsNotificationsFooter": "Los recordatorios de entrenamiento protegen tu racha.",
-  "settingsDataFooter": "Eliminar tu cuenta borra permanentemente tus datos de nuestros servidores."
+  "settingsDataFooter": "Eliminar tu cuenta borra permanentemente tus datos de nuestros servidores.",
+  "duration": "Duración",
+  "heatmapLess": "Menos",
+  "heatmapMore": "Más",
+  "tapDayToJump": "Toca un día para ir a su sesión",
+  "jumpedToDay": "Saltado a {date}"
 }

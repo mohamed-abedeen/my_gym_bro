@@ -1340,4 +1340,20 @@ class AppLocalizationsEs extends AppLocalizations {
   @override
   String get settingsDataFooter =>
       'Eliminar tu cuenta borra permanentemente tus datos de nuestros servidores.';
+  @override
+  String get duration => 'Duración';
+
+  @override
+  String get heatmapLess => 'Menos';
+
+  @override
+  String get heatmapMore => 'Más';
+
+  @override
+  String get tapDayToJump => 'Toca un día para ir a su sesión';
+
+  @override
+  String jumpedToDay(String date) {
+    return 'Saltado a $date';
+  }
 }

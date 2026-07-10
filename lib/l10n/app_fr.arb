@@ -431,5 +431,10 @@
   "languageSystem": "Système",
   "settingsWorkoutFooter": "Valeurs par défaut pour les minuteurs de repos, le suivi et l'estimation des calories.",
   "settingsNotificationsFooter": "Les rappels d'entraînement protègent votre série.",
-  "settingsDataFooter": "La suppression de votre compte efface définitivement vos données de nos serveurs."
+  "settingsDataFooter": "La suppression de votre compte efface définitivement vos données de nos serveurs.",
+  "duration": "Durée",
+  "heatmapLess": "Moins",
+  "heatmapMore": "Plus",
+  "tapDayToJump": "Touchez un jour pour ouvrir sa séance",
+  "jumpedToDay": "Passé au {date}"
 }
