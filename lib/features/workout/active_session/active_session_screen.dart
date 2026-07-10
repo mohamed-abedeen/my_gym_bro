@@ -133,7 +133,11 @@ class _ActiveSessionScreenState extends ConsumerState<ActiveSessionScreen> {
         ..invalidate(lifetimeStatsProvider)
         ..invalidate(activityStatsProvider)
         ..invalidate(recentSessionsProvider)
-        ..invalidate(consecutiveRestDaysProvider);
+        ..invalidate(consecutiveRestDaysProvider)
+        // Schedule-card auto-advance: recount completed sessions so the
+        // card moves on to the day AFTER the one just finished.
+        ..invalidate(nextTrainingDayIndexProvider)
+        ..invalidate(nextSessionHoursProvider);
     }
     super.dispose();
   }
@@ -479,7 +483,12 @@ class _ActiveSessionScreenState extends ConsumerState<ActiveSessionScreen> {
       if (confirmed != true) return;
     }
     await notifier.finishSession();
-    if (mounted) context.pop();
+    if (!mounted) return;
+    // Unlock the schedule card: even if the user had swiped it manually,
+    // finishing a workout means "show me the next training day" again.
+    final cardNotifier = ref.read(workoutCardStateProvider.notifier);
+    cardNotifier.state = cardNotifier.state.copyWith(userPickedPage: false);
+    context.pop();
   }
 
   Future<void> _discard() async {
