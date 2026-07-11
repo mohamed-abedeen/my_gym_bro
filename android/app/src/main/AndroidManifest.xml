@@ -10,9 +10,13 @@
          app is backgrounded/suspended (Android 12+; user-revocable). The
          scheduler falls back to inexact delivery when not granted. -->
     <uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM"/>
+    <!-- allowBackup off: cloud backup would copy the session token store and the
+         unencrypted health-data DB off-device. -->
     <application
         android:label="My Gym Bro"
         android:name="${applicationName}"
+        android:allowBackup="false"
+        android:fullBackupContent="false"
         android:icon="@mipmap/ic_launcher"
         android:roundIcon="@mipmap/ic_launcher_round"
         android:networkSecurityConfig="@xml/network_security_config"
@@ -50,6 +54,15 @@
         <meta-data
             android:name="flutterEmbedding"
             android:value="2" />
+
+        <!-- FCM pushes delivered while the app is backgrounded use this
+             small icon + accent color (must be an alpha-mask drawable). -->
+        <meta-data
+            android:name="com.google.firebase.messaging.default_notification_icon"
+            android:resource="@drawable/ic_stat_notification" />
+        <meta-data
+            android:name="com.google.firebase.messaging.default_notification_color"
+            android:resource="@color/ic_launcher_background" />
 
         <!-- ── Home-screen AppWidget ───────────────────────────────────────
              Provider that renders the streak + next-focus widget. Data

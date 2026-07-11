@@ -156,11 +156,17 @@ max_indexes = 5
 enabled = true
 # The base URL of your website. Used as an allow-list for redirects and for constructing URLs used
 # in emails.
-site_url = "http://127.0.0.1:3000"
+# Mobile-only app: auth emails must deep-link back into the app via the scheme
+# registered in AndroidManifest.xml / Info.plist. Mirror these values in the
+# hosted dashboard (Auth > URL Configuration) — config.toml only drives local dev.
+site_url = "io.supabase.mygymbro://login-callback/"
 # The public URL that Auth serves on. Defaults to the API external URL with `/auth/v1` appended.
 # external_url = ""
 # A list of *exact* URLs that auth providers are permitted to redirect to post authentication.
-additional_redirect_urls = ["https://127.0.0.1:3000"]
+additional_redirect_urls = [
+  "io.supabase.mygymbro://login-callback/",
+  "http://127.0.0.1:3000", # local dev only
+]
 # How long tokens are valid for, in seconds. Defaults to 3600 (1 hour), maximum 604,800 (1 week).
 jwt_expiry = 3600
 # JWT issuer URL. If not set, defaults to auth.external_url.
@@ -230,8 +236,9 @@ secure_password_change = false
 max_frequency = "1s"
 # Number of characters used in the email OTP.
 otp_length = 6
-# Number of seconds before the email OTP expires (defaults to 1 hour).
-otp_expiry = 3600
+# Number of seconds before the email OTP expires. 30 min per security checklist
+# (password-reset links use this expiry). Mirror in the hosted dashboard.
+otp_expiry = 1800
 
 # Use a production-ready SMTP server
 # [auth.email.smtp]
@@ -370,6 +377,24 @@ enabled = false
 authorization_url_path = "/oauth/consent"
 # Allow dynamic client registration
 allow_dynamic_registration = false
+
+# These functions are NOT called with a Supabase user JWT — they authenticate
+# themselves (x-cron-secret for the cron jobs, REVENUECAT_WEBHOOK_SECRET for the
+# webhook). With the default verify_jwt = true the gateway would reject them
+# before their own auth check runs, so entitlements would never be granted and
+# crons would never fire. User-facing functions (verify-subscription,
+# notify-social-challenge, delete-account) keep the default JWT gate.
+[functions.revenuecat-webhook]
+verify_jwt = false
+
+[functions.compute-leaderboard]
+verify_jwt = false
+
+[functions.schedule-notifications]
+verify_jwt = false
+
+[functions.send-push-notification]
+verify_jwt = false
 
 [edge_runtime]
 enabled = true

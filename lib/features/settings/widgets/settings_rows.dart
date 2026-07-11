@@ -2,13 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:my_gym_bro/shared/constants.dart';
 import 'package:my_gym_bro/shared/responsive.dart';
-import 'package:my_gym_bro/shared/widgets/glass_surface.dart';
 
-/// iOS-Settings-style building blocks for the redesigned settings screen.
+/// iOS-Settings-style building blocks for the settings screen.
 ///
-/// A section is a frosted [GlassSurface] card (per the glass system: general
-/// surfaces → frosted) holding compact rows: leading tinted icon badge,
-/// label, trailing value/control, hairline inset dividers.
+/// Flat-iOS design (handoff option 1a): a section is a flat solid card
+/// holding compact rows — leading flat color badge, label, trailing
+/// value/control, hairline inset dividers. No glass, no gradients.
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Icon badge palette — fixed decorative colors (iOS system palette), shared
@@ -35,17 +34,21 @@ class SettingsBadgeColors {
 // Section
 // ─────────────────────────────────────────────────────────────────────────────
 
-/// A titled group of settings rows on a single frosted card.
+/// A titled group of settings rows on a single flat card.
 class SettingsSection extends StatelessWidget {
   const SettingsSection({
     required this.children,
     this.header,
+    this.radius,
     super.key,
   });
 
   /// Uppercase mini-header rendered above the card. Null → no header.
   final String? header;
   final List<Widget> children;
+
+  /// Card corner radius. Defaults to 16 (sections); profile card uses 18.
+  final double? radius;
 
   @override
   Widget build(BuildContext context) {
@@ -55,10 +58,12 @@ class SettingsSection extends StatelessWidget {
     for (var i = 0; i < children.length; i++) {
       rows.add(children[i]);
       if (i < children.length - 1) {
-        rows.add(Padding(
-          padding: EdgeInsets.only(left: 54.w),
-          child: Container(height: 0.7, color: colors.divider.withValues(alpha: 0.55)),
-        ));
+        rows.add(
+          Padding(
+            padding: EdgeInsets.only(left: 49.w),
+            child: Container(height: 0.7, color: colors.divider),
+          ),
+        );
       }
     }
 
@@ -67,20 +72,24 @@ class SettingsSection extends StatelessWidget {
       children: [
         if (header != null)
           Padding(
-            padding: EdgeInsets.only(left: 18.w, bottom: 7.h),
+            padding: EdgeInsets.only(left: 6.w, bottom: 6.h),
             child: Text(
               header!.toUpperCase(),
               style: TextStyle(
                 fontSize: 11.sp,
                 fontWeight: FontWeight.w600,
-                letterSpacing: 0.8,
+                letterSpacing: 0.6,
                 color: colors.subtitleText,
               ),
             ),
           ),
-        GlassSurface(
+        Container(
           width: double.infinity,
-          radius: 22.r,
+          clipBehavior: Clip.antiAlias,
+          decoration: BoxDecoration(
+            color: colors.card,
+            borderRadius: BorderRadius.circular(radius ?? 16.r),
+          ),
           child: Column(children: rows),
         ),
       ],
@@ -92,13 +101,10 @@ class SettingsSection extends StatelessWidget {
 // Icon badge
 // ─────────────────────────────────────────────────────────────────────────────
 
-/// Rounded-square tinted icon container (the iOS Settings leading icon).
+/// Flat solid-color rounded square with a centered white glyph (handoff 1a,
+/// glyph variant — no gradient).
 class SettingsIconBadge extends StatelessWidget {
-  const SettingsIconBadge({
-    required this.icon,
-    required this.color,
-    super.key,
-  });
+  const SettingsIconBadge({required this.icon, required this.color, super.key});
 
   final IconData icon;
   final Color color;
@@ -106,20 +112,13 @@ class SettingsIconBadge extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      width: 30.w,
-      height: 30.w,
+      width: 26.w,
+      height: 26.w,
       decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(8.5.r),
-        gradient: LinearGradient(
-          begin: Alignment.topCenter,
-          end: Alignment.bottomCenter,
-          colors: [
-            Color.lerp(color, Colors.white, 0.18)!,
-            color,
-          ],
-        ),
+        borderRadius: BorderRadius.circular(7.r),
+        color: color,
       ),
-      child: Icon(icon, color: Colors.white, size: 17.sp),
+      child: Icon(icon, color: Colors.white, size: 15.sp),
     );
   }
 }
@@ -167,18 +166,21 @@ class SettingsNavRowShell extends StatelessWidget {
   const SettingsNavRowShell({
     required this.child,
     this.onTap,
+    this.padding,
     super.key,
   });
 
   final Widget child;
   final VoidCallback? onTap;
+  final EdgeInsetsGeometry? padding;
 
   @override
   Widget build(BuildContext context) {
     return _PressableRow(
       onTap: onTap,
       child: Padding(
-        padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 10.h),
+        padding:
+            padding ?? EdgeInsets.symmetric(horizontal: 12.w, vertical: 10.h),
         child: child,
       ),
     );
@@ -222,7 +224,7 @@ class SettingsNavRow extends StatelessWidget {
         child: Row(
           children: [
             SettingsIconBadge(icon: icon, color: iconColor),
-            SizedBox(width: 12.w),
+            SizedBox(width: 11.w),
             Expanded(
               child: Text(
                 label,
@@ -242,10 +244,7 @@ class SettingsNavRow extends StatelessWidget {
                   value!,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: TextStyle(
-                    fontSize: 13.sp,
-                    color: colors.subtitleText,
-                  ),
+                  style: TextStyle(fontSize: 13.sp, color: colors.subtitleText),
                 ),
               ),
             ],
@@ -266,7 +265,7 @@ class SettingsNavRow extends StatelessWidget {
 // Switch row
 // ─────────────────────────────────────────────────────────────────────────────
 
-/// Row with an inline adaptive switch. Fires a selection haptic on toggle.
+/// Row with an inline flat pill toggle. Fires a selection haptic on toggle.
 class SettingsSwitchRow extends StatelessWidget {
   const SettingsSwitchRow({
     required this.icon,
@@ -288,11 +287,11 @@ class SettingsSwitchRow extends StatelessWidget {
     final colors = AppColors.of(context);
 
     return Padding(
-      padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 5.h),
+      padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 9.h),
       child: Row(
         children: [
           SettingsIconBadge(icon: icon, color: iconColor),
-          SizedBox(width: 12.w),
+          SizedBox(width: 11.w),
           Expanded(
             child: Text(
               label,
@@ -305,17 +304,34 @@ class SettingsSwitchRow extends StatelessWidget {
               ),
             ),
           ),
-          Transform.scale(
-            scale: 0.85,
-            alignment: Alignment.centerRight,
-            child: Switch.adaptive(
-              value: value,
-              // iOS system green — requested toggle color in both themes.
-              activeTrackColor: const Color(0xFF34C759),
-              onChanged: (v) {
-                HapticFeedback.selectionClick();
-                onChanged(v);
-              },
+          GestureDetector(
+            onTap: () {
+              HapticFeedback.selectionClick();
+              onChanged(!value);
+            },
+            child: AnimatedContainer(
+              duration: const Duration(milliseconds: 150),
+              width: 40.w,
+              height: 24.w,
+              padding: EdgeInsets.all(2.w),
+              decoration: BoxDecoration(
+                // iOS system green on / grouped-grey off, both themes.
+                color: value ? const Color(0xFF34C759) : colors.panelBackground,
+                borderRadius: BorderRadius.circular(12.w),
+              ),
+              child: AnimatedAlign(
+                duration: const Duration(milliseconds: 150),
+                curve: Curves.easeOut,
+                alignment: value ? Alignment.centerRight : Alignment.centerLeft,
+                child: Container(
+                  width: 20.w,
+                  height: 20.w,
+                  decoration: const BoxDecoration(
+                    shape: BoxShape.circle,
+                    color: Colors.white,
+                  ),
+                ),
+              ),
             ),
           ),
         ],
@@ -354,11 +370,11 @@ class SettingsSegmentedRow extends StatelessWidget {
     final thumbColor = isDark ? const Color(0xFF636366) : Colors.white;
 
     return Padding(
-      padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 8.h),
+      padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 9.h),
       child: Row(
         children: [
           SettingsIconBadge(icon: icon, color: iconColor),
-          SizedBox(width: 12.w),
+          SizedBox(width: 11.w),
           Expanded(
             child: Text(
               label,
@@ -374,8 +390,8 @@ class SettingsSegmentedRow extends StatelessWidget {
           Container(
             padding: EdgeInsets.all(2.w),
             decoration: BoxDecoration(
-              color: colors.textSecondary.withValues(alpha: 0.14),
-              borderRadius: BorderRadius.circular(9.r),
+              color: colors.textSecondary.withValues(alpha: 0.16),
+              borderRadius: BorderRadius.circular(8.r),
             ),
             child: Row(
               mainAxisSize: MainAxisSize.min,
@@ -392,22 +408,14 @@ class SettingsSegmentedRow extends StatelessWidget {
                       duration: const Duration(milliseconds: 180),
                       curve: Curves.easeOut,
                       padding: EdgeInsets.symmetric(
-                          horizontal: 12.w, vertical: 5.h),
+                        horizontal: 11.w,
+                        vertical: 4.h,
+                      ),
                       decoration: BoxDecoration(
                         color: i == selectedIndex
                             ? thumbColor
                             : Colors.transparent,
-                        borderRadius: BorderRadius.circular(7.r),
-                        boxShadow: i == selectedIndex
-                            ? [
-                                BoxShadow(
-                                  color:
-                                      Colors.black.withValues(alpha: 0.15),
-                                  blurRadius: 4,
-                                  offset: const Offset(0, 1),
-                                ),
-                              ]
-                            : null,
+                        borderRadius: BorderRadius.circular(6.r),
                       ),
                       child: Text(
                         options[i],

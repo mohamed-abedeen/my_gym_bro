@@ -46,6 +46,7 @@ class _SkinsGrid extends ConsumerWidget {
     final isFemale =
         ref.watch(anatomyGenderProvider) == AnatomyGender.female;
     final selectedId = ref.watch(selectedSkinProvider);
+    final unlockedIds = ref.watch(unlockedSkinIdsProvider);
 
     // Only show skins that have an asset for the current anatomy gender.
     final visibleSkins = availableSkins
@@ -122,14 +123,30 @@ class _SkinsGrid extends ConsumerWidget {
               itemBuilder: (_, index) {
                 final skin = visibleSkins[index];
                 final isSelected = skin.id == selectedId;
+                final isLocked = !unlockedIds.contains(skin.id);
                 final assetPath = skin.pathForGender(isFemale: isFemale)!;
                 return _SkinCard(
                   skin: skin,
                   assetPath: assetPath,
                   genderLabel: genderLabel,
                   isSelected: isSelected,
+                  isLocked: isLocked,
                   colors: colors,
                   onTap: () {
+                    if (isLocked) {
+                      // Locked: explain how to unlock instead of selecting.
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text(
+                            skin.unlock == SkinUnlock.paid
+                                ? l10n.skinPremiumSoon
+                                : l10n.skinLockedProgress(
+                                    skin.requiredSessions ?? 0),
+                          ),
+                        ),
+                      );
+                      return;
+                    }
                     ref.read(selectedSkinProvider.notifier).select(skin.id);
                     Navigator.of(context).pop();
                   },
@@ -149,6 +166,7 @@ class _SkinCard extends StatelessWidget {
     required this.assetPath,
     required this.genderLabel,
     required this.isSelected,
+    required this.isLocked,
     required this.colors,
     required this.onTap,
   });
@@ -157,11 +175,13 @@ class _SkinCard extends StatelessWidget {
   final String assetPath;
   final String genderLabel;
   final bool isSelected;
+  final bool isLocked;
   final AppColorsTheme colors;
   final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     return GestureDetector(
       onTap: onTap,
       child: AnimatedContainer(
@@ -187,24 +207,73 @@ class _SkinCard extends StatelessWidget {
         ),
         child: Column(
           children: [
-            // ── Skin preview image ──
+            // ── Skin preview image (dimmed + lock chip when locked) ──
             Expanded(
-              child: Padding(
-                padding: EdgeInsets.fromLTRB(12.w, 12.h, 12.w, 6.h),
-                child: ClipRRect(
-                  borderRadius: BorderRadius.circular(10.r),
-                  child: Image.asset(
-                    assetPath,
-                    fit: BoxFit.contain,
-                    errorBuilder: (_, __, ___) => Center(
-                      child: Icon(
-                        Icons.person_outline_rounded,
-                        size: 52.sp,
-                        color: colors.subtitleText.withValues(alpha: 0.35),
+              child: Stack(
+                children: [
+                  Positioned.fill(
+                    child: Padding(
+                      padding: EdgeInsets.fromLTRB(12.w, 12.h, 12.w, 6.h),
+                      child: ClipRRect(
+                        borderRadius: BorderRadius.circular(10.r),
+                        child: Opacity(
+                          opacity: isLocked ? 0.35 : 1,
+                          child: Image.asset(
+                            assetPath,
+                            fit: BoxFit.contain,
+                            errorBuilder: (_, __, ___) => Center(
+                              child: Icon(
+                                Icons.person_outline_rounded,
+                                size: 52.sp,
+                                color: colors.subtitleText
+                                    .withValues(alpha: 0.35),
+                              ),
+                            ),
+                          ),
+                        ),
                       ),
                     ),
                   ),
-                ),
+                  if (isLocked)
+                    Positioned(
+                      top: 8.h,
+                      right: 8.w,
+                      child: Container(
+                        padding: EdgeInsets.symmetric(
+                            horizontal: 8.w, vertical: 4.h),
+                        decoration: BoxDecoration(
+                          color: colors.background.withValues(alpha: 0.85),
+                          borderRadius: BorderRadius.circular(12.r),
+                          border: Border.all(
+                            color:
+                                colors.textSecondary.withValues(alpha: 0.25),
+                          ),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(
+                              Icons.lock_rounded,
+                              size: 11.sp,
+                              color: colors.textSecondary,
+                            ),
+                            SizedBox(width: 4.w),
+                            Text(
+                              skin.unlock == SkinUnlock.paid
+                                  ? l10n.skinPremium
+                                  : l10n.skinWorkoutsShort(
+                                      skin.requiredSessions ?? 0),
+                              style: TextStyle(
+                                color: colors.textSecondary,
+                                fontSize: 9.sp,
+                                fontWeight: FontWeight.w700,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                ],
               ),
             ),
 

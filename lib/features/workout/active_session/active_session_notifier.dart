@@ -17,7 +17,11 @@ import 'package:my_gym_bro/features/workout/workout_providers.dart';
 
 // ── Set type ──────────────────────────────────
 
-enum SetType { normal, warmUp, failure, dropset }
+/// Set types. [superset] has no dedicated DB column — it is persisted as the
+/// (otherwise impossible) `isDropset && isFailure` combination so no schema
+/// migration is needed. Stats are unaffected: working-set filters only
+/// exclude `isWarmup`, so supersets still count toward volume and PRs.
+enum SetType { normal, warmUp, failure, dropset, superset }
 
 // ── Models ────────────────────────────────────
 
@@ -81,6 +85,7 @@ class ActiveSet {
 
   SetType get setType {
     if (isWarmup) return SetType.warmUp;
+    if (isDropset && isFailure) return SetType.superset;
     if (isDropset) return SetType.dropset;
     if (isFailure) return SetType.failure;
     return SetType.normal;
@@ -235,7 +240,7 @@ class ActiveSessionNotifier extends StateNotifier<ActiveSessionState> {
         super(const ActiveSessionState());
   final WorkoutLogRepository _repository;
 
-  /// Optional WorkoutX-backed cache. When present, logging an exercise ensures
+  /// Optional API-backed cache. When present, logging an exercise ensures
   /// it is cached locally (cache-on-log) so history/recovery resolve offline.
   final ExerciseRepository? _exerciseRepo;
   /// Refresh-and-read the streak. Invalidates the cached value first so the
@@ -289,8 +294,14 @@ class ActiveSessionNotifier extends StateNotifier<ActiveSessionState> {
   String _setProgressLabel() {
     final ex = state.currentExercise;
     if (ex == null || ex.sets.isEmpty) return '';
+    final total = ex.sets.length;
     final completed = ex.sets.where((s) => s.isCompleted).length;
-    return 'Set ${completed.clamp(1, ex.sets.length)} of ${ex.sets.length}';
+    final label = 'Set ${completed.clamp(1, total)} of $total';
+    // Set-progress dots — rendered as-is by the Dynamic Island / lock
+    // screen, matching the Android notification. Skipped for silly-long
+    // set lists to keep the island line tidy.
+    if (total > 8) return label;
+    return '$label  ${'●' * completed}${'○' * (total - completed)}';
   }
 
   String _liveActivityExerciseName() =>
@@ -476,6 +487,9 @@ class ActiveSessionNotifier extends StateNotifier<ActiveSessionState> {
     );
 
     restTimerService.completeSetFromNotification = completeNextSet;
+    // Register for notification actions for the whole session — "Complete
+    // Set" fires while no rest countdown is running.
+    RestTimerService.activeInstance = restTimerService;
 
     // Re-arm a persisted rest countdown if one survived; it resyncs the
     // ongoing notification itself. Otherwise rebuild the active-set view.
@@ -527,8 +541,10 @@ class ActiveSessionNotifier extends StateNotifier<ActiveSessionState> {
     ));
 
     // Allow the notification "Complete Set" action to call completeNextSet()
-    // without needing a Riverpod ref.
+    // without needing a Riverpod ref. Register the instance for the whole
+    // session — the action fires while no rest countdown is running.
     restTimerService.completeSetFromNotification = completeNextSet;
+    RestTimerService.activeInstance = restTimerService;
 
     // If a schedule day was provided, load its exercises into the session.
     if (scheduleDayId != null) {
@@ -699,16 +715,18 @@ class ActiveSessionNotifier extends StateNotifier<ActiveSessionState> {
   }
 
   /// Remove the currently active exercise (and all its sets) from the session.
-  Future<void> removeCurrentExercise() async {
-    final ex = state.currentExercise;
-    if (ex == null) return;
+  Future<void> removeCurrentExercise() =>
+      removeExercise(state.currentExerciseIndex);
 
-    final exercises = [...state.exercises]
-      ..removeAt(state.currentExerciseIndex);
-    final newIndex =
-        state.currentExerciseIndex >= exercises.length && exercises.isNotEmpty
-            ? exercises.length - 1
-            : state.currentExerciseIndex.clamp(0, exercises.isEmpty ? 0 : exercises.length - 1);
+  /// Remove the exercise at [index] (and all its sets) from the session.
+  Future<void> removeExercise(int index) async {
+    if (index < 0 || index >= state.exercises.length) return;
+    final ex = state.exercises[index];
+
+    final exercises = [...state.exercises]..removeAt(index);
+    var newIndex = state.currentExerciseIndex;
+    if (index < newIndex) newIndex -= 1;
+    newIndex = exercises.isEmpty ? 0 : newIndex.clamp(0, exercises.length - 1);
 
     state = state.copyWith(
       exercises: exercises,
@@ -716,6 +734,36 @@ class ActiveSessionNotifier extends StateNotifier<ActiveSessionState> {
     );
 
     await _repository.deleteSessionExercise(ex.sessionExerciseId);
+  }
+
+  /// Move an exercise from [oldIndex] to [newIndex], keeping the current
+  /// selection pinned to the same exercise, and persist the new order.
+  Future<void> reorderExercises(int oldIndex, int newIndex) async {
+    if (oldIndex < 0 || oldIndex >= state.exercises.length) return;
+    if (oldIndex == newIndex) return;
+
+    final exercises = [...state.exercises];
+    final moved = exercises.removeAt(oldIndex);
+    exercises.insert(newIndex.clamp(0, exercises.length), moved);
+
+    final currentId = state.currentExercise?.sessionExerciseId;
+    final newCurrent = currentId == null
+        ? 0
+        : exercises
+            .indexWhere((e) => e.sessionExerciseId == currentId)
+            .clamp(0, exercises.length - 1);
+
+    state = state.copyWith(
+      exercises: exercises,
+      currentExerciseIndex: newCurrent,
+    );
+
+    for (var i = 0; i < exercises.length; i++) {
+      await _repository.updateSessionExerciseOrder(
+        exercises[i].sessionExerciseId,
+        i,
+      );
+    }
   }
 
   /// Delete a set by its local id, removing it from both state and the DB.
@@ -907,12 +955,15 @@ class ActiveSessionNotifier extends StateNotifier<ActiveSessionState> {
       final idx = ex.sets.indexWhere((s) => s.localId == setLocalId);
       if (idx < 0) continue;
 
+      // Superset is stored as isDropset + isFailure (see SetType docs).
+      final asDropset = type == SetType.dropset || type == SetType.superset;
+      final asFailure = type == SetType.failure || type == SetType.superset;
       final updatedSets = ex.sets.map((s) {
         if (s.localId != setLocalId) return s;
         return s.copyWith(
           isWarmup: type == SetType.warmUp,
-          isDropset: type == SetType.dropset,
-          isFailure: type == SetType.failure,
+          isDropset: asDropset,
+          isFailure: asFailure,
         );
       }).toList();
       _updateExercise(ex.copyWith(sets: updatedSets));
@@ -921,8 +972,8 @@ class ActiveSessionNotifier extends StateNotifier<ActiveSessionState> {
         sessionExerciseId: ex.sessionExerciseId,
         setLocalId: setLocalId,
         isWarmup: type == SetType.warmUp,
-        isDropset: type == SetType.dropset,
-        isFailure: type == SetType.failure,
+        isDropset: asDropset,
+        isFailure: asFailure,
       ));
       return;
     }
@@ -953,6 +1004,12 @@ class ActiveSessionNotifier extends StateNotifier<ActiveSessionState> {
     // Haptic
     unawaited(HapticFeedback.mediumImpact());
 
+    // Rest timer "Off" (0s) — just refresh the ongoing notification.
+    if (_defaultRestSeconds <= 0) {
+      _updateActiveSetNotification();
+      return;
+    }
+
     // Start rest timer
     state = state.copyWith(showRestTimer: true);
     restTimerService.start(
@@ -976,6 +1033,28 @@ class ActiveSessionNotifier extends StateNotifier<ActiveSessionState> {
     // Subscribe to the tick stream so the notification updates every second.
     _restTickSub?.cancel();
     _restTickSub = restTimerService.stream?.listen(_updateRestTimerNotification);
+  }
+
+  /// Un-mark a completed set (mis-tap recovery). Does not touch the rest
+  /// timer — if one is running it keeps counting.
+  Future<void> uncompleteSet(int setLocalId) async {
+    final ex = state.currentExercise;
+    if (ex == null) return;
+
+    final updatedSets = ex.sets.map((s) {
+      if (s.localId == setLocalId) {
+        return s.copyWith(isCompleted: false);
+      }
+      return s;
+    }).toList();
+    _updateExercise(ex.copyWith(sets: updatedSets));
+
+    unawaited(_repository.setCompletion(
+      sessionExerciseId: ex.sessionExerciseId,
+      setLocalId: setLocalId,
+      isCompleted: false,
+    ));
+    if (!state.showRestTimer) _updateActiveSetNotification();
   }
 
   void _onRestComplete() {
@@ -1183,6 +1262,9 @@ class ActiveSessionNotifier extends StateNotifier<ActiveSessionState> {
 
   String get weightUnit => _weightUnit;
 
+  /// Default rest duration, for UI that surfaces the rest timer.
+  int get defaultRestSeconds => _defaultRestSeconds;
+
   /// Display weight: convert kg to lbs if needed.
   String displayWeight(double? weightKg) {
     if (weightKg == null) return '0';
@@ -1219,6 +1301,15 @@ class ActiveSessionNotifier extends StateNotifier<ActiveSessionState> {
 
   // ── Notification helpers ────────────────────────────────────────────────
 
+  /// Whole-session totals line pinned under the expanded notification,
+  /// e.g. "5 sets · 1,240 kg this session".
+  String get _sessionSummaryLine {
+    final vol = _weightUnit == 'lbs'
+        ? state.totalVolume * 2.20462
+        : state.totalVolume;
+    return '${state.totalCompletedSets} sets · ${vol.round()} $_weightUnit this session';
+  }
+
   /// Push the "active set" notification (State A).
   ///
   /// Shows the next incomplete set for the current exercise, or falls
@@ -1245,6 +1336,9 @@ class ActiveSessionNotifier extends StateNotifier<ActiveSessionState> {
       weight: '$weight$unit',
       reps: reps,
       sessionStartedAt: startedAt,
+      completedSets: ex.sets.where((s) => s.isCompleted).length,
+      muscleGroup: ex.muscleGroup,
+      sessionSummary: _sessionSummaryLine,
       tagline: activeSetTaglineForTone(_notificationTone),
       exerciseImagePath: _currentExerciseImagePath,
     ));
@@ -1276,6 +1370,9 @@ class ActiveSessionNotifier extends StateNotifier<ActiveSessionState> {
       remaining: remaining,
       totalSeconds: restTimerService.total,
       sessionStartedAt: startedAt,
+      completedSets: ex.sets.where((s) => s.isCompleted).length,
+      muscleGroup: ex.muscleGroup,
+      sessionSummary: _sessionSummaryLine,
       tagline: restCountdownTaglineForTone(_notificationTone),
       exerciseImagePath: _currentExerciseImagePath,
     ));

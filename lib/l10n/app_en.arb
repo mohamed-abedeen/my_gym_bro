@@ -117,6 +117,7 @@
   },
   "addSet": "Add set",
   "addExercise": "Add Exercise",
+  "editExercises": "Edit Exercises",
   "addDay": "Add Days",
   "scheduleName": "Schedule Name",
   "todaySession": "Today's Session",
@@ -236,7 +237,10 @@
   "notificationToneOnboardingTitle": "Pick your voice",
   "notificationToneOnboardingSubtitle": "How should we talk to you during workouts?",
   "notificationToneExampleLabel": "Example",
-  "restTimer": "Rest",
+  "restTimer": "Rest Timer",
+  "off": "Off",
+  "reorderExercises": "Reorder Exercises",
+  "replaceExercise": "Replace Exercise",
   "defaultRestTime": "Default rest time",
   "restTimerSound": "Rest timer sound",
   "trainingReminders": "Training reminders",
@@ -450,9 +454,6 @@
   },
   "clearFilters": "Clear Filters",
   "failedToLoadExercises": "Failed to load exercises",
-  "sortMostUsed": "Most Used",
-  "sortFavorites": "Favorites",
-  "sortAZ": "A–Z",
   "tabSummary": "Summary",
   "tabHistory": "History",
   "heaviestWeight": "Heaviest Weight",
@@ -478,6 +479,12 @@
   "failureSet": "Failure Set",
   "dropSet": "Drop Set",
   "removeSet": "Remove Set",
+  "superSet": "Super Set",
+  "pressToDelete": "Press To Delete",
+  "time": "Time",
+  "finish": "Finish",
+  "discard": "Discard",
+  "discardWorkoutConfirm": "Discard this workout? All progress will be lost.",
   "completeSet": "Complete set",
   "restTime": "Rest time",
   "remaining": "Remaining",
@@ -531,6 +538,36 @@
     }
   },
   "leagueMasterTitle": "Master",
+  "rankBronze": "Grinder",
+  "rankSilver": "Warrior",
+  "rankGold": "Beast",
+  "rankPlatinum": "Titan",
+  "rankElite": "Apex",
+  "rankUnranked": "Unranked",
+  "rankUpTitle": "RANK UP!",
+  "rankUpCta": "Let's go!",
+  "rankNext": "Next: {rank}",
+  "@rankNext": {
+    "placeholders": {
+      "rank": { "type": "String" }
+    }
+  },
+  "rankMax": "Max rank reached",
+  "rankShieldTooltip": "Demotion shield — your rank is protected while you climb back.",
+  "skinPremium": "Premium",
+  "skinPremiumSoon": "Premium skin — purchases coming soon",
+  "skinWorkoutsShort": "{count} workouts",
+  "@skinWorkoutsShort": {
+    "placeholders": {
+      "count": { "type": "int" }
+    }
+  },
+  "skinLockedProgress": "Unlocks at {count} workouts",
+  "@skinLockedProgress": {
+    "placeholders": {
+      "count": { "type": "int" }
+    }
+  },
   "noChallengesYet": "No active challenges yet",
   "settingsSectionAppearance": "Appearance",
   "settingsSectionWorkout": "Workout",
@@ -553,5 +590,17 @@
   "languageSystem": "System",
   "settingsWorkoutFooter": "Defaults for rest timers, logging, and calorie estimates.",
   "settingsNotificationsFooter": "Training reminders help protect your streak.",
-  "settingsDataFooter": "Deleting your account permanently removes your data from our servers."
+  "settingsDataFooter": "Deleting your account permanently removes your data from our servers.",
+  "duration": "Duration",
+  "heatmapLess": "Less",
+  "heatmapMore": "More",
+  "tapDayToJump": "Tap a day to jump to its session",
+  "jumpedToDay": "Jumped to {date}",
+  "@jumpedToDay": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  }
 }

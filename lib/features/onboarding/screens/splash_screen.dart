@@ -6,7 +6,7 @@ import 'package:my_gym_bro/shared/responsive.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 /// Screen 1 — Splash (1.5s)
-/// "My Gym Bro" 48px w700 centered. D2FF00 pulse animation.
+/// App logo centered with a pulse animation.
 /// Navigates: existing session → /home, else → /onboarding/welcome.
 class SplashScreen extends ConsumerStatefulWidget {
   const SplashScreen({super.key});
@@ -72,13 +72,10 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
           Center(
             child: FadeTransition(
               opacity: _pulse,
-              child: Text(
-                'MGB',
-                style: TextStyle(
-                  fontSize: 48.sp,
-                  fontWeight: FontWeight.w700,
-                  color: AppColors.of(context).white,
-                ),
+              child: Image.asset(
+                'assets/icons/app_icon.png',
+                width: 140.w,
+                height: 140.w,
               ),
             ),
           ),

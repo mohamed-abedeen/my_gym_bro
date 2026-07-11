@@ -234,6 +234,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get addExercise => 'Add Exercise';
 
   @override
+  String get editExercises => 'Edit Exercises';
+
+  @override
   String get addDay => 'Add Days';
 
   @override
@@ -544,7 +547,16 @@ class AppLocalizationsEn extends AppLocalizations {
   String get notificationToneExampleLabel => 'Example';
 
   @override
-  String get restTimer => 'Rest';
+  String get restTimer => 'Rest Timer';
+
+  @override
+  String get off => 'Off';
+
+  @override
+  String get reorderExercises => 'Reorder Exercises';
+
+  @override
+  String get replaceExercise => 'Replace Exercise';
 
   @override
   String get defaultRestTime => 'Default rest time';
@@ -998,15 +1010,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get failedToLoadExercises => 'Failed to load exercises';
 
   @override
-  String get sortMostUsed => 'Most Used';
-
-  @override
-  String get sortFavorites => 'Favorites';
-
-  @override
-  String get sortAZ => 'A–Z';
-
-  @override
   String get tabSummary => 'Summary';
 
   @override
@@ -1077,6 +1080,25 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get removeSet => 'Remove Set';
+
+  @override
+  String get superSet => 'Super Set';
+
+  @override
+  String get pressToDelete => 'Press To Delete';
+
+  @override
+  String get time => 'Time';
+
+  @override
+  String get finish => 'Finish';
+
+  @override
+  String get discard => 'Discard';
+
+  @override
+  String get discardWorkoutConfirm =>
+      'Discard this workout? All progress will be lost.';
 
   @override
   String get completeSet => 'Complete set';
@@ -1184,6 +1206,58 @@ class AppLocalizationsEn extends AppLocalizations {
   String get leagueMasterTitle => 'Master';
 
   @override
+  String get rankBronze => 'Grinder';
+
+  @override
+  String get rankSilver => 'Warrior';
+
+  @override
+  String get rankGold => 'Beast';
+
+  @override
+  String get rankPlatinum => 'Titan';
+
+  @override
+  String get rankElite => 'Apex';
+
+  @override
+  String get rankUnranked => 'Unranked';
+
+  @override
+  String get rankUpTitle => 'RANK UP!';
+
+  @override
+  String get rankUpCta => 'Let\'s go!';
+
+  @override
+  String rankNext(String rank) {
+    return 'Next: $rank';
+  }
+
+  @override
+  String get rankMax => 'Max rank reached';
+
+  @override
+  String get rankShieldTooltip =>
+      'Demotion shield — your rank is protected while you climb back.';
+
+  @override
+  String get skinPremium => 'Premium';
+
+  @override
+  String get skinPremiumSoon => 'Premium skin — purchases coming soon';
+
+  @override
+  String skinWorkoutsShort(int count) {
+    return '$count workouts';
+  }
+
+  @override
+  String skinLockedProgress(int count) {
+    return 'Unlocks at $count workouts';
+  }
+
+  @override
   String get noChallengesYet => 'No active challenges yet';
 
   @override
@@ -1256,4 +1330,21 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get settingsDataFooter =>
       'Deleting your account permanently removes your data from our servers.';
+
+  @override
+  String get duration => 'Duration';
+
+  @override
+  String get heatmapLess => 'Less';
+
+  @override
+  String get heatmapMore => 'More';
+
+  @override
+  String get tapDayToJump => 'Tap a day to jump to its session';
+
+  @override
+  String jumpedToDay(String date) {
+    return 'Jumped to $date';
+  }
 }

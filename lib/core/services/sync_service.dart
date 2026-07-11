@@ -20,6 +20,24 @@ class SyncService {
 
   static const _maxRetries = 3;
 
+  /// A raw SQL identifier is interpolated into [_resolveRemoteId]. Every real
+  /// sync table is lowercase snake_case; reject anything else so the table name
+  /// can never carry SQL. (All callers pass hardcoded literals — this is
+  /// defense-in-depth against a future caller or tampered queue row.)
+  static final _safeTableName = RegExp(r'^[a-z_]+$');
+
+  /// Whether [t] is a syntactically safe table name (lowercase snake_case).
+  /// Exposed so the guard can be unit-tested without a DB.
+  @visibleForTesting
+  static bool isSafeTableName(String t) => _safeTableName.hasMatch(t);
+
+  /// Pulls the local-only `remote_id` routing hint out of [payload] (mutating
+  /// it) and returns it. `remote_id` is never a real Supabase column, so it
+  /// must be stripped before the payload reaches PostgREST.
+  @visibleForTesting
+  static String? extractRemoteId(Map<String, dynamic> payload) =>
+      payload.remove('remote_id') as String?;
+
   /// Attempt to sync all pending queue items to Supabase.
   Future<void> syncAll() async {
     if (_supabase == null) return;
@@ -44,7 +62,6 @@ class SyncService {
               case _SyncResult.synced:
                 success = true;
                 await _dao.markSynced(item.localId);
-                break;
               case _SyncResult.deferred:
                 // remote_id not yet available — leave in queue for next pass.
                 debugPrint(
@@ -53,7 +70,6 @@ class SyncService {
                   '— remote_id pending, will retry on next sync pass',
                 );
                 success = true; // don't retry this pass, but don't mark synced
-                break;
             }
             if (success) break;
           } on Exception catch (e) {
@@ -87,18 +103,25 @@ class SyncService {
     final payload = jsonDecode(item.payload) as Map<String, dynamic>;
     final table = item.syncTableName;
 
+    // `remote_id` is a local routing hint (which Supabase row this maps to),
+    // never a real column. Pull it out before anything reaches PostgREST —
+    // leaving it in makes every insert/update fail with "column remote_id
+    // does not exist".
+    final payloadRemoteId = extractRemoteId(payload);
+
     switch (item.operation) {
       case 'insert':
         await _supabase!.from(table).insert(payload);
         return _SyncResult.synced;
       case 'update':
-        final remoteId = await _resolveRemoteId(payload, table, item.rowId);
+        final remoteId =
+            payloadRemoteId ?? await _resolveRemoteId(table, item.rowId);
         if (remoteId == null) return _SyncResult.deferred;
-        payload['remote_id'] = remoteId;
         await _supabase!.from(table).update(payload).eq('id', remoteId);
         return _SyncResult.synced;
       case 'delete':
-        final remoteId = await _resolveRemoteId(payload, table, item.rowId);
+        final remoteId =
+            payloadRemoteId ?? await _resolveRemoteId(table, item.rowId);
         if (remoteId == null) return _SyncResult.deferred;
         await _supabase!.from(table).delete().eq('id', remoteId);
         return _SyncResult.synced;
@@ -111,24 +134,19 @@ class SyncService {
     }
   }
 
-  /// Try to obtain the `remote_id` for a queued update/delete.
+  /// Look up a row's `remote_id` in the local DB — the initial insert may
+  /// have completed and written it back since this queue item was created.
+  /// Returns null (defer) if the row still has no `remote_id`.
   ///
-  /// 1. Use the value already in the payload if present.
-  /// 2. Otherwise, look up the row in the local DB — the initial insert may
-  ///    have completed and written the `remote_id` back since this queue item
-  ///    was created.
-  /// 3. If the row still has no `remote_id`, return null so the caller can
-  ///    defer the operation.
+  /// Only used as a fallback when the queued payload didn't carry the id.
   Future<String?> _resolveRemoteId(
-    Map<String, dynamic> payload,
     String table,
     int rowId,
   ) async {
-    // Fast path: already in the payload.
-    final existing = payload['remote_id'] as String?;
-    if (existing != null) return existing;
-
-    // Slow path: query the local DB for the row's current remote_id.
+    if (!_safeTableName.hasMatch(table)) {
+      debugPrint('Sync: refusing to resolve remote_id for unsafe table "$table"');
+      return null;
+    }
     try {
       final row = await _db.customSelect(
         'SELECT remote_id FROM $table WHERE local_id = ?',

@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:my_gym_bro/core/auth/auth_notifier.dart';
@@ -33,23 +35,22 @@ final supabaseProvider = Provider<SupabaseClient?>((ref) {
   }
 });
 
-/// WorkoutX API key — overridden at startup from `--dart-define WORKOUTX_API_KEY`.
-/// Empty string means no key configured (network exercise features disabled).
-final workoutxApiKeyProvider = Provider<String>((ref) => '');
-
-/// WorkoutX exercise API client.
+/// ExerciseDB OSS exercise API client (free, no key).
 final exerciseApiServiceProvider = Provider<ExerciseApiService>((ref) {
-  final apiKey = ref.watch(workoutxApiKeyProvider);
-  final service = ExerciseApiService(apiKey: apiKey);
+  final service = ExerciseApiService();
   ref.onDispose(service.dispose);
   return service;
 });
 
-/// Exercise repository: WorkoutX API + local Drift cache (offline-first).
+/// Exercise repository: ExerciseDB OSS API + local Drift cache (offline-first).
 final exerciseRepositoryProvider = Provider<ExerciseRepository>((ref) {
   final api = ref.watch(exerciseApiServiceProvider);
   final dao = ExerciseDao(ref.watch(databaseProvider));
-  return ExerciseRepository(api, dao);
+  final repo = ExerciseRepository(api, dao);
+  // Sync the static catalogue once in the background so the exercise browser
+  // never makes the user wait on the network.
+  unawaited(repo.warmUp());
+  return repo;
 });
 
 /// Sync service provider.

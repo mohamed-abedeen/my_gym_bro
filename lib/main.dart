@@ -20,6 +20,7 @@ import 'package:my_gym_bro/core/services/notification_service.dart';
 import 'package:my_gym_bro/core/services/program_seeder.dart';
 import 'package:my_gym_bro/core/services/subscription_sync_service.dart';
 import 'package:my_gym_bro/features/workout/workout_providers.dart';
+import 'package:my_gym_bro/shared/widgets/app_error_screen.dart';
 import 'package:purchases_flutter/purchases_flutter.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
@@ -43,6 +44,11 @@ Future<void> _bootstrap() async {
       debugPrint('[bootstrap] $step (+${stopwatch.elapsedMilliseconds}ms)');
 
   mark('start');
+  // Release builds show a branded screen instead of the grey crash screen.
+  // Debug keeps Flutter's red error surface for diagnostics.
+  if (!kDebugMode) {
+    ErrorWidget.builder = (details) => const AppErrorScreen();
+  }
   await SystemChrome.setPreferredOrientations([
     DeviceOrientation.portraitUp,
     DeviceOrientation.portraitDown,
@@ -72,18 +78,21 @@ Future<void> _bootstrap() async {
     mark('firebase init skipped (not configured)');
   }
 
-  // WorkoutX exercise API key — injected at build time via
-  // --dart-define WORKOUTX_API_KEY. Empty = network exercise features disabled.
-  const workoutxApiKey = String.fromEnvironment('WORKOUTX_API_KEY');
-
   // Supabase — bounded so a slow/absent network can't stall startup.
   const supabaseUrl = String.fromEnvironment('SUPABASE_URL');
   const supabaseKey = String.fromEnvironment('SUPABASE_ANON_KEY');
   if (supabaseUrl.isNotEmpty && supabaseKey.isNotEmpty) {
     try {
       mark('supabase init begin');
-      await Supabase.initialize(url: supabaseUrl, anonKey: supabaseKey)
-          .timeout(const Duration(seconds: 10));
+      // Session persisted via secure storage (Keychain / EncryptedSharedPrefs)
+      // instead of the default plaintext SharedPreferences.
+      await Supabase.initialize(
+        url: supabaseUrl,
+        anonKey: supabaseKey,
+        authOptions: const FlutterAuthClientOptions(
+          localStorage: SecureSessionStorage(),
+        ),
+      ).timeout(const Duration(seconds: 10));
       mark('supabase init done');
     } on Exception catch (_) {
       // Unreachable or timed out — app runs in local/offline mode.
@@ -143,7 +152,6 @@ Future<void> _bootstrap() async {
     ProviderScope(
       overrides: [
         databaseProvider.overrideWithValue(db),
-        workoutxApiKeyProvider.overrideWithValue(workoutxApiKey),
         localeProvider.overrideWith((ref) => savedLocale),
         if (savedTheme != null)
           themeModeProvider.overrideWith((ref) => savedTheme!),
@@ -161,7 +169,7 @@ Future<void> _bootstrap() async {
   // which can block indefinitely on a slow/absent network. Awaiting it
   // before runApp() froze the splash, so it is now fire-and-forget.
   unawaited(NotificationService.initialise());
-  unawaited(_backgroundDbInit(db, workoutxApiKey));
+  unawaited(_backgroundDbInit(db));
 
   // Reconcile RevenueCat entitlements into the local profile on launch, and
   // keep them in sync as renewals/cancellations arrive. Best-effort — both
@@ -175,15 +183,14 @@ Future<void> _bootstrap() async {
 
 /// Seeds and migrates the database after [runApp] so the main thread is never
 /// blocked waiting for these operations.
-Future<void> _backgroundDbInit(
-    AppDatabase db, String workoutxApiKey) async {
+Future<void> _backgroundDbInit(AppDatabase db) async {
   // Throwaway API client + repository used only for startup seeding; the UI
   // uses the repository from `exerciseRepositoryProvider` instead.
-  final exerciseApi = ExerciseApiService(apiKey: workoutxApiKey);
+  final exerciseApi = ExerciseApiService();
   final exerciseRepo = ExerciseRepository(exerciseApi, ExerciseDao(db));
   try {
-    // Exercises are no longer bulk-seeded from a bundled JSON; they come from
-    // the WorkoutX API and are cached on demand. Seed only the tiny starter
+    // Exercises are no longer bulk-seeded in full; they sync from the
+    // ExerciseDB OSS API and are cached on demand. Seed only the tiny starter
     // set so the default program has rich data offline on first launch.
     final programSeeder = ProgramSeeder(db, exerciseRepo);
     await programSeeder.ensureStarterCached();

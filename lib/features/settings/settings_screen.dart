@@ -24,16 +24,15 @@ import 'package:my_gym_bro/l10n/app_localizations.dart';
 import 'package:my_gym_bro/shared/constants.dart';
 import 'package:my_gym_bro/shared/responsive.dart';
 import 'package:my_gym_bro/shared/widgets/anatomy_body.dart';
-import 'package:my_gym_bro/shared/widgets/oc_glass_btn.dart';
 import 'package:my_gym_bro/shared/widgets/user_avatar.dart';
 import 'package:url_launcher/url_launcher.dart';
 
-/// Settings — premium iOS-26-style redesign.
+/// Settings — flat-iOS redesign (handoff option 1a).
 ///
-/// Grouped frosted-glass sections (Appearance / Workout / Notifications /
-/// General / Data & Account) over an ambient gradient backdrop, with compact
-/// iOS-Settings rows: tinted icon badges, inline segmented controls for
-/// two-state choices, and floating glass sheets for everything else.
+/// Grouped flat white cards (Appearance / Workout / Notifications /
+/// General / Data & Account) on the plain grouped-grey backdrop, with
+/// compact iOS-Settings rows: flat color badges, inline segmented controls
+/// for two-state choices, and sheets for everything else.
 class SettingsScreen extends ConsumerWidget {
   const SettingsScreen({super.key});
 
@@ -51,402 +50,382 @@ class SettingsScreen extends ConsumerWidget {
 
     return Scaffold(
       backgroundColor: colors.background,
-      body: Stack(
-        children: [
-          // ── Ambient backdrop — gives the frosted cards something to blur ──
-          Positioned(
-            top: -110.h,
-            right: -90.w,
-            child: _AuroraBlob(
-              color: colors.accent,
-              size: 340.w,
-              alpha: isDark ? 0.20 : 0.26,
-            ),
-          ),
-          Positioned(
-            top: 300.h,
-            left: -150.w,
-            child: _AuroraBlob(
-              color: SettingsBadgeColors.indigo,
-              size: 380.w,
-              alpha: isDark ? 0.16 : 0.16,
-            ),
-          ),
-          Positioned(
-            bottom: -120.h,
-            right: -70.w,
-            child: _AuroraBlob(
-              color: SettingsBadgeColors.teal,
-              size: 320.w,
-              alpha: isDark ? 0.12 : 0.14,
-            ),
-          ),
-
-          // ── Content ──
-          SafeArea(
-            bottom: false,
-            child: SingleChildScrollView(
-              padding: EdgeInsets.fromLTRB(16.w, 8.h, 16.w, 48.h),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+      body: SafeArea(
+        bottom: false,
+        child: SingleChildScrollView(
+          padding: EdgeInsets.fromLTRB(16.w, 8.h, 16.w, 48.h),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Header
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  // Header
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Text(
-                        l10n.settings,
-                        style: TextStyle(
-                          fontSize: 30.sp,
-                          fontWeight: FontWeight.w800,
-                          letterSpacing: -0.5,
-                          color: colors.textPrimary,
-                        ),
-                      ),
-                      OcGlassBtn(
-                        type: OcGlassBtnType.close,
-                        size: 42,
-                        onTap: () => Navigator.of(context).pop(),
-                      ),
-                    ],
+                  Text(
+                    l10n.settings,
+                    style: TextStyle(
+                      fontSize: 28.sp,
+                      fontWeight: FontWeight.w800,
+                      letterSpacing: -0.5,
+                      color: colors.textPrimary,
+                    ),
                   ),
-
-                  SizedBox(height: 16.h),
-
-                  // ── Profile hero card ──
-                  _ProfileCard(profile: profile),
-
-                  SizedBox(height: 20.h),
-
-                  // ── Appearance ──
-                  SettingsSection(
-                    header: l10n.settingsSectionAppearance,
-                    children: [
-                      SettingsNavRow(
-                        icon: Icons.palette_rounded,
-                        iconColor: SettingsBadgeColors.purple,
-                        label: l10n.skins,
-                        value: availableSkins
-                            .firstWhere(
-                              (s) => s.id == ref.watch(selectedSkinProvider),
-                              orElse: () => availableSkins.first,
-                            )
-                            .name,
-                        onTap: () => showSkinsModal(context, ref),
+                  GestureDetector(
+                    onTap: () => Navigator.of(context).pop(),
+                    child: Container(
+                      width: 34.w,
+                      height: 34.w,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        color: colors.card,
                       ),
-                      SettingsSwitchRow(
-                        icon: isDark
-                            ? Icons.dark_mode_rounded
-                            : Icons.light_mode_rounded,
-                        iconColor: SettingsBadgeColors.indigo,
-                        label: l10n.darkMode,
-                        value: isDark,
-                        onChanged: (val) {
-                          final newMode =
-                              val ? ThemeMode.dark : ThemeMode.light;
-                          ref.read(themeModeProvider.notifier).state = newMode;
-                          SecureStorage()
-                              .write('theme_mode', newMode.toString());
-                        },
+                      child: Icon(
+                        Icons.close_rounded,
+                        size: 16.sp,
+                        color: colors.subtitleText,
                       ),
-                      SettingsSegmentedRow(
-                        icon: Icons.accessibility_new_rounded,
-                        iconColor: SettingsBadgeColors.teal,
-                        label: l10n.anatomyModel,
-                        options: [l10n.male, l10n.female],
-                        selectedIndex:
-                            anatomyGender == AnatomyGender.female ? 1 : 0,
-                        onChanged: (i) => ref
-                            .read(anatomyGenderProvider.notifier)
-                            .set(i == 1
-                                ? AnatomyGender.female
-                                : AnatomyGender.male),
-                      ),
-                    ],
-                  ),
-
-                  SizedBox(height: 18.h),
-
-                  // ── Workout ──
-                  SettingsSection(
-                    header: l10n.settingsSectionWorkout,
-                    children: [
-                      SettingsSegmentedRow(
-                        icon: Icons.fitness_center_rounded,
-                        iconColor: SettingsBadgeColors.blue,
-                        label: l10n.weightUnit,
-                        options: const ['KG', 'LBS'],
-                        selectedIndex: weightUnit == 'lbs' ? 1 : 0,
-                        onChanged: (i) =>
-                            _setWeightUnit(ref, i == 1 ? 'lbs' : 'kg'),
-                      ),
-                      SettingsNavRow(
-                        icon: Icons.monitor_weight_rounded,
-                        iconColor: SettingsBadgeColors.green,
-                        label: l10n.bodyWeight,
-                        value: _bodyWeightLabel(profile.valueOrNull, l10n),
-                        onTap: () => BodyWeightSheet.show(context),
-                      ),
-                      SettingsNavRow(
-                        icon: Icons.local_fire_department_rounded,
-                        iconColor: SettingsBadgeColors.yellow,
-                        label: l10n.calorieGoal,
-                        value: _calorieGoalLabel(
-                          ref.watch(weeklyCalorieGoalProvider),
-                          l10n,
-                        ),
-                        onTap: () => showCalorieGoalSheet(context, ref),
-                      ),
-                      SettingsNavRow(
-                        icon: Icons.percent_rounded,
-                        iconColor: SettingsBadgeColors.teal,
-                        label: l10n.bodyFat,
-                        value: _bodyFatLabel(
-                          ref.watch(bodyFatPctProvider),
-                          l10n,
-                        ),
-                        onTap: () => showBodyFatSheet(context, ref),
-                      ),
-                      SettingsNavRow(
-                        icon: Icons.timer_rounded,
-                        iconColor: SettingsBadgeColors.orange,
-                        label: l10n.defaultRestTime,
-                        value: _restLabel(
-                          profile.valueOrNull?.defaultRestSeconds ?? 90,
-                        ),
-                        onTap: () => RestTimeSheet.show(context),
-                      ),
-                      SettingsSwitchRow(
-                        icon: Icons.volume_up_rounded,
-                        iconColor: SettingsBadgeColors.pink,
-                        label: l10n.restTimerSound,
-                        value: ref.watch(restTimerSoundEnabledProvider),
-                        onChanged: (val) => ref
-                            .read(restTimerSoundEnabledProvider.notifier)
-                            .set(val),
-                      ),
-                      SettingsSwitchRow(
-                        icon: Icons.vibration_rounded,
-                        iconColor: SettingsBadgeColors.red,
-                        label: l10n.restTimerVibration,
-                        value: ref.watch(restTimerVibrationEnabledProvider),
-                        onChanged: (val) => ref
-                            .read(restTimerVibrationEnabledProvider.notifier)
-                            .set(val),
-                      ),
-                    ],
-                  ),
-
-                  SizedBox(height: 18.h),
-
-                  // ── Notifications ──
-                  SettingsSection(
-                    header: l10n.notificationsSection,
-                    children: [
-                      SettingsSwitchRow(
-                        icon: Icons.alarm_rounded,
-                        iconColor: SettingsBadgeColors.red,
-                        label: l10n.trainingReminders,
-                        value: ref.watch(trainingRemindersEnabledProvider),
-                        onChanged: (val) async {
-                          await ref
-                              .read(trainingRemindersEnabledProvider.notifier)
-                              .set(val);
-                          if (val) {
-                            await NotificationService.scheduleWorkoutReminder(
-                              title: l10n.trainingReminders,
-                              body: l10n.trainingReminderBody,
-                            );
-                          } else {
-                            await NotificationService.cancelWorkoutReminder();
-                          }
-                        },
-                      ),
-                      SettingsNavRow(
-                        icon: Icons.record_voice_over_rounded,
-                        iconColor: SettingsBadgeColors.orange,
-                        label: l10n.notificationTone,
-                        value: toneLabel(
-                          notificationToneFromString(
-                            profile.valueOrNull?.notificationTone,
-                          ),
-                          l10n,
-                        ),
-                        onTap: () => showNotificationToneSheet(
-                          context,
-                          ref,
-                          profile.valueOrNull,
-                        ),
-                      ),
-                      SettingsSwitchRow(
-                        icon: Icons.people_alt_rounded,
-                        iconColor: SettingsBadgeColors.green,
-                        label: l10n.communityNotifications,
-                        value: ref
-                            .watch(communityNotificationsEnabledProvider),
-                        onChanged: (val) async {
-                          await ref
-                              .read(communityNotificationsEnabledProvider
-                                  .notifier)
-                              .set(val);
-                          try {
-                            final messaging = FirebaseMessaging.instance;
-                            if (val) {
-                              await messaging.subscribeToTopic('community');
-                            } else {
-                              await messaging
-                                  .unsubscribeFromTopic('community');
-                            }
-                          } on Exception catch (e) {
-                            if (kDebugMode) {
-                              debugPrint('[FCM] topic toggle failed: $e');
-                            }
-                          }
-                        },
-                      ),
-                    ],
-                  ),
-
-                  SizedBox(height: 18.h),
-
-                  // ── General ──
-                  SettingsSection(
-                    header: l10n.settingsSectionGeneral,
-                    children: [
-                      SettingsNavRow(
-                        icon: Icons.language_rounded,
-                        iconColor: SettingsBadgeColors.blue,
-                        label: l10n.language,
-                        value: localeDisplayName(
-                          ref.watch(localeProvider),
-                          l10n,
-                        ),
-                        onTap: () => showLanguageSheet(context, ref),
-                      ),
-                      SettingsNavRow(
-                        icon: Icons.star_rounded,
-                        iconColor: SettingsBadgeColors.yellow,
-                        label: l10n.rateApp,
-                        onTap: () =>
-                            _openExternal(context, _storeReviewUri()),
-                      ),
-                      SettingsNavRow(
-                        icon: Icons.mail_rounded,
-                        iconColor: SettingsBadgeColors.blue,
-                        label: l10n.contactSupport,
-                        onTap: () => _openExternal(
-                          context,
-                          Uri(
-                            scheme: 'mailto',
-                            path: 'support@mygymbro.app',
-                            queryParameters: {
-                              'subject': 'My Gym Bro — Support request',
-                            },
-                          ),
-                        ),
-                      ),
-                      SettingsNavRow(
-                        icon: Icons.shield_rounded,
-                        iconColor: SettingsBadgeColors.gray,
-                        label: l10n.privacyPolicy,
-                        onTap: () => _openExternal(
-                          context,
-                          Uri.parse('https://mygymbro.app/privacy'),
-                        ),
-                      ),
-                      SettingsNavRow(
-                        icon: Icons.description_rounded,
-                        iconColor: SettingsBadgeColors.gray,
-                        label: l10n.termsOfService,
-                        onTap: () => _openExternal(
-                          context,
-                          Uri.parse('https://mygymbro.app/terms'),
-                        ),
-                      ),
-                    ],
-                  ),
-
-                  SizedBox(height: 18.h),
-
-                  // ── Data & Account (Apple requirement) ──
-                  SettingsSection(
-                    header: l10n.settingsSectionData,
-                    children: [
-                      SettingsNavRow(
-                        icon: Icons.ios_share_rounded,
-                        iconColor: SettingsBadgeColors.blue,
-                        label: l10n.exportData,
-                        onTap: () =>
-                            _showSnack(context, l10n.exportComingSoon),
-                      ),
-                      SettingsNavRow(
-                        icon: Icons.cleaning_services_rounded,
-                        iconColor: SettingsBadgeColors.gray,
-                        label: l10n.clearCache,
-                        onTap: () => _clearCache(context, l10n),
-                      ),
-                      if (isSignedIn)
-                        SettingsNavRow(
-                          icon: Icons.logout_rounded,
-                          iconColor: SettingsBadgeColors.gray,
-                          label: l10n.signOut,
-                          onTap: () =>
-                              _showSignOutDialog(context, ref, l10n, colors),
-                        ),
-                      SettingsNavRow(
-                        icon: Icons.delete_forever_rounded,
-                        iconColor: SettingsBadgeColors.red,
-                        label: l10n.deleteAccount,
-                        isDestructive: true,
-                        onTap: () => _showDeleteAccountDialog(
-                            context, ref, l10n, colors),
-                      ),
-                    ],
-                  ),
-
-                  SizedBox(height: 26.h),
-
-                  // ── Version footer ──
-                  Center(
-                    child: Column(
-                      children: [
-                        Text(
-                          l10n.appName,
-                          style: TextStyle(
-                            color: colors.subtitleText,
-                            fontSize: 12.sp,
-                            fontWeight: FontWeight.w700,
-                          ),
-                        ),
-                        SizedBox(height: 2.h),
-                        ref.watch(packageInfoProvider).when(
-                              data: (info) => Text(
-                                '${l10n.appVersion(info.version)} '
-                                '(${info.buildNumber})',
-                                style: TextStyle(
-                                  color: colors.subtitleText
-                                      .withValues(alpha: 0.7),
-                                  fontSize: 11.sp,
-                                ),
-                              ),
-                              loading: () => Text(
-                                l10n.appVersion('…'),
-                                style: TextStyle(
-                                  color: colors.subtitleText
-                                      .withValues(alpha: 0.7),
-                                  fontSize: 11.sp,
-                                ),
-                              ),
-                              error: (_, __) => const SizedBox.shrink(),
-                            ),
-                      ],
                     ),
                   ),
                 ],
               ),
-            ),
+
+              SizedBox(height: 16.h),
+
+              // ── Profile hero card ──
+              _ProfileCard(profile: profile),
+
+              SizedBox(height: 20.h),
+
+              // ── Appearance ──
+              SettingsSection(
+                header: l10n.settingsSectionAppearance,
+                children: [
+                  SettingsNavRow(
+                    icon: Icons.palette_rounded,
+                    iconColor: SettingsBadgeColors.purple,
+                    label: l10n.skins,
+                    value: availableSkins
+                        .firstWhere(
+                          (s) => s.id == ref.watch(selectedSkinProvider),
+                          orElse: () => availableSkins.first,
+                        )
+                        .name,
+                    onTap: () => showSkinsModal(context, ref),
+                  ),
+                  SettingsSwitchRow(
+                    icon: isDark
+                        ? Icons.dark_mode_rounded
+                        : Icons.light_mode_rounded,
+                    iconColor: SettingsBadgeColors.indigo,
+                    label: l10n.darkMode,
+                    value: isDark,
+                    onChanged: (val) {
+                      final newMode = val ? ThemeMode.dark : ThemeMode.light;
+                      ref.read(themeModeProvider.notifier).state = newMode;
+                      SecureStorage().write('theme_mode', newMode.toString());
+                    },
+                  ),
+                  SettingsSegmentedRow(
+                    icon: Icons.accessibility_new_rounded,
+                    iconColor: SettingsBadgeColors.teal,
+                    label: l10n.anatomyModel,
+                    options: [l10n.male, l10n.female],
+                    selectedIndex: anatomyGender == AnatomyGender.female
+                        ? 1
+                        : 0,
+                    onChanged: (i) => ref
+                        .read(anatomyGenderProvider.notifier)
+                        .set(
+                          i == 1 ? AnatomyGender.female : AnatomyGender.male,
+                        ),
+                  ),
+                ],
+              ),
+
+              SizedBox(height: 18.h),
+
+              // ── Workout ──
+              SettingsSection(
+                header: l10n.settingsSectionWorkout,
+                children: [
+                  SettingsSegmentedRow(
+                    icon: Icons.fitness_center_rounded,
+                    iconColor: SettingsBadgeColors.blue,
+                    label: l10n.weightUnit,
+                    options: const ['KG', 'LBS'],
+                    selectedIndex: weightUnit == 'lbs' ? 1 : 0,
+                    onChanged: (i) =>
+                        _setWeightUnit(ref, i == 1 ? 'lbs' : 'kg'),
+                  ),
+                  SettingsNavRow(
+                    icon: Icons.monitor_weight_rounded,
+                    iconColor: SettingsBadgeColors.green,
+                    label: l10n.bodyWeight,
+                    value: _bodyWeightLabel(profile.valueOrNull, l10n),
+                    onTap: () => BodyWeightSheet.show(context),
+                  ),
+                  SettingsNavRow(
+                    icon: Icons.local_fire_department_rounded,
+                    iconColor: SettingsBadgeColors.yellow,
+                    label: l10n.calorieGoal,
+                    value: _calorieGoalLabel(
+                      ref.watch(weeklyCalorieGoalProvider),
+                      l10n,
+                    ),
+                    onTap: () => showCalorieGoalSheet(context, ref),
+                  ),
+                  SettingsNavRow(
+                    icon: Icons.percent_rounded,
+                    iconColor: SettingsBadgeColors.teal,
+                    label: l10n.bodyFat,
+                    value: _bodyFatLabel(ref.watch(bodyFatPctProvider), l10n),
+                    onTap: () => showBodyFatSheet(context, ref),
+                  ),
+                  SettingsNavRow(
+                    icon: Icons.timer_rounded,
+                    iconColor: SettingsBadgeColors.orange,
+                    label: l10n.defaultRestTime,
+                    value: _restLabel(
+                      profile.valueOrNull?.defaultRestSeconds ?? 90,
+                    ),
+                    onTap: () => RestTimeSheet.show(context),
+                  ),
+                  SettingsSwitchRow(
+                    icon: Icons.volume_up_rounded,
+                    iconColor: SettingsBadgeColors.pink,
+                    label: l10n.restTimerSound,
+                    value: ref.watch(restTimerSoundEnabledProvider),
+                    onChanged: (val) => ref
+                        .read(restTimerSoundEnabledProvider.notifier)
+                        .set(val),
+                  ),
+                  SettingsSwitchRow(
+                    icon: Icons.vibration_rounded,
+                    iconColor: SettingsBadgeColors.red,
+                    label: l10n.restTimerVibration,
+                    value: ref.watch(restTimerVibrationEnabledProvider),
+                    onChanged: (val) => ref
+                        .read(restTimerVibrationEnabledProvider.notifier)
+                        .set(val),
+                  ),
+                ],
+              ),
+
+              SizedBox(height: 18.h),
+
+              // ── Notifications ──
+              SettingsSection(
+                header: l10n.notificationsSection,
+                children: [
+                  SettingsSwitchRow(
+                    icon: Icons.alarm_rounded,
+                    iconColor: SettingsBadgeColors.red,
+                    label: l10n.trainingReminders,
+                    value: ref.watch(trainingRemindersEnabledProvider),
+                    onChanged: (val) async {
+                      await ref
+                          .read(trainingRemindersEnabledProvider.notifier)
+                          .set(val);
+                      if (val) {
+                        await NotificationService.scheduleWorkoutReminder(
+                          title: l10n.trainingReminders,
+                          body: l10n.trainingReminderBody,
+                        );
+                      } else {
+                        await NotificationService.cancelWorkoutReminder();
+                      }
+                    },
+                  ),
+                  SettingsNavRow(
+                    icon: Icons.record_voice_over_rounded,
+                    iconColor: SettingsBadgeColors.orange,
+                    label: l10n.notificationTone,
+                    value: toneLabel(
+                      notificationToneFromString(
+                        profile.valueOrNull?.notificationTone,
+                      ),
+                      l10n,
+                    ),
+                    onTap: () => showNotificationToneSheet(
+                      context,
+                      ref,
+                      profile.valueOrNull,
+                    ),
+                  ),
+                  SettingsSwitchRow(
+                    icon: Icons.people_alt_rounded,
+                    iconColor: SettingsBadgeColors.green,
+                    label: l10n.communityNotifications,
+                    value: ref.watch(communityNotificationsEnabledProvider),
+                    onChanged: (val) async {
+                      await ref
+                          .read(communityNotificationsEnabledProvider.notifier)
+                          .set(val);
+                      try {
+                        final messaging = FirebaseMessaging.instance;
+                        if (val) {
+                          await messaging.subscribeToTopic('community');
+                        } else {
+                          await messaging.unsubscribeFromTopic('community');
+                        }
+                      } on Exception catch (e) {
+                        if (kDebugMode) {
+                          debugPrint('[FCM] topic toggle failed: $e');
+                        }
+                      }
+                    },
+                  ),
+                ],
+              ),
+
+              SizedBox(height: 18.h),
+
+              // ── General ──
+              SettingsSection(
+                header: l10n.settingsSectionGeneral,
+                children: [
+                  SettingsNavRow(
+                    icon: Icons.language_rounded,
+                    iconColor: SettingsBadgeColors.blue,
+                    label: l10n.language,
+                    value: localeDisplayName(ref.watch(localeProvider), l10n),
+                    onTap: () => showLanguageSheet(context, ref),
+                  ),
+                  SettingsNavRow(
+                    icon: Icons.star_rounded,
+                    iconColor: SettingsBadgeColors.yellow,
+                    label: l10n.rateApp,
+                    onTap: () => _openExternal(context, _storeReviewUri()),
+                  ),
+                  SettingsNavRow(
+                    icon: Icons.mail_rounded,
+                    iconColor: SettingsBadgeColors.blue,
+                    label: l10n.contactSupport,
+                    onTap: () => _openExternal(
+                      context,
+                      Uri(
+                        scheme: 'mailto',
+                        path: 'support@mygymbro.app',
+                        queryParameters: {
+                          'subject': 'My Gym Bro — Support request',
+                        },
+                      ),
+                    ),
+                  ),
+                  SettingsNavRow(
+                    icon: Icons.shield_rounded,
+                    iconColor: SettingsBadgeColors.gray,
+                    label: l10n.privacyPolicy,
+                    onTap: () => _openExternal(
+                      context,
+                      Uri.parse('https://mygymbro.app/privacy'),
+                    ),
+                  ),
+                  SettingsNavRow(
+                    icon: Icons.description_rounded,
+                    iconColor: SettingsBadgeColors.gray,
+                    label: l10n.termsOfService,
+                    onTap: () => _openExternal(
+                      context,
+                      Uri.parse('https://mygymbro.app/terms'),
+                    ),
+                  ),
+                ],
+              ),
+
+              SizedBox(height: 18.h),
+
+              // ── Data & Account (Apple requirement) ──
+              SettingsSection(
+                header: l10n.settingsSectionData,
+                children: [
+                  SettingsNavRow(
+                    icon: Icons.ios_share_rounded,
+                    iconColor: SettingsBadgeColors.blue,
+                    label: l10n.exportData,
+                    onTap: () => _showSnack(context, l10n.exportComingSoon),
+                  ),
+                  SettingsNavRow(
+                    icon: Icons.cleaning_services_rounded,
+                    iconColor: SettingsBadgeColors.gray,
+                    label: l10n.clearCache,
+                    onTap: () => _clearCache(context, l10n),
+                  ),
+                  SettingsNavRow(
+                    icon: Icons.delete_forever_rounded,
+                    iconColor: SettingsBadgeColors.red,
+                    label: l10n.deleteAccount,
+                    isDestructive: true,
+                    onTap: () =>
+                        _showDeleteAccountDialog(context, ref, l10n, colors),
+                  ),
+                ],
+              ),
+
+              // ── Sign out — standalone iOS-style button card ──
+              if (isSignedIn) ...[
+                SizedBox(height: 18.h),
+                SettingsSection(
+                  children: [
+                    SettingsNavRowShell(
+                      onTap: () =>
+                          _showSignOutDialog(context, ref, l10n, colors),
+                      child: Center(
+                        child: Text(
+                          l10n.signOut,
+                          style: TextStyle(
+                            fontSize: 14.sp,
+                            fontWeight: FontWeight.w600,
+                            color: colors.danger,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+
+              SizedBox(height: 26.h),
+
+              // ── Version footer ──
+              Center(
+                child: Column(
+                  children: [
+                    Text(
+                      l10n.appName,
+                      style: TextStyle(
+                        color: colors.subtitleText,
+                        fontSize: 11.sp,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                    SizedBox(height: 2.h),
+                    ref
+                        .watch(packageInfoProvider)
+                        .when(
+                          data: (info) => Text(
+                            '${l10n.appVersion(info.version)} '
+                            '(${info.buildNumber})',
+                            style: TextStyle(
+                              color: colors.subtitleText.withValues(alpha: 0.7),
+                              fontSize: 10.sp,
+                            ),
+                          ),
+                          loading: () => Text(
+                            l10n.appVersion('…'),
+                            style: TextStyle(
+                              color: colors.subtitleText.withValues(alpha: 0.7),
+                              fontSize: 10.sp,
+                            ),
+                          ),
+                          error: (_, __) => const SizedBox.shrink(),
+                        ),
+                  ],
+                ),
+              ),
+            ],
           ),
-        ],
+        ),
       ),
     );
   }
@@ -457,9 +436,7 @@ class SettingsScreen extends ConsumerWidget {
     final kg = p?.bodyWeightKg;
     if (kg == null) return l10n.notSet;
     final unit = p?.weightUnit ?? 'kg';
-    return unit == 'lbs'
-        ? '${(kg * 2.20462).round()} lbs'
-        : '${kg.round()} kg';
+    return unit == 'lbs' ? '${(kg * 2.20462).round()} lbs' : '${kg.round()} kg';
   }
 
   static String _calorieGoalLabel(double? goal, AppLocalizations l10n) {
@@ -511,8 +488,10 @@ class SettingsScreen extends ConsumerWidget {
   static Future<void> _openExternal(BuildContext context, Uri uri) async {
     final l10n = AppLocalizations.of(context);
     try {
-      final launched =
-          await launchUrl(uri, mode: LaunchMode.externalApplication);
+      final launched = await launchUrl(
+        uri,
+        mode: LaunchMode.externalApplication,
+      );
       if (!launched && context.mounted) {
         _showSnack(context, l10n.couldNotOpenLink);
       }
@@ -539,7 +518,9 @@ class SettingsScreen extends ConsumerWidget {
   // ── Clear cache ──
 
   static Future<void> _clearCache(
-      BuildContext context, AppLocalizations l10n) async {
+    BuildContext context,
+    AppLocalizations l10n,
+  ) async {
     try {
       await CachedNetworkImage.evictFromCache('');
       await ExerciseGifCache.instance.emptyCache();
@@ -592,10 +573,7 @@ class SettingsScreen extends ConsumerWidget {
               await ref.read(authNotifierProvider.notifier).signOut();
               if (context.mounted) context.go(AppRoutes.signIn);
             },
-            child: Text(
-              l10n.signOut,
-              style: TextStyle(color: colors.danger),
-            ),
+            child: Text(l10n.signOut, style: TextStyle(color: colors.danger)),
           ),
         ],
       ),
@@ -676,30 +654,17 @@ class _ProfileCard extends ConsumerWidget {
     final p = profile.valueOrNull;
 
     return SettingsSection(
+      radius: 18.r,
       children: [
         // Identity row → profile screen
         SettingsNavRowShell(
           onTap: () => context.push(AppRoutes.profile),
           child: Row(
             children: [
-              Container(
-                padding: EdgeInsets.all(2.5.w),
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  gradient: LinearGradient(
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                    colors: [
-                      colors.accent,
-                      colors.accent.withValues(alpha: 0.25),
-                    ],
-                  ),
-                ),
-                child: UserAvatar(
-                  size: 52,
-                  url: p?.avatarUrl,
-                  iconColor: colors.textPrimary,
-                ),
+              UserAvatar(
+                size: 46,
+                url: p?.avatarUrl,
+                iconColor: colors.textPrimary,
               ),
               SizedBox(width: 12.w),
               Expanded(
@@ -711,7 +676,7 @@ class _ProfileCard extends ConsumerWidget {
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: TextStyle(
-                        fontSize: 16.sp,
+                        fontSize: 15.sp,
                         fontWeight: FontWeight.w700,
                         color: colors.textPrimary,
                       ),
@@ -721,7 +686,7 @@ class _ProfileCard extends ConsumerWidget {
                       _planLabel(p?.subscriptionStatus, l10n),
                       style: TextStyle(
                         fontSize: 11.sp,
-                        fontWeight: FontWeight.w600,
+                        fontWeight: FontWeight.w700,
                         color: colors.subtitleText,
                       ),
                     ),
@@ -740,18 +705,12 @@ class _ProfileCard extends ConsumerWidget {
         // Premium banner → paywall (hosts Restore Purchases)
         SettingsNavRowShell(
           onTap: () => context.push(AppRoutes.paywall),
+          padding: EdgeInsets.fromLTRB(14.w, 10.h, 14.w, 12.h),
           child: Container(
-            padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 11.h),
+            padding: EdgeInsets.symmetric(horizontal: 14.w, vertical: 11.h),
             decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(16.r),
-              gradient: LinearGradient(
-                begin: Alignment.centerLeft,
-                end: Alignment.centerRight,
-                colors: [
-                  colors.accent,
-                  Color.lerp(colors.accent, colors.amber, 0.55)!,
-                ],
-              ),
+              borderRadius: BorderRadius.circular(14.r),
+              color: colors.accent,
             ),
             child: Row(
               children: [
@@ -774,29 +733,30 @@ class _ProfileCard extends ConsumerWidget {
                   ),
                 ),
                 Container(
-                  padding:
-                      EdgeInsets.symmetric(horizontal: 9.w, vertical: 4.h),
+                  padding: EdgeInsets.symmetric(horizontal: 9.w, vertical: 4.h),
                   decoration: BoxDecoration(
                     color: colors.todayPillText.withValues(alpha: 0.14),
                     borderRadius: BorderRadius.circular(20.r),
                   ),
-                  child: Builder(builder: (context) {
-                    final status = p?.subscriptionStatus;
-                    final daysLeft = ref.watch(trialDaysLeftProvider);
-                    final label = status == 'active'
-                        ? l10n.planPremium
-                        : (daysLeft != null
-                            ? l10n.trialDaysLeft(daysLeft)
-                            : l10n.freeTrial);
-                    return Text(
-                      label,
-                      style: TextStyle(
-                        fontSize: 11.sp,
-                        fontWeight: FontWeight.w700,
-                        color: colors.todayPillText,
-                      ),
-                    );
-                  }),
+                  child: Builder(
+                    builder: (context) {
+                      final status = p?.subscriptionStatus;
+                      final daysLeft = ref.watch(trialDaysLeftProvider);
+                      final label = status == 'active'
+                          ? l10n.planPremium
+                          : (daysLeft != null
+                                ? l10n.trialDaysLeft(daysLeft)
+                                : l10n.freeTrial);
+                      return Text(
+                        label,
+                        style: TextStyle(
+                          fontSize: 11.sp,
+                          fontWeight: FontWeight.w700,
+                          color: colors.todayPillText,
+                        ),
+                      );
+                    },
+                  ),
                 ),
                 SizedBox(width: 2.w),
                 Icon(
@@ -824,40 +784,5 @@ class _ProfileCard extends ConsumerWidget {
       default:
         return l10n.freeTrial;
     }
-  }
-}
-
-// ─────────────────────────────────────────────────────────────────────────────
-// Ambient backdrop blob — soft radial glow the glass cards frost over
-// ─────────────────────────────────────────────────────────────────────────────
-
-class _AuroraBlob extends StatelessWidget {
-  const _AuroraBlob({
-    required this.color,
-    required this.size,
-    required this.alpha,
-  });
-
-  final Color color;
-  final double size;
-  final double alpha;
-
-  @override
-  Widget build(BuildContext context) {
-    return IgnorePointer(
-      child: Container(
-        width: size,
-        height: size,
-        decoration: BoxDecoration(
-          shape: BoxShape.circle,
-          gradient: RadialGradient(
-            colors: [
-              color.withValues(alpha: alpha),
-              color.withValues(alpha: 0),
-            ],
-          ),
-        ),
-      ),
-    );
   }
 }

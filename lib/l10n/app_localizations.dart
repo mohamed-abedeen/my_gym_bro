@@ -516,6 +516,12 @@ abstract class AppLocalizations {
   /// **'Add Exercise'**
   String get addExercise;
 
+  /// No description provided for @editExercises.
+  ///
+  /// In en, this message translates to:
+  /// **'Edit Exercises'**
+  String get editExercises;
+
   /// No description provided for @addDay.
   ///
   /// In en, this message translates to:
@@ -1113,8 +1119,26 @@ abstract class AppLocalizations {
   /// No description provided for @restTimer.
   ///
   /// In en, this message translates to:
-  /// **'Rest'**
+  /// **'Rest Timer'**
   String get restTimer;
+
+  /// No description provided for @off.
+  ///
+  /// In en, this message translates to:
+  /// **'Off'**
+  String get off;
+
+  /// No description provided for @reorderExercises.
+  ///
+  /// In en, this message translates to:
+  /// **'Reorder Exercises'**
+  String get reorderExercises;
+
+  /// No description provided for @replaceExercise.
+  ///
+  /// In en, this message translates to:
+  /// **'Replace Exercise'**
+  String get replaceExercise;
 
   /// No description provided for @defaultRestTime.
   ///
@@ -1932,24 +1956,6 @@ abstract class AppLocalizations {
   /// **'Failed to load exercises'**
   String get failedToLoadExercises;
 
-  /// No description provided for @sortMostUsed.
-  ///
-  /// In en, this message translates to:
-  /// **'Most Used'**
-  String get sortMostUsed;
-
-  /// No description provided for @sortFavorites.
-  ///
-  /// In en, this message translates to:
-  /// **'Favorites'**
-  String get sortFavorites;
-
-  /// No description provided for @sortAZ.
-  ///
-  /// In en, this message translates to:
-  /// **'A–Z'**
-  String get sortAZ;
-
   /// No description provided for @tabSummary.
   ///
   /// In en, this message translates to:
@@ -2093,6 +2099,42 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Remove Set'**
   String get removeSet;
+
+  /// No description provided for @superSet.
+  ///
+  /// In en, this message translates to:
+  /// **'Super Set'**
+  String get superSet;
+
+  /// No description provided for @pressToDelete.
+  ///
+  /// In en, this message translates to:
+  /// **'Press To Delete'**
+  String get pressToDelete;
+
+  /// No description provided for @time.
+  ///
+  /// In en, this message translates to:
+  /// **'Time'**
+  String get time;
+
+  /// No description provided for @finish.
+  ///
+  /// In en, this message translates to:
+  /// **'Finish'**
+  String get finish;
+
+  /// No description provided for @discard.
+  ///
+  /// In en, this message translates to:
+  /// **'Discard'**
+  String get discard;
+
+  /// No description provided for @discardWorkoutConfirm.
+  ///
+  /// In en, this message translates to:
+  /// **'Discard this workout? All progress will be lost.'**
+  String get discardWorkoutConfirm;
 
   /// No description provided for @completeSet.
   ///
@@ -2286,6 +2328,96 @@ abstract class AppLocalizations {
   /// **'Master'**
   String get leagueMasterTitle;
 
+  /// No description provided for @rankBronze.
+  ///
+  /// In en, this message translates to:
+  /// **'Grinder'**
+  String get rankBronze;
+
+  /// No description provided for @rankSilver.
+  ///
+  /// In en, this message translates to:
+  /// **'Warrior'**
+  String get rankSilver;
+
+  /// No description provided for @rankGold.
+  ///
+  /// In en, this message translates to:
+  /// **'Beast'**
+  String get rankGold;
+
+  /// No description provided for @rankPlatinum.
+  ///
+  /// In en, this message translates to:
+  /// **'Titan'**
+  String get rankPlatinum;
+
+  /// No description provided for @rankElite.
+  ///
+  /// In en, this message translates to:
+  /// **'Apex'**
+  String get rankElite;
+
+  /// No description provided for @rankUnranked.
+  ///
+  /// In en, this message translates to:
+  /// **'Unranked'**
+  String get rankUnranked;
+
+  /// No description provided for @rankUpTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'RANK UP!'**
+  String get rankUpTitle;
+
+  /// No description provided for @rankUpCta.
+  ///
+  /// In en, this message translates to:
+  /// **'Let\'s go!'**
+  String get rankUpCta;
+
+  /// No description provided for @rankNext.
+  ///
+  /// In en, this message translates to:
+  /// **'Next: {rank}'**
+  String rankNext(String rank);
+
+  /// No description provided for @rankMax.
+  ///
+  /// In en, this message translates to:
+  /// **'Max rank reached'**
+  String get rankMax;
+
+  /// No description provided for @rankShieldTooltip.
+  ///
+  /// In en, this message translates to:
+  /// **'Demotion shield — your rank is protected while you climb back.'**
+  String get rankShieldTooltip;
+
+  /// No description provided for @skinPremium.
+  ///
+  /// In en, this message translates to:
+  /// **'Premium'**
+  String get skinPremium;
+
+  /// No description provided for @skinPremiumSoon.
+  ///
+  /// In en, this message translates to:
+  /// **'Premium skin — purchases coming soon'**
+  String get skinPremiumSoon;
+
+  /// No description provided for @skinWorkoutsShort.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} workouts'**
+  String skinWorkoutsShort(int count);
+
+  /// No description provided for @skinLockedProgress.
+  ///
+  /// In en, this message translates to:
+  /// **'Unlocks at {count} workouts'**
+  String skinLockedProgress(int count);
+
   /// No description provided for @noChallengesYet.
   ///
   /// In en, this message translates to:
@@ -2423,6 +2555,36 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Deleting your account permanently removes your data from our servers.'**
   String get settingsDataFooter;
+
+  /// No description provided for @duration.
+  ///
+  /// In en, this message translates to:
+  /// **'Duration'**
+  String get duration;
+
+  /// No description provided for @heatmapLess.
+  ///
+  /// In en, this message translates to:
+  /// **'Less'**
+  String get heatmapLess;
+
+  /// No description provided for @heatmapMore.
+  ///
+  /// In en, this message translates to:
+  /// **'More'**
+  String get heatmapMore;
+
+  /// No description provided for @tapDayToJump.
+  ///
+  /// In en, this message translates to:
+  /// **'Tap a day to jump to its session'**
+  String get tapDayToJump;
+
+  /// No description provided for @jumpedToDay.
+  ///
+  /// In en, this message translates to:
+  /// **'Jumped to {date}'**
+  String jumpedToDay(String date);
 }
 
 class _AppLocalizationsDelegate

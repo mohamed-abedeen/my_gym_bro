@@ -675,6 +675,48 @@ void main() {
       expect(ex.lastWeekTopWeightKg, 100);
     });
 
+    test('caps assumed work time at the session duration', () async {
+      // 4-minute session with 8 rapid-fire sets: 8 × 45s assumed = 360s of
+      // "work", but the session only lasted 240s → scaled to 240s so the
+      // report agrees with the weekly calorie stat.
+      when(() => sessionDao.getInRange(any(), any())).thenAnswer(
+        (_) async => [_session(id: 1, startedAt: today, durationSeconds: 240)],
+      );
+      when(() => sessionDao.getSessionExercisesForSessions(any()))
+          .thenAnswer((_) async => [
+                _sessionExercise(id: 10, sessionId: 1, exerciseId: 'squat'),
+              ]);
+      when(() => sessionDao.getSetsForSessionExercises(any())).thenAnswer(
+        (_) async => List.generate(
+          8,
+          (_) => _set(sessionExerciseId: 10, weight: 100, reps: 5),
+        ),
+      );
+      when(() => exerciseDao.findByExerciseIds(any())).thenAnswer(
+        (_) async => [
+          const Exercise(
+            localId: 1,
+            syncStatus: 'synced',
+            exerciseId: 'squat',
+            name: 'Barbell Squat',
+            muscleGroup: 'Quads', // large muscle → MET 6.0
+            isCustom: false,
+            usageCount: 0,
+            isFavorite: false,
+          ),
+        ],
+      );
+
+      final container = makeContainer(profile: _profile(bodyWeightKg: 80));
+      final report = await container.read(dayReportProvider(today).future);
+
+      final ex = report.exercises.single;
+      // 8 × 45s = 360s scaled by 240/360 → 240s under load, not 360.
+      expect(ex.durationSeconds, 240);
+      // 6.0 MET × 80kg × 240/3600 h = 32 kcal, not 48.
+      expect(ex.calories, 32);
+    });
+
     test('empty day has no exercises', () async {
       when(() => sessionDao.getInRange(any(), any()))
           .thenAnswer((_) async => []);

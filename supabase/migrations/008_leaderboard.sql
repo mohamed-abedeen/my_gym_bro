@@ -255,7 +255,8 @@ AS $$
            ls.global_rank AS rank,
            ls.user_id = auth.uid() AS is_me
     FROM leaderboard_scores ls
-    LEFT JOIN public_profiles pp ON pp.user_id = ls.user_id, me
+    LEFT JOIN public_profiles pp ON pp.user_id = ls.user_id
+    CROSS JOIN me
     WHERE ls.board = p_board
       AND has_active_subscription(auth.uid())
       AND ls.global_rank BETWEEN me.global_rank - p_window

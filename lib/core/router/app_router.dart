@@ -25,6 +25,7 @@ import 'package:my_gym_bro/features/schedule/schedule_builder_screen.dart';
 import 'package:my_gym_bro/features/settings/settings_screen.dart';
 import 'package:my_gym_bro/features/workout/active_session/active_session_screen.dart';
 import 'package:my_gym_bro/features/workout/workout_providers.dart';
+import 'package:my_gym_bro/shared/widgets/app_error_screen.dart';
 
 // ═══════════════════════════════════════════════════════════════════════════
 // ROUTE PATHS
@@ -165,6 +166,10 @@ final routerProvider = Provider<GoRouter>((ref) {
     // UIView z-order doesn't cover Flutter-rendered sheet content. Harmless on
     // other platforms (just counts modal depth; the native bar isn't used).
     observers: [CNTabBarRouteObserver()],
+    // Unknown route / deep-link → branded error page instead of the default
+    // grey exception page. Splash re-runs the normal routing logic.
+    errorBuilder: (context, state) =>
+        AppErrorScreen(onGoHome: () => context.go(AppRoutes.splash)),
     routes: [
       // ────────────────────────────────────────────────────────────────────
       // ONBOARDING — fade transitions (they're a linear wizard, not a stack)

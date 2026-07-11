@@ -292,7 +292,8 @@ class WorkoutLogRepository {
             'remote_id': remoteId,
             'finished_at': params.finishedAt.toIso8601String(),
             'duration_seconds': params.durationSeconds,
-            'total_volume': params.totalVolume,
+            // Supabase column is total_volume_kg (see 001_initial_schema).
+            'total_volume_kg': params.totalVolume,
           },
         );
       } on Exception catch (e) {
@@ -316,6 +317,12 @@ class WorkoutLogRepository {
   /// Remove a session exercise and all its sets.
   Future<void> deleteSessionExercise(int sessionExerciseId) {
     return _sessionDao.deleteSessionExercise(sessionExerciseId);
+  }
+
+  /// Persist a new display order for a session exercise.
+  Future<void> updateSessionExerciseOrder(
+      int sessionExerciseId, int orderIndex) {
+    return _sessionDao.updateSessionExerciseOrder(sessionExerciseId, orderIndex);
   }
 
   /// Delete an entire session and cascade to its exercises and sets.

@@ -75,6 +75,7 @@
   "bestSet": "Bestes: {weight}kg × {reps} Wdh.",
   "addSet": "Satz hinzufügen",
   "addExercise": "Übung hinzufügen",
+  "editExercises": "Übungen bearbeiten",
   "addDay": "Tag hinzufügen",
   "scheduleName": "Planname",
   "todaySession": "Heutige Einheit",
@@ -174,7 +175,10 @@
   "notificationToneOnboardingTitle": "Wähle deine Stimme",
   "notificationToneOnboardingSubtitle": "Wie sollen wir während des Trainings mit dir sprechen?",
   "notificationToneExampleLabel": "Beispiel",
-  "restTimer": "Pause",
+  "restTimer": "Pausen-Timer",
+  "off": "Aus",
+  "reorderExercises": "Übungen neu anordnen",
+  "replaceExercise": "Übung ersetzen",
   "defaultRestTime": "Standard-Ruhezeit",
   "restTimerSound": "Ruhetimer-Ton",
   "trainingReminders": "Trainings-Erinnerungen",
@@ -296,9 +300,6 @@
   },
   "clearFilters": "Filter zurücksetzen",
   "failedToLoadExercises": "Übungen konnten nicht geladen werden",
-  "sortMostUsed": "Am häufigsten",
-  "sortFavorites": "Favoriten",
-  "sortAZ": "A–Z",
 
   "removeExercise": "Übung entfernen",
   "discardWorkout": "Dieses Training verwerfen?",
@@ -311,6 +312,12 @@
   "failureSet": "Versagenssatz",
   "dropSet": "Dropsatz",
   "removeSet": "Satz entfernen",
+  "superSet": "Supersatz",
+  "pressToDelete": "Zum Löschen drücken",
+  "time": "Zeit",
+  "finish": "Beenden",
+  "discard": "Verwerfen",
+  "discardWorkoutConfirm": "Dieses Training verwerfen? Der gesamte Fortschritt geht verloren.",
   "completeSet": "Satz abschließen",
   "restTime": "Pausenzeit",
   "remaining": "Verbleibend",
@@ -366,6 +373,31 @@
     }
   },
   "leagueMasterTitle": "Meister",
+  "rankBronze": "Grinder",
+  "rankSilver": "Warrior",
+  "rankGold": "Beast",
+  "rankPlatinum": "Titan",
+  "rankElite": "Apex",
+  "rankUnranked": "Ohne Rang",
+  "rankUpTitle": "AUFGESTIEGEN!",
+  "rankUpCta": "Los geht's!",
+  "rankNext": "Als Nächstes: {rank}",
+  "rankMax": "Höchster Rang erreicht",
+  "rankShieldTooltip": "Abstiegsschutz — dein Rang ist geschützt, während du dich zurückkämpfst.",
+  "skinPremium": "Premium",
+  "skinPremiumSoon": "Premium-Skin — Kauf bald verfügbar",
+  "skinWorkoutsShort": "{count} Workouts",
+  "@skinWorkoutsShort": {
+    "placeholders": {
+      "count": { "type": "int" }
+    }
+  },
+  "skinLockedProgress": "Wird bei {count} Workouts freigeschaltet",
+  "@skinLockedProgress": {
+    "placeholders": {
+      "count": { "type": "int" }
+    }
+  },
   "noChallengesYet": "Keine aktiven Challenges",
   "widgetStreakStart": "Streak starten",
   "widgetStreakOneDay": "1-Tage-Streak",
@@ -396,5 +428,10 @@
   "languageSystem": "System",
   "settingsWorkoutFooter": "Standardwerte für Pausen-Timer, Logging und Kalorienschätzungen.",
   "settingsNotificationsFooter": "Trainingserinnerungen schützen deine Serie.",
-  "settingsDataFooter": "Beim Löschen deines Kontos werden deine Daten dauerhaft von unseren Servern entfernt."
+  "settingsDataFooter": "Beim Löschen deines Kontos werden deine Daten dauerhaft von unseren Servern entfernt.",
+  "duration": "Dauer",
+  "heatmapLess": "Weniger",
+  "heatmapMore": "Mehr",
+  "tapDayToJump": "Tippe auf einen Tag, um zu seiner Einheit zu springen",
+  "jumpedToDay": "Zu {date} gesprungen"
 }

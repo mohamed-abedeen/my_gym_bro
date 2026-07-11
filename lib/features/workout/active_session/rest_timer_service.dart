@@ -348,7 +348,10 @@ class RestTimerService {
     _controller = null;
     _remaining = 0;
     _total = 0;
-    if (activeInstance == this) activeInstance = null;
+    // NOTE: deliberately NOT clearing [activeInstance] here — the
+    // notification's "Complete Set" action fires while no countdown is
+    // running (and "Skip" routes through cancel()), so the handler must
+    // still be able to reach this instance for the rest of the session.
 
     // Clean up the persisted state and the OS-scheduled notification —
     // the user explicitly cancelled, so nothing should fire later.
@@ -359,5 +362,6 @@ class RestTimerService {
   void dispose() {
     cancel();
     completeSetFromNotification = null;
+    if (activeInstance == this) activeInstance = null;
   }
 }

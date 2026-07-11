@@ -234,6 +234,9 @@ class AppLocalizationsFr extends AppLocalizations {
   String get addExercise => 'Ajouter un exercice';
 
   @override
+  String get editExercises => 'Modifier les exercices';
+
+  @override
   String get addDay => 'Ajouter des jours';
 
   @override
@@ -547,7 +550,16 @@ class AppLocalizationsFr extends AppLocalizations {
   String get notificationToneExampleLabel => 'Exemple';
 
   @override
-  String get restTimer => 'Repos';
+  String get restTimer => 'Minuteur de repos';
+
+  @override
+  String get off => 'Non';
+
+  @override
+  String get reorderExercises => 'Réorganiser les exercices';
+
+  @override
+  String get replaceExercise => 'Remplacer l\'exercice';
 
   @override
   String get defaultRestTime => 'Temps de repos par défaut';
@@ -1004,15 +1016,6 @@ class AppLocalizationsFr extends AppLocalizations {
   String get failedToLoadExercises => 'Impossible de charger les exercices';
 
   @override
-  String get sortMostUsed => 'Les plus utilisés';
-
-  @override
-  String get sortFavorites => 'Favoris';
-
-  @override
-  String get sortAZ => 'A–Z';
-
-  @override
   String get tabSummary => 'Summary';
 
   @override
@@ -1083,6 +1086,25 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String get removeSet => 'Supprimer la série';
+
+  @override
+  String get superSet => 'Superset';
+
+  @override
+  String get pressToDelete => 'Appuyer pour supprimer';
+
+  @override
+  String get time => 'Temps';
+
+  @override
+  String get finish => 'Terminer';
+
+  @override
+  String get discard => 'Abandonner';
+
+  @override
+  String get discardWorkoutConfirm =>
+      'Abandonner cet entraînement ? Toute la progression sera perdue.';
 
   @override
   String get completeSet => 'Compléter la série';
@@ -1190,6 +1212,58 @@ class AppLocalizationsFr extends AppLocalizations {
   String get leagueMasterTitle => 'Maître';
 
   @override
+  String get rankBronze => 'Grinder';
+
+  @override
+  String get rankSilver => 'Warrior';
+
+  @override
+  String get rankGold => 'Beast';
+
+  @override
+  String get rankPlatinum => 'Titan';
+
+  @override
+  String get rankElite => 'Apex';
+
+  @override
+  String get rankUnranked => 'Non classé';
+
+  @override
+  String get rankUpTitle => 'RANG SUPÉRIEUR !';
+
+  @override
+  String get rankUpCta => 'C\'est parti !';
+
+  @override
+  String rankNext(String rank) {
+    return 'Prochain : $rank';
+  }
+
+  @override
+  String get rankMax => 'Rang maximum atteint';
+
+  @override
+  String get rankShieldTooltip =>
+      'Bouclier de relégation — ton rang est protégé pendant que tu remontes.';
+
+  @override
+  String get skinPremium => 'Premium';
+
+  @override
+  String get skinPremiumSoon => 'Skin premium — achats bientôt disponibles';
+
+  @override
+  String skinWorkoutsShort(int count) {
+    return '$count séances';
+  }
+
+  @override
+  String skinLockedProgress(int count) {
+    return 'Se débloque à $count séances';
+  }
+
+  @override
   String get noChallengesYet => 'Aucun défi actif';
 
   @override
@@ -1262,4 +1336,21 @@ class AppLocalizationsFr extends AppLocalizations {
   @override
   String get settingsDataFooter =>
       'La suppression de votre compte efface définitivement vos données de nos serveurs.';
+
+  @override
+  String get duration => 'Durée';
+
+  @override
+  String get heatmapLess => 'Moins';
+
+  @override
+  String get heatmapMore => 'Plus';
+
+  @override
+  String get tapDayToJump => 'Touchez un jour pour ouvrir sa séance';
+
+  @override
+  String jumpedToDay(String date) {
+    return 'Passé au $date';
+  }
 }

@@ -45,136 +45,33 @@ serve(async (req: Request) => {
     }
 
     const userId = user.id;
-    const now = new Date().toISOString();
 
-    // Use service_role to bypass RLS for soft-delete and auth deletion
+    // Use service_role to bypass RLS for the delete.
     const supabaseAdmin = createClient(
       Deno.env.get("SUPABASE_URL")!,
-      Deno.env.get("SERVICE_ROLE_KEY")!
+      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
     );
 
-    // --- Cascading soft-delete ---
-
-    // 1. Get user's schedule IDs
-    const { data: schedules } = await supabaseAdmin
-      .from("schedules")
-      .select("id")
-      .eq("user_id", userId)
-      .is("deleted_at", null);
-
-    const scheduleIds = schedules?.map((s: { id: string }) => s.id) ?? [];
-
-    // 2. Get schedule_day IDs for those schedules
-    let scheduleDayIds: string[] = [];
-    if (scheduleIds.length > 0) {
-      const { data: scheduleDays } = await supabaseAdmin
-        .from("schedule_days")
-        .select("id")
-        .in("schedule_id", scheduleIds)
-        .is("deleted_at", null);
-
-      scheduleDayIds =
-        scheduleDays?.map((d: { id: string }) => d.id) ?? [];
+    // Hard-delete all of the user's data in one transaction (009 migration),
+    // in FK-safe order. This MUST run before deleteUser — otherwise the FKs to
+    // auth.users (no ON DELETE CASCADE) block the auth deletion.
+    const { error: purgeError } = await supabaseAdmin.rpc(
+      "delete_account_data",
+      { target: userId }
+    );
+    if (purgeError) {
+      console.error("Failed to purge account data:", purgeError);
+      return jsonResponse({ error: "Failed to delete account data" }, 500);
     }
 
-    // 3. Soft-delete scheduled_exercises (belong to schedule_days)
-    if (scheduleDayIds.length > 0) {
-      await supabaseAdmin
-        .from("scheduled_exercises")
-        .update({ deleted_at: now })
-        .in("schedule_day_id", scheduleDayIds)
-        .is("deleted_at", null);
-    }
-
-    // 4. Soft-delete schedule_days
-    if (scheduleIds.length > 0) {
-      await supabaseAdmin
-        .from("schedule_days")
-        .update({ deleted_at: now })
-        .in("schedule_id", scheduleIds)
-        .is("deleted_at", null);
-    }
-
-    // 5. Soft-delete schedules
-    if (scheduleIds.length > 0) {
-      await supabaseAdmin
-        .from("schedules")
-        .update({ deleted_at: now })
-        .in("id", scheduleIds);
-    }
-
-    // 6. Get user's session IDs
-    const { data: sessions } = await supabaseAdmin
-      .from("sessions")
-      .select("id")
-      .eq("user_id", userId)
-      .is("deleted_at", null);
-
-    const sessionIds = sessions?.map((s: { id: string }) => s.id) ?? [];
-
-    // 7. Get session_exercise IDs
-    let sessionExerciseIds: string[] = [];
-    if (sessionIds.length > 0) {
-      const { data: sessionExercises } = await supabaseAdmin
-        .from("session_exercises")
-        .select("id")
-        .in("session_id", sessionIds)
-        .is("deleted_at", null);
-
-      sessionExerciseIds =
-        sessionExercises?.map((e: { id: string }) => e.id) ?? [];
-    }
-
-    // 8. Soft-delete sets (belong to session_exercises)
-    if (sessionExerciseIds.length > 0) {
-      await supabaseAdmin
-        .from("sets")
-        .update({ deleted_at: now })
-        .in("session_exercise_id", sessionExerciseIds)
-        .is("deleted_at", null);
-    }
-
-    // 9. Soft-delete session_exercises
-    if (sessionIds.length > 0) {
-      await supabaseAdmin
-        .from("session_exercises")
-        .update({ deleted_at: now })
-        .in("session_id", sessionIds)
-        .is("deleted_at", null);
-    }
-
-    // 10. Soft-delete sessions
-    if (sessionIds.length > 0) {
-      await supabaseAdmin
-        .from("sessions")
-        .update({ deleted_at: now })
-        .in("id", sessionIds);
-    }
-
-    // 11. Soft-delete social data (direct user_id references)
-    const directTables = [
-      "posts",
-      "post_likes",
-      "post_comments",
-      "subscriptions",
-      "user_profiles",
-    ];
-
-    for (const table of directTables) {
-      await supabaseAdmin
-        .from(table)
-        .update({ deleted_at: now })
-        .eq("user_id", userId)
-        .is("deleted_at", null);
-    }
-
-    // 12. Hard-delete auth user
+    // Remove the auth user. This is the record that actually makes the account
+    // "gone" (email, identities, PII) — if it fails, surface an error so the
+    // client can retry rather than reporting a delete that didn't happen.
     const { error: deleteAuthError } =
       await supabaseAdmin.auth.admin.deleteUser(userId);
-
     if (deleteAuthError) {
       console.error("Failed to delete auth user:", deleteAuthError);
-      // Data is already soft-deleted, so log but don't fail the request
+      return jsonResponse({ error: "Failed to delete account" }, 500);
     }
 
     return jsonResponse({ message: "Account deleted successfully" });

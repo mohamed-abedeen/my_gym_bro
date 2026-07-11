@@ -10,6 +10,7 @@ import 'package:my_gym_bro/core/router/app_router.dart';
 import 'package:my_gym_bro/core/security/secure_storage.dart';
 import 'package:my_gym_bro/core/services/units.dart';
 import 'package:my_gym_bro/features/settings/skin_provider.dart';
+import 'package:my_gym_bro/features/workout/active_session/active_session_notifier.dart';
 import 'package:my_gym_bro/features/workout/log_bottom_sheet.dart';
 import 'package:my_gym_bro/features/workout/muscle_detail_sheet.dart';
 import 'package:my_gym_bro/features/workout/status_bottom_sheet.dart';
@@ -19,6 +20,7 @@ import 'package:my_gym_bro/shared/app_fonts.dart';
 import 'package:my_gym_bro/shared/constants.dart';
 import 'package:my_gym_bro/shared/responsive.dart';
 import 'package:my_gym_bro/shared/widgets/anatomy_body.dart';
+import 'package:my_gym_bro/shared/widgets/glass_surface.dart';
 import 'package:my_gym_bro/shared/widgets/liquid_glass_button.dart';
 
 /// Workout tab — pixel-perfect from Figma CSS.
@@ -81,7 +83,195 @@ class WorkoutScreen extends ConsumerWidget {
             SizedBox(height: 16.h),
           ],
         ),
+
+        // ── Resume-workout pill — hovers while a session is live ──
+        const _ResumeSessionPill(),
       ],
+    );
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// Resume-workout pill — shown while an active session exists after the
+// user backed out of the active screen. Tap = reopen, bin = discard.
+// ═══════════════════════════════════════════════════════════════════
+class _ResumeSessionPill extends ConsumerStatefulWidget {
+  const _ResumeSessionPill();
+
+  @override
+  ConsumerState<_ResumeSessionPill> createState() =>
+      _ResumeSessionPillState();
+}
+
+class _ResumeSessionPillState extends ConsumerState<_ResumeSessionPill> {
+  Timer? _ticker;
+
+  @override
+  void initState() {
+    super.initState();
+    // Tick the elapsed label once a second while a session is live.
+    _ticker = Timer.periodic(const Duration(seconds: 1), (_) {
+      if (mounted && ref.read(activeSessionProvider).sessionId != null) {
+        setState(() {});
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    _ticker?.cancel();
+    super.dispose();
+  }
+
+  static String _fmt(int s) {
+    if (s < 60) return '${s}s';
+    if (s < 3600) return '${s ~/ 60}m';
+    return '${s ~/ 3600}h ${(s % 3600) ~/ 60}m';
+  }
+
+  Future<void> _discard() async {
+    final colors = AppColors.of(context);
+    final l10n = AppLocalizations.of(context);
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: colors.card,
+        title: Text(l10n.discard, style: TextStyle(color: colors.textPrimary)),
+        content: Text(
+          l10n.discardWorkoutConfirm,
+          style: TextStyle(color: colors.textSecondary),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: Text(
+              l10n.cancel,
+              style: TextStyle(color: colors.textSecondary),
+            ),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            child: Text(l10n.discard, style: TextStyle(color: colors.danger)),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true) return;
+    await ref.read(activeSessionProvider.notifier).discardSession();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final session = ref.watch(activeSessionProvider);
+    if (session.sessionId == null) return const SizedBox.shrink();
+
+    final colors = AppColors.of(context);
+    final l10n = AppLocalizations.of(context);
+
+    Widget circleButton({
+      required Widget child,
+      required VoidCallback onTap,
+      Color? color,
+    }) =>
+        GestureDetector(
+          onTap: onTap,
+          behavior: HitTestBehavior.opaque,
+          child: Container(
+            width: 48.w,
+            height: 48.w,
+            decoration: BoxDecoration(
+              color: color ?? Colors.white.withValues(alpha: 0.08),
+              shape: BoxShape.circle,
+            ),
+            child: Center(child: child),
+          ),
+        );
+
+    return Positioned(
+      left: 20.w,
+      right: 20.w,
+      bottom: MediaQuery.of(context).padding.bottom + 92.h,
+      child: GestureDetector(
+        onTap: () => context.push(AppRoutes.activeSession),
+        child: GlassSurface(
+          radius: 34.r,
+          tint: colors.panelBackground.withValues(alpha: 0.85),
+          padding: EdgeInsets.all(10.w),
+          shadow: BoxShadow(
+            color: Colors.black.withValues(alpha: 0.35),
+            blurRadius: 18.w,
+            offset: Offset(0, 6.h),
+          ),
+          child: Row(
+            children: [
+              circleButton(
+                onTap: () => context.push(AppRoutes.activeSession),
+                child: Icon(
+                  Icons.keyboard_arrow_up_rounded,
+                  color: colors.textPrimary,
+                  size: 26.sp,
+                ),
+              ),
+              Expanded(
+                child: Column(
+                  children: [
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Container(
+                          width: 8.w,
+                          height: 8.w,
+                          decoration: BoxDecoration(
+                            color: colors.success,
+                            shape: BoxShape.circle,
+                          ),
+                        ),
+                        SizedBox(width: 8.w),
+                        Text(
+                          l10n.tabWorkout,
+                          style: TextStyle(
+                            color: colors.textPrimary,
+                            fontSize: 15.sp,
+                            fontWeight: FontWeight.w800,
+                          ),
+                        ),
+                        SizedBox(width: 5.w),
+                        Text(
+                          _fmt(session.elapsedSeconds),
+                          style: TextStyle(
+                            color: colors.textPrimary,
+                            fontSize: 15.sp,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                      ],
+                    ),
+                    SizedBox(height: 2.h),
+                    Text(
+                      session.currentExercise?.name ?? '',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        color: colors.textSecondary,
+                        fontSize: 13.sp,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              circleButton(
+                onTap: _discard,
+                color: const Color(0xFF3E1418),
+                child: Icon(
+                  Icons.delete_outline_rounded,
+                  color: const Color(0xFFFF453A),
+                  size: 22.sp,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
     );
   }
 }
@@ -535,6 +725,11 @@ class _ScheduleCardState extends ConsumerState<_ScheduleCard> {
   PageController? _pageController;
   int _lastSyncedPage = -1;
 
+  /// True while WE move the pager (auto-advance / program-change jumps) —
+  /// jumpToPage fires onPageChanged too, and those must not count as the
+  /// user picking a page.
+  bool _syncingPage = false;
+
   @override
   void dispose() {
     _pageController?.dispose();
@@ -584,10 +779,12 @@ class _ScheduleCardState extends ConsumerState<_ScheduleCard> {
     );
     final autoPage = nextDayAsync.valueOrNull;
 
-    // Use auto-advance page if the user hasn't manually changed the page yet,
-    // otherwise respect the user's persisted page choice.
+    // Use auto-advance page until the user manually swipes, then respect
+    // their choice. (Keyed on an explicit flag, NOT `currentPage == 0` —
+    // that made swiping back to the first card impossible, since landing
+    // on page 0 re-triggered the auto jump.)
     final effectivePage =
-        (cardState.currentPage == 0 && autoPage != null)
+        (!cardState.userPickedPage && autoPage != null)
             ? autoPage
             : cardState.currentPage;
     final safePage = effectivePage.clamp(0, totalPages - 1);
@@ -601,7 +798,9 @@ class _ScheduleCardState extends ConsumerState<_ScheduleCard> {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         final c = _pageController;
         if (c != null && c.hasClients && c.page?.round() != safePage) {
+          _syncingPage = true;
           c.jumpToPage(safePage);
+          _syncingPage = false;
         }
       });
     }
@@ -614,8 +813,13 @@ class _ScheduleCardState extends ConsumerState<_ScheduleCard> {
             controller: _pageController,
             itemCount: totalPages,
             onPageChanged: (i) {
-              ref.read(workoutCardStateProvider.notifier).state = cardState
-                  .copyWith(currentPage: i);
+              final notifier = ref.read(workoutCardStateProvider.notifier);
+              notifier.state = notifier.state.copyWith(
+                currentPage: i,
+                // Only a real user swipe locks the page; programmatic
+                // jumps keep auto-advance alive.
+                userPickedPage: _syncingPage ? null : true,
+              );
             },
             itemBuilder: (context, i) {
               // Last page = "Add Day"
@@ -652,7 +856,9 @@ class _ScheduleCardState extends ConsumerState<_ScheduleCard> {
     SecureStorage().write('last_selected_schedule_id', scheduleId.toString());
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (_pageController?.hasClients ?? false) {
+        _syncingPage = true;
         _pageController!.jumpToPage(0);
+        _syncingPage = false;
       }
     });
   }
@@ -976,6 +1182,14 @@ Future<void> _showProgramPicker(
   final offset = box.localToGlobal(Offset.zero);
   final colors = AppColors.of(context);
 
+  // Same dark panel as the other context menus, in BOTH themes (Figma mock)
+  // — a theme-following card blends into the page behind it.
+  final white = Colors.white.withValues(alpha: 0.92);
+  final divider = PopupMenuDivider(
+    height: 1,
+    color: Colors.white.withValues(alpha: 0.14),
+  );
+
   // Build items: each program + divider + "Create +" at the end
   final items = <PopupMenuEntry<int>>[];
   for (var i = 0; i < schedules.length; i++) {
@@ -990,7 +1204,7 @@ Future<void> _showProgramPicker(
             child: Text(
               schedule.name,
               style: TextStyle(
-                color: isCurrent ? colors.accent : colors.todayPillText,
+                color: isCurrent ? colors.accent : white,
                 fontSize: 15.sp,
                 fontWeight: FontWeight.w600,
               ),
@@ -998,7 +1212,7 @@ Future<void> _showProgramPicker(
           ),
         ),
       )
-      ..add(const PopupMenuDivider(height: 1));
+      ..add(divider);
   }
   // "Create +" action
   items.add(
@@ -1009,7 +1223,7 @@ Future<void> _showProgramPicker(
         child: Text(
           'Create +',
           style: TextStyle(
-            color: colors.textSecondary,
+            color: white,
             fontSize: 15.sp,
             fontWeight: FontWeight.w600,
           ),
@@ -1026,9 +1240,9 @@ Future<void> _showProgramPicker(
       offset.dx + 220.w,
       0,
     ),
-    color: colors.card.withValues(alpha: 0.95),
-    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20.r)),
-    elevation: 8,
+    color: const Color(0xF2202022),
+    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14.r)),
+    elevation: 12,
     items: items,
   );
 

@@ -75,6 +75,7 @@
   "bestSet": "Meilleur : {weight}kg × {reps} reps",
   "addSet": "Ajouter une série",
   "addExercise": "Ajouter un exercice",
+  "editExercises": "Modifier les exercices",
   "addDay": "Ajouter des jours",
   "scheduleName": "Nom du programme",
   "todaySession": "Séance du jour",
@@ -174,7 +175,10 @@
   "notificationToneOnboardingTitle": "Choisis ta voix",
   "notificationToneOnboardingSubtitle": "Comment devons-nous te parler pendant tes entraînements ?",
   "notificationToneExampleLabel": "Exemple",
-  "restTimer": "Repos",
+  "restTimer": "Minuteur de repos",
+  "off": "Non",
+  "reorderExercises": "Réorganiser les exercices",
+  "replaceExercise": "Remplacer l'exercice",
   "defaultRestTime": "Temps de repos par défaut",
   "restTimerSound": "Son du minuteur de repos",
   "trainingReminders": "Rappels d'entraînement",
@@ -296,9 +300,6 @@
   },
   "clearFilters": "Effacer les filtres",
   "failedToLoadExercises": "Impossible de charger les exercices",
-  "sortMostUsed": "Les plus utilisés",
-  "sortFavorites": "Favoris",
-  "sortAZ": "A–Z",
 
   "removeExercise": "Supprimer l'exercice",
   "discardWorkout": "Abandonner cet entraînement ?",
@@ -311,6 +312,12 @@
   "failureSet": "Série à l'échec",
   "dropSet": "Série dégressive",
   "removeSet": "Supprimer la série",
+  "superSet": "Superset",
+  "pressToDelete": "Appuyer pour supprimer",
+  "time": "Temps",
+  "finish": "Terminer",
+  "discard": "Abandonner",
+  "discardWorkoutConfirm": "Abandonner cet entraînement ? Toute la progression sera perdue.",
   "completeSet": "Compléter la série",
   "restTime": "Temps de repos",
   "remaining": "Restant",
@@ -366,6 +373,31 @@
     }
   },
   "leagueMasterTitle": "Maître",
+  "rankBronze": "Grinder",
+  "rankSilver": "Warrior",
+  "rankGold": "Beast",
+  "rankPlatinum": "Titan",
+  "rankElite": "Apex",
+  "rankUnranked": "Non classé",
+  "rankUpTitle": "RANG SUPÉRIEUR !",
+  "rankUpCta": "C'est parti !",
+  "rankNext": "Prochain : {rank}",
+  "rankMax": "Rang maximum atteint",
+  "rankShieldTooltip": "Bouclier de relégation — ton rang est protégé pendant que tu remontes.",
+  "skinPremium": "Premium",
+  "skinPremiumSoon": "Skin premium — achats bientôt disponibles",
+  "skinWorkoutsShort": "{count} séances",
+  "@skinWorkoutsShort": {
+    "placeholders": {
+      "count": { "type": "int" }
+    }
+  },
+  "skinLockedProgress": "Se débloque à {count} séances",
+  "@skinLockedProgress": {
+    "placeholders": {
+      "count": { "type": "int" }
+    }
+  },
   "noChallengesYet": "Aucun défi actif",
   "widgetStreakStart": "Démarrer une série",
   "widgetStreakOneDay": "Série de 1 jour",
@@ -396,5 +428,10 @@
   "languageSystem": "Système",
   "settingsWorkoutFooter": "Valeurs par défaut pour les minuteurs de repos, le suivi et l'estimation des calories.",
   "settingsNotificationsFooter": "Les rappels d'entraînement protègent votre série.",
-  "settingsDataFooter": "La suppression de votre compte efface définitivement vos données de nos serveurs."
+  "settingsDataFooter": "La suppression de votre compte efface définitivement vos données de nos serveurs.",
+  "duration": "Durée",
+  "heatmapLess": "Moins",
+  "heatmapMore": "Plus",
+  "tapDayToJump": "Touchez un jour pour ouvrir sa séance",
+  "jumpedToDay": "Passé au {date}"
 }

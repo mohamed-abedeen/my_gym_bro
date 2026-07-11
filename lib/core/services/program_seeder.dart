@@ -6,13 +6,13 @@ import 'package:flutter/services.dart' show rootBundle;
 import 'package:my_gym_bro/core/database/app_database.dart';
 import 'package:my_gym_bro/core/database/daos/exercise_dao.dart';
 import 'package:my_gym_bro/core/database/daos/schedule_dao.dart';
+import 'package:my_gym_bro/core/services/api_exercise.dart';
 import 'package:my_gym_bro/core/services/exercise_repository.dart';
-import 'package:my_gym_bro/core/services/workoutx_exercise.dart';
 
 /// Seeds the database with 3 ready-to-use training programs:
 /// Arnold Split, Bro Split, Push/Pull/Legs.
 ///
-/// Exercises are no longer bundled in bulk — they come from the WorkoutX API.
+/// Exercises are no longer bundled in bulk — they come from the exercise API.
 /// [ensureStarterCached] loads a tiny bundled starter set so the default
 /// program has rich data even on a first launch with no network; remaining
 /// exercises resolve via the API (and get cached) when online, or fall back to
@@ -35,10 +35,8 @@ class ProgramSeeder {
     try {
       final raw = await rootBundle.loadString('assets/exercises_starter.json');
       final list = (jsonDecode(raw) as List).cast<Map<String, dynamic>>();
-      final companions = list
-          .map((j) => WorkoutXExercise.fromJson(j)
-              .toCompanion(apiKey: _repo.mediaApiKey))
-          .toList();
+      final companions =
+          list.map((j) => ApiExercise.fromJson(j).toCompanion()).toList();
       await _exerciseDao.cacheAll(companions);
     } on Object {
       // Non-fatal — the default program still seeds with custom fallbacks.
@@ -62,7 +60,7 @@ class ProgramSeeder {
 
   /// Resolves an `exerciseId` for [name]:
   ///   1. local cache — exact match, then shortest partial,
-  ///   2. WorkoutX API by name (results are cached as a side effect),
+  ///   2. exercise API by name (results are cached as a side effect),
   ///   3. a loggable custom exercise as a last resort (offline / no match).
   Future<String> _id(String name, {String? muscleGroup}) async {
     final key = name.toLowerCase();
@@ -153,7 +151,7 @@ class ProgramSeeder {
     const chestBackLegs = _DayDef('Chest, Back & Legs', [
       // Chest
       _Ex('Barbell Bench Press', 5, 8, 'Chest'),
-      _Ex('Dumbbell Fly', 5, 8, 'Chest'),
+      _Ex('Dumbbell Incline Fly', 5, 8, 'Chest'),
       _Ex('Barbell Incline Bench Press', 6, 8, 'Chest'),
       _Ex('Cable Cross-Over', 6, 11, 'Chest'),
       _Ex('Chest Dip', 5, 12, 'Chest'),
@@ -162,11 +160,11 @@ class ProgramSeeder {
       _Ex('Wide Grip Pull-Up', 6, 10, 'Lats'),
       _Ex('Lever Reverse T-Bar Row', 5, 8, 'Lats'),
       _Ex('Cable Seated Row', 6, 8, 'Upper Back'),
-      _Ex('One Arm Dumbbell Row', 5, 8, 'Lats'),
+      _Ex('Dumbbell One Arm Bent-Over Row', 5, 8, 'Lats'),
       _Ex('Barbell Straight Leg Deadlift', 6, 15, 'Hamstrings'),
       // Legs
       _Ex('Barbell Full Squat', 6, 10, 'Quads'),
-      _Ex('Sled 45° Leg Press', 6, 10, 'Quads'),
+      _Ex('Sled 45° Leg Press (Side POV)', 6, 10, 'Quads'),
       _Ex('Lever Leg Extension', 6, 13, 'Quads'),
       _Ex('Lever Lying Leg Curl', 6, 12, 'Hamstrings'),
       _Ex('Barbell Lunge', 5, 15, 'Quads'),
@@ -175,13 +173,13 @@ class ProgramSeeder {
       _Ex('Lever Seated Calf Raise', 8, 15, 'Calves'),
       // Forearms
       _Ex('Barbell Wrist Curl', 4, 10, 'Forearms'),
-      _Ex('Barbell Reverse Curl', 4, 8, 'Forearms'),
+      _Ex('Dumbbell Standing Reverse Curl', 4, 8, 'Forearms'),
     ]);
 
     const shouldersArms = _DayDef('Shoulders & Arms', [
       // Biceps
       _Ex('Barbell Curl', 6, 8, 'Biceps'),
-      _Ex('Dumbbell Seated Curl', 6, 8, 'Biceps'),
+      _Ex('Dumbbell Standing Biceps Curl', 6, 8, 'Biceps'),
       _Ex('Dumbbell Concentration Curl', 6, 8, 'Biceps'),
       // Triceps
       _Ex('Barbell Close-Grip Bench Press', 6, 8, 'Triceps'),
@@ -198,7 +196,7 @@ class ProgramSeeder {
       _Ex('Lever Seated Calf Raise', 8, 15, 'Calves'),
       // Forearms
       _Ex('Barbell Wrist Curl', 4, 10, 'Forearms'),
-      _Ex('Barbell Reverse Curl', 4, 8, 'Forearms'),
+      _Ex('Dumbbell Standing Reverse Curl', 4, 8, 'Forearms'),
     ]);
 
     await _buildSchedule(
@@ -229,14 +227,14 @@ class ProgramSeeder {
           _Ex('Barbell Bench Press', 3, 10, 'Chest'),
           _Ex('Dumbbell Incline Bench Press', 3, 10, 'Chest'),
           _Ex('Dumbbell Decline Hammer Press', 3, 10, 'Chest'),
-          _Ex('Pec Dec', 3, 10, 'Chest'),
-          _Ex('Push-Up', 3, 10, 'Chest'),
+          _Ex('Cable Decline Fly', 3, 10, 'Chest'),
+          _Ex('Incline Push-Up', 3, 10, 'Chest'),
         ]),
         // Tuesday: Legs
         const _DayDef('Leg Day', [
           _Ex('Barbell Full Squat', 3, 10, 'Quads'),
           _Ex('Sled Hack Squat', 3, 10, 'Quads'),
-          _Ex('Sled 45° Leg Press', 3, 10, 'Quads'),
+          _Ex('Sled 45° Leg Press (Side POV)', 3, 10, 'Quads'),
           _Ex('Lever Leg Extension', 3, 10, 'Quads'),
           _Ex('Lever Lying Leg Curl', 3, 10, 'Hamstrings'),
           _Ex('Lever Standing Calf Raise', 3, 10, 'Calves'),
@@ -247,14 +245,14 @@ class ProgramSeeder {
           _Ex('Dumbbell Arnold Press', 3, 10, 'Shoulders'),
           _Ex('Dumbbell Lateral Raise', 3, 10, 'Shoulders'),
           _Ex('Barbell Upright Row', 3, 10, 'Shoulders'),
-          _Ex('Reverse Fly Machine', 3, 10, 'Shoulders'),
+          _Ex('Lever Seated Reverse Fly', 3, 10, 'Shoulders'),
           _Ex('Dumbbell Shrug', 3, 10, 'Traps'),
         ]),
         // Thursday: Back
         const _DayDef('Back Day', [
           _Ex('Barbell Deadlift', 3, 10, 'Lower Back'),
           _Ex('Cable Lat Pulldown Full Range of Motion', 3, 10, 'Lats'),
-          _Ex('Hammer Strength Row', 3, 10, 'Upper Back'),
+          _Ex('Lever Bent-Over Row With V-Bar', 3, 10, 'Upper Back'),
           _Ex('Cable Seated Row', 3, 10, 'Upper Back'),
           _Ex('Cable Straight Arm Pulldown', 3, 10, 'Lats'),
         ]),
@@ -291,7 +289,7 @@ class ProgramSeeder {
         ]),
         // Pull Day
         const _DayDef('Pull Day', [
-          _Ex('Pull-Up', 5, 5, 'Lats'),
+          _Ex('Pull Up (Neutral Grip)', 5, 5, 'Lats'),
           _Ex('Barbell Bent Over Row', 3, 5, 'Upper Back'),
           _Ex('Lever Reverse T-Bar Row', 3, 8, 'Lats'),
           _Ex('Dumbbell Shrug', 3, 8, 'Traps'),
@@ -302,7 +300,7 @@ class ProgramSeeder {
         const _DayDef('Leg Day', [
           _Ex('Barbell Full Squat', 5, 5, 'Quads'),
           _Ex('Barbell Deadlift', 3, 5, 'Lower Back'),
-          _Ex('Sled 45° Leg Press', 3, 8, 'Quads'),
+          _Ex('Sled 45° Leg Press (Side POV)', 3, 8, 'Quads'),
           _Ex('Lever Lying Leg Curl', 3, 8, 'Hamstrings'),
           _Ex('Lever Leg Extension', 3, 8, 'Quads'),
           _Ex('Lever Seated Calf Raise', 3, 8, 'Calves'),

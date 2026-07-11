@@ -121,7 +121,11 @@
       "Bash(flutter test *)",
       "mcp__plugin_figma_figma__get_metadata",
       "mcp__plugin_figma_figma__get_screenshot",
-      "Bash(curl -s -o /tmp/figma_screenshot.png \"https://www.figma.com/api/mcp/asset/b0fd1611-589b-48ba-91ab-01bc46bd462e\")"
+      "Bash(curl -s -o /tmp/figma_screenshot.png \"https://www.figma.com/api/mcp/asset/b0fd1611-589b-48ba-91ab-01bc46bd462e\")",
+      "Bash(git fetch *)",
+      "Bash(git pull *)",
+      "PowerShell(git fetch --all --quiet)",
+      "Bash(git merge *)"
     ]
   }
 }

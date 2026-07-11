@@ -42,19 +42,19 @@ flutter run --dart-define=SUPABASE_URL=<url> --dart-define=SUPABASE_ANON_KEY=<an
 
 ---
 
-## WorkoutX exercise API migration — to verify (branch `feat/workoutx-port`, uncommitted)
+## ExerciseDB OSS exercise API — to verify (replaced WorkoutX 2026-07-08)
 
-Needs a **free WorkoutX key**; run with `--dart-define=WORKOUTX_API_KEY=<key>` (free tier: 500 req/mo, 30/min, no `/search`, no AI gen).
+**No API key needed** (`https://oss.exercisedb.dev/api/v1`, free). ⚠️ OSS dataset is
+**non-commercial — testing only**; buy the ExerciseDB.io one-time license before release
+(see `08-WORKOUTX-MIGRATION.md` status note).
 
-- [ ] Exercise browser loads exercises from the API (paginated), infinite-scroll fetches more.
-- [ ] Search: on the free plan, search **degrades to local-cache LIKE filtering** (402 plan-gate handled silently, no error shown).
-- [ ] Offline / no-key: browser shows the offline banner and serves cached rows; app does not error.
+- [ ] Exercise browser loads exercises (catalogue syncs into Drift incrementally, ~1,500 rows), infinite-scroll fetches more.
+- [ ] Search does a **local LIKE over the synced catalogue** (first-ever search may return partial results while the sync catches up — API 429s pause the sync and later calls resume it).
+- [ ] Offline: browser shows the offline banner and serves cached rows; app does not error.
 - [ ] Caching: an exercise added to a schedule or logged in a session is cached locally (`ensureCached`) and still resolves later offline.
-- [ ] GIFs render (key-authenticated media URLs).
-- [ ] Upgrade migration v13→v14 wipes seeded (`is_custom=0`) exercises but **keeps custom ones**; historical logs still resolve via re-cache.
-- [ ] ProgramSeeder first-launch works offline via `assets/exercises_starter.json` fallback.
-
-> Combined state (Phase 1 + WorkoutX) verified clean on 2026-05-31: `flutter analyze` 0/0, 75 tests pass.
+- [ ] GIFs render (public `static.exercisedb.dev` URLs, no auth).
+- [ ] Upgrade migration v15→v16 wipes seeded (`is_custom=0`) exercises but **keeps custom ones**; WorkoutX-era ids in old schedules will NOT re-resolve (different id scheme) — fresh install recommended for testing.
+- [ ] ProgramSeeder first-launch works offline via `assets/exercises_starter.json` (regenerated with ExerciseDB ids/names).
 
 ## ⚠️ REMINDER — Cloud edge-function secrets (set before any function works)
 

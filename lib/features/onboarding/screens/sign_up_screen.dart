@@ -114,8 +114,8 @@ class _SignUpScreenState extends ConsumerState<SignUpScreen> {
   }
 
   Future<void> _seedExercisesIfNeeded() async {
-    // Exercises are no longer bundled/seeded in bulk — they come from the
-    // WorkoutX API and are cached on demand. We only ensure the tiny bundled
+    // Exercises are no longer bundled/seeded in bulk — they sync from the
+    // exercise API and are cached on demand. We only ensure the tiny bundled
     // starter set is cached so the default program has rich offline data.
     await SecureStorage().delete('needs_exercise_seed');
 

@@ -3,7 +3,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:my_gym_bro/core/providers/providers.dart';
 import 'package:my_gym_bro/core/services/units.dart';
+import 'package:my_gym_bro/features/leaderboard/leaderboard_providers.dart';
 import 'package:my_gym_bro/features/leaderboard/leaderboard_screen.dart';
+import 'package:my_gym_bro/features/leaderboard/rank.dart';
 import 'package:my_gym_bro/features/settings/settings_screen.dart';
 import 'package:my_gym_bro/features/settings/skin_provider.dart';
 import 'package:my_gym_bro/features/workout/muscle_detail_sheet.dart';
@@ -155,13 +157,22 @@ class _Header extends ConsumerWidget {
 // Figma: 399x187, bg #1C1C1E, radius 27
 // ─────────────────────────────────────────────
 
-class _LeaderboardCard extends StatelessWidget {
+class _LeaderboardCard extends ConsumerWidget {
   const _LeaderboardCard({required this.l10n});
   final AppLocalizations l10n;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final colors = AppColors.of(context);
+    final rank = ref.watch(myRankProvider);
+    // Other users on the weekly global board — drives the avatar row + count.
+    final bros = [
+      for (final e in ref
+              .watch(leaderboardProvider(LeaderboardScope.global))
+              .valueOrNull ??
+          const <LeaderboardEntry>[])
+        if (!e.isMe) e,
+    ];
 
     return Container(
       width: double.infinity,
@@ -173,15 +184,16 @@ class _LeaderboardCard extends StatelessWidget {
       clipBehavior: Clip.antiAlias,
       child: Stack(
         children: [
-          // Dumbbell image (right side) — Figma: 258x250, right-aligned
+          // Right side: the user's rank badge (entry tier until ranked).
           Positioned(
-            right: -30.w,
-            top: -30.h,
-            child: Image.asset(
-              'assets/images/dumbbells.png',
-              width: 258.w,
-              height: 250.h,
-              fit: BoxFit.cover,
+            right: 18.w,
+            top: 0,
+            bottom: 0,
+            child: Center(
+              child: RankBadge(
+                rank ?? const Rank(RankTier.bronze, 3),
+                size: 132.w,
+              ),
             ),
           ),
 
@@ -222,39 +234,48 @@ class _LeaderboardCard extends StatelessWidget {
                   ),
                 ),
                 const Spacer(),
-                // Overlapping friend avatars — 44x44, stacked with ~38px offset
+                // Overlapping avatars — 44x44, stacked with ~38px offset.
+                // Real board members once data is in; neutral placeholder
+                // circles (and no fake "+N") while offline or empty.
                 SizedBox(
                   height: 44.h,
                   child: Stack(
                     children: [
-                      // Avatar 1 at left: 0
-                      _avatarCircle(0, colors),
-                      // Avatar 2 at left: 38
-                      _avatarCircle(38.w, colors),
-                      // Avatar 3 at left: 76
-                      _avatarCircle(76.w, colors),
-                      // "+4" badge at left: 114
-                      Positioned(
-                        left: 114.w,
-                        child: Container(
-                          width: 44.w,
-                          height: 44.h,
-                          decoration: BoxDecoration(
-                            color: colors.overlayBlack,
-                            shape: BoxShape.circle,
-                          ),
-                          child: Center(
-                            child: Text(
-                              '+4',
-                              style: TextStyle(
-                                color: colors.textPrimary,
-                                fontSize: 20.sp,
-                                fontWeight: FontWeight.w700,
+                      if (bros.isEmpty)
+                        for (var i = 0; i < 3; i++)
+                          _avatarCircle(i * 38.w, colors, null)
+                      else ...[
+                        for (var i = 0; i < bros.length && i < 3; i++)
+                          _avatarCircle(i * 38.w, colors, bros[i].avatarUrl),
+                        if (bros.length > 3)
+                          Positioned(
+                            left: 114.w,
+                            child: Container(
+                              width: 44.w,
+                              height: 44.h,
+                              decoration: BoxDecoration(
+                                color: colors.overlayBlack,
+                                shape: BoxShape.circle,
+                              ),
+                              child: Center(
+                                child: Padding(
+                                  padding:
+                                      EdgeInsets.symmetric(horizontal: 4.w),
+                                  child: FittedBox(
+                                    child: Text(
+                                      '+${bros.length - 3}',
+                                      style: TextStyle(
+                                        color: colors.textPrimary,
+                                        fontSize: 20.sp,
+                                        fontWeight: FontWeight.w700,
+                                      ),
+                                    ),
+                                  ),
+                                ),
                               ),
                             ),
                           ),
-                        ),
-                      ),
+                      ],
                     ],
                   ),
                 ),
@@ -266,21 +287,23 @@ class _LeaderboardCard extends StatelessWidget {
     );
   }
 
-  static Widget _avatarCircle(double left, AppColorsTheme colors) {
+  static Widget _avatarCircle(
+    double left,
+    AppColorsTheme colors,
+    String? avatarUrl,
+  ) {
     return Positioned(
       left: left,
       child: Container(
-        width: 44.w,
-        height: 44.h,
         decoration: BoxDecoration(
-          color: colors.textSecondary.withValues(alpha: 0.4),
           shape: BoxShape.circle,
           border: Border.all(color: colors.panelBackground, width: 2.w),
         ),
-        child: Icon(
-          Icons.person_rounded,
-          color: colors.textSecondary,
-          size: 24.sp,
+        child: UserAvatar(
+          url: avatarUrl,
+          size: 40, // UserAvatar applies .w itself; +2w border ×2 ≈ 44w total
+          placeholderColor: colors.textSecondary.withValues(alpha: 0.4),
+          iconColor: colors.textSecondary,
         ),
       ),
     );

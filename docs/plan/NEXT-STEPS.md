@@ -20,6 +20,8 @@
 - Drift schema **v15**; migrations made idempotent (`_addColumnIfMissing`/`_hasTable`).
 - Full glass system + platform-adaptive nav (iOS native `CNTabBar`, non-iOS frosted Figma pill; refractive only on active-workout chrome). See root `CLAUDE.md`.
 - **Light-mode orange accent (#FF7A00) + dark accent #F0FF00 + streak fire pinned orange** — closes plan item 6.4c.
+- **Rank badges (2026-07-07)** — `Rank`/`RankBadge` (`lib/features/leaderboard/rank.dart`): 5 tiers × 3 levels derived client-side from the leaderboard `composite` percentile (no backend change); shown on the Home leaderboard card + Current League card. Artwork goes in `assets/badges/<tier>_<level>.png` (fallback medal renders until then). Requires `compute-leaderboard` scheduled or everyone is Unranked.
+- **Skins economy, client prep (2026-07-07)** — `Skin.unlock` (free / progress / paid) + `requiredSessions`; progress unlocks from local `lifetimeStatsProvider.sessionCount`; paid ownership persisted in `ownedSkinsProvider` (empty until RevenueCat `purchase-skin` ships — Phase 6/8 still owes IAP products, server verification + `skin_ownership` sync). Picker shows lock chips and blocks locked selection.
 
 **🔴 Remaining:** Phases 4–8, plus the close-out + hardening in Sprint 0 below.
 

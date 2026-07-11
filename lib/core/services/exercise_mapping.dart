@@ -4,9 +4,9 @@ import 'dart:convert';
 /// canonical muscle groups and difficulty tiers.
 ///
 /// These were previously private helpers inside `ExerciseLocalService` (which
-/// seeded a bundled JSON dataset). Exercises now come from the WorkoutX API,
+/// seeded a bundled JSON dataset). Exercises now come from the exercise API,
 /// but the mapping rules are unchanged and reused by:
-///   • the WorkoutX DTO → `ExercisesCompanion` mapping,
+///   • the [ApiExercise] DTO → `ExercisesCompanion` mapping,
 ///   • the bundled starter set used to seed the default program offline.
 ///
 /// All methods are static and side-effect free so they can be unit-tested and

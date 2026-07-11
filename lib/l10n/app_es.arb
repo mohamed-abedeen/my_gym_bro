@@ -75,6 +75,7 @@
   "bestSet": "Mejor: {weight}kg × {reps} reps",
   "addSet": "Añadir serie",
   "addExercise": "Añadir ejercicio",
+  "editExercises": "Editar ejercicios",
   "addDay": "Añadir días",
   "scheduleName": "Nombre del programa",
   "todaySession": "Sesión de hoy",
@@ -174,7 +175,10 @@
   "notificationToneOnboardingTitle": "Elige tu voz",
   "notificationToneOnboardingSubtitle": "¿Cómo deberíamos hablarte durante el entrenamiento?",
   "notificationToneExampleLabel": "Ejemplo",
-  "restTimer": "Descanso",
+  "restTimer": "Temporizador de descanso",
+  "off": "No",
+  "reorderExercises": "Reordenar ejercicios",
+  "replaceExercise": "Reemplazar ejercicio",
   "defaultRestTime": "Tiempo de descanso predeterminado",
   "restTimerSound": "Sonido del temporizador",
   "trainingReminders": "Recordatorios de entrenamiento",
@@ -296,9 +300,6 @@
   },
   "clearFilters": "Borrar filtros",
   "failedToLoadExercises": "No se pudieron cargar los ejercicios",
-  "sortMostUsed": "Más usados",
-  "sortFavorites": "Favoritos",
-  "sortAZ": "A–Z",
 
   "removeExercise": "Eliminar ejercicio",
   "discardWorkout": "¿Descartar este entrenamiento?",
@@ -311,6 +312,12 @@
   "failureSet": "Serie al fallo",
   "dropSet": "Serie descendente",
   "removeSet": "Eliminar serie",
+  "superSet": "Superserie",
+  "pressToDelete": "Pulsa para eliminar",
+  "time": "Tiempo",
+  "finish": "Terminar",
+  "discard": "Descartar",
+  "discardWorkoutConfirm": "¿Descartar este entrenamiento? Se perderá todo el progreso.",
   "completeSet": "Completar serie",
   "restTime": "Tiempo de descanso",
   "remaining": "Restante",
@@ -366,6 +373,31 @@
     }
   },
   "leagueMasterTitle": "Maestro",
+  "rankBronze": "Grinder",
+  "rankSilver": "Warrior",
+  "rankGold": "Beast",
+  "rankPlatinum": "Titan",
+  "rankElite": "Apex",
+  "rankUnranked": "Sin clasificar",
+  "rankUpTitle": "¡SUBISTE DE RANGO!",
+  "rankUpCta": "¡Vamos!",
+  "rankNext": "Siguiente: {rank}",
+  "rankMax": "Rango máximo alcanzado",
+  "rankShieldTooltip": "Escudo de descenso: tu rango está protegido mientras te recuperas.",
+  "skinPremium": "Premium",
+  "skinPremiumSoon": "Skin premium — compras disponibles pronto",
+  "skinWorkoutsShort": "{count} entrenos",
+  "@skinWorkoutsShort": {
+    "placeholders": {
+      "count": { "type": "int" }
+    }
+  },
+  "skinLockedProgress": "Se desbloquea a los {count} entrenamientos",
+  "@skinLockedProgress": {
+    "placeholders": {
+      "count": { "type": "int" }
+    }
+  },
   "noChallengesYet": "No hay retos activos",
   "widgetStreakStart": "Empieza una racha",
   "widgetStreakOneDay": "Racha de 1 día",
@@ -396,5 +428,10 @@
   "languageSystem": "Sistema",
   "settingsWorkoutFooter": "Valores predeterminados para temporizadores de descanso, registro y estimación de calorías.",
   "settingsNotificationsFooter": "Los recordatorios de entrenamiento protegen tu racha.",
-  "settingsDataFooter": "Eliminar tu cuenta borra permanentemente tus datos de nuestros servidores."
+  "settingsDataFooter": "Eliminar tu cuenta borra permanentemente tus datos de nuestros servidores.",
+  "duration": "Duración",
+  "heatmapLess": "Menos",
+  "heatmapMore": "Más",
+  "tapDayToJump": "Toca un día para ir a su sesión",
+  "jumpedToDay": "Saltado a {date}"
 }

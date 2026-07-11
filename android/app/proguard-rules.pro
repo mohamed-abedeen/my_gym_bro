@@ -6,6 +6,10 @@
 -keep class io.flutter.** { *; }
 -keep class io.flutter.plugins.** { *; }
 
+# Play Core: Flutter's deferred-components support references these classes,
+# but the app doesn't use deferred components or ship the Play Core library.
+-dontwarn com.google.android.play.core.**
+
 # Firebase
 -keep class com.google.firebase.** { *; }
 

@@ -117,6 +117,24 @@ class NotificationService {
   static const _activeWorkoutChannelDesc =
       'Live status while a workout is in progress';
 
+  // ── Active-workout notification look ────────────────────────────────────
+  // Brand accent (dark-theme accent) — tints the small icon, app name and
+  // action buttons so the ongoing notification reads as MyGymBro at a glance.
+  static const Color _kBrandAccent = Color(0xFFF0FF00);
+
+  /// "●●○○" set-progress dots for the current exercise. Empty when the
+  /// exercise has an unreasonable number of sets (keeps the line tidy).
+  static String _setDots(int done, int total) =>
+      total > 0 && total <= 8 && done >= 0 && done <= total
+          ? '●' * done + '○' * (total - done)
+          : '';
+
+  /// Header shown next to the app name, e.g. "CHEST · LIVE" / "LEGS · REST".
+  static String _headerLine(String? muscleGroup, String stateWord) =>
+      muscleGroup == null || muscleGroup.isEmpty
+          ? stateWord
+          : '${muscleGroup.toUpperCase()} · $stateWord';
+
   /// Initialise local notifications and Firebase Cloud Messaging.
   /// Call once from main() before runApp().
   static Future<void> initialise() async {
@@ -139,7 +157,10 @@ class NotificationService {
     });
 
     // ── Local notifications ──────────────────────────────────────────────────
-    const androidInit = AndroidInitializationSettings('@mipmap/ic_launcher');
+    // Status-bar small icon: white alpha-mask silhouette of the logo figure
+    // (drawable-*/ic_stat_notification.png) — full-color mipmaps render as a
+    // gray blob there.
+    const androidInit = AndroidInitializationSettings('ic_stat_notification');
     final iosInit = DarwinInitializationSettings(
       requestAlertPermission: true,
       requestSoundPermission: true,
@@ -341,11 +362,19 @@ class NotificationService {
     required String weight,
     required int reps,
     required DateTime sessionStartedAt,
+    int completedSets = 0,
+    String? muscleGroup,
+    String? sessionSummary,
     String? tagline,
     String? exerciseImagePath,
   }) async {
-    final headline = 'Set $currentSet/$totalSets · $weight × $reps reps';
-    final body = tagline == null ? headline : '$headline\n$tagline';
+    final headline = 'Set $currentSet of $totalSets  ·  $weight × $reps reps';
+    final dots = _setDots(completedSets, totalSets);
+    final body = [
+      headline,
+      if (dots.isNotEmpty) dots,
+      if (tagline != null) tagline,
+    ].join('\n');
 
     final largeIcon = exerciseImagePath != null
         ? FilePathAndroidBitmap(exerciseImagePath)
@@ -367,12 +396,20 @@ class NotificationService {
       showWhen: true,
       category: AndroidNotificationCategory.status,
       visibility: NotificationVisibility.public,
+      color: _kBrandAccent,
+      subText: _headerLine(muscleGroup, 'LIVE'),
+      ticker: '$exerciseName — $headline',
       largeIcon: largeIcon,
-      styleInformation: BigTextStyleInformation(body),
+      styleInformation: BigTextStyleInformation(
+        body,
+        // Whole-session totals pinned under the expanded card,
+        // e.g. "5 sets · 1,240 kg this session".
+        summaryText: sessionSummary,
+      ),
       actions: <AndroidNotificationAction>[
         const AndroidNotificationAction(
           _kActionCompleteSet,
-          'Complete Set',
+          '✓ Complete Set',
           showsUserInterface: false,
         ),
       ],
@@ -410,19 +447,27 @@ class NotificationService {
     required int remaining,
     required int totalSeconds,
     required DateTime sessionStartedAt,
+    int completedSets = 0,
+    String? muscleGroup,
+    String? sessionSummary,
     String? tagline,
     String? exerciseImagePath,
   }) async {
     final minutes = (remaining ~/ 60).toString().padLeft(2, '0');
     final seconds = (remaining % 60).toString().padLeft(2, '0');
 
+    // Countdown first — it's the collapsed/lock-screen line.
+    final restLine = '⏳ Rest $minutes:$seconds';
     final headline = nextSet == null
-        ? 'Final set complete'
-        : 'Next: Set $nextSet/$totalSets ($weight × $reps)';
-    final restLine = 'Rest $minutes:$seconds';
-    final body = tagline == null
-        ? '$headline\n$restLine'
-        : '$headline\n$restLine — $tagline';
+        ? 'Final set complete — finish strong'
+        : 'Up next  ·  Set $nextSet of $totalSets  ·  $weight × $reps reps';
+    final dots = _setDots(completedSets, totalSets);
+    final body = [
+      restLine,
+      headline,
+      if (dots.isNotEmpty) dots,
+      if (tagline != null) tagline,
+    ].join('\n');
 
     final largeIcon = exerciseImagePath != null
         ? FilePathAndroidBitmap(exerciseImagePath)
@@ -441,11 +486,17 @@ class NotificationService {
       showWhen: true,
       category: AndroidNotificationCategory.status,
       visibility: NotificationVisibility.public,
+      color: _kBrandAccent,
+      subText: _headerLine(muscleGroup, 'REST'),
+      ticker: '$exerciseName — $restLine',
       showProgress: true,
       maxProgress: totalSeconds,
       progress: remaining,
       largeIcon: largeIcon,
-      styleInformation: BigTextStyleInformation(body),
+      styleInformation: BigTextStyleInformation(
+        body,
+        summaryText: sessionSummary,
+      ),
       actions: <AndroidNotificationAction>[
         const AndroidNotificationAction(
           _kActionSkip,
@@ -454,7 +505,7 @@ class NotificationService {
         ),
         const AndroidNotificationAction(
           _kActionSub15,
-          '-15s',
+          '−15s',
           showsUserInterface: false,
         ),
         const AndroidNotificationAction(
@@ -508,6 +559,8 @@ class NotificationService {
       showWhen: true,
       category: AndroidNotificationCategory.status,
       visibility: NotificationVisibility.public,
+      color: _kBrandAccent,
+      subText: 'LIVE',
       largeIcon: largeIcon,
       styleInformation: BigTextStyleInformation(body),
     );
