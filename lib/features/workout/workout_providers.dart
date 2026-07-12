@@ -155,8 +155,14 @@ final workoutCardStateProvider = StateProvider<WorkoutCardState>(
 // ── Next training day index ──────────────────
 
 /// Whether a schedule day is a rest day, either by flag or by label.
-bool _isRestScheduleDay(ScheduleDay d) =>
-    d.isRestDay || (d.label?.toLowerCase().contains('rest') ?? false);
+/// A schedule day counts as rest when flagged as such, or when its label
+/// names rest in any app language ("Rest", "Ruhetag", "Descanso", "Repos").
+bool isRestScheduleDay(ScheduleDay d) {
+  if (d.isRestDay) return true;
+  final label = d.label?.toLowerCase();
+  if (label == null) return false;
+  return const ['rest', 'ruhe', 'descanso', 'repos'].any(label.contains);
+}
 
 /// Determines which training day page to show based on completed sessions.
 ///
@@ -170,7 +176,7 @@ final nextTrainingDayIndexProvider = FutureProvider.family<int, int>((
   final scheduleDao = ref.watch(scheduleDaoProvider);
 
   final days = await scheduleDao.getDays(scheduleId);
-  final trainingDays = days.where((d) => !_isRestScheduleDay(d)).toList();
+  final trainingDays = days.where((d) => !isRestScheduleDay(d)).toList();
   if (trainingDays.isEmpty) return 0;
 
   final completedCount = await sessionDao.countBySchedule(scheduleId);
@@ -207,7 +213,7 @@ final nextSessionHoursProvider = FutureProvider.family<int?, int>((
   final allDays = await scheduleDao.getDays(scheduleId);
   if (allDays.isEmpty) return null;
 
-  final trainingDays = allDays.where((d) => !_isRestScheduleDay(d)).toList();
+  final trainingDays = allDays.where((d) => !isRestScheduleDay(d)).toList();
   if (trainingDays.isEmpty) return null;
 
   // Figure out which training day was last completed and which is next
@@ -227,7 +233,7 @@ final nextSessionHoursProvider = FutureProvider.family<int?, int>((
   var pos = (lastDayIndex + 1) % totalDaysInCycle;
   while (pos != nextDayIndex) {
     final day = allDays.firstWhere((d) => d.dayIndex == pos);
-    if (_isRestScheduleDay(day)) {
+    if (isRestScheduleDay(day)) {
       restDaysBetween++;
     }
     pos = (pos + 1) % totalDaysInCycle;
@@ -1124,24 +1130,29 @@ const int _kMaxStreakGapDays = 3;
 /// ending and starting with rest days counts as one run). Without a schedule
 /// — or with a degenerate all-rest schedule — falls back to
 /// [_kDefaultStreakGapDays].
+///
+/// A schedule with *no* rest-day entries also gets the default: the schedule
+/// builder only saves training days (`isRestDay` is always false), so "no
+/// rest days" means unrecorded rest, not daily training — an allowance of 0
+/// would reset the streak on every legitimate rest day.
 int _streakGapAllowance(List<ScheduleDay>? scheduleDays) {
   final days = scheduleDays;
   if (days == null || days.isEmpty) return _kDefaultStreakGapDays;
-  if (days.every(_isRestScheduleDay)) return _kDefaultStreakGapDays;
+  if (days.every(isRestScheduleDay)) return _kDefaultStreakGapDays;
 
   // Longest cyclic run of consecutive rest days: doubling the list lets a
   // run that wraps around the cycle boundary be counted in one pass.
   var run = 0;
   var maxRun = 0;
   for (final d in [...days, ...days]) {
-    if (_isRestScheduleDay(d)) {
+    if (isRestScheduleDay(d)) {
       run++;
       if (run > maxRun) maxRun = run;
     } else {
       run = 0;
     }
   }
-  return maxRun.clamp(0, days.length).clamp(0, _kMaxStreakGapDays);
+  return maxRun.clamp(_kDefaultStreakGapDays, _kMaxStreakGapDays);
 }
 
 /// Number of workout days in the current unbroken training chain.
@@ -1207,6 +1218,59 @@ final streakProvider = FutureProvider<int>((ref) async {
   return streak;
 });
 
+/// What the streak-at-risk notification planner needs to decide whether
+/// tonight is do-or-die for the streak.
+class StreakRisk {
+  const StreakRisk({
+    required this.streak,
+    required this.restRun,
+    required this.allowedGap,
+  });
+
+  final int streak;
+
+  /// Workout-free days since the last session, *excluding* today
+  /// (-1 when the user already trained today).
+  final int restRun;
+
+  final int allowedGap;
+
+  /// Today is the last allowed rest day — no session today and the streak
+  /// dies at midnight. Single days don't warrant a warning.
+  bool get atRiskToday => streak >= 2 && restRun == allowedGap;
+}
+
+/// Streak-at-risk inputs for the achievement planner. Mirrors the maths in
+/// [streakProvider] (same DST-safe day difference and gap allowance).
+final streakRiskProvider = FutureProvider<StreakRisk>((ref) async {
+  final streak = await ref.watch(streakProvider.future);
+  final days = await ref
+      .watch(sessionDaoProvider)
+      .getDistinctSessionDatesDescending();
+  if (streak == 0 || days.isEmpty) {
+    return const StreakRisk(streak: 0, restRun: 0, allowedGap: 0);
+  }
+
+  final active = await ref.watch(activeScheduleProvider.future);
+  final scheduleDays = active == null
+      ? null
+      : await ref.watch(scheduleDaysProvider(active.localId).future);
+
+  final now = DateTime.now();
+  final last = days.first;
+  final restRun = (DateTime(now.year, now.month, now.day)
+                  .difference(DateTime(last.year, last.month, last.day))
+                  .inHours /
+              24)
+          .round() -
+      1;
+  return StreakRisk(
+    streak: streak,
+    restRun: restRun,
+    allowedGap: _streakGapAllowance(scheduleDays),
+  );
+});
+
 // ── Weekly streak ────────────────────────────
 
 /// Weekly-streak state: how many consecutive weeks the user has hit their
@@ -1249,7 +1313,7 @@ final weeklyStreakProvider = FutureProvider<WeeklyStreakData>((ref) async {
     );
     if (schedDays.isNotEmpty) {
       final trainingDays = schedDays
-          .where((d) => !_isRestScheduleDay(d))
+          .where((d) => !isRestScheduleDay(d))
           .length;
       if (trainingDays > 0) {
         target = ((trainingDays / schedDays.length) * 7).round().clamp(1, 7);

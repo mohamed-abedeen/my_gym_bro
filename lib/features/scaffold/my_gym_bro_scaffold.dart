@@ -8,6 +8,7 @@ import 'package:my_gym_bro/features/home/home_screen.dart';
 import 'package:my_gym_bro/features/leaderboard/leaderboard_providers.dart';
 import 'package:my_gym_bro/features/leaderboard/rank.dart';
 import 'package:my_gym_bro/features/leaderboard/rank_up_overlay.dart';
+import 'package:my_gym_bro/features/workout/achievement_planner.dart';
 import 'package:my_gym_bro/features/workout/active_session/active_session_notifier.dart';
 import 'package:my_gym_bro/features/workout/workout_providers.dart';
 import 'package:my_gym_bro/features/workout/workout_screen.dart';
@@ -43,6 +44,9 @@ class _MyGymBroScaffoldState extends ConsumerState<MyGymBroScaffold>
       unawaited(
         ref.read(activeSessionProvider.notifier).restoreOrResync(),
       );
+      // Schedule the ambient achievement notifications (streak-at-risk,
+      // weekly recap, scheduled-day, muscle-recovered) for today's data.
+      unawaited(ref.read(achievementPlannerProvider).refresh());
     });
   }
 
@@ -95,6 +99,12 @@ class _MyGymBroScaffoldState extends ConsumerState<MyGymBroScaffold>
         unawaited(showRankUp(context, Rank.fromComposite(r.state.composite)));
       }
       if (r.state != stored) unawaited(store.save(r.state));
+    });
+
+    // Re-plan the scheduled achievement notifications whenever the streak
+    // moves — i.e. after every finished workout and at midnight rollover.
+    ref.listen(streakProvider, (_, __) {
+      unawaited(ref.read(achievementPlannerProvider).refresh());
     });
 
     final colors = AppColors.of(context);

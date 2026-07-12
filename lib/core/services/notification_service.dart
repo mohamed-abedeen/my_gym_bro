@@ -99,6 +99,13 @@ class NotificationService {
   static const int _restTimerId = 0;
   static const int _workoutReminderId = 1;
   static const int _activeWorkoutId = 2;
+  static const int kudosNotificationId = 3;
+  static const int streakNotificationId = 4;
+  static const int streakRiskNotificationId = 5;
+  static const int muscleRecoveredNotificationId = 6;
+  static const int weeklyRecapNotificationId = 7;
+  static const int scheduledDayNotificationId = 8;
+  static const int milestoneNotificationId = 9;
 
   // Rest timer channel
   static const _channelId = 'rest_timer_silent';
@@ -116,6 +123,12 @@ class NotificationService {
   static const _activeWorkoutChannelName = 'MyGymBro Session';
   static const _activeWorkoutChannelDesc =
       'Live status while a workout is in progress';
+
+  // Achievements channel (kudos, streaks, records)
+  static const _achievementChannelId = 'achievements';
+  static const _achievementChannelName = 'Achievements';
+  static const _achievementChannelDesc =
+      'Workout kudos, streak alerts, and personal records';
 
   // ── Active-workout notification look ────────────────────────────────────
   // Brand accent (dark-theme accent) — tints the small icon, app name and
@@ -584,6 +597,76 @@ class NotificationService {
   static Future<void> cancelActiveWorkout() async {
     await _localPlugin.cancel(_activeWorkoutId);
   }
+
+  // ── Achievements (kudos / streaks) ─────────────────────────────────────────
+
+  /// One-shot celebration notification (post-workout kudos, streak alert).
+  /// Fixed [id]s replace in place instead of stacking.
+  static Future<void> showAchievement({
+    required int id,
+    required String title,
+    required String body,
+  }) async {
+    final details = NotificationDetails(
+      android: AndroidNotificationDetails(
+        _achievementChannelId,
+        _achievementChannelName,
+        channelDescription: _achievementChannelDesc,
+        importance: Importance.high,
+        priority: Priority.high,
+        color: _kBrandAccent,
+        styleInformation: BigTextStyleInformation(body),
+      ),
+      iOS: const DarwinNotificationDetails(),
+    );
+    await _localPlugin.show(id, title, body, details);
+  }
+
+  /// Schedule a one-shot achievement notification for a wall-clock moment
+  /// ([when] in device-local time). Replaces any pending one with the same
+  /// [id]; [when] in the past or under a minute away is delivered ASAP.
+  /// Inexact delivery — none of these are second-critical.
+  static Future<void> scheduleAchievementAt({
+    required int id,
+    required String title,
+    required String body,
+    required DateTime when,
+  }) async {
+    await _localPlugin.cancel(id);
+    final details = NotificationDetails(
+      android: AndroidNotificationDetails(
+        _achievementChannelId,
+        _achievementChannelName,
+        channelDescription: _achievementChannelDesc,
+        importance: Importance.high,
+        priority: Priority.high,
+        color: _kBrandAccent,
+        styleInformation: BigTextStyleInformation(body),
+      ),
+      iOS: const DarwinNotificationDetails(),
+    );
+    // tz.local is pinned to UTC (see initialise) — schedule relative to now.
+    final delay = when.difference(DateTime.now());
+    final deadline = tz.TZDateTime.now(tz.local)
+        .add(delay.isNegative ? const Duration(minutes: 1) : delay);
+    try {
+      await _localPlugin.zonedSchedule(
+        id,
+        title,
+        body,
+        deadline,
+        details,
+        androidScheduleMode: AndroidScheduleMode.inexactAllowWhileIdle,
+        uiLocalNotificationDateInterpretation:
+            UILocalNotificationDateInterpretation.absoluteTime,
+      );
+    } on Exception catch (e) {
+      if (kDebugMode) debugPrint('scheduleAchievementAt($id) failed: $e');
+    }
+  }
+
+  /// Cancel a pending achievement notification by id.
+  static Future<void> cancelAchievement(int id) => _localPlugin.cancel(id);
 
   // ── Workout reminder ───────────────────────────────────────────────────────
 

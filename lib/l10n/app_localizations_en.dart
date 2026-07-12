@@ -1101,6 +1101,10 @@ class AppLocalizationsEn extends AppLocalizations {
       'Discard this workout? All progress will be lost.';
 
   @override
+  String get finishWorkoutConfirm =>
+      'Finish this workout? It\'ll be saved to your history.';
+
+  @override
   String get completeSet => 'Complete set';
 
   @override
@@ -1230,6 +1234,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get rankUpCta => 'Let\'s go!';
 
   @override
+  String get newPrTitle => 'NEW PR!';
+
+  @override
   String rankNext(String rank) {
     return 'Next: $rank';
   }
@@ -1347,4 +1354,60 @@ class AppLocalizationsEn extends AppLocalizations {
   String jumpedToDay(String date) {
     return 'Jumped to $date';
   }
+
+  @override
+  String get shareNiceWork => 'Nice work!';
+
+  @override
+  String get shareStyleNormal => 'Normal';
+
+  @override
+  String get shareStyleTransparent => 'Transparent';
+
+  @override
+  String shareWorkoutNumber(int count) {
+    return 'Workout #$count';
+  }
+
+  @override
+  String get shareLiftedTotal => 'You lifted a total of';
+
+  @override
+  String get shareYourProgress => 'Share your progress';
+
+  @override
+  String get shareAnonymous => 'Anonymous';
+
+  @override
+  String get shareError => 'Couldn\'t create the image. Try again.';
+
+  @override
+  String get shareSaved => 'Saved to gallery';
+
+  @override
+  String get shareSaveError => 'Couldn\'t save to gallery';
+
+  @override
+  String get shareVolumeCaption => 'That\'s some serious iron.';
+
+  @override
+  String get shareVolumeDog => 'a big friendly dog';
+
+  @override
+  String get shareVolumeFridge => 'a full-size fridge';
+
+  @override
+  String get shareVolumePiano => 'a grand piano';
+
+  @override
+  String get shareVolumeCar => 'a small car';
+
+  @override
+  String get shareVolumeVan => 'a delivery van';
+
+  @override
+  String get shareVolumeElephant => 'a full-grown elephant';
+
+  @override
+  String get shareThisWeek => 'This Week';
 }

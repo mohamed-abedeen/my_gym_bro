@@ -2136,6 +2136,12 @@ abstract class AppLocalizations {
   /// **'Discard this workout? All progress will be lost.'**
   String get discardWorkoutConfirm;
 
+  /// No description provided for @finishWorkoutConfirm.
+  ///
+  /// In en, this message translates to:
+  /// **'Finish this workout? It\'ll be saved to your history.'**
+  String get finishWorkoutConfirm;
+
   /// No description provided for @completeSet.
   ///
   /// In en, this message translates to:
@@ -2376,6 +2382,12 @@ abstract class AppLocalizations {
   /// **'Let\'s go!'**
   String get rankUpCta;
 
+  /// No description provided for @newPrTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'NEW PR!'**
+  String get newPrTitle;
+
   /// No description provided for @rankNext.
   ///
   /// In en, this message translates to:
@@ -2585,6 +2597,114 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Jumped to {date}'**
   String jumpedToDay(String date);
+
+  /// No description provided for @shareNiceWork.
+  ///
+  /// In en, this message translates to:
+  /// **'Nice work!'**
+  String get shareNiceWork;
+
+  /// No description provided for @shareStyleNormal.
+  ///
+  /// In en, this message translates to:
+  /// **'Normal'**
+  String get shareStyleNormal;
+
+  /// No description provided for @shareStyleTransparent.
+  ///
+  /// In en, this message translates to:
+  /// **'Transparent'**
+  String get shareStyleTransparent;
+
+  /// No description provided for @shareWorkoutNumber.
+  ///
+  /// In en, this message translates to:
+  /// **'Workout #{count}'**
+  String shareWorkoutNumber(int count);
+
+  /// No description provided for @shareLiftedTotal.
+  ///
+  /// In en, this message translates to:
+  /// **'You lifted a total of'**
+  String get shareLiftedTotal;
+
+  /// No description provided for @shareYourProgress.
+  ///
+  /// In en, this message translates to:
+  /// **'Share your progress'**
+  String get shareYourProgress;
+
+  /// No description provided for @shareAnonymous.
+  ///
+  /// In en, this message translates to:
+  /// **'Anonymous'**
+  String get shareAnonymous;
+
+  /// No description provided for @shareError.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t create the image. Try again.'**
+  String get shareError;
+
+  /// No description provided for @shareSaved.
+  ///
+  /// In en, this message translates to:
+  /// **'Saved to gallery'**
+  String get shareSaved;
+
+  /// No description provided for @shareSaveError.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t save to gallery'**
+  String get shareSaveError;
+
+  /// No description provided for @shareVolumeCaption.
+  ///
+  /// In en, this message translates to:
+  /// **'That\'s some serious iron.'**
+  String get shareVolumeCaption;
+
+  /// No description provided for @shareVolumeDog.
+  ///
+  /// In en, this message translates to:
+  /// **'a big friendly dog'**
+  String get shareVolumeDog;
+
+  /// No description provided for @shareVolumeFridge.
+  ///
+  /// In en, this message translates to:
+  /// **'a full-size fridge'**
+  String get shareVolumeFridge;
+
+  /// No description provided for @shareVolumePiano.
+  ///
+  /// In en, this message translates to:
+  /// **'a grand piano'**
+  String get shareVolumePiano;
+
+  /// No description provided for @shareVolumeCar.
+  ///
+  /// In en, this message translates to:
+  /// **'a small car'**
+  String get shareVolumeCar;
+
+  /// No description provided for @shareVolumeVan.
+  ///
+  /// In en, this message translates to:
+  /// **'a delivery van'**
+  String get shareVolumeVan;
+
+  /// No description provided for @shareVolumeElephant.
+  ///
+  /// In en, this message translates to:
+  /// **'a full-grown elephant'**
+  String get shareVolumeElephant;
+
+  /// Caption above the weekly stat grid on the Weekly Progress share card, clarifying the figures cover this week (not just the finished session).
+  ///
+  /// In en, this message translates to:
+  /// **'This Week'**
+  String get shareThisWeek;
 }
 
 class _AppLocalizationsDelegate

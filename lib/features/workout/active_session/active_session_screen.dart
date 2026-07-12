@@ -18,7 +18,10 @@ import 'package:my_gym_bro/core/services/notification_tone.dart';
 import 'package:my_gym_bro/features/exercises/exercise_detail_screen.dart';
 import 'package:my_gym_bro/features/settings/skin_provider.dart';
 import 'package:my_gym_bro/features/workout/active_session/active_session_notifier.dart';
+import 'package:my_gym_bro/features/workout/active_session/pr_banner.dart';
 import 'package:my_gym_bro/features/workout/muscle_recovery_service.dart';
+import 'package:my_gym_bro/features/workout/share/share_card_data.dart';
+import 'package:my_gym_bro/features/workout/share/share_helpers.dart';
 import 'package:my_gym_bro/features/workout/workout_providers.dart';
 import 'package:my_gym_bro/l10n/app_localizations.dart';
 import 'package:my_gym_bro/shared/constants.dart';
@@ -146,6 +149,20 @@ class _ActiveSessionScreenState extends ConsumerState<ActiveSessionScreen> {
     final session = ref.watch(activeSessionProvider);
     final notifier = ref.read(activeSessionProvider.notifier);
     final exercise = session.currentExercise;
+
+    // "NEW PR!" banner — fires when completeSet detects a new record.
+    ref.listen(activeSessionProvider.select((s) => s.prEvent), (prev, next) {
+      if (next == null || identical(next, prev)) return;
+      final isLbs = notifier.weightUnit == 'lbs';
+      final w = isLbs ? next.weightKg * 2.20462 : next.weightKg;
+      final wText = w % 1 == 0 ? w.toStringAsFixed(0) : w.toStringAsFixed(1);
+      showPrBanner(
+        context,
+        title: l10n.newPrTitle,
+        body: '${next.exerciseName} · $wText '
+            '${isLbs ? 'lbs' : 'kg'} × ${next.reps}',
+      );
+    });
 
     // Re-sync notification strings only when the underlying values change.
     // (Locale changes flow through didChangeDependencies instead.)
@@ -445,41 +462,89 @@ class _ActiveSessionScreenState extends ConsumerState<ActiveSessionScreen> {
     final colors = AppColors.of(context);
     final l10n = AppLocalizations.of(context);
 
+    // Always confirm — the Finish/Discard row sits at the bottom of the screen
+    // and again in the swipe-up drawer, so it's easy to tap by accident.
+    // Unfinished sets get a sterner warning; a complete workout gets a plain
+    // "save this?" confirm.
     final hasIncomplete = session.exercises.any(
       (ex) => ex.sets.any((s) => !s.isCompleted),
     );
-    if (hasIncomplete) {
-      final confirmed = await showDialog<bool>(
-        context: context,
-        builder: (ctx) => AlertDialog(
-          backgroundColor: colors.card,
-          title: Text(
-            l10n.unfinishedSets,
-            style: TextStyle(color: colors.textPrimary),
-          ),
-          content: Text(
-            l10n.unfinishedSetsMessage,
-            style: TextStyle(color: colors.textSecondary),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(ctx, false),
-              child: Text(
-                l10n.cancel,
-                style: TextStyle(color: colors.textSecondary),
-              ),
-            ),
-            TextButton(
-              onPressed: () => Navigator.pop(ctx, true),
-              child: Text(l10n.confirm, style: TextStyle(color: colors.danger)),
-            ),
-          ],
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: colors.card,
+        title: Text(
+          hasIncomplete ? l10n.unfinishedSets : l10n.finish,
+          style: TextStyle(color: colors.textPrimary),
         ),
-      );
-      if (confirmed != true) return;
-    }
+        content: Text(
+          hasIncomplete ? l10n.unfinishedSetsMessage : l10n.finishWorkoutConfirm,
+          style: TextStyle(color: colors.textSecondary),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: Text(
+              l10n.cancel,
+              style: TextStyle(color: colors.textSecondary),
+            ),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            child: Text(l10n.finish, style: TextStyle(color: colors.accent)),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true) return;
+
+    // Snapshot BEFORE finishing: finishSession() resets the live state, so the
+    // share card is built from this pre-finish immutable instance, not from a
+    // post-finish (wiped) read.
+    final snapshot = session;
+
+    // Finish first, OUTSIDE the share try — a (very unlikely) local-DB finish
+    // failure must propagate/log as before, never be masked by share fallback.
     await notifier.finishSession();
-    if (mounted) context.pop();
+    if (!mounted) return;
+
+    // Build the share card defensively: it must never block a saved workout.
+    ShareCardData? data;
+    try {
+      var n = 0;
+      try {
+        // Nth workout — invalidate first so the count includes the one just
+        // saved. Optional: the card hides the number when it's 0.
+        ref.invalidate(lifetimeStatsProvider);
+        n = (await ref.read(lifetimeStatsProvider.future)).sessionCount;
+      } on Object {
+        // Count is a nice-to-have; a stats failure shouldn't lose the card.
+      }
+
+      if (!mounted) return;
+      final workoutName =
+          deriveWorkoutName(snapshot.exercises.map((e) => e.muscleGroup));
+      data = ShareCardData.fromActiveSession(
+        snapshot,
+        workoutName: workoutName,
+        workoutNumber: n,
+      );
+    } on Object {
+      data = null;
+    }
+    if (!mounted) return;
+
+    // Replace the active-session route with the share sheet via go_router — NOT
+    // Navigator.pushReplacement, which imperatively removes a page-based route
+    // go_router can't observe (it would leave a phantom /session in the match
+    // list that a later redirect refresh re-materialises over home).
+    // context.pushReplacement keeps the router stack synced; the share screen's
+    // X / Done then pop straight back to home.
+    if (data != null) {
+      context.pushReplacement(AppRoutes.shareCard, extra: data);
+    } else {
+      context.pop();
+    }
   }
 
   Future<void> _discard() async {

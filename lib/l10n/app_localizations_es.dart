@@ -1102,6 +1102,10 @@ class AppLocalizationsEs extends AppLocalizations {
       '¿Descartar este entrenamiento? Se perderá todo el progreso.';
 
   @override
+  String get finishWorkoutConfirm =>
+      '¿Terminar este entrenamiento? Se guardará en tu historial.';
+
+  @override
   String get completeSet => 'Completar serie';
 
   @override
@@ -1231,6 +1235,9 @@ class AppLocalizationsEs extends AppLocalizations {
   String get rankUpCta => '¡Vamos!';
 
   @override
+  String get newPrTitle => '¡NUEVO RÉCORD!';
+
+  @override
   String rankNext(String rank) {
     return 'Siguiente: $rank';
   }
@@ -1348,4 +1355,60 @@ class AppLocalizationsEs extends AppLocalizations {
   String jumpedToDay(String date) {
     return 'Saltado a $date';
   }
+
+  @override
+  String get shareNiceWork => '¡Buen trabajo!';
+
+  @override
+  String get shareStyleNormal => 'Normal';
+
+  @override
+  String get shareStyleTransparent => 'Transparente';
+
+  @override
+  String shareWorkoutNumber(int count) {
+    return 'Entrenamiento n.º $count';
+  }
+
+  @override
+  String get shareLiftedTotal => 'Levantaste un total de';
+
+  @override
+  String get shareYourProgress => 'Comparte tu progreso';
+
+  @override
+  String get shareAnonymous => 'Anónimo';
+
+  @override
+  String get shareError => 'No se pudo crear la imagen. Inténtalo de nuevo.';
+
+  @override
+  String get shareSaved => 'Guardado en la galería';
+
+  @override
+  String get shareSaveError => 'No se pudo guardar en la galería';
+
+  @override
+  String get shareVolumeCaption => 'Eso es hierro de verdad.';
+
+  @override
+  String get shareVolumeDog => 'un perro grande';
+
+  @override
+  String get shareVolumeFridge => 'un frigorífico';
+
+  @override
+  String get shareVolumePiano => 'un piano de cola';
+
+  @override
+  String get shareVolumeCar => 'un coche pequeño';
+
+  @override
+  String get shareVolumeVan => 'una furgoneta';
+
+  @override
+  String get shareVolumeElephant => 'un elefante adulto';
+
+  @override
+  String get shareThisWeek => 'Esta semana';
 }

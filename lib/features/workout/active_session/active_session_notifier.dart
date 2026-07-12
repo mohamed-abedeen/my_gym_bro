@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:math' as math;
 
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -119,6 +120,42 @@ class ActiveSet {
       );
 }
 
+// ── Personal records ──────────────────────────
+
+/// What a completed set beat: the all-time heaviest weight, or the best
+/// estimated one-rep max (Epley) at any rep count.
+enum PrKind { weight, oneRm }
+
+/// A "NEW PR!" moment fired by [ActiveSessionNotifier.completeSet]. The
+/// screen listens for instance changes and shows the banner.
+class PrEvent {
+  const PrEvent({
+    required this.exerciseName,
+    required this.weightKg,
+    required this.reps,
+    required this.kind,
+  });
+
+  final String exerciseName;
+  final double weightKg;
+  final int reps;
+  final PrKind kind;
+}
+
+/// Which PR (if any) a set scores against a baseline. Strictly greater —
+/// matching a record is not a new one. Weights in kg; 1RM via Epley,
+/// mirroring `SessionDao.getPersonalRecords`.
+PrKind? evaluatePr({
+  required double weight,
+  required int reps,
+  required double baselineWeight,
+  required double baselineOneRm,
+}) {
+  if (weight > baselineWeight) return PrKind.weight;
+  if (weight * (1 + reps / 30.0) > baselineOneRm) return PrKind.oneRm;
+  return null;
+}
+
 class ActiveSessionState {
 
   const ActiveSessionState({
@@ -130,6 +167,7 @@ class ActiveSessionState {
     this.isFinishing = false,
     this.pausedAt,
     this.accumulatedPausedSeconds = 0,
+    this.prEvent,
   });
   final int? sessionId;
   final List<ActiveExercise> exercises;
@@ -137,6 +175,10 @@ class ActiveSessionState {
   final DateTime? startedAt;
   final bool showRestTimer;
   final bool isFinishing;
+
+  /// Latest PR scored this session; listeners compare instances, so it never
+  /// needs clearing.
+  final PrEvent? prEvent;
 
   /// Wall-clock time the user pressed pause. `null` when the session is
   /// active. The elapsed clock and Live Activity reads this to freeze.
@@ -160,6 +202,7 @@ class ActiveSessionState {
     DateTime? pausedAt,
     int? accumulatedPausedSeconds,
     bool clearPausedAt = false,
+    PrEvent? prEvent,
   }) =>
       ActiveSessionState(
         sessionId: sessionId ?? this.sessionId,
@@ -172,6 +215,7 @@ class ActiveSessionState {
         pausedAt: clearPausedAt ? null : (pausedAt ?? this.pausedAt),
         accumulatedPausedSeconds:
             accumulatedPausedSeconds ?? this.accumulatedPausedSeconds,
+        prEvent: prEvent ?? this.prEvent,
       );
 
   ActiveExercise? get currentExercise =>
@@ -228,6 +272,8 @@ class ActiveSessionNotifier extends StateNotifier<ActiveSessionState> {
     String restNotificationTitle = 'Rest complete!',
     String restNotificationBody = 'Time to start your next set.',
     Future<int> Function()? getStreak,
+    NotificationTone tone = NotificationTone.balanced,
+    String? userName,
   })  : _repository = repository,
         _exerciseRepo = exerciseRepository,
         _defaultRestSeconds = defaultRestSeconds,
@@ -237,6 +283,8 @@ class ActiveSessionNotifier extends StateNotifier<ActiveSessionState> {
         _restNotificationTitle = restNotificationTitle,
         _restNotificationBody = restNotificationBody,
         _getStreak = getStreak,
+        _tone = tone,
+        _userName = userName,
         super(const ActiveSessionState());
   final WorkoutLogRepository _repository;
 
@@ -246,6 +294,11 @@ class ActiveSessionNotifier extends StateNotifier<ActiveSessionState> {
   /// Refresh-and-read the streak. Invalidates the cached value first so the
   /// just-finished session is included. Provided by the provider builder.
   final Future<int> Function()? _getStreak;
+
+  /// Voice for the kudos/streak notifications; kept in sync via
+  /// [updateSettings] like the other profile-backed settings.
+  NotificationTone _tone;
+  String? _userName;
   final RestTimerService restTimerService = RestTimerService();
 
   /// Subscription to the rest-timer tick stream for updating the
@@ -1001,6 +1054,11 @@ class ActiveSessionNotifier extends StateNotifier<ActiveSessionState> {
       isCompleted: true,
     ));
 
+    unawaited(_maybeCelebratePr(
+      updatedEx,
+      updatedSets.firstWhere((s) => s.localId == setLocalId),
+    ));
+
     // Haptic
     unawaited(HapticFeedback.mediumImpact());
 
@@ -1033,6 +1091,69 @@ class ActiveSessionNotifier extends StateNotifier<ActiveSessionState> {
     // Subscribe to the tick stream so the notification updates every second.
     _restTickSub?.cancel();
     _restTickSub = restTimerService.stream?.listen(_updateRestTimerNotification);
+  }
+
+  /// Best already-celebrated set per exercise this session, so one workout
+  /// can't fire twice for the same record. Keyed by exerciseId.
+  final _celebrated = <String, ({double weight, double oneRm})>{};
+  int? _celebratedSessionId;
+
+  /// PRs scored this session — appended to the post-workout kudos.
+  int _sessionPrCount = 0;
+
+  /// Fires the "NEW PR!" moment when a completed working set beats the
+  /// user's history (heaviest weight or best estimated 1RM) for this
+  /// exercise. History = other sessions' completed sets, so the set just
+  /// logged can't out-PR itself.
+  Future<void> _maybeCelebratePr(ActiveExercise ex, ActiveSet set) async {
+    final sessionId = state.sessionId;
+    final weight = set.weight;
+    final reps = set.reps;
+    if (sessionId == null ||
+        set.isWarmup ||
+        weight == null ||
+        weight <= 0 ||
+        reps == null ||
+        reps <= 0) {
+      return;
+    }
+
+    final prev = await _repository.getPersonalRecordsExcluding(
+      exerciseId: ex.exerciseId,
+      sessionId: sessionId,
+    );
+    // First session on this exercise: nothing to beat, stay quiet.
+    if (prev.maxWeight == null || !mounted) return;
+
+    if (_celebratedSessionId != sessionId) {
+      _celebrated.clear();
+      _sessionPrCount = 0;
+      _celebratedSessionId = sessionId;
+    }
+    final done = _celebrated[ex.exerciseId];
+    final kind = evaluatePr(
+      weight: weight,
+      reps: reps,
+      baselineWeight: math.max(prev.maxWeight!, done?.weight ?? 0),
+      baselineOneRm: math.max(prev.best1rm ?? 0, done?.oneRm ?? 0),
+    );
+    if (kind == null) return;
+
+    final oneRm = weight * (1 + reps / 30.0);
+    _celebrated[ex.exerciseId] = (
+      weight: math.max(weight, done?.weight ?? 0),
+      oneRm: math.max(oneRm, done?.oneRm ?? 0),
+    );
+    _sessionPrCount++;
+    unawaited(HapticFeedback.heavyImpact());
+    state = state.copyWith(
+      prEvent: PrEvent(
+        exerciseName: ex.name,
+        weightKg: weight,
+        reps: reps,
+        kind: kind,
+      ),
+    );
   }
 
   /// Un-mark a completed set (mis-tap recovery). Does not touch the rest
@@ -1209,9 +1330,61 @@ class ActiveSessionNotifier extends StateNotifier<ActiveSessionState> {
       nextCta: 'Workout logged. See you next session.',
     ));
 
+    // Post-workout kudos + streak alert (Strava-style, tone-voiced).
+    // Only for sessions with actual work in them.
+    final completedSets = state.totalCompletedSets;
+    if (completedSets > 0) {
+      final vol = _weightUnit == 'lbs'
+          ? state.totalVolume * _kLbsPerKg
+          : state.totalVolume;
+      final stats = '$completedSets sets · ${vol.round()} '
+          '$_weightUnit · ${(durationSecs / 60).round().clamp(1, 9999)} min';
+      final prSuffix = _sessionPrCount > 0
+          ? kudosPrSuffixForTone(_tone, _sessionPrCount)
+          : '';
+      unawaited(NotificationService.showAchievement(
+        id: NotificationService.kudosNotificationId,
+        title: workoutKudosTitleForTone(_tone, _userName),
+        body: '${workoutKudosBodyForTone(_tone, stats)}$prSuffix',
+      ));
+      if (isStreakMilestone(streakDays)) {
+        unawaited(NotificationService.showAchievement(
+          id: NotificationService.streakNotificationId,
+          title: streakTitleForTone(_tone, streakDays),
+          body: streakBodyForTone(_tone, streakDays),
+        ));
+      }
+      unawaited(_maybeCelebrateMilestone(state.totalVolume));
+    }
+    _sessionPrCount = 0;
+
     // Reset state so a subsequent session starts clean.
     _lastLoggedCache.clear();
     state = const ActiveSessionState();
+  }
+
+  /// Fire a lifetime-milestone notification when this session pushed the
+  /// all-time volume across a threshold or landed a milestone session count.
+  Future<void> _maybeCelebrateMilestone(double sessionVolume) async {
+    final totals = await _repository.getLifetimeTotals();
+    final String? body;
+    if (isSessionMilestone(totals.sessionCount)) {
+      body = milestoneSessionsBodyForTone(_tone, totals.sessionCount);
+    } else {
+      final crossed = crossedVolumeMilestone(
+        total: totals.totalVolume,
+        sessionVolume: sessionVolume,
+      );
+      if (crossed == null) return;
+      final display =
+          _weightUnit == 'lbs' ? (crossed * _kLbsPerKg).round() : crossed;
+      body = milestoneVolumeBodyForTone(_tone, '$display $_weightUnit');
+    }
+    await NotificationService.showAchievement(
+      id: NotificationService.milestoneNotificationId,
+      title: milestoneTitleForTone(_tone),
+      body: body,
+    );
   }
 
   /// Discard the session. Deletes the orphan DB row + all its session
@@ -1251,6 +1424,8 @@ class ActiveSessionNotifier extends StateNotifier<ActiveSessionState> {
     String? weightUnit,
     bool? restSoundEnabled,
     bool? restVibrationEnabled,
+    String? notificationTone,
+    String? userName,
   }) {
     if (restSeconds != null) _defaultRestSeconds = restSeconds;
     if (weightUnit != null) _weightUnit = weightUnit;
@@ -1258,6 +1433,10 @@ class ActiveSessionNotifier extends StateNotifier<ActiveSessionState> {
     if (restVibrationEnabled != null) {
       _restVibrationEnabled = restVibrationEnabled;
     }
+    if (notificationTone != null) {
+      _tone = notificationToneFromString(notificationTone);
+    }
+    if (userName != null) _userName = userName;
   }
 
   String get weightUnit => _weightUnit;
@@ -1409,6 +1588,8 @@ final activeSessionProvider =
       ref.invalidate(streakProvider);
       return ref.read(streakProvider.future);
     },
+    tone: notificationToneFromString(profile?.notificationTone),
+    userName: profile?.displayName,
   );
 
   // Keep rest-time / weight-unit in sync without recreating the notifier.
@@ -1418,6 +1599,8 @@ final activeSessionProvider =
       notifier.updateSettings(
         restSeconds: p.defaultRestSeconds,
         weightUnit: p.weightUnit,
+        notificationTone: p.notificationTone,
+        userName: p.displayName,
       );
     }
   });

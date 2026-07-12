@@ -64,6 +64,7 @@ class AnatomyBody extends StatelessWidget {
     required this.muscleStates, required this.height, super.key,
     this.gender = AnatomyGender.female,
     this.basePngPath,
+    this.highlightColor,
   });
   final List<MuscleStateInfo> muscleStates;
   final double height;
@@ -75,6 +76,12 @@ class AnatomyBody extends StatelessWidget {
   /// instead of the default anatomy PNG.  Falls back to the built-in default
   /// when `null`.
   final String? basePngPath;
+
+  /// Optional override tint for every drawn muscle overlay. When `null`
+  /// (default) each muscle keeps its own recovery-state colour; callers like
+  /// the share card pass the brand accent so worked muscles read as "trained"
+  /// rather than recovery-red.
+  final Color? highlightColor;
 
   @override
   Widget build(BuildContext context) {
@@ -118,7 +125,7 @@ class AnatomyBody extends StatelessWidget {
             _svgPath(gender, base),
             height: height,
             colorFilter: ColorFilter.mode(
-              muscle.color.withValues(alpha: 0.85),
+              (highlightColor ?? muscle.color).withValues(alpha: 0.85),
               BlendMode.srcIn,
             ),
           ),

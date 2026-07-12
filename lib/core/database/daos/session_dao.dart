@@ -295,8 +295,13 @@ class SessionDao extends DatabaseAccessor<AppDatabase>
   }
 
   /// Personal records for a given exercise.
+  ///
+  /// With [excludeSessionId], returns the *history* baseline used for live
+  /// PR detection: completed sets from every other session only.
   Future<ExercisePersonalRecords> getPersonalRecords(
-      String exerciseId) async {
+    String exerciseId, {
+    int? excludeSessionId,
+  }) async {
     final setRow = await customSelect(
       'SELECT '
       '  MAX(ws.weight) AS max_weight, '
@@ -305,8 +310,13 @@ class SessionDao extends DatabaseAccessor<AppDatabase>
       'FROM session_exercises se '
       'JOIN workout_sets ws ON ws.session_exercise_id = se.local_id '
       'WHERE se.exercise_id = ? '
-      '  AND ws.weight IS NOT NULL AND ws.reps IS NOT NULL',
-      variables: [Variable<String>(exerciseId)],
+      '  AND ws.weight IS NOT NULL AND ws.reps IS NOT NULL'
+      '${excludeSessionId == null ? '' : ' '
+          'AND se.session_id != ? AND ws.is_completed = 1'}',
+      variables: [
+        Variable<String>(exerciseId),
+        if (excludeSessionId != null) Variable<int>(excludeSessionId),
+      ],
       readsFrom: {sessionExercises, workoutSets},
     ).getSingleOrNull();
 

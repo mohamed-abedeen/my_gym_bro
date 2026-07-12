@@ -1107,6 +1107,10 @@ class AppLocalizationsDe extends AppLocalizations {
       'Dieses Training verwerfen? Der gesamte Fortschritt geht verloren.';
 
   @override
+  String get finishWorkoutConfirm =>
+      'Dieses Training beenden? Es wird in deinem Verlauf gespeichert.';
+
+  @override
   String get completeSet => 'Satz abschließen';
 
   @override
@@ -1236,6 +1240,9 @@ class AppLocalizationsDe extends AppLocalizations {
   String get rankUpCta => 'Los geht\'s!';
 
   @override
+  String get newPrTitle => 'NEUER REKORD!';
+
+  @override
   String rankNext(String rank) {
     return 'Als Nächstes: $rank';
   }
@@ -1355,4 +1362,61 @@ class AppLocalizationsDe extends AppLocalizations {
   String jumpedToDay(String date) {
     return 'Zu $date gesprungen';
   }
+
+  @override
+  String get shareNiceWork => 'Gut gemacht!';
+
+  @override
+  String get shareStyleNormal => 'Normal';
+
+  @override
+  String get shareStyleTransparent => 'Transparent';
+
+  @override
+  String shareWorkoutNumber(int count) {
+    return 'Training #$count';
+  }
+
+  @override
+  String get shareLiftedTotal => 'Du hast insgesamt gehoben';
+
+  @override
+  String get shareYourProgress => 'Teile deinen Fortschritt';
+
+  @override
+  String get shareAnonymous => 'Anonym';
+
+  @override
+  String get shareError =>
+      'Bild konnte nicht erstellt werden. Versuche es erneut.';
+
+  @override
+  String get shareSaved => 'In der Galerie gespeichert';
+
+  @override
+  String get shareSaveError => 'Speichern in der Galerie fehlgeschlagen';
+
+  @override
+  String get shareVolumeCaption => 'Das ist ordentlich Eisen.';
+
+  @override
+  String get shareVolumeDog => 'ein großer Hund';
+
+  @override
+  String get shareVolumeFridge => 'ein Kühlschrank';
+
+  @override
+  String get shareVolumePiano => 'ein Flügel';
+
+  @override
+  String get shareVolumeCar => 'ein Kleinwagen';
+
+  @override
+  String get shareVolumeVan => 'ein Lieferwagen';
+
+  @override
+  String get shareVolumeElephant => 'ein ausgewachsener Elefant';
+
+  @override
+  String get shareThisWeek => 'Diese Woche';
 }

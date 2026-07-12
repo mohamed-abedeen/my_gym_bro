@@ -24,6 +24,8 @@ import 'package:my_gym_bro/features/scaffold/my_gym_bro_scaffold.dart';
 import 'package:my_gym_bro/features/schedule/schedule_builder_screen.dart';
 import 'package:my_gym_bro/features/settings/settings_screen.dart';
 import 'package:my_gym_bro/features/workout/active_session/active_session_screen.dart';
+import 'package:my_gym_bro/features/workout/share/share_card_data.dart';
+import 'package:my_gym_bro/features/workout/share/share_card_screen.dart';
 import 'package:my_gym_bro/features/workout/workout_providers.dart';
 import 'package:my_gym_bro/shared/widgets/app_error_screen.dart';
 
@@ -60,6 +62,7 @@ class AppRoutes {
   static const settings = '/settings';
   static const exerciseBrowser = '/exercises';
   static const activeSession = '/session';
+  static const shareCard = '/session/share';
   static const scheduleBuilder = '/schedule/build';
   static const paywall = '/paywall';
 
@@ -278,6 +281,18 @@ final routerProvider = Provider<GoRouter>((ref) {
             state: state,
           );
         },
+      ),
+      GoRoute(
+        path: AppRoutes.shareCard,
+        // Reached only via context.pushReplacement with a ShareCardData in
+        // `extra` (from the finish flow). Deep-linked/refreshed without that
+        // data → bounce home rather than crash on a null cast.
+        redirect: (context, state) =>
+            state.extra is ShareCardData ? null : AppRoutes.home,
+        pageBuilder: (context, state) => _slideUpPage(
+          child: ShareCardScreen(data: state.extra! as ShareCardData),
+          state: state,
+        ),
       ),
       GoRoute(
         path: AppRoutes.scheduleBuilder,

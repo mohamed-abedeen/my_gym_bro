@@ -250,6 +250,28 @@ class WorkoutLogRepository {
   final ScheduleDao _scheduleDao;
   final SyncService _syncService;
 
+  /// History PR baseline for live detection: the best completed sets from
+  /// every session *except* [sessionId] (the one in progress).
+  Future<ExercisePersonalRecords> getPersonalRecordsExcluding({
+    required String exerciseId,
+    required int sessionId,
+  }) =>
+      _sessionDao.getPersonalRecords(exerciseId, excludeSessionId: sessionId);
+
+  /// Lifetime totals across every finished session — the milestone check
+  /// after finishing a workout (totals include the session just saved).
+  Future<({double totalVolume, int sessionCount})> getLifetimeTotals() async {
+    final finished =
+        (await _sessionDao.getAll()).where((s) => s.finishedAt != null);
+    double vol = 0;
+    var count = 0;
+    for (final s in finished) {
+      vol += s.totalVolume ?? 0;
+      count++;
+    }
+    return (totalVolume: vol, sessionCount: count);
+  }
+
   // ── Session lifecycle ───────────────────────────────────────────────────
 
   /// Create a new workout session and return its local ID.

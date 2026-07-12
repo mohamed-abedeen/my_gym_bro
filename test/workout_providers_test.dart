@@ -227,20 +227,22 @@ void main() {
       expect(await container.read(streakProvider.future), 3);
     });
 
-    test('daily schedule with no rest days breaks on any missed day',
+    test('schedule without rest-day entries keeps the default allowance',
         () async {
+      // The schedule builder never saves rest days (isRestDay is always
+      // false), so a no-rest schedule means unrecorded rest — a one-day gap
+      // must not reset the streak.
       when(() => sessionDao.getDistinctSessionDatesDescending(
             limit: any(named: 'limit'),
           )).thenAnswer((_) async => [
             today,
-            // One missed day, but the schedule trains every day.
             DateTime(today.year, today.month, today.day - 2),
           ]);
 
       final container = makeContainer(
         scheduleRestPattern: [false, false, false],
       );
-      expect(await container.read(streakProvider.future), 1);
+      expect(await container.read(streakProvider.future), 2);
     });
 
     test('still counts when today has no session yet', () async {

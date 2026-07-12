@@ -10,6 +10,9 @@
          app is backgrounded/suspended (Android 12+; user-revocable). The
          scheduler falls back to inexact delivery when not granted. -->
     <uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM"/>
+    <!-- gal needs legacy storage permission to write to the gallery on API ≤28;
+         API 29+ (scoped storage) needs none. -->
+    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" android:maxSdkVersion="28" />
     <!-- allowBackup off: cloud backup would copy the session token store and the
          unencrypted health-data DB off-device. -->
     <application

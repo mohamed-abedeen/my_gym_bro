@@ -2,9 +2,7 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
-import 'package:audio_session/audio_session.dart';
-import 'package:audioplayers/audioplayers.dart'
-    hide AVAudioSessionCategory, AVAudioSessionOptions;
+import 'package:audioplayers/audioplayers.dart';
 import 'package:flutter/foundation.dart';
 import 'package:my_gym_bro/core/services/notification_service.dart';
 import 'package:path_provider/path_provider.dart';
@@ -271,41 +269,46 @@ class RestTimerService {
     _onComplete?.call();
   }
 
-  /// Configures the OS audio session for ducking, plays the tone, then
-  /// deactivates the session so the OS restores background music volume.
+  /// Plays the tone with transient may-duck audio focus so background
+  /// music dips under it and resumes at full volume when we're done.
+  ///
+  /// The focus context must be set on the PLAYER itself: audioplayers
+  /// makes its own focus request when playing, and its Android default is
+  /// AUDIOFOCUS_GAIN — a permanent grab that music apps treat as "another
+  /// app took over", stopping playback for good. (The old audio_session
+  /// ducking config never applied to the player's own request.)
   Future<void> _playWithDucking() async {
     try {
-      // 1. Configure the audio session for ducking on both platforms.
-      final session = await AudioSession.instance;
-      await session.configure(AudioSessionConfiguration(
-        avAudioSessionCategory: AVAudioSessionCategory.playback,
-        avAudioSessionCategoryOptions:
-            AVAudioSessionCategoryOptions.duckOthers |
-                AVAudioSessionCategoryOptions.mixWithOthers,
-        avAudioSessionMode: AVAudioSessionMode.defaultMode,
-        androidAudioAttributes: const AndroidAudioAttributes(
-          contentType: AndroidAudioContentType.sonification,
-          usage: AndroidAudioUsage.assistanceSonification,
-        ),
-        androidAudioFocusGainType:
-            AndroidAudioFocusGainType.gainTransientMayDuck,
-      ));
-
-      // 2. Activate the session — this triggers ducking immediately.
-      await session.setActive(true);
-
-      // 3. Play the timer tone.
       final player = AudioPlayer();
+      await player.setAudioContext(AudioContext(
+        // Media stream (NOT assistanceSonification — that routes to the
+        // system stream, which is muted on vibrate/silent, e.g. Samsung)
+        // with a transient may-duck focus so music dips and resumes.
+        android: const AudioContextAndroid(
+          audioFocus: AndroidAudioFocus.gainTransientMayDuck,
+        ),
+        iOS: AudioContextIOS(
+          options: const {
+            AVAudioSessionOptions.duckOthers,
+            AVAudioSessionOptions.mixWithOthers,
+          },
+        ),
+      ));
       await player.play(AssetSource('audio/rest_complete.mp3'));
 
-      // 4. When playback finishes, deactivate the session to restore
-      //    the original background music volume, then release the player.
-      player.onPlayerComplete.listen((_) async {
-        await session.setActive(false);
+      // Dispose to abandon focus (restores music volume/playback). The
+      // delayed fallback covers onPlayerComplete never firing.
+      var released = false;
+      Future<void> release() async {
+        if (released) return;
+        released = true;
         await player.dispose();
-      });
+      }
+
+      player.onPlayerComplete.listen((_) => release());
+      unawaited(Future<void>.delayed(const Duration(seconds: 6), release));
     } on Exception catch (e) {
-      debugPrint('Audio ducking error: $e');
+      debugPrint('Rest tone playback error: $e');
     }
   }
 

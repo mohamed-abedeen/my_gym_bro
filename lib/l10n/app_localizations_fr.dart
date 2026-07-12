@@ -1107,6 +1107,10 @@ class AppLocalizationsFr extends AppLocalizations {
       'Abandonner cet entraînement ? Toute la progression sera perdue.';
 
   @override
+  String get finishWorkoutConfirm =>
+      'Terminer cet entraînement ? Il sera enregistré dans ton historique.';
+
+  @override
   String get completeSet => 'Compléter la série';
 
   @override
@@ -1236,6 +1240,9 @@ class AppLocalizationsFr extends AppLocalizations {
   String get rankUpCta => 'C\'est parti !';
 
   @override
+  String get newPrTitle => 'NOUVEAU RECORD !';
+
+  @override
   String rankNext(String rank) {
     return 'Prochain : $rank';
   }
@@ -1353,4 +1360,60 @@ class AppLocalizationsFr extends AppLocalizations {
   String jumpedToDay(String date) {
     return 'Passé au $date';
   }
+
+  @override
+  String get shareNiceWork => 'Beau travail !';
+
+  @override
+  String get shareStyleNormal => 'Normal';
+
+  @override
+  String get shareStyleTransparent => 'Transparent';
+
+  @override
+  String shareWorkoutNumber(int count) {
+    return 'Séance n° $count';
+  }
+
+  @override
+  String get shareLiftedTotal => 'Tu as soulevé au total';
+
+  @override
+  String get shareYourProgress => 'Partage ta progression';
+
+  @override
+  String get shareAnonymous => 'Anonyme';
+
+  @override
+  String get shareError => 'Impossible de créer l\'image. Réessaie.';
+
+  @override
+  String get shareSaved => 'Enregistré dans la galerie';
+
+  @override
+  String get shareSaveError => 'Impossible d\'enregistrer dans la galerie';
+
+  @override
+  String get shareVolumeCaption => 'Ça, c\'est de la fonte.';
+
+  @override
+  String get shareVolumeDog => 'un gros chien';
+
+  @override
+  String get shareVolumeFridge => 'un réfrigérateur';
+
+  @override
+  String get shareVolumePiano => 'un piano à queue';
+
+  @override
+  String get shareVolumeCar => 'une petite voiture';
+
+  @override
+  String get shareVolumeVan => 'une camionnette';
+
+  @override
+  String get shareVolumeElephant => 'un éléphant adulte';
+
+  @override
+  String get shareThisWeek => 'Cette semaine';
 }

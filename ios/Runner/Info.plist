@@ -76,6 +76,8 @@
 		<string>Take a photo for your profile picture.</string>
 		<key>NSPhotoLibraryUsageDescription</key>
 		<string>Choose a photo for your profile picture.</string>
+		<key>NSPhotoLibraryAddUsageDescription</key>
+		<string>Save your workout share cards to your photo library.</string>
 		<key>NSUserNotificationUsageDescription</key>
 		<string>We'll send you workout reminders and rest timer alerts.</string>
 		<key>UILaunchStoryboardName</key>

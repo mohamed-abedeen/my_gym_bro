@@ -485,6 +485,7 @@
   "finish": "Finish",
   "discard": "Discard",
   "discardWorkoutConfirm": "Discard this workout? All progress will be lost.",
+  "finishWorkoutConfirm": "Finish this workout? It'll be saved to your history.",
   "completeSet": "Complete set",
   "restTime": "Rest time",
   "remaining": "Remaining",
@@ -546,6 +547,7 @@
   "rankUnranked": "Unranked",
   "rankUpTitle": "RANK UP!",
   "rankUpCta": "Let's go!",
+  "newPrTitle": "NEW PR!",
   "rankNext": "Next: {rank}",
   "@rankNext": {
     "placeholders": {
@@ -602,5 +604,31 @@
         "type": "String"
       }
     }
+  },
+  "shareNiceWork": "Nice work!",
+  "shareStyleNormal": "Normal",
+  "shareStyleTransparent": "Transparent",
+  "shareWorkoutNumber": "Workout #{count}",
+  "@shareWorkoutNumber": {
+    "placeholders": {
+      "count": { "type": "int" }
+    }
+  },
+  "shareLiftedTotal": "You lifted a total of",
+  "shareYourProgress": "Share your progress",
+  "shareAnonymous": "Anonymous",
+  "shareError": "Couldn't create the image. Try again.",
+  "shareSaved": "Saved to gallery",
+  "shareSaveError": "Couldn't save to gallery",
+  "shareVolumeCaption": "That's some serious iron.",
+  "shareVolumeDog": "a big friendly dog",
+  "shareVolumeFridge": "a full-size fridge",
+  "shareVolumePiano": "a grand piano",
+  "shareVolumeCar": "a small car",
+  "shareVolumeVan": "a delivery van",
+  "shareVolumeElephant": "a full-grown elephant",
+  "shareThisWeek": "This Week",
+  "@shareThisWeek": {
+    "description": "Caption above the weekly stat grid on the Weekly Progress share card, clarifying the figures cover this week (not just the finished session)."
   }
 }
