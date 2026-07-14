@@ -1344,7 +1344,14 @@ class AppLocalizationsEs extends AppLocalizations {
   String get couldNotOpenLink => 'No se pudo abrir el enlace';
 
   @override
-  String get exportComingSoon => 'Exportación disponible pronto';
+  String get exportPreparing => 'Preparando tu exportación…';
+
+  @override
+  String get exportNothingYet =>
+      'Aún no hay nada que exportar — registra primero un entrenamiento';
+
+  @override
+  String get exportFailed => 'Error al exportar. Inténtalo de nuevo.';
 
   @override
   String get deleteAccountFailed =>

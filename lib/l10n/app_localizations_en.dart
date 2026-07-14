@@ -1339,7 +1339,13 @@ class AppLocalizationsEn extends AppLocalizations {
   String get couldNotOpenLink => 'Could not open link';
 
   @override
-  String get exportComingSoon => 'Export coming soon';
+  String get exportPreparing => 'Preparing your export…';
+
+  @override
+  String get exportNothingYet => 'Nothing to export yet — log a workout first';
+
+  @override
+  String get exportFailed => 'Export failed. Please try again.';
 
   @override
   String get deleteAccountFailed =>

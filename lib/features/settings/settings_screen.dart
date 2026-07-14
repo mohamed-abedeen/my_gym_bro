@@ -11,14 +11,17 @@ import 'package:my_gym_bro/core/database/app_database.dart';
 import 'package:my_gym_bro/core/providers/providers.dart';
 import 'package:my_gym_bro/core/router/app_router.dart';
 import 'package:my_gym_bro/core/security/secure_storage.dart';
+import 'package:my_gym_bro/core/services/crash_reporter.dart';
 import 'package:my_gym_bro/core/services/exercise_gif_cache.dart';
 import 'package:my_gym_bro/core/services/notification_service.dart';
 import 'package:my_gym_bro/core/services/notification_tone.dart';
+import 'package:my_gym_bro/core/services/units.dart';
 import 'package:my_gym_bro/features/settings/app_settings_provider.dart';
 import 'package:my_gym_bro/features/settings/skin_provider.dart';
 import 'package:my_gym_bro/features/settings/skins_modal.dart';
 import 'package:my_gym_bro/features/settings/widgets/settings_rows.dart';
 import 'package:my_gym_bro/features/settings/widgets/settings_sheets.dart';
+import 'package:my_gym_bro/features/settings/workout_export.dart';
 import 'package:my_gym_bro/features/workout/workout_providers.dart';
 import 'package:my_gym_bro/l10n/app_localizations.dart';
 import 'package:my_gym_bro/shared/constants.dart';
@@ -343,7 +346,7 @@ class SettingsScreen extends ConsumerWidget {
                     icon: Icons.ios_share_rounded,
                     iconColor: SettingsBadgeColors.blue,
                     label: l10n.exportData,
-                    onTap: () => _showSnack(context, l10n.exportComingSoon),
+                    onTap: () => _exportData(context, ref, l10n),
                   ),
                   SettingsNavRow(
                     icon: Icons.cleaning_services_rounded,
@@ -513,6 +516,42 @@ class SettingsScreen extends ConsumerWidget {
         backgroundColor: colors.cardElevated,
       ),
     );
+  }
+
+  // ── Export data ──
+
+  /// Exports the full workout history as CSV and opens the share sheet.
+  static Future<void> _exportData(
+    BuildContext context,
+    WidgetRef ref,
+    AppLocalizations l10n,
+  ) async {
+    final db = ref.read(databaseProvider);
+    final unit = ref.read(weightUnitProvider);
+    final messenger = ScaffoldMessenger.of(context);
+    // Brief loading state while the query + file write run.
+    _showSnack(context, l10n.exportPreparing);
+    try {
+      final csv = await buildWorkoutCsv(db, unit);
+      messenger.hideCurrentSnackBar();
+      if (csv == null) {
+        if (context.mounted) _showSnack(context, l10n.exportNothingYet);
+        return;
+      }
+      // Anchor for the iPad share popover.
+      Rect? origin;
+      if (context.mounted) {
+        final box = context.findRenderObject() as RenderBox?;
+        if (box != null) {
+          origin = box.localToGlobal(Offset.zero) & box.size;
+        }
+      }
+      await shareWorkoutCsv(csv, sharePositionOrigin: origin);
+    } on Exception catch (e, st) {
+      CrashReporter.recordError(e, stackTrace: st, reason: 'workout export');
+      messenger.hideCurrentSnackBar();
+      if (context.mounted) _showSnack(context, l10n.exportFailed);
+    }
   }
 
   // ── Clear cache ──

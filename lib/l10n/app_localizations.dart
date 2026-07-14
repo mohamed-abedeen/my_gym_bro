@@ -2574,11 +2574,23 @@ abstract class AppLocalizations {
   /// **'Could not open link'**
   String get couldNotOpenLink;
 
-  /// No description provided for @exportComingSoon.
+  /// No description provided for @exportPreparing.
   ///
   /// In en, this message translates to:
-  /// **'Export coming soon'**
-  String get exportComingSoon;
+  /// **'Preparing your export…'**
+  String get exportPreparing;
+
+  /// No description provided for @exportNothingYet.
+  ///
+  /// In en, this message translates to:
+  /// **'Nothing to export yet — log a workout first'**
+  String get exportNothingYet;
+
+  /// No description provided for @exportFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Export failed. Please try again.'**
+  String get exportFailed;
 
   /// No description provided for @deleteAccountFailed.
   ///
