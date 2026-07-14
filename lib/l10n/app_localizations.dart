@@ -600,6 +600,42 @@ abstract class AppLocalizations {
   /// **'7-day free trial'**
   String get trialBadge;
 
+  /// No description provided for @subscribeToContinue.
+  ///
+  /// In en, this message translates to:
+  /// **'Subscribe to continue'**
+  String get subscribeToContinue;
+
+  /// No description provided for @autoRenewDisclosure.
+  ///
+  /// In en, this message translates to:
+  /// **'Subscription auto-renews at the price and period shown unless cancelled at least 24 hours before the end of the current period. Manage or cancel anytime in your App Store or Google Play account settings.'**
+  String get autoRenewDisclosure;
+
+  /// No description provided for @termsOfUse.
+  ///
+  /// In en, this message translates to:
+  /// **'Terms of Use'**
+  String get termsOfUse;
+
+  /// No description provided for @purchaseFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Purchase failed. Please try again.'**
+  String get purchaseFailed;
+
+  /// No description provided for @restoreFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not restore purchases. Please try again.'**
+  String get restoreFailed;
+
+  /// No description provided for @noOfferingsAvailable.
+  ///
+  /// In en, this message translates to:
+  /// **'No offerings available. Try again later.'**
+  String get noOfferingsAvailable;
+
   /// No description provided for @signIn.
   ///
   /// In en, this message translates to:

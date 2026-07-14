@@ -1,4 +1,7 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:my_gym_bro/core/router/app_router.dart';
@@ -9,6 +12,7 @@ import 'package:my_gym_bro/l10n/app_localizations.dart';
 import 'package:my_gym_bro/shared/constants.dart';
 import 'package:my_gym_bro/shared/responsive.dart';
 import 'package:purchases_flutter/purchases_flutter.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Paywall Screen
@@ -26,9 +30,50 @@ class _PaywallScreenState extends ConsumerState<PaywallScreen> {
   bool _loading = false;
   String? _error;
 
+  // Store-localized prices from RevenueCat offerings (Apple 3.1.2). Null
+  // until fetched — the plan cards fall back to static placeholder strings.
+  String? _monthlyPrice;
+  String? _yearlyPrice;
+
   // RevenueCat product identifiers — update to match your dashboard
   static const _monthlyId = 'mgb_monthly';
   static const _yearlyId = 'mgb_yearly';
+
+  @override
+  void initState() {
+    super.initState();
+    unawaited(_loadPrices());
+  }
+
+  /// Fetch store prices for the plan cards. RevenueCat is not configured in
+  /// dev (placeholder keys skip `Purchases.configure`), so any failure just
+  /// keeps the static fallback prices — the screen must always render.
+  Future<void> _loadPrices() async {
+    try {
+      if (!await Purchases.isConfigured) return;
+      final current = (await Purchases.getOfferings()).current;
+      if (current == null || !mounted) return;
+      setState(() {
+        _monthlyPrice = _priceFor(current, _monthlyId, current.monthly);
+        _yearlyPrice = _priceFor(current, _yearlyId, current.annual);
+      });
+    } on Exception {
+      // Offerings unavailable — keep fallbacks.
+    }
+  }
+
+  static String? _priceFor(
+    Offering offering,
+    String productId,
+    Package? fallback,
+  ) {
+    for (final p in offering.availablePackages) {
+      if (p.storeProduct.identifier == productId) {
+        return p.storeProduct.priceString;
+      }
+    }
+    return fallback?.storeProduct.priceString;
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -76,29 +121,31 @@ class _PaywallScreenState extends ConsumerState<PaywallScreen> {
                   children: [
                     SizedBox(height: 8.h),
 
-                    // ── Badge
-                    Container(
-                      padding: EdgeInsets.symmetric(
-                          horizontal: 14.w, vertical: 6.h),
-                      decoration: BoxDecoration(
-                        color: colors.accent,
-                        borderRadius: BorderRadius.circular(AppRadius.button),
-                      ),
-                      child: Text(
-                        l10n.trialBadge,
-                        style: TextStyle(
-                          fontSize: 13.sp,
-                          fontWeight: FontWeight.w700,
-                          color: colors.black,
+                    // ── Badge — trial copy only while a trial is available
+                    if (!locked)
+                      Container(
+                        padding: EdgeInsets.symmetric(
+                            horizontal: 14.w, vertical: 6.h),
+                        decoration: BoxDecoration(
+                          color: colors.accent,
+                          borderRadius:
+                              BorderRadius.circular(AppRadius.button),
+                        ),
+                        child: Text(
+                          l10n.trialBadge,
+                          style: TextStyle(
+                            fontSize: 13.sp,
+                            fontWeight: FontWeight.w700,
+                            color: colors.black,
+                          ),
                         ),
                       ),
-                    ),
 
                     SizedBox(height: 20.h),
 
-                    // ── Headline
+                    // ── Headline — trial copy vs. expired copy
                     Text(
-                      l10n.startTrial,
+                      locked ? l10n.subscribeToContinue : l10n.startTrial,
                       textAlign: TextAlign.center,
                       style: TextStyle(
                         fontSize: 28.sp,
@@ -149,7 +196,7 @@ class _PaywallScreenState extends ConsumerState<PaywallScreen> {
                       children: [
                         _PlanCard(
                           label: l10n.monthlyPlan,
-                          sublabel: r'$9.99 / mo',
+                          sublabel: _monthlyPrice ?? r'$9.99 / mo',
                           selected: _selected == _Plan.monthly,
                           onTap: () =>
                               setState(() => _selected = _Plan.monthly),
@@ -157,7 +204,7 @@ class _PaywallScreenState extends ConsumerState<PaywallScreen> {
                         SizedBox(width: 12.w),
                         _PlanCard(
                           label: l10n.yearlyPlan,
-                          sublabel: r'$49.99 / yr',
+                          sublabel: _yearlyPrice ?? r'$49.99 / yr',
                           badge: l10n.bestValue,
                           selected: _selected == _Plan.yearly,
                           onTap: () =>
@@ -211,23 +258,56 @@ class _PaywallScreenState extends ConsumerState<PaywallScreen> {
                                   color: colors.black,
                                 ),
                               )
-                            : Text(l10n.startTrial),
+                            : Text(locked
+                                ? l10n.subscribeToContinue
+                                : l10n.startTrial),
                       ),
                     ),
 
                     SizedBox(height: 16.h),
 
-                    // ── Cancel anytime disclaimer
+                    // ── Cancel anytime disclaimer — trial copy only
+                    if (!locked) ...[
+                      Text(
+                        l10n.cancelAnytime,
+                        textAlign: TextAlign.center,
+                        style: TextStyle(
+                          fontSize: 12.sp,
+                          color: colors.textSecondary,
+                        ),
+                      ),
+                      SizedBox(height: 8.h),
+                    ],
+
+                    // ── Auto-renewal disclosure (Apple 3.1.2)
                     Text(
-                      l10n.cancelAnytime,
+                      l10n.autoRenewDisclosure,
                       textAlign: TextAlign.center,
                       style: TextStyle(
-                        fontSize: 12.sp,
+                        fontSize: 11.sp,
                         color: colors.textSecondary,
                       ),
                     ),
 
-                    SizedBox(height: 12.h),
+                    SizedBox(height: 4.h),
+
+                    // ── Terms of Use / Privacy Policy links
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        _footerLink(
+                            l10n.termsOfUse, 'https://mygymbro.app/terms'),
+                        Text(
+                          '·',
+                          style: TextStyle(
+                            fontSize: 12.sp,
+                            color: colors.textSecondary,
+                          ),
+                        ),
+                        _footerLink(l10n.privacyPolicy,
+                            'https://mygymbro.app/privacy'),
+                      ],
+                    ),
 
                     // ── Restore purchases
                     TextButton(
@@ -266,6 +346,7 @@ class _PaywallScreenState extends ConsumerState<PaywallScreen> {
   }
 
   Future<void> _purchase() async {
+    final l10n = AppLocalizations.of(context);
     setState(() {
       _loading = true;
       _error = null;
@@ -274,7 +355,7 @@ class _PaywallScreenState extends ConsumerState<PaywallScreen> {
       final offerings = await Purchases.getOfferings();
       final current = offerings.current;
       if (current == null) {
-        setState(() => _error = 'No offerings available. Try again later.');
+        setState(() => _error = l10n.noOfferingsAvailable);
         return;
       }
 
@@ -292,15 +373,16 @@ class _PaywallScreenState extends ConsumerState<PaywallScreen> {
       // (`subscriptionLockedProvider`) releases.
       await SubscriptionSyncService.syncNow(ref.read(userProfileDaoProvider));
       if (mounted) _dismiss();
-    } on PurchasesErrorCode catch (e) {
-      if (e == PurchasesErrorCode.purchaseCancelledError) {
-        setState(() => _error = null);
-      } else {
-        setState(() => _error = 'Purchase failed. Please try again.');
+    } on PlatformException catch (e) {
+      // purchases_flutter surfaces errors as PlatformException — map to a
+      // PurchasesErrorCode; user cancelling the sheet is not an error.
+      if (PurchasesErrorHelper.getErrorCode(e) !=
+          PurchasesErrorCode.purchaseCancelledError) {
+        setState(() => _error = l10n.purchaseFailed);
         CrashReporter.recordError(e, reason: 'Paywall purchase failed');
       }
     } on Exception catch (e) {
-      setState(() => _error = 'Purchase failed. Please try again.');
+      setState(() => _error = l10n.purchaseFailed);
       CrashReporter.recordError(e, reason: 'Paywall purchase exception');
     } finally {
       if (mounted) setState(() => _loading = false);
@@ -308,6 +390,7 @@ class _PaywallScreenState extends ConsumerState<PaywallScreen> {
   }
 
   Future<void> _restore() async {
+    final l10n = AppLocalizations.of(context);
     setState(() {
       _loading = true;
       _error = null;
@@ -316,11 +399,50 @@ class _PaywallScreenState extends ConsumerState<PaywallScreen> {
       await Purchases.restorePurchases();
       await SubscriptionSyncService.syncNow(ref.read(userProfileDaoProvider));
       if (mounted) _dismiss();
+    } on PlatformException catch (e) {
+      if (PurchasesErrorHelper.getErrorCode(e) !=
+          PurchasesErrorCode.purchaseCancelledError) {
+        setState(() => _error = l10n.restoreFailed);
+        CrashReporter.recordError(e, reason: 'Paywall restore failed');
+      }
     } on Exception catch (e) {
-      setState(() => _error = 'Could not restore purchases. Please try again.');
+      setState(() => _error = l10n.restoreFailed);
       CrashReporter.recordError(e, reason: 'Paywall restore failed');
     } finally {
       if (mounted) setState(() => _loading = false);
+    }
+  }
+
+  Widget _footerLink(String label, String url) {
+    final colors = AppColors.of(context);
+    return TextButton(
+      onPressed: () => _openLink(url),
+      child: Text(
+        label,
+        style: TextStyle(
+          fontSize: 12.sp,
+          color: colors.textSecondary,
+          decoration: TextDecoration.underline,
+        ),
+      ),
+    );
+  }
+
+  /// Same URLs + launch mechanism as the settings screen.
+  Future<void> _openLink(String url) async {
+    final l10n = AppLocalizations.of(context);
+    var launched = false;
+    try {
+      launched = await launchUrl(
+        Uri.parse(url),
+        mode: LaunchMode.externalApplication,
+      );
+    } on PlatformException {
+      launched = false;
+    }
+    if (!launched && mounted) {
+      ScaffoldMessenger.of(context)
+          .showSnackBar(SnackBar(content: Text(l10n.couldNotOpenLink)));
     }
   }
 }

@@ -277,6 +277,27 @@ class AppLocalizationsFr extends AppLocalizations {
   String get trialBadge => 'Essai gratuit 7 jours';
 
   @override
+  String get subscribeToContinue => 'Abonnez-vous pour continuer';
+
+  @override
+  String get autoRenewDisclosure =>
+      'L\'abonnement se renouvelle automatiquement au prix et pour la période indiqués, sauf annulation au moins 24 heures avant la fin de la période en cours. Gérez ou annulez à tout moment dans les réglages de votre compte App Store ou Google Play.';
+
+  @override
+  String get termsOfUse => 'Conditions d\'utilisation';
+
+  @override
+  String get purchaseFailed => 'Échec de l\'achat. Veuillez réessayer.';
+
+  @override
+  String get restoreFailed =>
+      'Impossible de restaurer les achats. Veuillez réessayer.';
+
+  @override
+  String get noOfferingsAvailable =>
+      'Aucune offre disponible. Réessayez plus tard.';
+
+  @override
   String get signIn => 'Se connecter';
 
   @override
