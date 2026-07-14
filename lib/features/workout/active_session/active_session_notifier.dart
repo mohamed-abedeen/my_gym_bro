@@ -5,6 +5,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:my_gym_bro/core/providers/providers.dart';
 import 'package:my_gym_bro/core/security/input_sanitiser.dart';
+import 'package:my_gym_bro/core/services/crash_reporter.dart';
 import 'package:my_gym_bro/core/services/exercise_repository.dart';
 import 'package:my_gym_bro/core/services/live_activity_service.dart';
 import 'package:my_gym_bro/core/services/notification_image_cache.dart';
@@ -305,6 +306,18 @@ class ActiveSessionNotifier extends StateNotifier<ActiveSessionState> {
   /// notification progress bar every second.
   StreamSubscription<int>? _restTickSub;
 
+  /// Cancel the rest-tick subscription fire-and-forget — nothing downstream
+  /// depends on its completion, but a failure shouldn't leak to the zone
+  /// handler unlogged.
+  void _cancelRestTick() {
+    final cancelled = _restTickSub?.cancel();
+    _restTickSub = null;
+    unawaited(cancelled?.catchError((Object e, StackTrace s) {
+      CrashReporter.recordError(e,
+          stackTrace: s, reason: 'Rest tick cancel failed');
+    }));
+  }
+
   /// Per-session cache so we only hit the DB once per exercise.
   final Map<String, List<LastLoggedSetInfo>> _lastLoggedCache = {};
 
@@ -420,7 +433,7 @@ class ActiveSessionNotifier extends StateNotifier<ActiveSessionState> {
     );
 
     // Subscribe to the tick stream so the notification updates every second.
-    unawaited(_restTickSub?.cancel());
+    _cancelRestTick();
     _restTickSub =
         restTimerService.stream?.listen(_updateRestTimerNotification);
 
@@ -1089,7 +1102,7 @@ class ActiveSessionNotifier extends StateNotifier<ActiveSessionState> {
     ));
 
     // Subscribe to the tick stream so the notification updates every second.
-    unawaited(_restTickSub?.cancel());
+    _cancelRestTick();
     _restTickSub = restTimerService.stream?.listen(_updateRestTimerNotification);
   }
 
@@ -1179,8 +1192,7 @@ class ActiveSessionNotifier extends StateNotifier<ActiveSessionState> {
   }
 
   void _onRestComplete() {
-    unawaited(_restTickSub?.cancel());
-    _restTickSub = null;
+    _cancelRestTick();
     state = state.copyWith(showRestTimer: false);
     // Switch the notification back to the "active set" state.
     _updateActiveSetNotification();
@@ -1240,8 +1252,7 @@ class ActiveSessionNotifier extends StateNotifier<ActiveSessionState> {
   }
 
   void hideRestTimer() {
-    unawaited(_restTickSub?.cancel());
-    _restTickSub = null;
+    _cancelRestTick();
     restTimerService.cancel();
     state = state.copyWith(showRestTimer: false);
     // Switch the notification back to the "active set" state.
@@ -1296,8 +1307,7 @@ class ActiveSessionNotifier extends StateNotifier<ActiveSessionState> {
       totalVolume: state.totalVolume,
     ));
 
-    unawaited(_restTickSub?.cancel());
-    _restTickSub = null;
+    _cancelRestTick();
     restTimerService.dispose();
 
     // Remove the persistent workout-in-progress notification.
@@ -1390,8 +1400,7 @@ class ActiveSessionNotifier extends StateNotifier<ActiveSessionState> {
   /// Discard the session. Deletes the orphan DB row + all its session
   /// exercises and sets so nothing is left behind for history/stats.
   Future<void> discardSession() async {
-    unawaited(_restTickSub?.cancel());
-    _restTickSub = null;
+    _cancelRestTick();
     restTimerService.dispose();
     _lastLoggedCache.clear();
     final sessionId = state.sessionId;
@@ -1559,7 +1568,7 @@ class ActiveSessionNotifier extends StateNotifier<ActiveSessionState> {
 
   @override
   void dispose() {
-    unawaited(_restTickSub?.cancel());
+    _cancelRestTick();
     restTimerService.dispose();
     super.dispose();
   }

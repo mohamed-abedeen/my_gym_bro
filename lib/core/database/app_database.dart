@@ -321,8 +321,9 @@ class AppDatabase extends _$AppDatabase {
         // WorkoutX API. The old bundled rows use a different id scheme
         // ("2gPfomN") than WorkoutX ("0025"), so wipe the seeded catalogue;
         // it re-caches on demand from the API as the user browses/logs.
-        // User-created custom exercises (is_custom = 1) are preserved.
-        await customStatement('DELETE FROM exercises WHERE is_custom = 0');
+        // User-created custom exercises (is_custom = 1) are preserved, as
+        // are rows the user's history/routines reference (see helper).
+        await _deleteUnreferencedCatalogue();
       }
       if (from < 15) {
         // Social graph — local cache of the current user's outgoing follows.
@@ -335,8 +336,9 @@ class AppDatabase extends _$AppDatabase {
         // OSS v1 API (testing until the ExerciseDB.io license is bought).
         // WorkoutX ids ("0025") don't exist in the ExerciseDB scheme
         // ("2gPfomN"), so wipe the cached catalogue; it re-syncs from the
-        // API on the next browse. Custom exercises are preserved.
-        await customStatement('DELETE FROM exercises WHERE is_custom = 0');
+        // API on the next browse. Custom exercises are preserved, as are
+        // rows the user's history/routines reference (see helper).
+        await _deleteUnreferencedCatalogue();
       }
     },
   );
@@ -354,6 +356,22 @@ class AppDatabase extends _$AppDatabase {
     if (await _hasColumn(table, column)) return;
     await customStatement('ALTER TABLE $table ADD COLUMN $column $definition');
   }
+
+  /// Wipe cached (non-custom) catalogue rows on an exercise-source switch —
+  /// but keep any row the user's workout history (`session_exercises`) or
+  /// routines (`scheduled_exercises`) references, so their names/details
+  /// keep rendering instead of degrading to a generic "Exercise" until the
+  /// rate-limited API re-caches them. The new source's sync upserts by
+  /// `exercise_id` (see `ExerciseDao.cacheAll`), so kept rows whose id
+  /// exists in the new scheme are refreshed in place; a wholesale delete
+  /// of the rest is still needed because off-scheme leftovers would
+  /// otherwise pollute browse/search and inflate the sync-progress count.
+  /// Plain DELETE — naturally idempotent, safe to re-run.
+  Future<void> _deleteUnreferencedCatalogue() => customStatement(
+        'DELETE FROM exercises WHERE is_custom = 0 '
+        'AND exercise_id NOT IN (SELECT exercise_id FROM session_exercises) '
+        'AND exercise_id NOT IN (SELECT exercise_id FROM scheduled_exercises)',
+      );
 
   /// True if [table] exists. Keeps `createTable` migrations idempotent for a
   /// database that already created the table at an inconsistent version.

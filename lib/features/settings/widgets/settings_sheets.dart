@@ -6,6 +6,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:my_gym_bro/core/database/app_database.dart';
 import 'package:my_gym_bro/core/providers/providers.dart';
+import 'package:my_gym_bro/core/security/safe_logger.dart';
 import 'package:my_gym_bro/core/services/notification_tone.dart';
 import 'package:my_gym_bro/features/settings/app_settings_provider.dart';
 import 'package:my_gym_bro/features/workout/workout_providers.dart';
@@ -250,7 +251,10 @@ class RestTimeSheet extends ConsumerWidget {
           final selected = current == seconds;
           return GestureDetector(
             onTap: () async {
-              unawaited(HapticFeedback.selectionClick());
+              // Fire-and-forget: never block the tap on a haptic; a failure
+              // is inconsequential, so just log it in debug.
+              unawaited(HapticFeedback.selectionClick().catchError(
+                  (Object e) => SafeLogger.log('Haptic failed: $e')));
               final dao = ref.read(userProfileDaoProvider);
               if (profile == null) {
                 await dao.upsert(

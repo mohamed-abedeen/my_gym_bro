@@ -21,9 +21,13 @@ class ExerciseGifCache {
   static final CacheManager instance = CacheManager(
     Config(
       key,
-      // ~80 GIFs ≈ a generous program + recents; well under the old 200.
-      maxNrOfCacheObjects: 80,
-      stalePeriod: const Duration(days: 14),
+      // ~300 GIFs covers a 5-7 routine program (~50-100 exercises) plus
+      // generous browsing recents; at ~1.25 MB/GIF that's a ~375 MB worst
+      // case, only reached if the user actually views 300 distinct GIFs.
+      // 90 days keeps a program's media alive through long offline
+      // stretches (the old 14 days evicted it after a two-week gap).
+      maxNrOfCacheObjects: 300,
+      stalePeriod: const Duration(days: 90),
     ),
   );
 }
