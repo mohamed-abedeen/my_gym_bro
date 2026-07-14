@@ -1,17 +1,9 @@
 /// Models for the community feed.
 library;
 
-/// A single comment preview shown below a post.
-class CommunityComment {
-  const CommunityComment(this.name, this.text);
-
-  final String name;
-  final String text;
-}
-
 /// A community post. Carries real backend fields (id, counts, like state,
-/// author avatar, image, timestamp); the [likes]/[comments]/[bookmarks]
-/// string getters keep the existing card UI unchanged.
+/// author avatar, image, timestamp); the [likes]/[bookmarks] string getters
+/// keep the existing card UI unchanged.
 class CommunityPost {
   const CommunityPost({
     required this.authorName,
@@ -23,7 +15,6 @@ class CommunityPost {
     this.commentCount = 0,
     this.likedByMe = false,
     this.createdAt,
-    this.topComments = const [],
   });
 
   final String id;
@@ -32,14 +23,15 @@ class CommunityPost {
   final String? imageUrl;
   final String description;
   final int likeCount;
+
+  /// Backed by the real `post_comments` table but not shown anywhere yet —
+  /// the comment UI returns when comment read/write ships.
   final int commentCount;
   final bool likedByMe;
   final DateTime? createdAt;
-  final List<CommunityComment> topComments;
 
-  /// Compact display strings used by the post card.
+  /// Compact display string used by the post card.
   String get likes => _compact(likeCount);
-  String get comments => _compact(commentCount);
 
   /// Bookmarks aren't backed yet — kept so the card layout is unchanged.
   String get bookmarks => '0';

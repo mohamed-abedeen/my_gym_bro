@@ -933,7 +933,7 @@ abstract class AppLocalizations {
   /// No description provided for @communityError.
   ///
   /// In en, this message translates to:
-  /// **'Couldn\'t load the feed. Try again.'**
+  /// **'Couldn\'t load the feed. Pull down to retry.'**
   String get communityError;
 
   /// No description provided for @post.
@@ -1913,6 +1913,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'No sessions yet'**
   String get noSessionsYet;
+
+  /// No description provided for @noPostsYet.
+  ///
+  /// In en, this message translates to:
+  /// **'No posts yet'**
+  String get noPostsYet;
 
   /// No description provided for @retry.
   ///

@@ -196,7 +196,7 @@
   "loadingExercises": "Loading exercise library...",
   "whatOnYourMind": "What's on your mind?",
   "communityEmpty": "No posts yet. Be the first to share!",
-  "communityError": "Couldn't load the feed. Try again.",
+  "communityError": "Couldn't load the feed. Pull down to retry.",
   "post": "Post",
   "skip": "Skip",
   "cancel": "Cancel",
@@ -425,6 +425,7 @@
   "posts": "Posts",
   "lastSession": "Last Session",
   "noSessionsYet": "No sessions yet",
+  "noPostsYet": "No posts yet",
   "retry": "Retry",
   "leaderboard": "Leaderboard",
 

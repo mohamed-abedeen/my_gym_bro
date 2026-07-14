@@ -8,7 +8,6 @@ import 'package:image_picker/image_picker.dart';
 import 'package:intl/intl.dart';
 import 'package:my_gym_bro/core/services/exercise_gif_cache.dart';
 import 'package:my_gym_bro/core/services/units.dart';
-import 'package:my_gym_bro/features/community/community_mock_data.dart';
 import 'package:my_gym_bro/features/profile/profile_providers.dart';
 import 'package:my_gym_bro/features/settings/skin_provider.dart';
 import 'package:my_gym_bro/features/social/follow_providers.dart';
@@ -169,24 +168,21 @@ class _ProfileBody extends ConsumerWidget {
                 childCount: sessions.length,
               ),
             ),
-        ] else if (tabIndex == 1) ...[
-          // Achievement tab — 3-column grid
-          SliverPadding(
-            padding: EdgeInsets.symmetric(
-              horizontal: AppSizes.contentPaddingH.w,
-            ),
-            sliver: const _AchievementGrid(),
-          ),
         ] else ...[
-          // Posts tab — user's posts
-          SliverList(
-            delegate: SliverChildBuilderDelegate(
-              (context, index) => _ProfilePostCard(
-                post: CommunityMockData.posts[index],
-                displayName: displayName,
-                avatarUrl: avatarUrl,
+          // Posts tab — no own-posts query exists yet, so show an honest
+          // empty state instead of fabricated content.
+          SliverToBoxAdapter(
+            child: Padding(
+              padding: EdgeInsets.only(top: 80.h),
+              child: Center(
+                child: Text(
+                  l10n.noPostsYet,
+                  style: TextStyle(
+                    color: colors.textSecondary,
+                    fontSize: 14.sp,
+                  ),
+                ),
               ),
-              childCount: CommunityMockData.posts.length,
             ),
           ),
         ],
@@ -572,7 +568,9 @@ class _TabPills extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final colors = AppColors.of(context);
-    final tabs = [l10n.lastSession, l10n.achievement, l10n.posts];
+    // Achievement tab removed: no queryable earned-achievements store exists
+    // yet (achievements are notification-only) — no placeholder cards.
+    final tabs = [l10n.lastSession, l10n.posts];
 
     return Row(
       children: List.generate(tabs.length, (i) {
@@ -1217,271 +1215,6 @@ class _StatCell extends StatelessWidget {
           ),
         ],
       ],
-    );
-  }
-}
-
-// ═══════════════════════════════════════════════════════════════════════════
-// Achievement Grid — 3-column grid of rounded cards, Figma spec:
-// card 115x187, radius 23, bg #1C1C1E, label 11sp bold white centered below
-// ═══════════════════════════════════════════════════════════════════════════
-
-class _AchievementGrid extends StatelessWidget {
-  const _AchievementGrid();
-
-  @override
-  Widget build(BuildContext context) {
-    final colors = AppColors.of(context);
-
-    // Placeholder count — will be replaced with real achievement data
-    const itemCount = 9;
-
-    return SliverGrid(
-      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-        crossAxisCount: 3,
-        mainAxisSpacing: 12.h,
-        crossAxisSpacing: 12.w,
-        // Card (187) + gap (8) + label (~16) = ~211 total height per cell
-        childAspectRatio: 115 / 211,
-      ),
-      delegate: SliverChildBuilderDelegate(
-        (context, index) => Column(
-          children: [
-            // Achievement card
-            Expanded(
-              child: Container(
-                width: double.infinity,
-                decoration: ShapeDecoration(
-                  color: colors.panelBackground,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(23.r),
-                  ),
-                ),
-              ),
-            ),
-            SizedBox(height: 8.h),
-            // Label
-            Text(
-              AppLocalizations.of(context).achievement,
-              textAlign: TextAlign.center,
-              style: TextStyle(
-                color: colors.textPrimary,
-                fontSize: 11.sp,
-                fontWeight: FontWeight.w700,
-              ),
-            ),
-          ],
-        ),
-        childCount: itemCount,
-      ),
-    );
-  }
-}
-
-// ═══════════════════════════════════════════════════════════════════════════
-// Profile Post Card — Figma Posts tab design
-// Author row (avatar + name + menu) → full-width image → interaction bar →
-// description text. No comments section in profile view.
-// ═══════════════════════════════════════════════════════════════════════════
-
-class _ProfilePostCard extends StatelessWidget {
-  const _ProfilePostCard({
-    required this.post,
-    required this.displayName,
-    required this.avatarUrl,
-  });
-
-  final CommunityPost post;
-  final String displayName;
-  final String? avatarUrl;
-
-  @override
-  Widget build(BuildContext context) {
-    final colors = AppColors.of(context);
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        // ── Author row ──
-        Padding(
-          padding: EdgeInsets.symmetric(horizontal: 22.w, vertical: 10.h),
-          child: Row(
-            children: [
-              UserAvatar(size: 35, url: avatarUrl, iconColor: colors.textSecondary),
-              SizedBox(width: 6.w),
-              Text(
-                displayName,
-                style: TextStyle(
-                  fontSize: 10.sp,
-                  fontWeight: FontWeight.w700,
-                  color: colors.textPrimary,
-                ),
-              ),
-              const Spacer(),
-              Icon(Icons.more_vert_rounded, color: colors.textPrimary, size: 18.sp),
-            ],
-          ),
-        ),
-
-        // ── Post image ──
-        Container(
-          width: double.infinity,
-          height: 297.h,
-          color: colors.avatarPlaceholderDarker,
-          child: Container(
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-                colors: [
-                  colors.avatarPlaceholderDarker,
-                  colors.avatarPlaceholderDark,
-                  colors.avatarPlaceholderDarker,
-                ],
-              ),
-            ),
-            child: Center(
-              child: Icon(
-                Icons.fitness_center,
-                color: colors.textSecondary,
-                size: 48.sp,
-              ),
-            ),
-          ),
-        ),
-
-        SizedBox(height: 10.h),
-
-        // ── Interaction bar ──
-        Padding(
-          padding: EdgeInsets.symmetric(horizontal: 22.w),
-          child: Row(
-            children: [
-              // Engagement pill (likes + comments + bookmarks)
-              _InteractionPill(
-                width: 186.w,
-                height: 29.h,
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Image.asset(
-                      'assets/images/bicep.png',
-                      width: 20.w,
-                      height: 20.h,
-                    ),
-                    SizedBox(width: 4.w),
-                    Text(
-                      post.likes,
-                      style: TextStyle(
-                        fontSize: 10.sp,
-                        fontWeight: FontWeight.w700,
-                        color: colors.textPrimary,
-                      ),
-                    ),
-                    SizedBox(width: 14.w),
-                    Icon(
-                      Icons.chat_bubble_outline_rounded,
-                      color: colors.textPrimary,
-                      size: 14.sp,
-                    ),
-                    SizedBox(width: 4.w),
-                    Text(
-                      post.comments,
-                      style: TextStyle(
-                        fontSize: 10.sp,
-                        fontWeight: FontWeight.w700,
-                        color: colors.textPrimary,
-                      ),
-                    ),
-                    SizedBox(width: 14.w),
-                    Icon(
-                      Icons.bookmark_border_rounded,
-                      color: colors.textPrimary,
-                      size: 14.sp,
-                    ),
-                    SizedBox(width: 4.w),
-                    Text(
-                      post.bookmarks,
-                      style: TextStyle(
-                        fontSize: 10.sp,
-                        fontWeight: FontWeight.w700,
-                        color: colors.textPrimary,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              const Spacer(),
-              // Share button
-              _InteractionPill(
-                width: 30.w,
-                height: 29.h,
-                child: Icon(
-                  Icons.send_rounded,
-                  color: colors.textPrimary,
-                  size: 14.sp,
-                ),
-              ),
-            ],
-          ),
-        ),
-
-        SizedBox(height: 12.h),
-
-        // ── Description ──
-        Padding(
-          padding: EdgeInsets.symmetric(horizontal: 24.w),
-          child: Text(
-            post.description,
-            style: TextStyle(
-              fontSize: 10.sp,
-              fontWeight: FontWeight.w500,
-              height: 1.2,
-              color: colors.textPrimary,
-            ),
-            maxLines: 3,
-            overflow: TextOverflow.ellipsis,
-          ),
-        ),
-
-        SizedBox(height: 20.h),
-      ],
-    );
-  }
-}
-
-// ═══════════════════════════════════════════════════════════════════════════
-// Interaction Pill — glass-style pill for post engagement bar
-// ═══════════════════════════════════════════════════════════════════════════
-
-class _InteractionPill extends StatelessWidget {
-  const _InteractionPill({
-    required this.width,
-    required this.height,
-    required this.child,
-  });
-
-  final double width;
-  final double height;
-  final Widget child;
-
-  @override
-  Widget build(BuildContext context) {
-    final colors = AppColors.of(context);
-    return ClipRRect(
-      borderRadius: BorderRadius.circular(296.r),
-      child: BackdropFilter(
-        filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
-        child: Container(
-          width: width,
-          height: height,
-          decoration: BoxDecoration(
-            color: colors.panelBackground,
-            borderRadius: BorderRadius.circular(296.r),
-          ),
-          child: Center(child: child),
-        ),
-      ),
     );
   }
 }

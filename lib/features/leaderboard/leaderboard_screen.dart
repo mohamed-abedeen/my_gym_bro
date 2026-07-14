@@ -14,9 +14,8 @@ import 'package:my_gym_bro/shared/widgets/user_avatar.dart';
 ///  • Leaderboard tab — Current League card, scope (Rivals/Global/Friends),
 ///    and a server-ranked list with tier colours (weekly board via the
 ///    `leaderboard_*` RPCs; offline/empty states handled).
-///  • Challenges tab — vertically stacked challenge cards with hero photo,
-///    progress bar, rank, and an "End in Nd" badge (mock until the
-///    challenges backend ships).
+///  • Challenges tab — empty state only until the challenges backend ships
+///    (the Figma card UI lives in git history; no mock data is rendered).
 class LeaderboardScreen extends ConsumerStatefulWidget {
   const LeaderboardScreen({super.key});
 
@@ -59,20 +58,6 @@ _Tier _tierForPosition(int position, int total) {
   return _Tier.workHarder;
 }
 
-class _Challenge {
-  const _Challenge({
-    required this.title,
-    required this.percent,
-    required this.rank,
-    required this.daysLeft,
-  });
-
-  final String title;
-  final int percent;
-  final int rank;
-  final int daysLeft;
-}
-
 class _LeaderboardScreenState extends ConsumerState<LeaderboardScreen> {
   _Tab _tab = _Tab.leaderboard;
   LeaderboardScope _scope = LeaderboardScope.rivals;
@@ -87,12 +72,6 @@ class _LeaderboardScreenState extends ConsumerState<LeaderboardScreen> {
       if (mounted) ref.invalidate(leaderboardProvider);
     });
   }
-
-  static const _challenges = <_Challenge>[
-    _Challenge(title: '1000 push up', percent: 30, rank: 20, daysLeft: 25),
-    _Challenge(title: '1000 push up', percent: 30, rank: 20, daysLeft: 25),
-    _Challenge(title: '1000 push up', percent: 30, rank: 20, daysLeft: 25),
-  ];
 
   @override
   Widget build(BuildContext context) {
@@ -142,10 +121,7 @@ class _LeaderboardScreenState extends ConsumerState<LeaderboardScreen> {
                           onScope: (s) => setState(() => _scope = s),
                           l10n: l10n,
                         )
-                      : _ChallengesTab(
-                          challenges: _challenges,
-                          l10n: l10n,
-                        ),
+                      : _ChallengesTab(l10n: l10n),
                 ),
               ],
             ),
@@ -807,214 +783,25 @@ class _AvatarMedal extends StatelessWidget {
 
 // ─────────────────────────────────────────────
 // C H A L L E N G E S   T A B
-// Stack of hero cards with progress + countdown
 // ─────────────────────────────────────────────
 
 class _ChallengesTab extends StatelessWidget {
-  const _ChallengesTab({required this.challenges, required this.l10n});
+  const _ChallengesTab({required this.l10n});
 
-  final List<_Challenge> challenges;
   final AppLocalizations l10n;
 
   @override
   Widget build(BuildContext context) {
-    if (challenges.isEmpty) {
-      final colors = AppColors.of(context);
-      return Center(
-        child: Text(
-          l10n.noChallengesYet,
-          style: TextStyle(color: colors.textSecondary, fontSize: 14.sp),
-        ),
-      );
-    }
-    return ListView.separated(
-      padding: EdgeInsets.fromLTRB(9.w, 0, 9.w, 24.h),
-      itemCount: challenges.length,
-      separatorBuilder: (_, __) => SizedBox(height: 12.h),
-      itemBuilder: (context, i) =>
-          _ChallengeCard(challenge: challenges[i], l10n: l10n),
-    );
-  }
-}
-
-class _ChallengeCard extends StatelessWidget {
-  const _ChallengeCard({required this.challenge, required this.l10n});
-
-  final _Challenge challenge;
-  final AppLocalizations l10n;
-
-  @override
-  Widget build(BuildContext context) {
+    // ponytail: no challenges backend exists — render only the honest empty
+    // state. The mock cards (fake title/progress/rank, hardcoded "End in Nd"
+    // countdown, placeholder hero) were removed pre-launch; restore the card
+    // UI from git history once real challenge data ships.
     final colors = AppColors.of(context);
-
-    return Container(
-      height: 281.h,
-      decoration: BoxDecoration(
-        color: colors.panelBackground,
-        borderRadius: BorderRadius.circular(25.r),
+    return Center(
+      child: Text(
+        l10n.noChallengesYet,
+        style: TextStyle(color: colors.textSecondary, fontSize: 14.sp),
       ),
-      clipBehavior: Clip.antiAlias,
-      child: Stack(
-        children: [
-          // Hero image (push-up photo placeholder — falls back to a gradient).
-          Positioned.fill(
-            child: _ChallengeHero(colors: colors),
-          ),
-          // Gradient overlay for text legibility
-          Positioned.fill(
-            child: DecoratedBox(
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.topCenter,
-                  end: Alignment.bottomCenter,
-                  stops: const [0, 0.21, 0.73],
-                  colors: [
-                    colors.panelBackground.withValues(alpha: 0),
-                    colors.panelBackground.withValues(alpha: 0),
-                    colors.panelBackground,
-                  ],
-                ),
-              ),
-            ),
-          ),
-          // "End in 25d" pill (top-right)
-          Positioned(
-            top: 12.h,
-            right: 14.w,
-            child: Container(
-              height: 28.h,
-              padding: EdgeInsets.symmetric(horizontal: 14.w),
-              alignment: Alignment.center,
-              decoration: BoxDecoration(
-                color: colors.accent,
-                borderRadius: BorderRadius.circular(20.5.r),
-              ),
-              child: Text(
-                l10n.endInDays(challenge.daysLeft),
-                style: TextStyle(
-                  color: colors.todayPillText,
-                  fontSize: 10.sp,
-                  fontWeight: FontWeight.w700,
-                ),
-              ),
-            ),
-          ),
-          // Title + progress + rank + bar (bottom)
-          Positioned(
-            left: 16.w,
-            right: 16.w,
-            bottom: 18.h,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Text(
-                  challenge.title,
-                  style: TextStyle(
-                    color: colors.textPrimary,
-                    fontSize: 20.sp,
-                    fontWeight: FontWeight.w700,
-                  ),
-                ),
-                SizedBox(height: 4.h),
-                Row(
-                  children: [
-                    Expanded(
-                      child: Text(
-                        l10n.percentDone(challenge.percent),
-                        style: TextStyle(
-                          color: colors.textPrimary,
-                          fontSize: 13.sp,
-                          fontWeight: FontWeight.w700,
-                        ),
-                      ),
-                    ),
-                    Text(
-                      l10n.rankNumber(challenge.rank),
-                      style: TextStyle(
-                        color: colors.textSecondary,
-                        fontSize: 13.sp,
-                        fontWeight: FontWeight.w700,
-                      ),
-                    ),
-                  ],
-                ),
-                SizedBox(height: 6.h),
-                _ProgressBar(percent: challenge.percent),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _ChallengeHero extends StatelessWidget {
-  const _ChallengeHero({required this.colors});
-
-  final AppColorsTheme colors;
-
-  @override
-  Widget build(BuildContext context) {
-    // Placeholder visual until asset is added — a dark fitness-themed gradient
-    // with a barbell silhouette icon. Once a hero image asset is available,
-    // swap this for Image.asset('assets/images/challenge_pushup.png', fit: BoxFit.cover).
-    return DecoratedBox(
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [
-            colors.cardElevated,
-            colors.panelBackground,
-          ],
-        ),
-      ),
-      child: Center(
-        child: Icon(
-          Icons.fitness_center_rounded,
-          color: colors.textPrimary.withValues(alpha: 0.18),
-          size: 110.sp,
-        ),
-      ),
-    );
-  }
-}
-
-class _ProgressBar extends StatelessWidget {
-  const _ProgressBar({required this.percent});
-
-  final int percent;
-
-  @override
-  Widget build(BuildContext context) {
-    final colors = AppColors.of(context);
-    final pct = (percent.clamp(0, 100)) / 100;
-
-    return LayoutBuilder(
-      builder: (context, c) {
-        final fullWidth = c.maxWidth;
-        return Stack(
-          children: [
-            Container(
-              height: 7.h,
-              decoration: BoxDecoration(
-                color: const Color(0xFF363A0D),
-                borderRadius: BorderRadius.circular(7.5.r),
-              ),
-            ),
-            Container(
-              width: fullWidth * pct,
-              height: 7.h,
-              decoration: BoxDecoration(
-                color: colors.accent,
-                borderRadius: BorderRadius.circular(7.5.r),
-              ),
-            ),
-          ],
-        );
-      },
     );
   }
 }

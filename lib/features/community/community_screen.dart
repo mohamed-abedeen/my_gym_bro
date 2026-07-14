@@ -44,29 +44,35 @@ class _CommunityScreenState extends ConsumerState<CommunityScreen> {
       body: SafeArea(
         child: Stack(
           children: [
-            // ── Scrollable feed ──
-            NotificationListener<UserScrollNotification>(
-              onNotification: (notification) {
-                final direction = notification.direction;
-                if (direction == ScrollDirection.reverse && _showComposer) {
-                  setState(() => _showComposer = false);
-                } else if (direction == ScrollDirection.forward &&
-                    !_showComposer) {
-                  setState(() => _showComposer = true);
-                }
-                return false;
-              },
-              child: CustomScrollView(
-                slivers: [
-                  // Header
-                  SliverToBoxAdapter(child: _Header(l10n: l10n)),
+            // ── Scrollable feed (pull down to refresh / retry) ──
+            RefreshIndicator(
+              color: colors.accent,
+              onRefresh: _refreshFeed,
+              child: NotificationListener<UserScrollNotification>(
+                onNotification: (notification) {
+                  final direction = notification.direction;
+                  if (direction == ScrollDirection.reverse && _showComposer) {
+                    setState(() => _showComposer = false);
+                  } else if (direction == ScrollDirection.forward &&
+                      !_showComposer) {
+                    setState(() => _showComposer = true);
+                  }
+                  return false;
+                },
+                child: CustomScrollView(
+                  physics: const AlwaysScrollableScrollPhysics(),
+                  slivers: [
+                    // Header
+                    SliverToBoxAdapter(child: _Header(l10n: l10n)),
 
-                  // Stories row
-                  const SliverToBoxAdapter(child: _StoriesRow()),
+                    // Stories row
+                    const SliverToBoxAdapter(child: _StoriesRow()),
 
-                  // Posts feed — real Supabase data (mock when offline).
-                  ..._buildFeedSlivers(ref, l10n, colors),
-                ],
+                    // Posts feed — real Supabase data only; offline/error
+                    // shows a retry message, never fabricated content.
+                    ..._buildFeedSlivers(ref, l10n, colors),
+                  ],
+                ),
               ),
             ),
 
@@ -83,6 +89,16 @@ class _CommunityScreenState extends ConsumerState<CommunityScreen> {
         ),
       ),
     );
+  }
+
+  /// Re-fetches the feed; a failure just leaves the offline state showing.
+  Future<void> _refreshFeed() async {
+    ref.invalidate(communityFeedProvider);
+    try {
+      await ref.read(communityFeedProvider.future);
+    } on Object {
+      // Error state stays visible — user can pull to retry again.
+    }
   }
 
   /// Builds the feed slivers from [communityFeedProvider], handling
@@ -426,7 +442,7 @@ class _PostCard extends ConsumerWidget {
                           : () async {
                               await ref
                                   .read(communityRepositoryProvider)
-                                  .toggleLike(post.id,
+                                  ?.toggleLike(post.id,
                                       currentlyLiked: post.likedByMe);
                               ref.invalidate(communityFeedProvider);
                             },
@@ -451,21 +467,8 @@ class _PostCard extends ConsumerWidget {
                         ],
                       ),
                     ),
-                    SizedBox(width: 14.w),
-                    Icon(
-                      Icons.chat_bubble_outline_rounded,
-                      color: colors.textPrimary,
-                      size: 14.sp,
-                    ),
-                    SizedBox(width: 4.w),
-                    Text(
-                      post.comments,
-                      style: TextStyle(
-                        fontSize: 10.sp,
-                        fontWeight: FontWeight.w700,
-                        color: colors.textPrimary,
-                      ),
-                    ),
+                    // Comment count/button removed until comments are a real
+                    // feature (no comment read/write exists yet).
                     SizedBox(width: 14.w),
                     Icon(
                       Icons.bookmark_border_rounded,
@@ -516,71 +519,6 @@ class _PostCard extends ConsumerWidget {
             overflow: TextOverflow.ellipsis,
           ),
         ),
-
-        // Top comments preview
-        if (post.topComments.isNotEmpty) ...[
-          SizedBox(height: 10.h),
-          Padding(
-            padding: EdgeInsets.symmetric(horizontal: 24.w),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children:
-                  post.topComments
-                      .map(
-                        (c) => Padding(
-                          padding: EdgeInsets.only(bottom: 6.h),
-                          child: Row(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              // Commenter avatar
-                              Container(
-                                width: 22.w,
-                                height: 22.h,
-                                decoration: BoxDecoration(
-                                  color: colors.avatarPlaceholder,
-                                  shape: BoxShape.circle,
-                                ),
-                                child: Icon(
-                                  Icons.person,
-                                  color: colors.textSecondary,
-                                  size: 12.sp,
-                                ),
-                              ),
-                              SizedBox(width: 6.w),
-                              Expanded(
-                                child: RichText(
-                                  maxLines: 2,
-                                  overflow: TextOverflow.ellipsis,
-                                  text: TextSpan(
-                                    children: [
-                                      TextSpan(
-                                        text: '${c.name}  ',
-                                        style: TextStyle(
-                                          fontSize: 10.sp,
-                                          fontWeight: FontWeight.w700,
-                                          color: colors.textPrimary,
-                                        ),
-                                      ),
-                                      TextSpan(
-                                        text: c.text,
-                                        style: TextStyle(
-                                          fontSize: 10.sp,
-                                          fontWeight: FontWeight.w400,
-                                          color: colors.subtitleText,
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      )
-                      .toList(),
-            ),
-          ),
-        ],
 
         SizedBox(height: 8.h),
       ],
@@ -737,7 +675,7 @@ class _ComposerBar extends ConsumerWidget {
                       if (text.isEmpty) return;
                       await ref
                           .read(communityRepositoryProvider)
-                          .createPost(content: text);
+                          ?.createPost(content: text);
                       // Refresh the feed so the new post appears immediately.
                       ref.invalidate(communityFeedProvider);
                     },

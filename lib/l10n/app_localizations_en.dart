@@ -448,7 +448,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get communityEmpty => 'No posts yet. Be the first to share!';
 
   @override
-  String get communityError => 'Couldn\'t load the feed. Try again.';
+  String get communityError => 'Couldn\'t load the feed. Pull down to retry.';
 
   @override
   String get post => 'Post';
@@ -980,6 +980,9 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get noSessionsYet => 'No sessions yet';
+
+  @override
+  String get noPostsYet => 'No posts yet';
 
   @override
   String get retry => 'Retry';

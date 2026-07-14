@@ -453,7 +453,7 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get communityError =>
-      'Feed konnte nicht geladen werden. Versuch es erneut.';
+      'Feed konnte nicht geladen werden. Zieh nach unten, um es erneut zu versuchen.';
 
   @override
   String get post => 'Posten';
@@ -988,6 +988,9 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get noSessionsYet => 'No sessions yet';
+
+  @override
+  String get noPostsYet => 'Noch keine Beiträge';
 
   @override
   String get retry => 'Erneut versuchen';

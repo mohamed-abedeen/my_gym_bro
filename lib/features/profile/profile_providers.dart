@@ -17,7 +17,7 @@ List<MuscleStateInfo> muscleStatesForSession(EnrichedSession enriched) {
       .toList();
 }
 
-/// Selected tab index on the profile screen (Status / Achievement / Posts).
+/// Selected tab index on the profile screen (Status / Posts).
 final profileTabProvider = StateProvider<int>((ref) => 0);
 
 /// Expanded session index in the profile session history.

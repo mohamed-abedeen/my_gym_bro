@@ -1,5 +1,5 @@
 import 'package:my_gym_bro/core/security/input_sanitiser.dart';
-import 'package:my_gym_bro/features/community/community_mock_data.dart';
+import 'package:my_gym_bro/features/community/community_models.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 /// Contract for the community feed.
@@ -11,22 +11,6 @@ abstract class CommunityRepository {
 
   /// Toggle the current user's like on a post.
   Future<void> toggleLike(String postId, {required bool currentlyLiked});
-}
-
-/// Offline / no-Supabase fallback — serves the static sample posts and makes
-/// writes no-ops (the app is usable without a backend).
-class MockCommunityRepository implements CommunityRepository {
-  const MockCommunityRepository();
-
-  @override
-  Future<List<CommunityPost>> fetchFeed({int limit = 30, int offset = 0}) async =>
-      CommunityMockData.posts;
-
-  @override
-  Future<void> createPost({required String content, String? imageUrl}) async {}
-
-  @override
-  Future<void> toggleLike(String postId, {required bool currentlyLiked}) async {}
 }
 
 /// Supabase-backed community feed.

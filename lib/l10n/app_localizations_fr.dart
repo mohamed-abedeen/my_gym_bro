@@ -453,7 +453,8 @@ class AppLocalizationsFr extends AppLocalizations {
       'Aucune publication pour l\'instant. Sois le premier !';
 
   @override
-  String get communityError => 'Impossible de charger le fil. Réessaie.';
+  String get communityError =>
+      'Impossible de charger le fil. Glisse vers le bas pour réessayer.';
 
   @override
   String get post => 'Publier';
@@ -987,6 +988,9 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String get noSessionsYet => 'No sessions yet';
+
+  @override
+  String get noPostsYet => 'Aucune publication pour l\'instant';
 
   @override
   String get retry => 'Réessayer';
