@@ -57,14 +57,11 @@ android {
 
     buildTypes {
         release {
-            // Signs with the real keystore when android/key.properties exists;
-            // debug fallback keeps `flutter run --release` working locally.
-            // A debug-signed build must never be uploaded to Play.
-            signingConfig = if (keystoreProperties.isNotEmpty()) {
-                signingConfigs.getByName("release")
-            } else {
-                signingConfigs.getByName("debug")
-            }
+            // Signed with the upload keystore from android/key.properties.
+            // No debug-key fallback — a debug-signed build must never be
+            // uploaded to Play; release builds without key.properties fail
+            // loudly in the taskGraph check below.
+            signingConfig = signingConfigs.findByName("release")
             isMinifyEnabled = true
             isShrinkResources = true
             proguardFiles(
@@ -72,6 +69,18 @@ android {
                 "proguard-rules.pro"
             )
         }
+    }
+}
+
+// Fail release builds with a clear error when the upload keystore is not
+// configured, instead of silently producing a debug/unsigned artifact.
+// Debug builds are unaffected (their task graph has no *Release tasks).
+gradle.taskGraph.whenReady {
+    if (keystoreProperties.isEmpty() && allTasks.any { it.name.contains("Release") }) {
+        throw GradleException(
+            "key.properties missing — create the upload keystore and android/key.properties " +
+                "(see the comment near the top of android/app/build.gradle.kts).",
+        )
     }
 }
 

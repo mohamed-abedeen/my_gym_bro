@@ -76,6 +76,19 @@ flutter_launcher_icons:
   macos:
     generate: true
 
+# Regenerates the committed splash (Android drawables/styles, iOS
+# LaunchScreen assets, web/splash) via `dart run flutter_native_splash:create`.
+# The android_12 image is the source recovered from the committed
+# drawable-xxxhdpi/android12splash.png (the original file was never in the
+# repo); assets/splash/ is intentionally NOT in the bundled assets list.
+flutter_native_splash:
+  color: "#F2F2F7"
+  color_dark: "#000000"
+  image: assets/images/splash_light.png
+  image_dark: assets/images/splash_dark.png
+  android_12:
+    image: assets/splash/android12.png
+
 flutter:
   uses-material-design: true
   generate: true
