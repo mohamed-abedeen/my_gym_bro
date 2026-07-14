@@ -181,11 +181,14 @@ Future<void> _bootstrap() async {
   unawaited(_backgroundDbInit(db));
 
   // Reconcile RevenueCat entitlements into the local profile on launch, and
-  // keep them in sync as renewals/cancellations arrive. Best-effort — both
-  // no-op when RevenueCat isn't configured.
+  // keep them in sync as renewals/cancellations arrive. Then reconcile with
+  // the verify-subscription edge function so the trial can't be stretched by
+  // rolling the device clock back. Best-effort — all no-op when
+  // RevenueCat/Supabase aren't configured or the device is offline.
   final profileDao = UserProfileDao(db);
   SubscriptionSyncService.listen(profileDao);
-  unawaited(SubscriptionSyncService.syncNow(profileDao));
+  unawaited(SubscriptionSyncService.syncNow(profileDao)
+      .then((_) => SubscriptionSyncService.verifyServer(profileDao)));
 
   mark('runApp returned -- bootstrap complete');
 }

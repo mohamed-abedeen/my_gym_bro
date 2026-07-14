@@ -61,11 +61,13 @@ class _MyGymBroScaffoldState extends ConsumerState<MyGymBroScaffold>
     if (state == AppLifecycleState.resumed) {
       // Re-reconcile RevenueCat entitlements into the local profile so the
       // paywall gate (`subscriptionLockedProvider`) reflects renewals,
-      // cancellations, and trial elapse the moment the app comes forward.
-      // Best-effort — no-ops when RevenueCat isn't configured.
-      unawaited(
-        SubscriptionSyncService.syncNow(ref.read(userProfileDaoProvider)),
-      );
+      // cancellations, and trial elapse the moment the app comes forward,
+      // then let the verify-subscription edge function issue the
+      // authoritative (clock-rollback-proof) verdict. Best-effort — no-ops
+      // when RevenueCat/Supabase aren't configured or the device is offline.
+      final profileDao = ref.read(userProfileDaoProvider);
+      unawaited(SubscriptionSyncService.syncNow(profileDao)
+          .then((_) => SubscriptionSyncService.verifyServer(profileDao)));
       // Option A — rebuild any stale active-workout notification whose
       // buttons would otherwise point at a dead isolate (see
       // `docs/notification-recovery.md`) — and, if this process has no

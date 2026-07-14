@@ -2,6 +2,7 @@ import 'package:flutter/foundation.dart';
 import 'package:my_gym_bro/core/database/app_database.dart';
 import 'package:my_gym_bro/core/database/daos/user_profile_dao.dart';
 import 'package:purchases_flutter/purchases_flutter.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 /// Reconciles RevenueCat entitlements into the local [UserProfiles] row.
 ///
@@ -34,6 +35,65 @@ class SubscriptionSyncService {
     Purchases.addCustomerInfoUpdateListener((info) {
       _apply(dao, info);
     });
+  }
+
+  static DateTime? _lastServerVerify;
+
+  /// Ask the `verify-subscription` edge function for the authoritative
+  /// entitlement and mirror the verdict into the local profile, so a
+  /// rolled-back device clock can't stretch the trial. Called on app launch
+  /// and on resume; debounced to at most one call per minute.
+  ///
+  /// Offline-first: any failure (signed out, Supabase not initialised,
+  /// offline, function not deployed) leaves local state untouched.
+  static Future<void> verifyServer(UserProfileDao dao) async {
+    final now = DateTime.now();
+    if (_lastServerVerify != null &&
+        now.difference(_lastServerVerify!) < const Duration(minutes: 1)) {
+      return;
+    }
+    _lastServerVerify = now;
+    try {
+      final client = Supabase.instance.client;
+      if (client.auth.currentSession == null) return; // signed out
+      final res = await client.functions
+          .invoke('verify-subscription')
+          .timeout(const Duration(seconds: 10));
+      final verdict = parseVerdict(res.data);
+      if (verdict == null) return;
+      final (status, expiresAt) = verdict;
+      final profile = await dao.getFirst();
+      if (profile == null) return;
+      if (profile.subscriptionStatus == status &&
+          profile.subscriptionExpiresAt == expiresAt) {
+        return; // no-op
+      }
+      await dao.updateSubscription(
+        profile.localId,
+        status: status,
+        expiresAt: expiresAt,
+      );
+    } on Object catch (e) {
+      // Silence is the contract: server verify is a best-effort tightener,
+      // never a blocker for the offline-first app.
+      if (kDebugMode) debugPrint('[SubSync] verifyServer failed: $e');
+    }
+  }
+
+  /// Maps a verify-subscription response body
+  /// (`{status, product_id, expires_at, is_trial}`) to a `(status, expiresAt)`
+  /// verdict, or null when the shape/status is unexpected (keep local state).
+  @visibleForTesting
+  static (String, DateTime?)? parseVerdict(dynamic data) {
+    if (data is! Map) return null;
+    final status = data['status'];
+    if (status is! String ||
+        !const {'active', 'trial', 'expired', 'grace_period'}
+            .contains(status)) {
+      return null;
+    }
+    final raw = data['expires_at'];
+    return (status, raw is String ? DateTime.tryParse(raw) : null);
   }
 
   static Future<void> _apply(

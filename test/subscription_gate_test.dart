@@ -1,6 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:my_gym_bro/core/database/app_database.dart';
+import 'package:my_gym_bro/core/services/subscription_sync_service.dart';
 import 'package:my_gym_bro/features/workout/workout_providers.dart';
 
 /// Builds a [UserProfile] carrying only the subscription fields the gate
@@ -89,6 +90,43 @@ void main() {
       expect(
         await _locked(_containerFor(_profile(subscriptionStatus: 'whatever'))),
         isFalse,
+      );
+    });
+  });
+
+  group('SubscriptionSyncService.parseVerdict', () {
+    test('maps a verify-subscription body to status + expiry', () {
+      final end = DateTime.utc(2026, 7, 21);
+      expect(
+        SubscriptionSyncService.parseVerdict({
+          'status': 'trial',
+          'product_id': null,
+          'expires_at': end.toIso8601String(),
+          'is_trial': true,
+        }),
+        ('trial', end),
+      );
+      expect(
+        SubscriptionSyncService.parseVerdict({
+          'status': 'expired',
+          'product_id': null,
+          'expires_at': null,
+          'is_trial': false,
+        }),
+        ('expired', null),
+      );
+    });
+
+    test('rejects unexpected shapes/statuses so local state is kept', () {
+      expect(SubscriptionSyncService.parseVerdict(null), isNull);
+      expect(SubscriptionSyncService.parseVerdict('error'), isNull);
+      expect(
+        SubscriptionSyncService.parseVerdict({'error': 'Database error'}),
+        isNull,
+      );
+      expect(
+        SubscriptionSyncService.parseVerdict({'status': 'bogus'}),
+        isNull,
       );
     });
   });
