@@ -1507,4 +1507,21 @@ class AppLocalizationsFr extends AppLocalizations {
   String restTimerRemaining(String time) {
     return 'Minuteur de repos, $time restant';
   }
+
+  @override
+  String get plateCalculator => 'Calculateur de disques';
+
+  @override
+  String get plateCalcTargetWeight => 'Poids cible';
+
+  @override
+  String get plateCalcBar => 'Barre';
+
+  @override
+  String get plateCalcPerSide => 'par côté';
+
+  @override
+  String plateCalcUnreachable(String amount) {
+    return 'Inatteignable à $amount près';
+  }
 }

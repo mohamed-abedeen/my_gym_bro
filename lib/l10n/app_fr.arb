@@ -485,5 +485,15 @@
     "placeholders": {
       "time": { "type": "String" }
     }
+  },
+  "plateCalculator": "Calculateur de disques",
+  "plateCalcTargetWeight": "Poids cible",
+  "plateCalcBar": "Barre",
+  "plateCalcPerSide": "par côté",
+  "plateCalcUnreachable": "Inatteignable à {amount} près",
+  "@plateCalcUnreachable": {
+    "placeholders": {
+      "amount": { "type": "String" }
+    }
   }
 }

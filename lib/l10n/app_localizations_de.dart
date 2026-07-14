@@ -1509,4 +1509,21 @@ class AppLocalizationsDe extends AppLocalizations {
   String restTimerRemaining(String time) {
     return 'Pausen-Timer, noch $time';
   }
+
+  @override
+  String get plateCalculator => 'Scheibenrechner';
+
+  @override
+  String get plateCalcTargetWeight => 'Zielgewicht';
+
+  @override
+  String get plateCalcBar => 'Stange';
+
+  @override
+  String get plateCalcPerSide => 'pro Seite';
+
+  @override
+  String plateCalcUnreachable(String amount) {
+    return 'Um $amount nicht erreichbar';
+  }
 }

@@ -2867,6 +2867,36 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Rest timer, {time} remaining'**
   String restTimerRemaining(String time);
+
+  /// No description provided for @plateCalculator.
+  ///
+  /// In en, this message translates to:
+  /// **'Plate calculator'**
+  String get plateCalculator;
+
+  /// No description provided for @plateCalcTargetWeight.
+  ///
+  /// In en, this message translates to:
+  /// **'Target weight'**
+  String get plateCalcTargetWeight;
+
+  /// No description provided for @plateCalcBar.
+  ///
+  /// In en, this message translates to:
+  /// **'Bar'**
+  String get plateCalcBar;
+
+  /// No description provided for @plateCalcPerSide.
+  ///
+  /// In en, this message translates to:
+  /// **'per side'**
+  String get plateCalcPerSide;
+
+  /// No description provided for @plateCalcUnreachable.
+  ///
+  /// In en, this message translates to:
+  /// **'Unreachable by {amount}'**
+  String plateCalcUnreachable(String amount);
 }
 
 class _AppLocalizationsDelegate

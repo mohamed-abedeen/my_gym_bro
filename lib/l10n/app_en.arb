@@ -665,5 +665,15 @@
     "placeholders": {
       "time": { "type": "String" }
     }
+  },
+  "plateCalculator": "Plate calculator",
+  "plateCalcTargetWeight": "Target weight",
+  "plateCalcBar": "Bar",
+  "plateCalcPerSide": "per side",
+  "plateCalcUnreachable": "Unreachable by {amount}",
+  "@plateCalcUnreachable": {
+    "placeholders": {
+      "amount": { "type": "String" }
+    }
   }
 }

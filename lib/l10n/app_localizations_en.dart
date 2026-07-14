@@ -1496,4 +1496,21 @@ class AppLocalizationsEn extends AppLocalizations {
   String restTimerRemaining(String time) {
     return 'Rest timer, $time remaining';
   }
+
+  @override
+  String get plateCalculator => 'Plate calculator';
+
+  @override
+  String get plateCalcTargetWeight => 'Target weight';
+
+  @override
+  String get plateCalcBar => 'Bar';
+
+  @override
+  String get plateCalcPerSide => 'per side';
+
+  @override
+  String plateCalcUnreachable(String amount) {
+    return 'Unreachable by $amount';
+  }
 }

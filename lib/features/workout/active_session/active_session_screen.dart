@@ -15,11 +15,13 @@ import 'package:my_gym_bro/core/providers/providers.dart';
 import 'package:my_gym_bro/core/router/app_router.dart';
 import 'package:my_gym_bro/core/services/exercise_gif_cache.dart';
 import 'package:my_gym_bro/core/services/notification_tone.dart';
+import 'package:my_gym_bro/core/services/units.dart';
 import 'package:my_gym_bro/features/exercises/exercise_detail_screen.dart';
 import 'package:my_gym_bro/features/settings/skin_provider.dart';
 import 'package:my_gym_bro/features/workout/active_session/active_session_notifier.dart';
 import 'package:my_gym_bro/features/workout/active_session/pr_banner.dart';
 import 'package:my_gym_bro/features/workout/muscle_recovery_service.dart';
+import 'package:my_gym_bro/features/workout/plate_calculator_sheet.dart';
 import 'package:my_gym_bro/features/workout/share/share_card_data.dart';
 import 'package:my_gym_bro/features/workout/share/share_helpers.dart';
 import 'package:my_gym_bro/features/workout/workout_providers.dart';
@@ -1815,6 +1817,33 @@ class _SetRowState extends State<_SetRow> {
                     color: secondary,
                     fontSize: 9.5.sp,
                     fontWeight: FontWeight.w700,
+                  ),
+                ),
+                Semantics(
+                  button: true,
+                  label: l10n.plateCalculator,
+                  child: GestureDetector(
+                    onTap: () {
+                      final unit = weightUnitFromString(widget.unit);
+                      showPlateCalculatorSheet(
+                        context,
+                        unit: unit,
+                        initialWeight:
+                            convertFromKg(widget.set.weight ?? 0, unit),
+                      );
+                    },
+                    behavior: HitTestBehavior.opaque,
+                    child: Padding(
+                      padding: EdgeInsets.symmetric(
+                        horizontal: 6.w,
+                        vertical: 12.h,
+                      ),
+                      child: Icon(
+                        Icons.calculate_outlined,
+                        color: secondary,
+                        size: 15.sp,
+                      ),
+                    ),
                   ),
                 ),
               ],
