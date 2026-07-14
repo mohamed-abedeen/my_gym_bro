@@ -936,6 +936,12 @@ abstract class AppLocalizations {
   /// **'Couldn\'t load the feed. Pull down to retry.'**
   String get communityError;
 
+  /// No description provided for @postFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t publish your post. Try again.'**
+  String get postFailed;
+
   /// No description provided for @post.
   ///
   /// In en, this message translates to:
@@ -1890,12 +1896,6 @@ abstract class AppLocalizations {
   /// **'{days}-day streak'**
   String widgetStreakDays(int days);
 
-  /// No description provided for @achievement.
-  ///
-  /// In en, this message translates to:
-  /// **'Achievement'**
-  String get achievement;
-
   /// No description provided for @posts.
   ///
   /// In en, this message translates to:
@@ -2357,30 +2357,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Volume'**
   String get volumeLabel;
-
-  /// No description provided for @percentDone.
-  ///
-  /// In en, this message translates to:
-  /// **'{percent}% done'**
-  String percentDone(int percent);
-
-  /// No description provided for @rankNumber.
-  ///
-  /// In en, this message translates to:
-  /// **'Rank #{rank}'**
-  String rankNumber(int rank);
-
-  /// No description provided for @startChallenge.
-  ///
-  /// In en, this message translates to:
-  /// **'start'**
-  String get startChallenge;
-
-  /// No description provided for @endInDays.
-  ///
-  /// In en, this message translates to:
-  /// **'End in {days}d'**
-  String endInDays(int days);
 
   /// No description provided for @leagueMasterTitle.
   ///

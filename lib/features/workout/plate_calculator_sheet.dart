@@ -48,8 +48,10 @@ class _PlateCalculatorSheetState extends State<_PlateCalculatorSheet> {
   List<double> get _barPresets => _isLbs ? const [45.0, 35.0] : const [20.0, 15.0];
 
   /// Values are already in the display unit — no kg conversion here.
+  /// Rounds to 2 decimals and strips trailing zeros so unit-converted
+  /// weights don't leak binary-float noise (10 lbs -> 9.999999999999998).
   String _fmt(double v) =>
-      v % 1 == 0 ? v.toStringAsFixed(0) : v.toString();
+      v.toStringAsFixed(2).replaceFirst(RegExp(r'\.?0+$'), '');
 
   @override
   Widget build(BuildContext context) {

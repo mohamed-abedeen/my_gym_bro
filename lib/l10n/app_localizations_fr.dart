@@ -457,6 +457,9 @@ class AppLocalizationsFr extends AppLocalizations {
       'Impossible de charger le fil. Glisse vers le bas pour réessayer.';
 
   @override
+  String get postFailed => 'Impossible de publier. Réessaie.';
+
+  @override
   String get post => 'Publier';
 
   @override
@@ -983,9 +986,6 @@ class AppLocalizationsFr extends AppLocalizations {
   }
 
   @override
-  String get achievement => 'Succès';
-
-  @override
   String get posts => 'Publications';
 
   @override
@@ -1230,24 +1230,6 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String get volumeLabel => 'Volume';
-
-  @override
-  String percentDone(int percent) {
-    return '$percent% fait';
-  }
-
-  @override
-  String rankNumber(int rank) {
-    return 'Rang #$rank';
-  }
-
-  @override
-  String get startChallenge => 'démarrer';
-
-  @override
-  String endInDays(int days) {
-    return 'Finit dans ${days}j';
-  }
 
   @override
   String get leagueMasterTitle => 'Maître';

@@ -68,6 +68,14 @@ class SubscriptionSyncService {
           profile.subscriptionExpiresAt == expiresAt) {
         return; // no-op
       }
+      if (profile.subscriptionStatus == 'active' && status != 'active') {
+        // Never downgrade a locally RC-verified purchase: syncNow (device
+        // receipt, runs right before this) is authoritative for 'active',
+        // and the server's webhook-fed table can lag a fresh purchase by
+        // minutes. This verify call only tightens trial/expired states
+        // against clock rollback.
+        return;
+      }
       await dao.updateSubscription(
         profile.localId,
         status: status,

@@ -65,9 +65,6 @@ class _CommunityScreenState extends ConsumerState<CommunityScreen> {
                     // Header
                     SliverToBoxAdapter(child: _Header(l10n: l10n)),
 
-                    // Stories row
-                    const SliverToBoxAdapter(child: _StoriesRow()),
-
                     // Posts feed — real Supabase data only; offline/error
                     // shows a retry message, never fabricated content.
                     ..._buildFeedSlivers(ref, l10n, colors),
@@ -183,18 +180,6 @@ class _Header extends StatelessWidget {
             ),
           ),
 
-          // Search icon
-          Icon(Icons.search, color: colors.textPrimary, size: 24.sp),
-          SizedBox(width: 14.w),
-
-          // Notifications icon
-          Icon(
-            Icons.notifications_outlined,
-            color: colors.textPrimary,
-            size: 24.sp,
-          ),
-          SizedBox(width: 16.w),
-
           // Profile avatar in glass circle — 48x48 per Figma
           LiquidGlassButton(
             width: 48.w,
@@ -205,140 +190,6 @@ class _Header extends StatelessWidget {
             child: UserAvatar(size: 44, iconColor: colors.textPrimary),
           ),
         ],
-      ),
-    );
-  }
-}
-
-// ═══════════════════════════════════════════════════════════════════
-// Stories row: own avatar + friend story circles with green ring
-// ═══════════════════════════════════════════════════════════════════
-class _StoriesRow extends StatelessWidget {
-  const _StoriesRow();
-
-  @override
-  Widget build(BuildContext context) {
-    return SizedBox(
-      height: 120.h,
-      child: ListView(
-        scrollDirection: Axis.horizontal,
-        padding: EdgeInsets.only(left: 22.w, right: 22.w, top: 12.h),
-        children: [
-          // Own avatar with + button
-          _OwnStoryAvatar(),
-          SizedBox(width: 16.w),
-          // Friend stories with green gradient ring
-          const _FriendStory(index: 0),
-          SizedBox(width: 16.w),
-          const _FriendStory(index: 1),
-          SizedBox(width: 16.w),
-          const _FriendStory(index: 2),
-          SizedBox(width: 16.w),
-          const _FriendStory(index: 3),
-        ],
-      ),
-    );
-  }
-}
-
-class _OwnStoryAvatar extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    final colors = AppColors.of(context);
-    return SizedBox(
-      width: 85.w,
-      height: 100.h,
-      child: Stack(
-        children: [
-          // Avatar
-          Container(
-            width: 85.w,
-            height: 85.h,
-            decoration: BoxDecoration(
-              color: colors.avatarPlaceholderDark,
-              borderRadius: BorderRadius.circular(42.5.r),
-            ),
-            child: Icon(Icons.person, color: colors.textSecondary, size: 40.sp),
-          ),
-          // Green + button
-          Positioned(
-            right: 0,
-            bottom: 10.h,
-            child: Container(
-              width: 22.w,
-              height: 22.h,
-              decoration: const BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.topCenter,
-                  end: Alignment.bottomCenter,
-                  colors: [AppColors.storyRingStart, AppColors.storyRingEnd],
-                ),
-                shape: BoxShape.circle,
-              ),
-              child: Icon(Icons.add, color: AppColors.of(context).black, size: 14.sp),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _FriendStory extends StatelessWidget {
-  const _FriendStory({required this.index});
-  final int index;
-
-  static const _avatarColors = [
-    AppColors.categoryGreen,
-    AppColors.categoryBrown,
-    AppColors.categoryBlue,
-    AppColors.categoryTan,
-  ];
-
-  @override
-  Widget build(BuildContext context) {
-    final colors = AppColors.of(context);
-    return SizedBox(
-      width: 93.w,
-      height: 100.h,
-      child: Center(
-        child: Container(
-          width: 93.w,
-          height: 93.h,
-          decoration: const BoxDecoration(
-            gradient: LinearGradient(
-              begin: Alignment.topCenter,
-              end: Alignment.bottomCenter,
-              colors: [AppColors.storyRingAltStart, AppColors.storyRingAltEnd],
-            ),
-            shape: BoxShape.circle,
-          ),
-          child: Center(
-            child: Container(
-              width: 89.w,
-              height: 89.h,
-              decoration: BoxDecoration(
-                color: colors.background,
-                shape: BoxShape.circle,
-              ),
-              child: Center(
-                child: Container(
-                  width: 85.w,
-                  height: 85.h,
-                  decoration: BoxDecoration(
-                    color: _avatarColors[index % _avatarColors.length],
-                    shape: BoxShape.circle,
-                  ),
-                  child: Icon(
-                    Icons.person,
-                    color: colors.textSecondary,
-                    size: 36.sp,
-                  ),
-                ),
-              ),
-            ),
-          ),
-        ),
       ),
     );
   }
@@ -671,11 +522,30 @@ class _ComposerBar extends ConsumerWidget {
                   ElevatedButton(
                     onPressed: () async {
                       final text = controller.text.trim();
-                      Navigator.of(ctx).pop();
-                      if (text.isEmpty) return;
-                      await ref
-                          .read(communityRepositoryProvider)
-                          ?.createPost(content: text);
+                      if (text.isEmpty) {
+                        Navigator.of(ctx).pop();
+                        return;
+                      }
+                      final repo = ref.read(communityRepositoryProvider);
+                      final messenger = ScaffoldMessenger.of(ctx);
+                      var posted = false;
+                      if (repo != null) {
+                        try {
+                          await repo.createPost(content: text);
+                          posted = true;
+                        } on Exception {
+                          // fall through to the error snackbar
+                        }
+                      }
+                      if (!posted) {
+                        // Keep the sheet (and the typed text) open so the
+                        // post is never silently lost.
+                        messenger.showSnackBar(
+                          SnackBar(content: Text(l10n.postFailed)),
+                        );
+                        return;
+                      }
+                      if (ctx.mounted) Navigator.of(ctx).pop();
                       // Refresh the feed so the new post appears immediately.
                       ref.invalidate(communityFeedProvider);
                     },

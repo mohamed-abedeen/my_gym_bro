@@ -451,6 +451,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get communityError => 'Couldn\'t load the feed. Pull down to retry.';
 
   @override
+  String get postFailed => 'Couldn\'t publish your post. Try again.';
+
+  @override
   String get post => 'Post';
 
   @override
@@ -970,9 +973,6 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get achievement => 'Achievement';
-
-  @override
   String get posts => 'Posts';
 
   @override
@@ -1215,24 +1215,6 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get volumeLabel => 'Volume';
-
-  @override
-  String percentDone(int percent) {
-    return '$percent% done';
-  }
-
-  @override
-  String rankNumber(int rank) {
-    return 'Rank #$rank';
-  }
-
-  @override
-  String get startChallenge => 'start';
-
-  @override
-  String endInDays(int days) {
-    return 'End in ${days}d';
-  }
 
   @override
   String get leagueMasterTitle => 'Master';

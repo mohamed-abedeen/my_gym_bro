@@ -361,17 +361,25 @@ class AppDatabase extends _$AppDatabase {
   /// but keep any row the user's workout history (`session_exercises`) or
   /// routines (`scheduled_exercises`) references, so their names/details
   /// keep rendering instead of degrading to a generic "Exercise" until the
-  /// rate-limited API re-caches them. The new source's sync upserts by
-  /// `exercise_id` (see `ExerciseDao.cacheAll`), so kept rows whose id
-  /// exists in the new scheme are refreshed in place; a wholesale delete
-  /// of the rest is still needed because off-scheme leftovers would
-  /// otherwise pollute browse/search and inflate the sync-progress count.
-  /// Plain DELETE — naturally idempotent, safe to re-run.
-  Future<void> _deleteUnreferencedCatalogue() => customStatement(
-        'DELETE FROM exercises WHERE is_custom = 0 '
-        'AND exercise_id NOT IN (SELECT exercise_id FROM session_exercises) '
-        'AND exercise_id NOT IN (SELECT exercise_id FROM scheduled_exercises)',
-      );
+  /// rate-limited API re-caches them.
+  ///
+  /// Kept legacy rows are then flagged `is_custom = 1` so they stop counting
+  /// as catalogue: `ExerciseDao.countCatalogue` feeds the sync's "cache is
+  /// complete" shortcut, and off-scheme leftovers counted there would make
+  /// the sync declare itself done before fetching the catalogue's tail. Rows
+  /// whose id does exist in the new scheme self-heal — the sync's upsert
+  /// (`ExerciseDao.cacheAll`) rewrites them with `is_custom = 0`. At this
+  /// point in the migration every surviving non-custom row IS a kept legacy
+  /// row, so the blanket UPDATE is safe. Plain DELETE/UPDATE — naturally
+  /// idempotent, safe to re-run.
+  Future<void> _deleteUnreferencedCatalogue() async {
+    await customStatement(
+      'DELETE FROM exercises WHERE is_custom = 0 '
+      'AND exercise_id NOT IN (SELECT exercise_id FROM session_exercises) '
+      'AND exercise_id NOT IN (SELECT exercise_id FROM scheduled_exercises)',
+    );
+    await customStatement('UPDATE exercises SET is_custom = 1');
+  }
 
   /// True if [table] exists. Keeps `createTable` migrations idempotent for a
   /// database that already created the table at an inconsistent version.

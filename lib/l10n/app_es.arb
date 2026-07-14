@@ -145,6 +145,7 @@
   "whatOnYourMind": "¿Qué hay de nuevo?",
   "communityEmpty": "Aún no hay publicaciones. ¡Sé el primero!",
   "communityError": "No se pudo cargar el feed. Desliza hacia abajo para reintentar.",
+  "postFailed": "No se pudo publicar. Inténtalo de nuevo.",
   "noPostsYet": "Aún no hay publicaciones",
   "post": "Publicar",
   "skip": "Omitir",
@@ -363,25 +364,6 @@
   "follow": "Seguir",
   "friends": "Amigos",
   "volumeLabel": "Volumen",
-  "percentDone": "{percent}% hecho",
-  "@percentDone": {
-    "placeholders": {
-      "percent": { "type": "int" }
-    }
-  },
-  "rankNumber": "Rango #{rank}",
-  "@rankNumber": {
-    "placeholders": {
-      "rank": { "type": "int" }
-    }
-  },
-  "startChallenge": "iniciar",
-  "endInDays": "Termina en {days}d",
-  "@endInDays": {
-    "placeholders": {
-      "days": { "type": "int" }
-    }
-  },
   "leagueMasterTitle": "Maestro",
   "rankBronze": "Grinder",
   "rankSilver": "Warrior",
@@ -578,7 +560,6 @@
   "following": "Siguiendo",
   "followers": "Seguidores",
   "streak": "Racha",
-  "achievement": "Logro",
   "posts": "Publicaciones",
   "lastSession": "Última sesión",
   "noSessionsYet": "Aún no hay sesiones",

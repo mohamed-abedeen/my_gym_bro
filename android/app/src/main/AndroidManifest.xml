@@ -7,6 +7,9 @@
          app is backgrounded/suspended (Android 12+; user-revocable). The
          scheduler falls back to inexact delivery when not granted. -->
     <uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM"/>
+    <!-- Lets ScheduledNotificationBootReceiver restore pending rest-timer /
+         reminder notifications after a device reboot. -->
+    <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED"/>
     <!-- gal needs legacy storage permission to write to the gallery on API ≤28;
          API 29+ (scoped storage) needs none. -->
     <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" android:maxSdkVersion="28" />
@@ -79,6 +82,28 @@
             <meta-data
                 android:name="android.appwidget.provider"
                 android:resource="@xml/mgb_widget_info" />
+        </receiver>
+
+        <!-- flutter_local_notifications: required components (the plugin's
+             own manifest does not declare them). Without these, zonedSchedule
+             rest-timer/reminder notifications and notification action buttons
+             silently do nothing. Boot receiver reschedules pending
+             notifications after a reboot. -->
+        <receiver
+            android:name="com.dexterous.flutterlocalnotifications.ScheduledNotificationReceiver"
+            android:exported="false" />
+        <receiver
+            android:name="com.dexterous.flutterlocalnotifications.ActionBroadcastReceiver"
+            android:exported="false" />
+        <receiver
+            android:name="com.dexterous.flutterlocalnotifications.ScheduledNotificationBootReceiver"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="android.intent.action.BOOT_COMPLETED" />
+                <action android:name="android.intent.action.MY_PACKAGE_REPLACED" />
+                <action android:name="android.intent.action.QUICKBOOT_POWERON" />
+                <action android:name="com.htc.intent.action.QUICKBOOT_POWERON" />
+            </intent-filter>
         </receiver>
     </application>
     <!-- Required to query activities that can process text, see:

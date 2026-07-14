@@ -150,9 +150,15 @@ void main() {
 
     // v14/v16 catalogue wipe: referenced + custom rows survive, the
     // unreferenced catalogue row is deleted.
-    final remaining =
-        (await db.select(db.exercises).get()).map((e) => e.exerciseId).toSet();
-    expect(remaining, {'hist01', 'sched01', 'custom01'});
+    final rows = await db.select(db.exercises).get();
+    expect(rows.map((e) => e.exerciseId).toSet(),
+        {'hist01', 'sched01', 'custom01'});
+
+    // Kept legacy rows are flagged non-catalogue (is_custom = 1) so they
+    // can't inflate countCatalogue and truncate the new source's sync;
+    // the sync's upsert flips genuine current-scheme ids back to 0.
+    expect(rows.where((e) => !e.isCustom), isEmpty,
+        reason: 'kept legacy rows must not count as catalogue');
 
     // The pre-existing profile row survived and the new columns read null.
     final profile = await (db.select(db.userProfiles)..limit(1)).getSingle();

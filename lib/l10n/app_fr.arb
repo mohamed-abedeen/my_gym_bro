@@ -145,6 +145,7 @@
   "whatOnYourMind": "Quoi de neuf ?",
   "communityEmpty": "Aucune publication pour l'instant. Sois le premier !",
   "communityError": "Impossible de charger le fil. Glisse vers le bas pour réessayer.",
+  "postFailed": "Impossible de publier. Réessaie.",
   "noPostsYet": "Aucune publication pour l'instant",
   "post": "Publier",
   "skip": "Passer",
@@ -363,25 +364,6 @@
   "follow": "Suivre",
   "friends": "Amis",
   "volumeLabel": "Volume",
-  "percentDone": "{percent}% fait",
-  "@percentDone": {
-    "placeholders": {
-      "percent": { "type": "int" }
-    }
-  },
-  "rankNumber": "Rang #{rank}",
-  "@rankNumber": {
-    "placeholders": {
-      "rank": { "type": "int" }
-    }
-  },
-  "startChallenge": "démarrer",
-  "endInDays": "Finit dans {days}j",
-  "@endInDays": {
-    "placeholders": {
-      "days": { "type": "int" }
-    }
-  },
   "leagueMasterTitle": "Maître",
   "rankBronze": "Grinder",
   "rankSilver": "Warrior",
@@ -578,7 +560,6 @@
   "following": "Abonnements",
   "followers": "Abonnés",
   "streak": "Série",
-  "achievement": "Succès",
   "posts": "Publications",
   "lastSession": "Dernière séance",
   "noSessionsYet": "Aucune séance pour l'instant",

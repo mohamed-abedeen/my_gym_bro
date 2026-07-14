@@ -46,8 +46,11 @@ function mapEventToStatus(
     case "INITIAL_PURCHASE":
     case "RENEWAL":
     case "PRODUCT_CHANGE":
-      return "active";
+    // CANCELLATION = auto-renew turned off; the entitlement stays paid until
+    // the period ends, when EXPIRATION arrives. Marking it expired here would
+    // lock a paying subscriber out for the remainder of their paid period.
     case "CANCELLATION":
+      return "active";
     case "EXPIRATION":
       return "expired";
     case "BILLING_ISSUE":

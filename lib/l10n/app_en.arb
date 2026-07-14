@@ -197,6 +197,7 @@
   "whatOnYourMind": "What's on your mind?",
   "communityEmpty": "No posts yet. Be the first to share!",
   "communityError": "Couldn't load the feed. Pull down to retry.",
+  "postFailed": "Couldn't publish your post. Try again.",
   "post": "Post",
   "skip": "Skip",
   "cancel": "Cancel",
@@ -421,7 +422,6 @@
       "days": {"type": "int"}
     }
   },
-  "achievement": "Achievement",
   "posts": "Posts",
   "lastSession": "Last Session",
   "noSessionsYet": "No sessions yet",
@@ -528,25 +528,6 @@
   "scopeGlobal": "Global",
   "scopeFriends": "Friends",
   "volumeLabel": "Volume",
-  "percentDone": "{percent}% done",
-  "@percentDone": {
-    "placeholders": {
-      "percent": { "type": "int" }
-    }
-  },
-  "rankNumber": "Rank #{rank}",
-  "@rankNumber": {
-    "placeholders": {
-      "rank": { "type": "int" }
-    }
-  },
-  "startChallenge": "start",
-  "endInDays": "End in {days}d",
-  "@endInDays": {
-    "placeholders": {
-      "days": { "type": "int" }
-    }
-  },
   "leagueMasterTitle": "Master",
   "rankBronze": "Grinder",
   "rankSilver": "Warrior",
