@@ -1489,4 +1489,24 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get shareObjectElephant => 'Elefant';
+
+  @override
+  String get close => 'Schließen';
+
+  @override
+  String get hint => 'Hinweis';
+
+  @override
+  String get moreOptions => 'Weitere Optionen';
+
+  @override
+  String get markSetComplete => 'Satz als abgeschlossen markieren';
+
+  @override
+  String get markSetIncomplete => 'Satz als nicht abgeschlossen markieren';
+
+  @override
+  String restTimerRemaining(String time) {
+    return 'Pausen-Timer, noch $time';
+  }
 }

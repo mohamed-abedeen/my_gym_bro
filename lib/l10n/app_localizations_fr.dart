@@ -1487,4 +1487,24 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String get shareObjectElephant => 'Éléphant';
+
+  @override
+  String get close => 'Fermer';
+
+  @override
+  String get hint => 'Astuce';
+
+  @override
+  String get moreOptions => 'Plus d\'options';
+
+  @override
+  String get markSetComplete => 'Marquer la série comme terminée';
+
+  @override
+  String get markSetIncomplete => 'Marquer la série comme non terminée';
+
+  @override
+  String restTimerRemaining(String time) {
+    return 'Minuteur de repos, $time restant';
+  }
 }

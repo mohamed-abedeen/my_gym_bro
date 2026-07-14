@@ -159,7 +159,8 @@ class _ActiveSessionScreenState extends ConsumerState<ActiveSessionScreen> {
       showPrBanner(
         context,
         title: l10n.newPrTitle,
-        body: '${next.exerciseName} · $wText '
+        body:
+            '${next.exerciseName} · $wText '
             '${isLbs ? 'lbs' : 'kg'} × ${next.reps}',
       );
     });
@@ -230,29 +231,37 @@ class _ActiveSessionScreenState extends ConsumerState<ActiveSessionScreen> {
                         ),
                       ),
                       SizedBox(width: 12.w),
-                      GestureDetector(
-                        // Live countdown sheet while resting, duration picker
-                        // otherwise (the floating rest pill is gone).
-                        onTap: session.showRestTimer
-                            ? _showRestSheet
-                            : _showRestPickerSheet,
-                        behavior: HitTestBehavior.opaque,
-                        child: Icon(
-                          Icons.alarm_rounded,
-                          color: colors.textPrimary,
-                          size: 22.sp,
+                      Semantics(
+                        button: true,
+                        label: l10n.restTimer,
+                        child: GestureDetector(
+                          // Live countdown sheet while resting, duration picker
+                          // otherwise (the floating rest pill is gone).
+                          onTap: session.showRestTimer
+                              ? _showRestSheet
+                              : _showRestPickerSheet,
+                          behavior: HitTestBehavior.opaque,
+                          child: Icon(
+                            Icons.alarm_rounded,
+                            color: colors.textPrimary,
+                            size: 22.sp,
+                          ),
                         ),
                       ),
                       SizedBox(width: 16.w),
                       // Builder so the menu can anchor to this icon's position.
                       Builder(
-                        builder: (anchorCtx) => GestureDetector(
-                          onTap: () => _showExerciseMenu(anchorCtx),
-                          behavior: HitTestBehavior.opaque,
-                          child: Icon(
-                            Icons.more_vert_rounded,
-                            color: colors.textPrimary,
-                            size: 22.sp,
+                        builder: (anchorCtx) => Semantics(
+                          button: true,
+                          label: l10n.moreOptions,
+                          child: GestureDetector(
+                            onTap: () => _showExerciseMenu(anchorCtx),
+                            behavior: HitTestBehavior.opaque,
+                            child: Icon(
+                              Icons.more_vert_rounded,
+                              color: colors.textPrimary,
+                              size: 22.sp,
+                            ),
                           ),
                         ),
                       ),
@@ -355,20 +364,26 @@ class _ActiveSessionScreenState extends ConsumerState<ActiveSessionScreen> {
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   // Drag handle — swipe up (or tap) to open the drawer.
-                  GestureDetector(
-                    onTap: _showActionsSheet,
-                    behavior: HitTestBehavior.opaque,
-                    child: Padding(
-                      padding: EdgeInsets.symmetric(
-                        horizontal: 40.w,
-                        vertical: 6.h,
-                      ),
-                      child: Container(
-                        width: 48.w,
-                        height: 4.h,
-                        decoration: BoxDecoration(
-                          color: colors.textSecondary.withValues(alpha: 0.55),
-                          borderRadius: BorderRadius.circular(2.r),
+                  // Labeled: it's the only route to Add/Edit Exercises for
+                  // screen-reader users (the swipe gesture is invisible to them).
+                  Semantics(
+                    button: true,
+                    label: l10n.moreOptions,
+                    child: GestureDetector(
+                      onTap: _showActionsSheet,
+                      behavior: HitTestBehavior.opaque,
+                      child: Padding(
+                        padding: EdgeInsets.symmetric(
+                          horizontal: 40.w,
+                          vertical: 6.h,
+                        ),
+                        child: Container(
+                          width: 48.w,
+                          height: 4.h,
+                          decoration: BoxDecoration(
+                            color: colors.textSecondary.withValues(alpha: 0.55),
+                            borderRadius: BorderRadius.circular(2.r),
+                          ),
                         ),
                       ),
                     ),
@@ -401,24 +416,28 @@ class _ActiveSessionScreenState extends ConsumerState<ActiveSessionScreen> {
     return Row(
       children: [
         Expanded(
-          child: GestureDetector(
-            onTap: () {
-              if (sheetCtx != null) Navigator.pop(sheetCtx);
-              unawaited(_finish());
-            },
-            child: Container(
-              height: 56.h,
-              decoration: BoxDecoration(
-                color: colors.cardElevated,
-                borderRadius: BorderRadius.circular(28.r),
-              ),
-              child: Center(
-                child: Text(
-                  l10n.finish,
-                  style: TextStyle(
-                    color: colors.textPrimary,
-                    fontSize: 17.sp,
-                    fontWeight: FontWeight.w700,
+          // button: true only — the visible Text supplies the label.
+          child: Semantics(
+            button: true,
+            child: GestureDetector(
+              onTap: () {
+                if (sheetCtx != null) Navigator.pop(sheetCtx);
+                unawaited(_finish());
+              },
+              child: Container(
+                height: 56.h,
+                decoration: BoxDecoration(
+                  color: colors.cardElevated,
+                  borderRadius: BorderRadius.circular(28.r),
+                ),
+                child: Center(
+                  child: Text(
+                    l10n.finish,
+                    style: TextStyle(
+                      color: colors.textPrimary,
+                      fontSize: 17.sp,
+                      fontWeight: FontWeight.w700,
+                    ),
                   ),
                 ),
               ),
@@ -427,24 +446,27 @@ class _ActiveSessionScreenState extends ConsumerState<ActiveSessionScreen> {
         ),
         SizedBox(width: 12.w),
         Expanded(
-          child: GestureDetector(
-            onTap: () {
-              if (sheetCtx != null) Navigator.pop(sheetCtx);
-              unawaited(_discard());
-            },
-            child: Container(
-              height: 56.h,
-              decoration: BoxDecoration(
-                color: const Color(0xFF3E1418),
-                borderRadius: BorderRadius.circular(28.r),
-              ),
-              child: Center(
-                child: Text(
-                  l10n.discard,
-                  style: TextStyle(
-                    color: const Color(0xFFFF453A),
-                    fontSize: 17.sp,
-                    fontWeight: FontWeight.w700,
+          child: Semantics(
+            button: true,
+            child: GestureDetector(
+              onTap: () {
+                if (sheetCtx != null) Navigator.pop(sheetCtx);
+                unawaited(_discard());
+              },
+              child: Container(
+                height: 56.h,
+                decoration: BoxDecoration(
+                  color: const Color(0xFF3E1418),
+                  borderRadius: BorderRadius.circular(28.r),
+                ),
+                child: Center(
+                  child: Text(
+                    l10n.discard,
+                    style: TextStyle(
+                      color: const Color(0xFFFF453A),
+                      fontSize: 17.sp,
+                      fontWeight: FontWeight.w700,
+                    ),
                   ),
                 ),
               ),
@@ -478,7 +500,9 @@ class _ActiveSessionScreenState extends ConsumerState<ActiveSessionScreen> {
           style: TextStyle(color: colors.textPrimary),
         ),
         content: Text(
-          hasIncomplete ? l10n.unfinishedSetsMessage : l10n.finishWorkoutConfirm,
+          hasIncomplete
+              ? l10n.unfinishedSetsMessage
+              : l10n.finishWorkoutConfirm,
           style: TextStyle(color: colors.textSecondary),
         ),
         actions: [
@@ -522,8 +546,9 @@ class _ActiveSessionScreenState extends ConsumerState<ActiveSessionScreen> {
       }
 
       if (!mounted) return;
-      final workoutName =
-          deriveWorkoutName(snapshot.exercises.map((e) => e.muscleGroup));
+      final workoutName = deriveWorkoutName(
+        snapshot.exercises.map((e) => e.muscleGroup),
+      );
       data = ShareCardData.fromActiveSession(
         snapshot,
         workoutName: workoutName,
@@ -616,23 +641,27 @@ class _ActiveSessionScreenState extends ConsumerState<ActiveSessionScreen> {
     final l10n = AppLocalizations.of(context);
 
     Widget actionPill(String label, VoidCallback onTap) {
-      return GestureDetector(
-        onTap: onTap,
-        child: Container(
-          width: double.infinity,
-          height: 56.h,
-          margin: EdgeInsets.only(bottom: 12.h),
-          decoration: BoxDecoration(
-            color: colors.cardElevated,
-            borderRadius: BorderRadius.circular(28.r),
-          ),
-          child: Center(
-            child: Text(
-              label,
-              style: TextStyle(
-                color: colors.textPrimary,
-                fontSize: 17.sp,
-                fontWeight: FontWeight.w700,
+      // button trait only — the visible text supplies the label.
+      return Semantics(
+        button: true,
+        child: GestureDetector(
+          onTap: onTap,
+          child: Container(
+            width: double.infinity,
+            height: 56.h,
+            margin: EdgeInsets.only(bottom: 12.h),
+            decoration: BoxDecoration(
+              color: colors.cardElevated,
+              borderRadius: BorderRadius.circular(28.r),
+            ),
+            child: Center(
+              child: Text(
+                label,
+                style: TextStyle(
+                  color: colors.textPrimary,
+                  fontSize: 17.sp,
+                  fontWeight: FontWeight.w700,
+                ),
               ),
             ),
           ),
@@ -783,14 +812,18 @@ class _ActiveSessionScreenState extends ConsumerState<ActiveSessionScreen> {
                                 fontSize: 12.sp,
                               ),
                             ),
-                            trailing: GestureDetector(
-                              onTap: () =>
-                                  unawaited(notifier.removeExercise(i)),
-                              behavior: HitTestBehavior.opaque,
-                              child: Icon(
-                                Icons.delete_outline_rounded,
-                                color: colors.danger,
-                                size: 22.sp,
+                            trailing: Semantics(
+                              button: true,
+                              label: l10n.removeExercise,
+                              child: GestureDetector(
+                                onTap: () =>
+                                    unawaited(notifier.removeExercise(i)),
+                                behavior: HitTestBehavior.opaque,
+                                child: Icon(
+                                  Icons.delete_outline_rounded,
+                                  color: colors.danger,
+                                  size: 22.sp,
+                                ),
                               ),
                             ),
                           ),
@@ -1035,22 +1068,27 @@ class _TopStatsCapsule extends StatelessWidget {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 // Time — tap to pause/resume the session clock.
-                GestureDetector(
-                  onTap: () {
-                    HapticFeedback.selectionClick();
-                    if (paused) {
-                      notifier.resume();
-                    } else {
-                      notifier.pause();
-                    }
-                  },
-                  behavior: HitTestBehavior.opaque,
-                  child: _StatColumn(
-                    label: l10n.time,
-                    value: ValueListenableBuilder<int>(
-                      valueListenable: elapsed,
-                      builder: (_, seconds, __) =>
-                          Text(_fmt(seconds), style: _valueStyle),
+                // button trait so screen readers know it's actionable; the
+                // "Time" label + value announce from the child texts.
+                Semantics(
+                  button: true,
+                  child: GestureDetector(
+                    onTap: () {
+                      HapticFeedback.selectionClick();
+                      if (paused) {
+                        notifier.resume();
+                      } else {
+                        notifier.pause();
+                      }
+                    },
+                    behavior: HitTestBehavior.opaque,
+                    child: _StatColumn(
+                      label: l10n.time,
+                      value: ValueListenableBuilder<int>(
+                        valueListenable: elapsed,
+                        builder: (_, seconds, __) =>
+                            Text(_fmt(seconds), style: _valueStyle),
+                      ),
                     ),
                   ),
                 ),
@@ -1540,19 +1578,23 @@ class _SetsTable extends StatelessWidget {
     final btnHeight = 36.h;
     return Padding(
       padding: EdgeInsets.symmetric(horizontal: 20.w),
-      child: GlassSurface(
-        height: btnHeight,
-        radius: btnHeight / 2,
-        blurSigma: AppGlass.blurButton,
-        shadow: GlassDecoration.shadow(isDark: isDark),
-        onTap: notifier.addSet,
-        child: Center(
-          child: Text(
-            l10n.addSet,
-            style: TextStyle(
-              color: AppColors.of(context).textPrimary,
-              fontSize: 13.sp,
-              fontWeight: FontWeight.w600,
+      // button: true only — the visible "Add set" Text supplies the label.
+      child: Semantics(
+        button: true,
+        child: GlassSurface(
+          height: btnHeight,
+          radius: btnHeight / 2,
+          blurSigma: AppGlass.blurButton,
+          shadow: GlassDecoration.shadow(isDark: isDark),
+          onTap: notifier.addSet,
+          child: Center(
+            child: Text(
+              l10n.addSet,
+              style: TextStyle(
+                color: AppColors.of(context).textPrimary,
+                fontSize: 13.sp,
+                fontWeight: FontWeight.w600,
+              ),
             ),
           ),
         ),
@@ -2121,32 +2163,39 @@ class _SetRowState extends State<_SetRow> {
             ),
           );
 
-    return GestureDetector(
-      onTap: () {
-        if (completed) {
-          HapticFeedback.selectionClick();
-          widget.notifier.uncompleteSet(widget.set.localId);
-        } else {
-          widget.notifier.completeSet(widget.set.localId);
-        }
-      },
-      // Draggable across the whole bar (row width minus side padding and
-      // the button itself), not just a short throw.
-      onHorizontalDragUpdate: (d) => setState(
-        () => _dragX = (_dragX + d.delta.dx).clamp(
-          -(MediaQuery.sizeOf(context).width - 40.w - 58.w),
-          0.0,
+    // Icon-only toggle: name it for screen readers. The label flips with the
+    // state so VoiceOver reads what the tap will do next.
+    final l10n = AppLocalizations.of(context);
+    return Semantics(
+      button: true,
+      label: completed ? l10n.markSetIncomplete : l10n.markSetComplete,
+      child: GestureDetector(
+        onTap: () {
+          if (completed) {
+            HapticFeedback.selectionClick();
+            widget.notifier.uncompleteSet(widget.set.localId);
+          } else {
+            widget.notifier.completeSet(widget.set.localId);
+          }
+        },
+        // Draggable across the whole bar (row width minus side padding and
+        // the button itself), not just a short throw.
+        onHorizontalDragUpdate: (d) => setState(
+          () => _dragX = (_dragX + d.delta.dx).clamp(
+            -(MediaQuery.sizeOf(context).width - 40.w - 58.w),
+            0.0,
+          ),
         ),
+        onHorizontalDragEnd: (_) {
+          if (_dragX < _kArmThreshold) {
+            _arm();
+          } else {
+            setState(() => _dragX = 0);
+          }
+        },
+        onHorizontalDragCancel: () => setState(() => _dragX = 0),
+        child: Transform.translate(offset: Offset(_dragX, 0), child: button),
       ),
-      onHorizontalDragEnd: (_) {
-        if (_dragX < _kArmThreshold) {
-          _arm();
-        } else {
-          setState(() => _dragX = 0);
-        }
-      },
-      onHorizontalDragCancel: () => setState(() => _dragX = 0),
-      child: Transform.translate(offset: Offset(_dragX, 0), child: button),
     );
   }
 
@@ -2163,24 +2212,28 @@ class _SetRowState extends State<_SetRow> {
       ),
       child: Row(
         children: [
-          // X — cancel.
-          GestureDetector(
-            onTap: _disarm,
-            behavior: HitTestBehavior.opaque,
-            child: Padding(
-              padding: EdgeInsets.all(4.w),
-              child: Container(
-                width: barHeight - 8.w,
-                height: barHeight - 8.w,
-                decoration: const BoxDecoration(
-                  color: Color(0xFF9B1B1F),
-                  shape: BoxShape.circle,
-                ),
-                child: Center(
-                  child: Icon(
-                    Icons.close_rounded,
-                    color: Colors.white,
-                    size: 20.sp,
+          // X — cancel (icon-only, so it carries a semantic label).
+          Semantics(
+            button: true,
+            label: l10n.cancel,
+            child: GestureDetector(
+              onTap: _disarm,
+              behavior: HitTestBehavior.opaque,
+              child: Padding(
+                padding: EdgeInsets.all(4.w),
+                child: Container(
+                  width: barHeight - 8.w,
+                  height: barHeight - 8.w,
+                  decoration: const BoxDecoration(
+                    color: Color(0xFF9B1B1F),
+                    shape: BoxShape.circle,
+                  ),
+                  child: Center(
+                    child: Icon(
+                      Icons.close_rounded,
+                      color: Colors.white,
+                      size: 20.sp,
+                    ),
                   ),
                 ),
               ),
@@ -2188,20 +2241,23 @@ class _SetRowState extends State<_SetRow> {
           ),
           // Press the text to confirm the delete.
           Expanded(
-            child: GestureDetector(
-              onTap: () {
-                HapticFeedback.heavyImpact();
-                widget.notifier.deleteSet(widget.set.localId);
-              },
-              behavior: HitTestBehavior.opaque,
-              child: Center(
-                child: Text(
-                  l10n.pressToDelete,
-                  style: TextStyle(
-                    color: const Color(0xFFFF6B6B),
-                    fontSize: 12.sp,
-                    fontWeight: FontWeight.w800,
-                    letterSpacing: 0.4,
+            child: Semantics(
+              button: true,
+              child: GestureDetector(
+                onTap: () {
+                  HapticFeedback.heavyImpact();
+                  widget.notifier.deleteSet(widget.set.localId);
+                },
+                behavior: HitTestBehavior.opaque,
+                child: Center(
+                  child: Text(
+                    l10n.pressToDelete,
+                    style: TextStyle(
+                      color: const Color(0xFFFF6B6B),
+                      fontSize: 12.sp,
+                      fontWeight: FontWeight.w800,
+                      letterSpacing: 0.4,
+                    ),
                   ),
                 ),
               ),
@@ -2261,38 +2317,47 @@ class _RestSheet extends ConsumerWidget {
                   final timeStr = running
                       ? '${m.toString().padLeft(2, '0')}:${s.toString().padLeft(2, '0')}'
                       : '--:--';
-                  return SizedBox(
-                    width: 150.w,
-                    height: 150.w,
-                    child: CustomPaint(
-                      painter: _TimerRingPainter(
-                        progress: running
-                            ? notifier.restTimerService.progress
-                            : 0,
-                        strokeWidth: 12.w,
-                        accentColor: colors.accent,
-                      ),
-                      child: Center(
-                        child: Column(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Text(
-                              l10n.restTime,
-                              style: TextStyle(
-                                color: colors.textPrimary,
-                                fontSize: 13.sp,
-                                fontWeight: FontWeight.w700,
+                  // One meaningful announcement ("Rest timer, 1:30 remaining")
+                  // instead of the two raw texts. Not a live region — that
+                  // would re-announce every second.
+                  return Semantics(
+                    label: running
+                        ? l10n.restTimerRemaining(timeStr)
+                        : l10n.restTimer,
+                    excludeSemantics: true,
+                    child: SizedBox(
+                      width: 150.w,
+                      height: 150.w,
+                      child: CustomPaint(
+                        painter: _TimerRingPainter(
+                          progress: running
+                              ? notifier.restTimerService.progress
+                              : 0,
+                          strokeWidth: 12.w,
+                          accentColor: colors.accent,
+                        ),
+                        child: Center(
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Text(
+                                l10n.restTime,
+                                style: TextStyle(
+                                  color: colors.textPrimary,
+                                  fontSize: 13.sp,
+                                  fontWeight: FontWeight.w700,
+                                ),
                               ),
-                            ),
-                            Text(
-                              timeStr,
-                              style: TextStyle(
-                                color: colors.textPrimary,
-                                fontSize: 30.sp,
-                                fontWeight: FontWeight.w800,
+                              Text(
+                                timeStr,
+                                style: TextStyle(
+                                  color: colors.textPrimary,
+                                  fontSize: 30.sp,
+                                  fontWeight: FontWeight.w800,
+                                ),
                               ),
-                            ),
-                          ],
+                            ],
+                          ),
                         ),
                       ),
                     ),
@@ -2347,25 +2412,30 @@ class _RestSheet extends ConsumerWidget {
   }) {
     final colors = AppColors.of(context);
     final enabled = onTap != null;
-    return GestureDetector(
-      onTap: onTap,
-      behavior: HitTestBehavior.opaque,
-      child: Container(
-        padding: EdgeInsets.symmetric(horizontal: 20.w, vertical: 10.h),
-        decoration: BoxDecoration(
-          color: accent
-              ? colors.accent.withValues(alpha: enabled ? 0.16 : 0.06)
-              : Colors.white.withValues(alpha: enabled ? 0.12 : 0.05),
-          borderRadius: BorderRadius.circular(100.r),
-        ),
-        child: Text(
-          label,
-          style: TextStyle(
+    // button + enabled traits; the visible text supplies the label.
+    return Semantics(
+      button: true,
+      enabled: enabled,
+      child: GestureDetector(
+        onTap: onTap,
+        behavior: HitTestBehavior.opaque,
+        child: Container(
+          padding: EdgeInsets.symmetric(horizontal: 20.w, vertical: 10.h),
+          decoration: BoxDecoration(
             color: accent
-                ? colors.accent.withValues(alpha: enabled ? 1 : 0.4)
-                : colors.textPrimary.withValues(alpha: enabled ? 1 : 0.4),
-            fontSize: 13.sp,
-            fontWeight: FontWeight.w700,
+                ? colors.accent.withValues(alpha: enabled ? 0.16 : 0.06)
+                : Colors.white.withValues(alpha: enabled ? 0.12 : 0.05),
+            borderRadius: BorderRadius.circular(100.r),
+          ),
+          child: Text(
+            label,
+            style: TextStyle(
+              color: accent
+                  ? colors.accent.withValues(alpha: enabled ? 1 : 0.4)
+                  : colors.textPrimary.withValues(alpha: enabled ? 1 : 0.4),
+              fontSize: 13.sp,
+              fontWeight: FontWeight.w700,
+            ),
           ),
         ),
       ),

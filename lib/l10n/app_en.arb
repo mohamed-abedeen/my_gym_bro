@@ -654,5 +654,16 @@
   "shareObjectPiano": "Piano",
   "shareObjectCar": "Car",
   "shareObjectVan": "Van",
-  "shareObjectElephant": "Elephant"
+  "shareObjectElephant": "Elephant",
+  "close": "Close",
+  "hint": "Hint",
+  "moreOptions": "More options",
+  "markSetComplete": "Mark set complete",
+  "markSetIncomplete": "Mark set incomplete",
+  "restTimerRemaining": "Rest timer, {time} remaining",
+  "@restTimerRemaining": {
+    "placeholders": {
+      "time": { "type": "String" }
+    }
+  }
 }

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import 'package:my_gym_bro/l10n/app_localizations.dart';
 import 'package:my_gym_bro/shared/constants.dart';
 import 'package:my_gym_bro/shared/responsive.dart';
 import 'package:my_gym_bro/shared/widgets/glass_decoration.dart';
@@ -103,23 +104,43 @@ class OcGlassBtn extends StatelessWidget {
             child: content,
           );
 
-    return GestureDetector(
-      onTap: onTap,
-      behavior: HitTestBehavior.opaque,
-      child: surface,
+    // Every OcGlassBtn knows its type, so it can label itself for screen
+    // readers: the visible pill label wins, otherwise a localized default.
+    // excludeSemantics drops the inner Text so nothing announces twice; the
+    // GestureDetector above the Semantics keeps the tap action.
+    return Semantics(
+      container: true,
+      button: true,
+      label: label ?? _semanticLabel(type, AppLocalizations.of(context)),
+      child: GestureDetector(
+        onTap: onTap,
+        behavior: HitTestBehavior.opaque,
+        child: ExcludeSemantics(child: surface),
+      ),
     );
   }
+
+  // ── Default screen-reader label per type ──
+
+  String _semanticLabel(OcGlassBtnType t, AppLocalizations l10n) => switch (t) {
+    OcGlassBtnType.close => l10n.close,
+    OcGlassBtnType.done => l10n.done,
+    OcGlassBtnType.save => l10n.save,
+    OcGlassBtnType.share => l10n.share,
+    OcGlassBtnType.delete => l10n.delete,
+    OcGlassBtnType.hint => l10n.hint,
+  };
 
   // ── Icon mapping ──
 
   IconData _iconFor(OcGlassBtnType t) => switch (t) {
-        OcGlassBtnType.close => Icons.close_rounded,
-        OcGlassBtnType.done => Icons.check_rounded,
-        OcGlassBtnType.save => Icons.save_rounded,
-        OcGlassBtnType.share => Icons.ios_share_rounded,
-        OcGlassBtnType.delete => Icons.delete_outline_rounded,
-        OcGlassBtnType.hint => Icons.lightbulb_outline_rounded,
-      };
+    OcGlassBtnType.close => Icons.close_rounded,
+    OcGlassBtnType.done => Icons.check_rounded,
+    OcGlassBtnType.save => Icons.save_rounded,
+    OcGlassBtnType.share => Icons.ios_share_rounded,
+    OcGlassBtnType.delete => Icons.delete_outline_rounded,
+    OcGlassBtnType.hint => Icons.lightbulb_outline_rounded,
+  };
 
   // ── Icon color ──
 
@@ -136,6 +157,6 @@ class OcGlassBtn extends StatelessWidget {
 
   Color _glassTint(OcGlassBtnType t, AppColorsTheme c, bool isDark) =>
       t == OcGlassBtnType.delete
-          ? c.danger.withValues(alpha: isDark ? 0.10 : 0.08)
-          : GlassDecoration.tint(isDark: isDark);
+      ? c.danger.withValues(alpha: isDark ? 0.10 : 0.08)
+      : GlassDecoration.tint(isDark: isDark);
 }

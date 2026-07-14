@@ -1482,4 +1482,24 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get shareObjectElephant => 'Elefante';
+
+  @override
+  String get close => 'Cerrar';
+
+  @override
+  String get hint => 'Pista';
+
+  @override
+  String get moreOptions => 'Más opciones';
+
+  @override
+  String get markSetComplete => 'Marcar serie como completada';
+
+  @override
+  String get markSetIncomplete => 'Marcar serie como no completada';
+
+  @override
+  String restTimerRemaining(String time) {
+    return 'Temporizador de descanso, quedan $time';
+  }
 }

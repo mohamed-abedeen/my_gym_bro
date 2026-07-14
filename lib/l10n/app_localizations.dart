@@ -2831,6 +2831,42 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Elephant'**
   String get shareObjectElephant;
+
+  /// No description provided for @close.
+  ///
+  /// In en, this message translates to:
+  /// **'Close'**
+  String get close;
+
+  /// No description provided for @hint.
+  ///
+  /// In en, this message translates to:
+  /// **'Hint'**
+  String get hint;
+
+  /// No description provided for @moreOptions.
+  ///
+  /// In en, this message translates to:
+  /// **'More options'**
+  String get moreOptions;
+
+  /// No description provided for @markSetComplete.
+  ///
+  /// In en, this message translates to:
+  /// **'Mark set complete'**
+  String get markSetComplete;
+
+  /// No description provided for @markSetIncomplete.
+  ///
+  /// In en, this message translates to:
+  /// **'Mark set incomplete'**
+  String get markSetIncomplete;
+
+  /// No description provided for @restTimerRemaining.
+  ///
+  /// In en, this message translates to:
+  /// **'Rest timer, {time} remaining'**
+  String restTimerRemaining(String time);
 }
 
 class _AppLocalizationsDelegate

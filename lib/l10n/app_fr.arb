@@ -474,5 +474,16 @@
   "shareObjectPiano": "Piano",
   "shareObjectCar": "Voiture",
   "shareObjectVan": "Camionnette",
-  "shareObjectElephant": "Éléphant"
+  "shareObjectElephant": "Éléphant",
+  "close": "Fermer",
+  "hint": "Astuce",
+  "moreOptions": "Plus d'options",
+  "markSetComplete": "Marquer la série comme terminée",
+  "markSetIncomplete": "Marquer la série comme non terminée",
+  "restTimerRemaining": "Minuteur de repos, {time} restant",
+  "@restTimerRemaining": {
+    "placeholders": {
+      "time": { "type": "String" }
+    }
+  }
 }

@@ -56,10 +56,15 @@ class LiquidGlassButton extends StatelessWidget {
             child: content,
           );
 
-    return GestureDetector(
-      onTap: onTap,
-      behavior: HitTestBehavior.opaque,
-      child: surface,
+    // Announce as a button; the caller-provided child (usually a Text)
+    // supplies its own label, so none is set here.
+    return Semantics(
+      button: true,
+      child: GestureDetector(
+        onTap: onTap,
+        behavior: HitTestBehavior.opaque,
+        child: surface,
+      ),
     );
   }
 }

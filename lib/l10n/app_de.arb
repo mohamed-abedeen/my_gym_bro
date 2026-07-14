@@ -474,5 +474,16 @@
   "shareObjectPiano": "Flügel",
   "shareObjectCar": "Auto",
   "shareObjectVan": "Lieferwagen",
-  "shareObjectElephant": "Elefant"
+  "shareObjectElephant": "Elefant",
+  "close": "Schließen",
+  "hint": "Hinweis",
+  "moreOptions": "Weitere Optionen",
+  "markSetComplete": "Satz als abgeschlossen markieren",
+  "markSetIncomplete": "Satz als nicht abgeschlossen markieren",
+  "restTimerRemaining": "Pausen-Timer, noch {time}",
+  "@restTimerRemaining": {
+    "placeholders": {
+      "time": { "type": "String" }
+    }
+  }
 }

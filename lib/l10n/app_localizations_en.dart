@@ -1476,4 +1476,24 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get shareObjectElephant => 'Elephant';
+
+  @override
+  String get close => 'Close';
+
+  @override
+  String get hint => 'Hint';
+
+  @override
+  String get moreOptions => 'More options';
+
+  @override
+  String get markSetComplete => 'Mark set complete';
+
+  @override
+  String get markSetIncomplete => 'Mark set incomplete';
+
+  @override
+  String restTimerRemaining(String time) {
+    return 'Rest timer, $time remaining';
+  }
 }

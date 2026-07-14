@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:my_gym_bro/l10n/app_localizations.dart';
 import 'package:my_gym_bro/shared/constants.dart';
 import 'package:my_gym_bro/shared/responsive.dart';
 import 'package:my_gym_bro/shared/widgets/glass_surface.dart';
@@ -64,6 +65,7 @@ class _BottomNavPillState extends ConsumerState<BottomNavPill>
   Widget build(BuildContext context) {
     final idx = ref.watch(navIndexProvider);
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    final l10n = AppLocalizations.of(context);
 
     if (idx != _prevIndex) {
       WidgetsBinding.instance.addPostFrameCallback((_) => _animateTo(idx));
@@ -102,7 +104,8 @@ class _BottomNavPillState extends ConsumerState<BottomNavPill>
                 width: pillW,
                 height: pillH,
                 radius: pillH / 2, // fully rounded (Figma corner radius 33.5)
-                blurSigma: 2.5, // ≈ Figma background blur 5 (Flutter sigma runs heavier)
+                blurSigma:
+                    2.5, // ≈ Figma background blur 5 (Flutter sigma runs heavier)
                 tint: pillFill,
                 borderColor: pillStroke,
                 borderWidth: 0.5,
@@ -133,16 +136,23 @@ class _BottomNavPillState extends ConsumerState<BottomNavPill>
               Positioned.fill(
                 child: Row(
                   children: [
-                    _NavTab(index: 0, icon: Icons.home_rounded, size: 34.sp),
+                    _NavTab(
+                      index: 0,
+                      icon: Icons.home_rounded,
+                      size: 34.sp,
+                      label: l10n.tabHome,
+                    ),
                     _NavTab(
                       index: 1,
                       icon: Icons.fitness_center_rounded,
                       size: 34.sp,
+                      label: l10n.tabWorkout,
                     ),
                     _NavTab(
                       index: 2,
                       icon: Icons.people_rounded,
                       size: 38.sp,
+                      label: l10n.tabCommunity,
                     ),
                   ],
                 ),
@@ -160,11 +170,19 @@ class _BottomNavPillState extends ConsumerState<BottomNavPill>
 // ─────────────────────────────────────────────────────────────────────────────
 
 class _NavTab extends ConsumerWidget {
-  const _NavTab({required this.index, required this.icon, required this.size});
+  const _NavTab({
+    required this.index,
+    required this.icon,
+    required this.size,
+    required this.label,
+  });
 
   final int index;
   final IconData icon;
   final double size;
+
+  /// Screen-reader label for this tab (the icon is otherwise unlabeled).
+  final String label;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -185,19 +203,26 @@ class _NavTab extends ConsumerWidget {
     }
 
     return Expanded(
-      child: GestureDetector(
-        behavior: HitTestBehavior.opaque,
-        onTap: () => ref.read(navIndexProvider.notifier).state = index,
-        child: SizedBox(
-          height: AppSizes.navPillHeight.h,
-          child: Center(
-            child: AnimatedSwitcher(
-              duration: const Duration(milliseconds: 200),
-              child: Icon(
-                icon,
-                key: ValueKey('$index-$isActive'),
-                size: size,
-                color: color,
+      // Icon-only tab: give screen readers a name + tab semantics. The icon
+      // itself carries no semantics, so there's no double announcement.
+      child: Semantics(
+        button: true,
+        selected: isActive,
+        label: label,
+        child: GestureDetector(
+          behavior: HitTestBehavior.opaque,
+          onTap: () => ref.read(navIndexProvider.notifier).state = index,
+          child: SizedBox(
+            height: AppSizes.navPillHeight.h,
+            child: Center(
+              child: AnimatedSwitcher(
+                duration: const Duration(milliseconds: 200),
+                child: Icon(
+                  icon,
+                  key: ValueKey('$index-$isActive'),
+                  size: size,
+                  color: color,
+                ),
               ),
             ),
           ),

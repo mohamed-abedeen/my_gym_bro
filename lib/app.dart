@@ -47,9 +47,24 @@ class MyGymBroApp extends ConsumerWidget {
 
       // Router
       routerConfig: router,
-      builder: (context, child) => _LocaleSyncBoundary(
-        child: ConnectivityBanner(child: child ?? const SizedBox.shrink()),
-      ),
+      builder: (context, child) {
+        // Clamp system text scaling to 0.8–1.3 app-wide: the fixed-size glass
+        // chrome (54.h stats capsule, 46.h set rows, the nav pill's hardcoded
+        // tab offsets) overflows past ~1.3, and scales below 0.8 make labels
+        // unreadably small. Within the clamp everything still scales.
+        final mq = MediaQuery.of(context);
+        return MediaQuery(
+          data: mq.copyWith(
+            textScaler: mq.textScaler.clamp(
+              minScaleFactor: 0.8,
+              maxScaleFactor: 1.3,
+            ),
+          ),
+          child: _LocaleSyncBoundary(
+            child: ConnectivityBanner(child: child ?? const SizedBox.shrink()),
+          ),
+        );
+      },
     );
   }
 }
