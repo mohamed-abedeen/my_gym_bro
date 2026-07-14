@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:my_gym_bro/core/services/subscription_sync_service.dart';
 import 'package:my_gym_bro/features/community/community_screen.dart';
 import 'package:my_gym_bro/features/home/home_screen.dart';
@@ -176,33 +177,53 @@ class _MyGymBroScaffoldState extends ConsumerState<MyGymBroScaffold>
     // actually leaves the app. Pushed routes, sheets and dialogs sit above
     // this route, so their back behavior is untouched. Inert on iOS (no
     // system back at the app root).
-    return PopScope(
-      canPop: false,
-      onPopInvokedWithResult: (didPop, _) {
-        if (didPop) return;
-        if (ref.read(navIndexProvider) != 0) {
-          ref.read(navIndexProvider.notifier).state = 0;
-          _lastBackAt = null; // exit window starts fresh on Home
-          return;
-        }
-        final now = DateTime.now();
-        if (_lastBackAt != null &&
-            now.difference(_lastBackAt!) < const Duration(seconds: 2)) {
-          SystemNavigator.pop();
-          return;
-        }
-        _lastBackAt = now;
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(AppLocalizations.of(context).backAgainToExit),
-            duration: const Duration(seconds: 2),
-            behavior: SnackBarBehavior.floating,
-            // Keep the hint clear of the floating nav pill.
-            margin: EdgeInsets.only(left: 24.w, right: 24.w, bottom: 110.h),
-          ),
-        );
-      },
-      child: scaffold,
+    // BackButtonListener actually receives the event: go_router 13's
+    // popRoute() checks canPop() before maybePop(), so a PopScope on the
+    // root route is never consulted and the app would exit directly. The
+    // listener takes priority on the back dispatcher; when something is
+    // genuinely poppable (pushed screen, sheet, dialog) it returns false
+    // and the router pops as usual. PopScope(canPop: false) stays as the
+    // ahead-of-time "framework handles back" signal predictive back needs.
+    return BackButtonListener(
+      onBackButtonPressed: _handleRootBack,
+      child: PopScope(
+        canPop: false,
+        onPopInvokedWithResult: (didPop, _) {
+          // Only reached if something calls maybePop() directly (or a
+          // future go_router routes back through here) — same handling.
+          if (!didPop) unawaited(_handleRootBack());
+        },
+        child: scaffold,
+      ),
     );
+  }
+
+  /// Root back handling: pop whatever is genuinely open first; otherwise a
+  /// non-home tab goes Home, and on Home a double-back within 2s exits.
+  /// Returns true when the event was consumed.
+  Future<bool> _handleRootBack() async {
+    if (GoRouter.of(context).canPop()) return false; // let the router pop
+    if (ref.read(navIndexProvider) != 0) {
+      ref.read(navIndexProvider.notifier).state = 0;
+      _lastBackAt = null; // exit window starts fresh on Home
+      return true;
+    }
+    final now = DateTime.now();
+    if (_lastBackAt != null &&
+        now.difference(_lastBackAt!) < const Duration(seconds: 2)) {
+      await SystemNavigator.pop();
+      return true;
+    }
+    _lastBackAt = now;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(AppLocalizations.of(context).backAgainToExit),
+        duration: const Duration(seconds: 2),
+        behavior: SnackBarBehavior.floating,
+        // Keep the hint clear of the floating nav pill.
+        margin: EdgeInsets.only(left: 24.w, right: 24.w, bottom: 110.h),
+      ),
+    );
+    return true;
   }
 }
