@@ -460,6 +460,9 @@ class AppLocalizationsDe extends AppLocalizations {
       'Beitrag konnte nicht veröffentlicht werden. Versuch es erneut.';
 
   @override
+  String get backAgainToExit => 'Zum Beenden erneut zurückwischen';
+
+  @override
   String get post => 'Posten';
 
   @override

@@ -146,6 +146,7 @@
   "communityEmpty": "Aucune publication pour l'instant. Sois le premier !",
   "communityError": "Impossible de charger le fil. Glisse vers le bas pour réessayer.",
   "postFailed": "Impossible de publier. Réessaie.",
+  "backAgainToExit": "Balaie encore une fois pour quitter",
   "noPostsYet": "Aucune publication pour l'instant",
   "post": "Publier",
   "skip": "Passer",

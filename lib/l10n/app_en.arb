@@ -198,6 +198,7 @@
   "communityEmpty": "No posts yet. Be the first to share!",
   "communityError": "Couldn't load the feed. Pull down to retry.",
   "postFailed": "Couldn't publish your post. Try again.",
+  "backAgainToExit": "Swipe back again to exit",
   "post": "Post",
   "skip": "Skip",
   "cancel": "Cancel",

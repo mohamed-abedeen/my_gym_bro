@@ -942,6 +942,12 @@ abstract class AppLocalizations {
   /// **'Couldn\'t publish your post. Try again.'**
   String get postFailed;
 
+  /// No description provided for @backAgainToExit.
+  ///
+  /// In en, this message translates to:
+  /// **'Swipe back again to exit'**
+  String get backAgainToExit;
+
   /// No description provided for @post.
   ///
   /// In en, this message translates to:

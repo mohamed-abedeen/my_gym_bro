@@ -146,6 +146,7 @@
   "communityEmpty": "Aún no hay publicaciones. ¡Sé el primero!",
   "communityError": "No se pudo cargar el feed. Desliza hacia abajo para reintentar.",
   "postFailed": "No se pudo publicar. Inténtalo de nuevo.",
+  "backAgainToExit": "Desliza atrás otra vez para salir",
   "noPostsYet": "Aún no hay publicaciones",
   "post": "Publicar",
   "skip": "Omitir",

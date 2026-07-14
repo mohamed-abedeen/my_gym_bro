@@ -458,6 +458,9 @@ class AppLocalizationsEs extends AppLocalizations {
   String get postFailed => 'No se pudo publicar. Inténtalo de nuevo.';
 
   @override
+  String get backAgainToExit => 'Desliza atrás otra vez para salir';
+
+  @override
   String get post => 'Publicar';
 
   @override

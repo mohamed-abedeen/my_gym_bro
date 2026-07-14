@@ -146,6 +146,7 @@
   "communityEmpty": "Noch keine Beiträge. Sei der Erste!",
   "communityError": "Feed konnte nicht geladen werden. Zieh nach unten, um es erneut zu versuchen.",
   "postFailed": "Beitrag konnte nicht veröffentlicht werden. Versuch es erneut.",
+  "backAgainToExit": "Zum Beenden erneut zurückwischen",
   "noPostsYet": "Noch keine Beiträge",
   "post": "Posten",
   "skip": "Überspringen",

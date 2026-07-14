@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:my_gym_bro/core/services/subscription_sync_service.dart';
 import 'package:my_gym_bro/features/community/community_screen.dart';
@@ -12,6 +13,7 @@ import 'package:my_gym_bro/features/workout/achievement_planner.dart';
 import 'package:my_gym_bro/features/workout/active_session/active_session_notifier.dart';
 import 'package:my_gym_bro/features/workout/workout_providers.dart';
 import 'package:my_gym_bro/features/workout/workout_screen.dart';
+import 'package:my_gym_bro/l10n/app_localizations.dart';
 import 'package:my_gym_bro/shared/constants.dart';
 import 'package:my_gym_bro/shared/responsive.dart';
 import 'package:my_gym_bro/shared/widgets/bottom_nav_pill.dart';
@@ -31,6 +33,9 @@ class MyGymBroScaffold extends ConsumerStatefulWidget {
 class _MyGymBroScaffoldState extends ConsumerState<MyGymBroScaffold>
     with WidgetsBindingObserver {
   int _previousIndex = 0;
+
+  /// Timestamp of the last root back gesture — double-back-to-exit window.
+  DateTime? _lastBackAt;
 
   @override
   void initState() {
@@ -150,22 +155,48 @@ class _MyGymBroScaffoldState extends ConsumerState<MyGymBroScaffold>
     // iOS → real native UITabBar (Apple Liquid Glass on iOS 26) via
     // cupertino_native_better. Every other platform keeps the custom frosted
     // floating pill. Both drive the same [navIndexProvider].
-    if (Theme.of(context).platform == TargetPlatform.iOS) {
-      return Scaffold(
-        backgroundColor: colors.background,
-        body: pageBody,
-        bottomNavigationBar: const IosNativeNav(),
-      );
-    }
+    final scaffold = Theme.of(context).platform == TargetPlatform.iOS
+        ? Scaffold(
+            backgroundColor: colors.background,
+            body: pageBody,
+            bottomNavigationBar: const IosNativeNav(),
+          )
+        : Scaffold(
+            backgroundColor: colors.background,
+            body: Stack(
+              children: [
+                pageBody,
+                const BottomNavPill(),
+              ],
+            ),
+          );
 
-    return Scaffold(
-      backgroundColor: colors.background,
-      body: Stack(
-        children: [
-          pageBody,
-          const BottomNavPill(),
-        ],
-      ),
+    // Root back guard: the first back gesture at the shell only shows a
+    // hint; a second within 2s actually leaves the app. Pushed routes,
+    // sheets and dialogs sit above this route, so their back behavior is
+    // untouched. Inert on iOS (no system back at the app root).
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, _) {
+        if (didPop) return;
+        final now = DateTime.now();
+        if (_lastBackAt != null &&
+            now.difference(_lastBackAt!) < const Duration(seconds: 2)) {
+          SystemNavigator.pop();
+          return;
+        }
+        _lastBackAt = now;
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(AppLocalizations.of(context).backAgainToExit),
+            duration: const Duration(seconds: 2),
+            behavior: SnackBarBehavior.floating,
+            // Keep the hint clear of the floating nav pill.
+            margin: EdgeInsets.only(left: 24.w, right: 24.w, bottom: 110.h),
+          ),
+        );
+      },
+      child: scaffold,
     );
   }
 }
