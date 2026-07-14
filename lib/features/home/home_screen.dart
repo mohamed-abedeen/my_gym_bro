@@ -1,4 +1,3 @@
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:my_gym_bro/core/providers/providers.dart';
@@ -38,7 +37,7 @@ class HomeScreen extends ConsumerWidget {
           child: GestureDetector(
             behavior: HitTestBehavior.opaque,
             onTap: () => Navigator.of(context).push(
-              CupertinoPageRoute<void>(
+              MaterialPageRoute<void>(
                 builder: (_) => const LeaderboardScreen(),
               ),
             ),
@@ -132,7 +131,7 @@ class _Header extends ConsumerWidget {
           GestureDetector(
             onTap:
                 () => Navigator.of(context).push(
-                  CupertinoPageRoute<void>(builder: (_) => const SettingsScreen()),
+                  MaterialPageRoute<void>(builder: (_) => const SettingsScreen()),
                 ),
             child: LiquidGlassButton(
               width: 48.w,

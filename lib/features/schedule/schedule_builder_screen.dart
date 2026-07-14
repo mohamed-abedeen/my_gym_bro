@@ -1073,7 +1073,7 @@ class _ScheduleBuilderScreenState
     if (dayIndex >= _days.length) return;
 
     await Navigator.of(context).push(
-      CupertinoPageRoute<void>(
+      MaterialPageRoute<void>(
         builder: (_) => ExerciseBrowserScreen(
           multiPickMode: true,
           onMultiSelect: (exercises) {
@@ -1105,7 +1105,7 @@ class _ScheduleBuilderScreenState
     final exercises = await exerciseDao.findByExerciseIds([ex.exerciseId]);
     if (exercises.isNotEmpty && mounted) {
       unawaited(Navigator.of(context).push(
-        CupertinoPageRoute<void>(
+        MaterialPageRoute<void>(
           builder: (_) => ExerciseDetailScreen(exercise: exercises.first),
         ),
       ));

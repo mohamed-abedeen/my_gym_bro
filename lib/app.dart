@@ -7,6 +7,22 @@ import 'package:my_gym_bro/l10n/app_localizations.dart';
 import 'package:my_gym_bro/shared/constants.dart';
 import 'package:my_gym_bro/shared/widgets/connectivity_banner.dart';
 
+/// Screen-to-screen motion, per platform. Routes use plain [MaterialPage] /
+/// [MaterialPageRoute] so this theme is the single source of truth:
+/// - iOS/macOS: native Cupertino slide + interactive swipe-back.
+/// - Android: predictive-back (Android 14+ shared-element gesture); regular
+///   pushes fall back to the M3 FadeForwards transition (~350ms fade-slide).
+/// - Windows/Linux (dev): same FadeForwards look, no gesture.
+const _pageTransitionsTheme = PageTransitionsTheme(
+  builders: <TargetPlatform, PageTransitionsBuilder>{
+    TargetPlatform.iOS: CupertinoPageTransitionsBuilder(),
+    TargetPlatform.macOS: CupertinoPageTransitionsBuilder(),
+    TargetPlatform.android: PredictiveBackPageTransitionsBuilder(),
+    TargetPlatform.windows: FadeForwardsPageTransitionsBuilder(),
+    TargetPlatform.linux: FadeForwardsPageTransitionsBuilder(),
+  },
+);
+
 /// Root app widget.
 class MyGymBroApp extends ConsumerWidget {
   const MyGymBroApp({super.key});
@@ -29,6 +45,7 @@ class MyGymBroApp extends ConsumerWidget {
       // Theme
       themeMode: themeMode,
       theme: ThemeData.light().copyWith(
+        pageTransitionsTheme: _pageTransitionsTheme,
         scaffoldBackgroundColor: AppColorsTheme.light.background,
         colorScheme: ColorScheme.light(
           primary: AppColorsTheme.light.accent,
@@ -37,6 +54,7 @@ class MyGymBroApp extends ConsumerWidget {
         extensions: const [AppColorsTheme.light],
       ),
       darkTheme: ThemeData.dark().copyWith(
+        pageTransitionsTheme: _pageTransitionsTheme,
         scaffoldBackgroundColor: AppColorsTheme.dark.background,
         colorScheme: ColorScheme.dark(
           primary: AppColorsTheme.dark.accent,

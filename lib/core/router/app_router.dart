@@ -1,5 +1,5 @@
 import 'package:cupertino_native_better/cupertino_native_better.dart';
-import 'package:flutter/cupertino.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:my_gym_bro/features/auth/sign_in_screen.dart';
@@ -73,13 +73,15 @@ class AppRoutes {
 // PAGE HELPERS
 // ═══════════════════════════════════════════════════════════════════════════
 
-/// iOS-native slide transition with parallax + interactive swipe-back.
-/// This is the same transition UINavigationController uses on real iPhones.
-CupertinoPage<T> _cupertinoPage<T>({
+/// Platform-adaptive push transition, resolved by the app theme's
+/// `PageTransitionsTheme` (see `app.dart`): iOS/macOS get the native
+/// Cupertino slide + interactive swipe-back, Android gets predictive-back /
+/// M3 FadeForwards, desktop gets FadeForwards.
+MaterialPage<T> _platformPage<T>({
   required Widget child,
   required GoRouterState state,
 }) =>
-    CupertinoPage<T>(
+    MaterialPage<T>(
       key: state.pageKey,
       child: child,
     );
@@ -110,11 +112,13 @@ NoTransitionPage<T> _noTransitionPage<T>({
       child: child,
     );
 
-/// Slide-up transition — for modals like active session, paywall.
+/// Slide-up transition — iOS fullscreen-dialog feel for modal flows
+/// (active session, share card, paywall). Pop reverses it automatically.
+/// Collapses to a plain fade when the OS requests reduced motion.
 CustomTransitionPage<T> _slideUpPage<T>({
   required Widget child,
   required GoRouterState state,
-  Duration duration = const Duration(milliseconds: 400),
+  Duration duration = const Duration(milliseconds: 350),
 }) =>
     CustomTransitionPage<T>(
       key: state.pageKey,
@@ -122,6 +126,9 @@ CustomTransitionPage<T> _slideUpPage<T>({
       transitionDuration: duration,
       reverseTransitionDuration: duration,
       transitionsBuilder: (context, animation, secondaryAnimation, child) {
+        if (MediaQuery.disableAnimationsOf(context)) {
+          return FadeTransition(opacity: animation, child: child);
+        }
         final curved = CurvedAnimation(
           parent: animation,
           curve: Curves.easeOutCubic,
@@ -189,57 +196,57 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: AppRoutes.onboardingGender,
         pageBuilder: (context, state) =>
-            _cupertinoPage(child: const GenderScreen(), state: state),
+            _platformPage(child: const GenderScreen(), state: state),
       ),
       GoRoute(
         path: AppRoutes.onboardingGoal,
         pageBuilder: (context, state) =>
-            _cupertinoPage(child: const GoalScreen(), state: state),
+            _platformPage(child: const GoalScreen(), state: state),
       ),
       GoRoute(
         path: AppRoutes.onboardingExperience,
         pageBuilder: (context, state) =>
-            _cupertinoPage(child: const ExperienceScreen(), state: state),
+            _platformPage(child: const ExperienceScreen(), state: state),
       ),
       GoRoute(
         path: AppRoutes.onboardingBirthday,
         pageBuilder: (context, state) =>
-            _cupertinoPage(child: const BirthdayScreen(), state: state),
+            _platformPage(child: const BirthdayScreen(), state: state),
       ),
       GoRoute(
         path: AppRoutes.onboardingWeight,
         pageBuilder: (context, state) =>
-            _cupertinoPage(child: const WeightScreen(), state: state),
+            _platformPage(child: const WeightScreen(), state: state),
       ),
       GoRoute(
         path: AppRoutes.onboardingHeight,
         pageBuilder: (context, state) =>
-            _cupertinoPage(child: const HeightScreen(), state: state),
+            _platformPage(child: const HeightScreen(), state: state),
       ),
       GoRoute(
         path: AppRoutes.onboardingTargetZones,
         pageBuilder: (context, state) =>
-            _cupertinoPage(child: const TargetZonesScreen(), state: state),
+            _platformPage(child: const TargetZonesScreen(), state: state),
       ),
       GoRoute(
         path: AppRoutes.onboardingNotificationTone,
-        pageBuilder: (context, state) => _cupertinoPage(
+        pageBuilder: (context, state) => _platformPage(
             child: const NotificationToneScreen(), state: state),
       ),
       GoRoute(
         path: AppRoutes.onboardingLanguage,
         pageBuilder: (context, state) =>
-            _cupertinoPage(child: const LanguageScreen(), state: state),
+            _platformPage(child: const LanguageScreen(), state: state),
       ),
       GoRoute(
         path: AppRoutes.onboardingSignup,
         pageBuilder: (context, state) =>
-            _cupertinoPage(child: const SignUpScreen(), state: state),
+            _platformPage(child: const SignUpScreen(), state: state),
       ),
       GoRoute(
         path: AppRoutes.onboardingTrial,
         pageBuilder: (context, state) =>
-            _cupertinoPage(child: const TrialScreen(), state: state),
+            _platformPage(child: const TrialScreen(), state: state),
       ),
 
       // ────────────────────────────────────────────────────────────────────
@@ -262,11 +269,11 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: AppRoutes.settings,
         pageBuilder: (context, state) =>
-            _cupertinoPage(child: const SettingsScreen(), state: state),
+            _platformPage(child: const SettingsScreen(), state: state),
       ),
       GoRoute(
         path: AppRoutes.exerciseBrowser,
-        pageBuilder: (context, state) => _cupertinoPage(
+        pageBuilder: (context, state) => _platformPage(
           child: const ExerciseBrowserScreen(pickMode: true),
           state: state,
         ),
@@ -297,7 +304,7 @@ final routerProvider = Provider<GoRouter>((ref) {
         path: AppRoutes.scheduleBuilder,
         pageBuilder: (context, state) {
           final scheduleId = state.extra as int?;
-          return _cupertinoPage(
+          return _platformPage(
             child: ScheduleBuilderScreen(scheduleId: scheduleId),
             state: state,
           );
@@ -317,7 +324,7 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: AppRoutes.profile,
         pageBuilder: (context, state) =>
-            _cupertinoPage(child: const ProfileScreen(), state: state),
+            _platformPage(child: const ProfileScreen(), state: state),
       ),
     ],
     // ──────────────────────────────────────────────────────────────────────
