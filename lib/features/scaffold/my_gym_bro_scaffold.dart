@@ -171,14 +171,20 @@ class _MyGymBroScaffoldState extends ConsumerState<MyGymBroScaffold>
             ),
           );
 
-    // Root back guard: the first back gesture at the shell only shows a
-    // hint; a second within 2s actually leaves the app. Pushed routes,
-    // sheets and dialogs sit above this route, so their back behavior is
-    // untouched. Inert on iOS (no system back at the app root).
+    // Root back guard: back from a non-home tab returns to Home; on Home
+    // the first back gesture only shows a hint and a second within 2s
+    // actually leaves the app. Pushed routes, sheets and dialogs sit above
+    // this route, so their back behavior is untouched. Inert on iOS (no
+    // system back at the app root).
     return PopScope(
       canPop: false,
       onPopInvokedWithResult: (didPop, _) {
         if (didPop) return;
+        if (ref.read(navIndexProvider) != 0) {
+          ref.read(navIndexProvider.notifier).state = 0;
+          _lastBackAt = null; // exit window starts fresh on Home
+          return;
+        }
         final now = DateTime.now();
         if (_lastBackAt != null &&
             now.difference(_lastBackAt!) < const Duration(seconds: 2)) {
