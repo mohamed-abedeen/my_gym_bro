@@ -744,7 +744,7 @@ class _ComposerBar extends ConsumerWidget {
                     style: ElevatedButton.styleFrom(
                       backgroundColor: AppColors.storyRingEnd,
                       foregroundColor: colors.black,
-                      shape: StadiumBorder(),
+                      shape: const StadiumBorder(),
                       padding: EdgeInsets.symmetric(
                         horizontal: 24.w,
                         vertical: 10.h,
@@ -773,9 +773,7 @@ class _ComposerBar extends ConsumerWidget {
 // ═══════════════════════════════════════════════════════════════════
 class _GlassPill extends StatelessWidget {
   const _GlassPill({
-    this.width,
-    required this.height,
-    required this.child,
+    required this.height, required this.child, this.width,
   });
   final double? width;
   final double height;

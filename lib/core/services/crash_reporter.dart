@@ -19,7 +19,7 @@ class CrashReporter {
   static FirebaseCrashlytics? get _crashlytics {
     try {
       return FirebaseCrashlytics.instance;
-    } catch (_) {
+    } on Object catch (_) {
       return null;
     }
   }

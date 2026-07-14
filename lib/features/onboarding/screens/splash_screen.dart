@@ -43,7 +43,7 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
     try {
       final session = Supabase.instance.client.auth.currentSession;
       hasSession = session != null;
-    } catch (_) { // ignore: avoid_catches_without_on_clauses
+    } on Object catch (_) {
       // Supabase not initialised — treat as no session.
       // Must use bare catch: the package throws AssertionError (an Error,
       // not an Exception) in debug builds when not initialised.

@@ -27,19 +27,39 @@ String formatShareDuration(int seconds) {
   return '${minutes}m';
 }
 
-/// Maps a total lifted volume (in kg) to a fun, relatable object comparison.
-/// Tiers are keyed off the canonical kg figure so the object is stable
-/// regardless of the user's display unit. Returns a tier-specific `headline`
-/// (the object) plus a shared motivational `subline`.
-({String headline, String subline}) volumeComparison(
+/// Maps a total lifted volume (in kg) to a relatable object comparison for
+/// the Hype card: a `headline` ("Heavier than a full-grown elephant."), the
+/// short `objectLabel` for the scale legend ("ELEPHANT"), and the object's
+/// canonical `objectKg` (drives the bar fill/marker). Tiers are keyed off the
+/// canonical kg figure so the object is stable regardless of display unit.
+///
+/// Picks the heaviest object the user out-lifted. Below the lightest object
+/// (30 kg) the "heavier than" claim would be false, so the headline falls
+/// back to the neutral caption and the bar shows partial progress to the dog.
+({String headline, String objectLabel, double objectKg}) volumeComparison(
   double kg,
   AppLocalizations l10n,
 ) {
-  final subline = l10n.shareVolumeCaption;
-  if (kg >= 6000) return (headline: l10n.shareVolumeElephant, subline: subline);
-  if (kg >= 3000) return (headline: l10n.shareVolumeVan, subline: subline);
-  if (kg >= 1200) return (headline: l10n.shareVolumeCar, subline: subline);
-  if (kg >= 450) return (headline: l10n.shareVolumePiano, subline: subline);
-  if (kg >= 150) return (headline: l10n.shareVolumeFridge, subline: subline);
-  return (headline: l10n.shareVolumeDog, subline: subline);
+  final tiers = <({double kg, String phrase, String label})>[
+    (kg: 6000, phrase: l10n.shareVolumeElephant, label: l10n.shareObjectElephant),
+    (kg: 3000, phrase: l10n.shareVolumeVan, label: l10n.shareObjectVan),
+    (kg: 1200, phrase: l10n.shareVolumeCar, label: l10n.shareObjectCar),
+    (kg: 450, phrase: l10n.shareVolumePiano, label: l10n.shareObjectPiano),
+    (kg: 150, phrase: l10n.shareVolumeFridge, label: l10n.shareObjectFridge),
+    (kg: 30, phrase: l10n.shareVolumeDog, label: l10n.shareObjectDog),
+  ];
+  for (final t in tiers) {
+    if (kg >= t.kg) {
+      return (
+        headline: l10n.shareHeavierThan(t.phrase),
+        objectLabel: t.label,
+        objectKg: t.kg,
+      );
+    }
+  }
+  return (
+    headline: l10n.shareVolumeCaption,
+    objectLabel: l10n.shareObjectDog,
+    objectKg: 30,
+  );
 }

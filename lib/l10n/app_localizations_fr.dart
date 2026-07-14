@@ -980,6 +980,13 @@ class AppLocalizationsFr extends AppLocalizations {
   String get sore => 'Douloureux';
 
   @override
+  String get tapMuscleToFocus =>
+      'Touchez un muscle ci-dessous pour le mettre en évidence sur le corps';
+
+  @override
+  String get readyNow => 'Prêt maintenant';
+
+  @override
   String get notTrainedYet => 'Pas encore entraîné';
 
   @override
@@ -1362,13 +1369,22 @@ class AppLocalizationsFr extends AppLocalizations {
   }
 
   @override
-  String get shareNiceWork => 'Beau travail !';
+  String get shareNiceWork => 'Beau travail.';
 
   @override
-  String get shareStyleNormal => 'Normal';
+  String get shareStyleDark => 'Sombre';
 
   @override
-  String get shareStyleTransparent => 'Transparent';
+  String get shareStyleSticker => 'Sticker';
+
+  @override
+  String get shareTemplateEditorial => 'Éditorial';
+
+  @override
+  String get shareTemplateAnatomy => 'Anatomie';
+
+  @override
+  String get shareTemplateHype => 'Hype';
 
   @override
   String shareWorkoutNumber(int count) {
@@ -1376,10 +1392,18 @@ class AppLocalizationsFr extends AppLocalizations {
   }
 
   @override
-  String get shareLiftedTotal => 'Tu as soulevé au total';
+  String get shareTotalVolumeLifted => 'Volume total soulevé';
 
   @override
-  String get shareYourProgress => 'Partage ta progression';
+  String get shareOneSession => 'Une séance';
+
+  @override
+  String get shareYou => 'Toi';
+
+  @override
+  String shareHeavierThan(String object) {
+    return 'Plus lourd qu\'$object.';
+  }
 
   @override
   String get shareAnonymous => 'Anonyme';
@@ -1415,5 +1439,20 @@ class AppLocalizationsFr extends AppLocalizations {
   String get shareVolumeElephant => 'un éléphant adulte';
 
   @override
-  String get shareThisWeek => 'Cette semaine';
+  String get shareObjectDog => 'Chien';
+
+  @override
+  String get shareObjectFridge => 'Frigo';
+
+  @override
+  String get shareObjectPiano => 'Piano';
+
+  @override
+  String get shareObjectCar => 'Voiture';
+
+  @override
+  String get shareObjectVan => 'Camionnette';
+
+  @override
+  String get shareObjectElephant => 'Éléphant';
 }

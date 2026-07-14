@@ -44,6 +44,15 @@ Future<void> _bootstrap() async {
       debugPrint('[bootstrap] $step (+${stopwatch.elapsedMilliseconds}ms)');
 
   mark('start');
+  // OFL licenses for the bundled share-card fonts (Archivo, IBM Plex Mono).
+  LicenseRegistry.addLicense(() async* {
+    for (final f in ['OFL-Archivo.txt', 'OFL-IBMPlexMono.txt']) {
+      yield LicenseEntryWithLineBreaks(
+        ['assets/fonts'],
+        await rootBundle.loadString('assets/fonts/$f'),
+      );
+    }
+  });
   // Release builds show a branded screen instead of the grey crash screen.
   // Debug keeps Flutter's red error surface for diagnostics.
   if (!kDebugMode) {

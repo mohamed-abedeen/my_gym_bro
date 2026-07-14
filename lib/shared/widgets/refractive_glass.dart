@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:my_gym_bro/shared/widgets/glass_surface.dart' show GlassSurface;
 import 'package:oc_liquid_glass/oc_liquid_glass.dart';
 
 /// Refractive "liquid glass" surface — the oc_liquid_glass shader look used by

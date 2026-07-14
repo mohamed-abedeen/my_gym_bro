@@ -975,6 +975,12 @@ class AppLocalizationsEn extends AppLocalizations {
   String get sore => 'Sore';
 
   @override
+  String get tapMuscleToFocus => 'Tap a muscle below to focus it on the body';
+
+  @override
+  String get readyNow => 'Ready now';
+
+  @override
   String get notTrainedYet => 'Not trained yet';
 
   @override
@@ -1356,13 +1362,22 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get shareNiceWork => 'Nice work!';
+  String get shareNiceWork => 'Nice work.';
 
   @override
-  String get shareStyleNormal => 'Normal';
+  String get shareStyleDark => 'Dark';
 
   @override
-  String get shareStyleTransparent => 'Transparent';
+  String get shareStyleSticker => 'Sticker';
+
+  @override
+  String get shareTemplateEditorial => 'Editorial';
+
+  @override
+  String get shareTemplateAnatomy => 'Anatomy';
+
+  @override
+  String get shareTemplateHype => 'Hype';
 
   @override
   String shareWorkoutNumber(int count) {
@@ -1370,10 +1385,18 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get shareLiftedTotal => 'You lifted a total of';
+  String get shareTotalVolumeLifted => 'Total volume lifted';
 
   @override
-  String get shareYourProgress => 'Share your progress';
+  String get shareOneSession => 'One session';
+
+  @override
+  String get shareYou => 'You';
+
+  @override
+  String shareHeavierThan(String object) {
+    return 'Heavier than $object.';
+  }
 
   @override
   String get shareAnonymous => 'Anonymous';
@@ -1409,5 +1432,20 @@ class AppLocalizationsEn extends AppLocalizations {
   String get shareVolumeElephant => 'a full-grown elephant';
 
   @override
-  String get shareThisWeek => 'This Week';
+  String get shareObjectDog => 'Dog';
+
+  @override
+  String get shareObjectFridge => 'Fridge';
+
+  @override
+  String get shareObjectPiano => 'Piano';
+
+  @override
+  String get shareObjectCar => 'Car';
+
+  @override
+  String get shareObjectVan => 'Van';
+
+  @override
+  String get shareObjectElephant => 'Elephant';
 }

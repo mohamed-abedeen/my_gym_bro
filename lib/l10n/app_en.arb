@@ -424,6 +424,8 @@
 
   "muscleRecovery": "Muscle Recovery",
   "sore": "Sore",
+  "tapMuscleToFocus": "Tap a muscle below to focus it on the body",
+  "readyNow": "Ready now",
   "notTrainedYet": "Not trained yet",
   "fullyRecovered": "Fully recovered — ready to train",
   "lessThanOneHourRecovery": "Less than 1 hour to full recovery",
@@ -605,17 +607,28 @@
       }
     }
   },
-  "shareNiceWork": "Nice work!",
-  "shareStyleNormal": "Normal",
-  "shareStyleTransparent": "Transparent",
+  "shareNiceWork": "Nice work.",
+  "shareStyleDark": "Dark",
+  "shareStyleSticker": "Sticker",
+  "shareTemplateEditorial": "Editorial",
+  "shareTemplateAnatomy": "Anatomy",
+  "shareTemplateHype": "Hype",
   "shareWorkoutNumber": "Workout #{count}",
   "@shareWorkoutNumber": {
     "placeholders": {
       "count": { "type": "int" }
     }
   },
-  "shareLiftedTotal": "You lifted a total of",
-  "shareYourProgress": "Share your progress",
+  "shareTotalVolumeLifted": "Total volume lifted",
+  "shareOneSession": "One session",
+  "shareYou": "You",
+  "shareHeavierThan": "Heavier than {object}.",
+  "@shareHeavierThan": {
+    "description": "Hype-card headline; {object} is one of the shareVolume* phrases, e.g. 'a full-grown elephant'.",
+    "placeholders": {
+      "object": { "type": "String" }
+    }
+  },
   "shareAnonymous": "Anonymous",
   "shareError": "Couldn't create the image. Try again.",
   "shareSaved": "Saved to gallery",
@@ -627,8 +640,10 @@
   "shareVolumeCar": "a small car",
   "shareVolumeVan": "a delivery van",
   "shareVolumeElephant": "a full-grown elephant",
-  "shareThisWeek": "This Week",
-  "@shareThisWeek": {
-    "description": "Caption above the weekly stat grid on the Weekly Progress share card, clarifying the figures cover this week (not just the finished session)."
-  }
+  "shareObjectDog": "Dog",
+  "shareObjectFridge": "Fridge",
+  "shareObjectPiano": "Piano",
+  "shareObjectCar": "Car",
+  "shareObjectVan": "Van",
+  "shareObjectElephant": "Elephant"
 }

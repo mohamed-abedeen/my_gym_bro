@@ -13,3 +13,9 @@ linter:
     lines_longer_than_80_chars: false
     flutter_style_todos: false
     one_member_abstracts: false
+    # Idiomatic patterns this codebase uses deliberately
+    cascade_invocations: false # x.a(); x.b(); reads clearer than x..a()..b()
+    prefer_constructors_over_static_methods: false # .of(context) factories
+    use_setters_to_change_properties: false
+    avoid_positional_boolean_parameters: false
+    parameter_assignments: false # ReorderableList newIndex -= 1 idiom

@@ -28,22 +28,29 @@ void main() {
 
   group('volumeComparison tiers', () {
     String head(double kg) => volumeComparison(kg, l10n).headline;
-    test('boundaries pick the right object', () {
-      expect(head(0), l10n.shareVolumeDog);
-      expect(head(149), l10n.shareVolumeDog);
-      expect(head(150), l10n.shareVolumeFridge);
-      expect(head(449), l10n.shareVolumeFridge);
-      expect(head(450), l10n.shareVolumePiano);
-      expect(head(1199), l10n.shareVolumePiano);
-      expect(head(1200), l10n.shareVolumeCar);
-      expect(head(2999), l10n.shareVolumeCar);
-      expect(head(3000), l10n.shareVolumeVan);
-      expect(head(5999), l10n.shareVolumeVan);
-      expect(head(6000), l10n.shareVolumeElephant);
+    test('boundaries pick the heaviest out-lifted object', () {
+      expect(head(30), l10n.shareHeavierThan(l10n.shareVolumeDog));
+      expect(head(149), l10n.shareHeavierThan(l10n.shareVolumeDog));
+      expect(head(150), l10n.shareHeavierThan(l10n.shareVolumeFridge));
+      expect(head(449), l10n.shareHeavierThan(l10n.shareVolumeFridge));
+      expect(head(450), l10n.shareHeavierThan(l10n.shareVolumePiano));
+      expect(head(1199), l10n.shareHeavierThan(l10n.shareVolumePiano));
+      expect(head(1200), l10n.shareHeavierThan(l10n.shareVolumeCar));
+      expect(head(2999), l10n.shareHeavierThan(l10n.shareVolumeCar));
+      expect(head(3000), l10n.shareHeavierThan(l10n.shareVolumeVan));
+      expect(head(5999), l10n.shareHeavierThan(l10n.shareVolumeVan));
+      expect(head(6000), l10n.shareHeavierThan(l10n.shareVolumeElephant));
     });
-    test('subline is shared across tiers', () {
-      expect(volumeComparison(10, l10n).subline, l10n.shareVolumeCaption);
-      expect(volumeComparison(9000, l10n).subline, l10n.shareVolumeCaption);
+    test('below the lightest object falls back to the neutral caption', () {
+      final c = volumeComparison(10, l10n);
+      expect(c.headline, l10n.shareVolumeCaption);
+      expect(c.objectLabel, l10n.shareObjectDog);
+      expect(c.objectKg, 30);
+    });
+    test('legend carries the object label and canonical kg', () {
+      final c = volumeComparison(9000, l10n);
+      expect(c.objectLabel, l10n.shareObjectElephant);
+      expect(c.objectKg, 6000);
     });
   });
 }

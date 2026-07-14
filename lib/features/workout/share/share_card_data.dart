@@ -1,6 +1,6 @@
 import 'package:my_gym_bro/features/workout/active_session/active_session_notifier.dart';
 import 'package:my_gym_bro/features/workout/workout_providers.dart'
-    show epleyOneRepMax;
+    show EnrichedSession, epleyOneRepMax;
 
 /// One performed exercise as it appears on a share card: its name and how
 /// many sets were actually completed.
@@ -27,6 +27,7 @@ class ShareCardData {
     required this.exercises,
     required this.workedMuscleGroups,
     required this.hasPr,
+    this.date,
   });
 
   /// Builds a card snapshot from the live session state. Exercises with no
@@ -76,6 +77,57 @@ class ShareCardData {
       exercises: exercises,
       workedMuscleGroups: workedMuscleGroups,
       hasPr: state.prEvent != null,
+      date: state.startedAt ?? DateTime.now(),
+    );
+  }
+
+  /// Builds a card snapshot from a persisted session in the history list.
+  /// Same shape as `fromActiveSession`, sourced from the enriched DB rows.
+  /// `workoutNumber` stays 0 (the card hides it) — the history list can be
+  /// reordered by the date jump, so an index-derived "#N" would lie.
+  factory ShareCardData.fromEnrichedSession(
+    EnrichedSession enriched, {
+    bool hasPr = false,
+  }) {
+    final exercises = <ShareExercise>[];
+    final workedMuscleGroups = <String>{};
+    var e1rmSum = 0.0;
+    var e1rmCount = 0;
+    var totalSets = 0;
+    for (final ex in enriched.exercises) {
+      if (ex.sets == 0) continue;
+      exercises.add(ShareExercise(name: ex.name, sets: ex.sets));
+      totalSets += ex.sets;
+      final mg = ex.muscleGroup;
+      if (mg != null && mg.toLowerCase() != 'cardio') {
+        workedMuscleGroups.add(mg);
+      }
+
+      var best = 0.0;
+      for (final s in ex.setDetails) {
+        if (s.isWarmup) continue;
+        final w = s.weight;
+        final r = s.reps;
+        if (w == null || r == null || w <= 0 || r <= 0) continue;
+        final e = epleyOneRepMax(w, r);
+        if (e > best) best = e;
+      }
+      if (best > 0) {
+        e1rmSum += best;
+        e1rmCount++;
+      }
+    }
+    return ShareCardData(
+      workoutName: enriched.workoutName,
+      totalVolumeKg: enriched.session.totalVolume ?? 0,
+      totalSets: totalSets,
+      durationSeconds: enriched.session.durationSeconds ?? 0,
+      avgStrength: e1rmCount == 0 ? 0 : e1rmSum / e1rmCount,
+      workoutNumber: 0,
+      exercises: exercises,
+      workedMuscleGroups: workedMuscleGroups,
+      hasPr: hasPr,
+      date: enriched.session.startedAt,
     );
   }
 
@@ -107,4 +159,8 @@ class ShareCardData {
   final Set<String> workedMuscleGroups;
 
   final bool hasPr;
+
+  /// When the workout happened — the date line on the cards. Null only in
+  /// hand-built test data; cards fall back to "now".
+  final DateTime? date;
 }

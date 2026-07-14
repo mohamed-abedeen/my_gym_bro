@@ -1,4 +1,5 @@
 /// Models for the community feed.
+library;
 
 /// A single comment preview shown below a post.
 class CommunityComment {

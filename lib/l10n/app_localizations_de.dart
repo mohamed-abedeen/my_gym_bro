@@ -981,6 +981,13 @@ class AppLocalizationsDe extends AppLocalizations {
   String get sore => 'Schmerzhaft';
 
   @override
+  String get tapMuscleToFocus =>
+      'Tippe unten auf einen Muskel, um ihn am Körper hervorzuheben';
+
+  @override
+  String get readyNow => 'Jetzt bereit';
+
+  @override
   String get notTrainedYet => 'Noch nicht trainiert';
 
   @override
@@ -1364,13 +1371,22 @@ class AppLocalizationsDe extends AppLocalizations {
   }
 
   @override
-  String get shareNiceWork => 'Gut gemacht!';
+  String get shareNiceWork => 'Gut gemacht.';
 
   @override
-  String get shareStyleNormal => 'Normal';
+  String get shareStyleDark => 'Dunkel';
 
   @override
-  String get shareStyleTransparent => 'Transparent';
+  String get shareStyleSticker => 'Sticker';
+
+  @override
+  String get shareTemplateEditorial => 'Editorial';
+
+  @override
+  String get shareTemplateAnatomy => 'Anatomie';
+
+  @override
+  String get shareTemplateHype => 'Hype';
 
   @override
   String shareWorkoutNumber(int count) {
@@ -1378,10 +1394,18 @@ class AppLocalizationsDe extends AppLocalizations {
   }
 
   @override
-  String get shareLiftedTotal => 'Du hast insgesamt gehoben';
+  String get shareTotalVolumeLifted => 'Gesamtvolumen gehoben';
 
   @override
-  String get shareYourProgress => 'Teile deinen Fortschritt';
+  String get shareOneSession => 'Eine Einheit';
+
+  @override
+  String get shareYou => 'Du';
+
+  @override
+  String shareHeavierThan(String object) {
+    return 'Schwerer als $object.';
+  }
 
   @override
   String get shareAnonymous => 'Anonym';
@@ -1418,5 +1442,20 @@ class AppLocalizationsDe extends AppLocalizations {
   String get shareVolumeElephant => 'ein ausgewachsener Elefant';
 
   @override
-  String get shareThisWeek => 'Diese Woche';
+  String get shareObjectDog => 'Hund';
+
+  @override
+  String get shareObjectFridge => 'Kühlschrank';
+
+  @override
+  String get shareObjectPiano => 'Flügel';
+
+  @override
+  String get shareObjectCar => 'Auto';
+
+  @override
+  String get shareObjectVan => 'Lieferwagen';
+
+  @override
+  String get shareObjectElephant => 'Elefant';
 }

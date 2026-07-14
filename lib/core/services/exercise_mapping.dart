@@ -1,5 +1,7 @@
 import 'dart:convert';
 
+import 'package:my_gym_bro/core/services/api_exercise.dart' show ApiExercise;
+
 /// Pure, dependency-free heuristics for classifying exercises into the app's
 /// canonical muscle groups and difficulty tiers.
 ///

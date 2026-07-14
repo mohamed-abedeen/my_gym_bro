@@ -9,22 +9,28 @@ import 'package:my_gym_bro/features/leaderboard/leaderboard_providers.dart';
 import 'package:my_gym_bro/features/settings/skin_provider.dart';
 import 'package:my_gym_bro/features/workout/share/share_card_data.dart';
 import 'package:my_gym_bro/features/workout/share/share_exporter.dart';
-import 'package:my_gym_bro/features/workout/share/widgets/exercise_list_card.dart';
-import 'package:my_gym_bro/features/workout/share/widgets/hero_stats_card.dart';
+import 'package:my_gym_bro/features/workout/share/widgets/anatomy_card.dart';
+import 'package:my_gym_bro/features/workout/share/widgets/editorial_card.dart';
+import 'package:my_gym_bro/features/workout/share/widgets/hype_card.dart';
 import 'package:my_gym_bro/features/workout/share/widgets/share_card_widgets.dart';
-import 'package:my_gym_bro/features/workout/share/widgets/stat_stack_card.dart';
-import 'package:my_gym_bro/features/workout/share/widgets/volume_hype_card.dart';
-import 'package:my_gym_bro/features/workout/share/widgets/weekly_progress_card.dart';
 import 'package:my_gym_bro/l10n/app_localizations.dart';
-import 'package:my_gym_bro/shared/constants.dart';
 
-/// Post-workout share sheet: a full-screen dark canvas with a swipeable
-/// carousel of the five share-card templates. Share captures the currently
-/// visible card's [RepaintBoundary] to a PNG and opens the system share sheet;
-/// Done (and the top-left X) pop back to home.
+// ── Screen chrome tokens (design_handoff_share_cards_v2) ──
+const _bg = Color(0xFF050506);
+const _glassFill = Color(0x12FFFFFF); // white 7%
+const _glassBorder = Color(0x1AFFFFFF); // white 10%
+const _chipBorder = Color(0x24FFFFFF); // white 14%
+const _actionBorder = Color(0x29FFFFFF); // white 16%
+const _chipActiveBg = Color(0xFFF4F4F0);
+
+/// Post-workout share sheet: header, a swipeable carousel of the three
+/// v2 templates (Editorial / Anatomy / Hype) selected by named chips, the
+/// Dark/Sticker background toggle, and the Share / Save / Done action bar.
+/// Share captures the currently visible card's [RepaintBoundary] to a PNG
+/// and opens the system share sheet; Done (and the top-left X) pop back.
 ///
-/// Each page lives inside its own on-screen [RepaintBoundary] so capturing the
-/// visible page is release-safe — `capturePng`'s paint-ready guard is
+/// Each page lives inside its own on-screen [RepaintBoundary] so capturing
+/// the visible page is release-safe — `capturePng`'s paint-ready guard is
 /// debug-only, so the card being snapshotted must already be mounted+painted.
 class ShareCardScreen extends ConsumerStatefulWidget {
   const ShareCardScreen({required this.data, super.key});
@@ -43,7 +49,7 @@ class _ShareCardScreenState extends ConsumerState<ShareCardScreen> {
   int _page = 0;
 
   /// The raster-precache future, awaited before the first capture so the base
-  /// anatomy PNG + rank badge are decoded (not transparent) in the snapshot.
+  /// anatomy PNG + brand logo + rank badge are decoded in the snapshot.
   Future<void>? _precache;
 
   @override
@@ -51,17 +57,15 @@ class _ShareCardScreenState extends ConsumerState<ShareCardScreen> {
     super.initState();
     final data = widget.data;
     _cards = [
-      HeroStatsCard(data: data),
-      WeeklyProgressCard(data: data),
-      ExerciseListCard(data: data),
-      VolumeHypeCard(data: data),
-      StatStackCard(data: data),
+      EditorialShareCard(data: data),
+      AnatomyShareCard(data: data),
+      HypeShareCard(data: data),
     ];
     _boundaryKeys = [for (var i = 0; i < _cards.length; i++) GlobalKey()];
 
-    // Precache the anatomy/skin + rank rasters so the first capture isn't a
-    // half-loaded frame. Deferred to post-frame so `context` can resolve the
-    // image configuration (MediaQuery etc.).
+    // Precache the anatomy/skin + logo + rank rasters so the first capture
+    // isn't a half-loaded frame. Deferred to post-frame so `context` can
+    // resolve the image configuration (MediaQuery etc.).
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
       _precache = ShareCardExporter.precacheCardImages(
@@ -93,11 +97,11 @@ class _ShareCardScreenState extends ConsumerState<ShareCardScreen> {
   Future<Uint8List?> _captureCurrent() async {
     try {
       // Make sure the card's async rasters are settled before snapshotting:
-      // (1) await the base PNG + rank-badge precache; (2) settle two frames so
-      // the flutter_svg muscle overlays have decoded+painted (they have no
-      // precache hook). The card is on-screen so these are usually already
-      // done — this just closes the "tap the instant a page appears" race
-      // that would otherwise capture a body with missing muscle highlights.
+      // (1) await the base PNG + logo + rank-badge precache; (2) settle two
+      // frames so the flutter_svg muscle overlays have decoded+painted (they
+      // have no precache hook). The card is on-screen so these are usually
+      // already done — this just closes the "tap the instant a page appears"
+      // race that would otherwise capture a body with missing highlights.
       // ponytail: frame-settle over a flutter_svg cache-warm — simpler and
       // version-robust; add explicit SVG precache only if artifacts appear.
       if (_precache != null) await _precache;
@@ -107,7 +111,7 @@ class _ShareCardScreenState extends ConsumerState<ShareCardScreen> {
       await WidgetsBinding.instance.endOfFrame;
       if (!mounted) return null;
       return await ShareCardExporter.capturePng(_boundaryKeys[_page]);
-    } catch (_) {
+    } on Object catch (_) {
       return null;
     }
   }
@@ -127,7 +131,7 @@ class _ShareCardScreenState extends ConsumerState<ShareCardScreen> {
     }
     try {
       await ShareCardExporter.shareImage(bytes, sharePositionOrigin: rect);
-    } catch (_) {
+    } on Object catch (_) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text(l10n.shareError)),
@@ -136,8 +140,8 @@ class _ShareCardScreenState extends ConsumerState<ShareCardScreen> {
   }
 
   /// Saves the currently visible card's PNG to the device photo gallery.
-  /// Works in both Normal and Transparent mode (transparent saves real alpha).
-  /// `gal` prompts for library access itself and throws [GalException] if it's
+  /// Works in both Dark and Sticker mode (sticker saves real alpha). `gal`
+  /// prompts for library access itself and throws [GalException] if it's
   /// denied — caught here so a denial shows a SnackBar instead of crashing.
   Future<void> _save() async {
     final l10n = AppLocalizations.of(context);
@@ -155,7 +159,7 @@ class _ShareCardScreenState extends ConsumerState<ShareCardScreen> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text(l10n.shareSaved)),
       );
-    } catch (_) {
+    } on Object catch (_) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text(l10n.shareSaveError)),
@@ -168,54 +172,59 @@ class _ShareCardScreenState extends ConsumerState<ShareCardScreen> {
     final l10n = AppLocalizations.of(context);
     final data = widget.data;
     final transparent = ref.watch(shareCardTransparentProvider);
-
-    // Shared dark-outlined style for the two secondary actions (Save + Done).
-    final outlinedStyle = OutlinedButton.styleFrom(
-      foregroundColor: kShareTextPrimary,
-      minimumSize: const Size.fromHeight(54),
-      side: BorderSide(color: kShareTextSecondary.withValues(alpha: 0.5)),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(27)),
-      textStyle: const TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
-    );
+    final templateNames = [
+      l10n.shareTemplateEditorial,
+      l10n.shareTemplateAnatomy,
+      l10n.shareTemplateHype,
+    ];
+    final subtitle = [
+      data.workoutName.toUpperCase(),
+      if (data.workoutNumber > 0)
+        l10n.shareWorkoutNumber(data.workoutNumber).toUpperCase(),
+    ].join(' · ');
 
     return Scaffold(
-      backgroundColor: const Color(0xFF000000),
+      backgroundColor: _bg,
       body: SafeArea(
         child: Column(
           children: [
-            // ── Header: X + "Nice work!" + optional "Workout #N" ──
+            // ── Header: glass X · "Nice work." · workout subline ──
             Padding(
-              padding: const EdgeInsets.fromLTRB(8, 8, 16, 4),
+              padding: const EdgeInsets.fromLTRB(20, 20, 20, 8),
               child: Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  IconButton(
-                    onPressed: () => Navigator.of(context).pop(),
-                    icon: const Icon(Icons.close_rounded),
-                    color: kShareTextPrimary,
-                    tooltip: MaterialLocalizations.of(context).closeButtonTooltip,
+                  _GlassCloseButton(
+                    onTap: () => Navigator.of(context).pop(),
                   ),
+                  const SizedBox(width: 14),
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(l10n.shareNiceWork, style: shareTitleStyle(size: 24)),
-                        if (data.workoutNumber > 0) ...[
-                          const SizedBox(height: 2),
-                          Text(
-                            l10n.shareWorkoutNumber(data.workoutNumber),
-                            style: shareLabelStyle,
+                        Text(
+                          l10n.shareNiceWork,
+                          style: shareArchivo(
+                            22,
+                            weight: 800,
+                            width: 110,
+                            letterSpacing: -0.4,
                           ),
-                        ],
+                        ),
+                        const SizedBox(height: 2),
+                        Text(
+                          subtitle,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: shareMono(11, letterSpacing: 1),
+                        ),
                       ],
                     ),
                   ),
-                  const SizedBox(width: 40), // balance the leading X
                 ],
               ),
             ),
 
-            // ── Carousel of the 5 templates ──
+            // ── Carousel of the 3 templates ──
             Expanded(
               child: PageView.builder(
                 controller: _controller,
@@ -224,17 +233,17 @@ class _ShareCardScreenState extends ConsumerState<ShareCardScreen> {
                 itemBuilder: (context, i) => Center(
                   child: Padding(
                     padding: const EdgeInsets.symmetric(
-                      horizontal: 20,
-                      vertical: 8,
+                      horizontal: 34,
+                      vertical: 12,
                     ),
                     child: Stack(
                       children: [
-                        // Transparent-mode preview: a checkerboard BEHIND the
+                        // Sticker-mode preview: a checkerboard BEHIND the
                         // boundary (never captured) so the user sees the alpha.
                         if (transparent)
                           Positioned.fill(
                             child: ClipRRect(
-                              borderRadius: BorderRadius.circular(AppRadius.card),
+                              borderRadius: BorderRadius.circular(20),
                               child: const CustomPaint(
                                 painter: _CheckerPainter(),
                               ),
@@ -251,78 +260,113 @@ class _ShareCardScreenState extends ConsumerState<ShareCardScreen> {
               ),
             ),
 
-            // ── Normal / Transparent style toggle ──
-            _StyleToggle(
-              transparent: transparent,
-              onChanged: (v) =>
-                  ref.read(shareCardTransparentProvider.notifier).state = v,
-              l10n: l10n,
-            ),
-
-            // ── Page dots ──
+            // ── Named template chips ──
             Padding(
-              padding: const EdgeInsets.symmetric(vertical: 12),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  for (var i = 0; i < _cards.length; i++)
-                    AnimatedContainer(
-                      key: Key('share_dot_$i'),
-                      duration: const Duration(milliseconds: 200),
-                      margin: const EdgeInsets.symmetric(horizontal: 3),
-                      height: 6,
-                      width: i == _page ? 18 : 6,
-                      decoration: BoxDecoration(
-                        color: i == _page
-                            ? kShareAccent
-                            : kShareTextSecondary.withValues(alpha: 0.5),
-                        borderRadius: BorderRadius.circular(3),
+              padding: const EdgeInsets.fromLTRB(20, 14, 20, 4),
+              // FittedBox: long localized names shrink instead of overflowing.
+              child: FittedBox(
+                fit: BoxFit.scaleDown,
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    for (var i = 0; i < templateNames.length; i++) ...[
+                      if (i > 0) const SizedBox(width: 8),
+                      _TemplateChip(
+                        key: Key('share_chip_$i'),
+                        label: templateNames[i],
+                        active: i == _page,
+                        onTap: () => _controller.animateToPage(
+                          i,
+                          duration: const Duration(milliseconds: 250),
+                          curve: Curves.easeOut,
+                        ),
                       ),
-                    ),
-                ],
+                    ],
+                  ],
+                ),
               ),
             ),
 
-            // ── Actions: Share (wide primary) + Save + Done ──
+            // ── Dark / Sticker background toggle ──
             Padding(
-              padding: const EdgeInsets.fromLTRB(20, 4, 20, 16),
+              padding: const EdgeInsets.fromLTRB(20, 10, 20, 2),
+              child: _StyleToggle(
+                transparent: transparent,
+                onChanged: (v) =>
+                    ref.read(shareCardTransparentProvider.notifier).state = v,
+                l10n: l10n,
+              ),
+            ),
+
+            // ── Actions: Share (wide primary) · Save · Done ──
+            Padding(
+              padding: const EdgeInsets.fromLTRB(20, 16, 20, 24),
               child: Row(
                 children: [
                   Expanded(
-                    flex: 2,
-                    child: FilledButton(
+                    child: FilledButton.icon(
                       key: _shareBtnKey,
                       onPressed: () => unawaited(_share()),
+                      icon: const Icon(Icons.ios_share_rounded, size: 20),
+                      label: Text(l10n.share),
                       style: FilledButton.styleFrom(
                         backgroundColor: kShareAccent,
                         foregroundColor: const Color(0xFF000000),
-                        minimumSize: const Size.fromHeight(54),
+                        minimumSize: const Size.fromHeight(56),
                         shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(27),
+                          borderRadius: BorderRadius.circular(28),
                         ),
                         textStyle: const TextStyle(
                           fontSize: 17,
                           fontWeight: FontWeight.w800,
+                          letterSpacing: -0.2,
                         ),
                       ),
-                      child: Text(l10n.share),
                     ),
                   ),
                   const SizedBox(width: 10),
-                  Expanded(
-                    child: OutlinedButton(
-                      onPressed: () => unawaited(_save()),
-                      style: outlinedStyle,
-                      child: Text(l10n.save),
+                  // Save — icon-only circular button.
+                  Tooltip(
+                    message: l10n.save,
+                    child: SizedBox(
+                      width: 56,
+                      height: 56,
+                      child: OutlinedButton(
+                        key: const Key('share_save_btn'),
+                        onPressed: () => unawaited(_save()),
+                        style: OutlinedButton.styleFrom(
+                          foregroundColor: kShareTextPrimary,
+                          padding: EdgeInsets.zero,
+                          minimumSize: const Size(56, 56),
+                          tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                          side: const BorderSide(color: _actionBorder),
+                          shape: const CircleBorder(),
+                        ),
+                        child: const Icon(
+                          Icons.file_download_outlined,
+                          size: 22,
+                        ),
+                      ),
                     ),
                   ),
                   const SizedBox(width: 10),
-                  Expanded(
-                    child: OutlinedButton(
-                      onPressed: () => Navigator.of(context).pop(),
-                      style: outlinedStyle,
-                      child: Text(l10n.done),
+                  // Done — compact outlined pill.
+                  OutlinedButton(
+                    onPressed: () => Navigator.of(context).pop(),
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: kShareTextPrimary,
+                      minimumSize: const Size(0, 56),
+                      padding: const EdgeInsets.symmetric(horizontal: 24),
+                      side: const BorderSide(color: _actionBorder),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(28),
+                      ),
+                      textStyle: const TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w700,
+                      ),
                     ),
+                    child: Text(l10n.done),
                   ),
                 ],
               ),
@@ -334,7 +378,82 @@ class _ShareCardScreenState extends ConsumerState<ShareCardScreen> {
   }
 }
 
-/// The Normal / Transparent segmented toggle above the page dots.
+/// The 40px circular translucent close button in the header.
+class _GlassCloseButton extends StatelessWidget {
+  const _GlassCloseButton({required this.onTap});
+
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: _glassFill,
+      shape: const CircleBorder(side: BorderSide(color: _glassBorder)),
+      child: InkWell(
+        onTap: onTap,
+        customBorder: const CircleBorder(),
+        child: SizedBox(
+          width: 40,
+          height: 40,
+          child: Icon(
+            Icons.close_rounded,
+            size: 18,
+            color: kShareTextPrimary,
+            semanticLabel:
+                MaterialLocalizations.of(context).closeButtonTooltip,
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// One named template chip: filled off-white when active, hairline outline
+/// otherwise.
+class _TemplateChip extends StatelessWidget {
+  const _TemplateChip({
+    required this.label,
+    required this.active,
+    required this.onTap,
+    super.key,
+  });
+
+  final String label;
+  final bool active;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      behavior: HitTestBehavior.opaque,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 180),
+        curve: Curves.easeOut,
+        height: 34,
+        padding: const EdgeInsets.symmetric(horizontal: 16),
+        alignment: Alignment.center,
+        decoration: BoxDecoration(
+          color: active ? _chipActiveBg : Colors.transparent,
+          borderRadius: BorderRadius.circular(17),
+          border: Border.all(
+            color: active ? Colors.transparent : _chipBorder,
+          ),
+        ),
+        child: Text(
+          label,
+          style: TextStyle(
+            color: active ? const Color(0xFF000000) : kShareTextSecondary,
+            fontSize: 13,
+            fontWeight: active ? FontWeight.w700 : FontWeight.w600,
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// The Dark / Sticker segmented toggle above the action bar.
 class _StyleToggle extends StatelessWidget {
   const _StyleToggle({
     required this.transparent,
@@ -348,46 +467,56 @@ class _StyleToggle extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 20),
-      padding: const EdgeInsets.all(3),
-      decoration: BoxDecoration(
-        color: const Color(0xFF1C1C1E),
-        borderRadius: BorderRadius.circular(22),
-      ),
-      child: Row(
-        children: [
-          _segment(l10n.shareStyleNormal, !transparent, () => onChanged(false)),
-          _segment(
-            l10n.shareStyleTransparent,
-            transparent,
-            () => onChanged(true),
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        Container(
+          padding: const EdgeInsets.all(2),
+          decoration: BoxDecoration(
+            color: const Color(0x0FFFFFFF), // white 6%
+            borderRadius: BorderRadius.circular(15),
           ),
-        ],
-      ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              _segment(
+                l10n.shareStyleDark,
+                !transparent,
+                () => onChanged(false),
+              ),
+              const SizedBox(width: 2),
+              _segment(
+                l10n.shareStyleSticker,
+                transparent,
+                () => onChanged(true),
+              ),
+            ],
+          ),
+        ),
+      ],
     );
   }
 
   Widget _segment(String label, bool active, VoidCallback onTap) {
-    return Expanded(
-      child: GestureDetector(
-        onTap: onTap,
-        behavior: HitTestBehavior.opaque,
-        child: AnimatedContainer(
-          duration: const Duration(milliseconds: 180),
-          height: 38,
-          alignment: Alignment.center,
-          decoration: BoxDecoration(
-            color: active ? kShareAccent : Colors.transparent,
-            borderRadius: BorderRadius.circular(19),
-          ),
-          child: Text(
-            label,
-            style: TextStyle(
-              color: active ? const Color(0xFF000000) : kShareTextPrimary,
-              fontSize: 14,
-              fontWeight: FontWeight.w700,
-            ),
+    return GestureDetector(
+      onTap: onTap,
+      behavior: HitTestBehavior.opaque,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 180),
+        curve: Curves.easeOut,
+        height: 26,
+        padding: const EdgeInsets.symmetric(horizontal: 14),
+        alignment: Alignment.center,
+        decoration: BoxDecoration(
+          color: active ? const Color(0x24FFFFFF) : Colors.transparent,
+          borderRadius: BorderRadius.circular(13),
+        ),
+        child: Text(
+          label,
+          style: TextStyle(
+            color: active ? kShareTextPrimary : kShareTextSecondary,
+            fontSize: 12,
+            fontWeight: FontWeight.w600,
           ),
         ),
       ),
@@ -395,9 +524,9 @@ class _StyleToggle extends StatelessWidget {
   }
 }
 
-/// A simple two-tone checkerboard — the transparent-mode preview backdrop that
-/// reveals the card's alpha. Painted BEHIND the RepaintBoundary, so it is never
-/// part of the exported PNG.
+/// A simple two-tone checkerboard — the sticker-mode preview backdrop that
+/// reveals the card's alpha. Painted BEHIND the RepaintBoundary, so it is
+/// never part of the exported PNG.
 class _CheckerPainter extends CustomPainter {
   const _CheckerPainter();
 

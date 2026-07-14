@@ -260,7 +260,6 @@ class ActiveSessionState {
 // ── Notifier ──────────────────────────────────
 
 class ActiveSessionNotifier extends StateNotifier<ActiveSessionState> {
-  static const double _kLbsPerKg = 2.20462;
 
   ActiveSessionNotifier({
     required WorkoutLogRepository repository,
@@ -286,6 +285,7 @@ class ActiveSessionNotifier extends StateNotifier<ActiveSessionState> {
         _tone = tone,
         _userName = userName,
         super(const ActiveSessionState());
+  static const double _kLbsPerKg = 2.20462;
   final WorkoutLogRepository _repository;
 
   /// Optional API-backed cache. When present, logging an exercise ensures
@@ -315,7 +315,7 @@ class ActiveSessionNotifier extends StateNotifier<ActiveSessionState> {
   String _restNotificationTitle;
   String _restNotificationBody;
   String _workoutReminderTitle = 'Workout day';
-  String _workoutReminderBody = 'Keep your streak going. Let\'s train.';
+  String _workoutReminderBody = "Keep your streak going. Let's train.";
 
   /// User-selected notification voice — drives tone-aware copy in the
   /// ongoing-session notification (active-set tagline + rest tagline +
@@ -420,7 +420,7 @@ class ActiveSessionNotifier extends StateNotifier<ActiveSessionState> {
     );
 
     // Subscribe to the tick stream so the notification updates every second.
-    _restTickSub?.cancel();
+    unawaited(_restTickSub?.cancel());
     _restTickSub =
         restTimerService.stream?.listen(_updateRestTimerNotification);
 
@@ -920,12 +920,12 @@ class ActiveSessionNotifier extends StateNotifier<ActiveSessionState> {
     final ex = state.currentExercise;
     if (ex == null) return;
 
-    Patch<double?> weight = const Patch.unchanged();
-    Patch<int?> reps = const Patch.unchanged();
-    Patch<int?> durationSeconds = const Patch.unchanged();
-    Patch<double?> distance = const Patch.unchanged();
-    Patch<double?> speed = const Patch.unchanged();
-    Patch<double?> incline = const Patch.unchanged();
+    var weight = const Patch<double?>.unchanged();
+    var reps = const Patch<int?>.unchanged();
+    var durationSeconds = const Patch<int?>.unchanged();
+    var distance = const Patch<double?>.unchanged();
+    var speed = const Patch<double?>.unchanged();
+    var incline = const Patch<double?>.unchanged();
 
     if (weightStr != null) {
       var parsed = InputSanitiser.parseWeight(weightStr);
@@ -1089,7 +1089,7 @@ class ActiveSessionNotifier extends StateNotifier<ActiveSessionState> {
     ));
 
     // Subscribe to the tick stream so the notification updates every second.
-    _restTickSub?.cancel();
+    unawaited(_restTickSub?.cancel());
     _restTickSub = restTimerService.stream?.listen(_updateRestTimerNotification);
   }
 
@@ -1179,7 +1179,7 @@ class ActiveSessionNotifier extends StateNotifier<ActiveSessionState> {
   }
 
   void _onRestComplete() {
-    _restTickSub?.cancel();
+    unawaited(_restTickSub?.cancel());
     _restTickSub = null;
     state = state.copyWith(showRestTimer: false);
     // Switch the notification back to the "active set" state.
@@ -1240,7 +1240,7 @@ class ActiveSessionNotifier extends StateNotifier<ActiveSessionState> {
   }
 
   void hideRestTimer() {
-    _restTickSub?.cancel();
+    unawaited(_restTickSub?.cancel());
     _restTickSub = null;
     restTimerService.cancel();
     state = state.copyWith(showRestTimer: false);
@@ -1296,7 +1296,7 @@ class ActiveSessionNotifier extends StateNotifier<ActiveSessionState> {
       totalVolume: state.totalVolume,
     ));
 
-    _restTickSub?.cancel();
+    unawaited(_restTickSub?.cancel());
     _restTickSub = null;
     restTimerService.dispose();
 
@@ -1320,7 +1320,7 @@ class ActiveSessionNotifier extends StateNotifier<ActiveSessionState> {
     if (_getStreak != null) {
       try {
         streakDays = await _getStreak();
-      } catch (_) {
+      } on Object catch (_) {
         // Fall back to 0; the ambient widgetSyncProvider listener will
         // overwrite once Drift re-reads.
       }
@@ -1390,7 +1390,7 @@ class ActiveSessionNotifier extends StateNotifier<ActiveSessionState> {
   /// Discard the session. Deletes the orphan DB row + all its session
   /// exercises and sets so nothing is left behind for history/stats.
   Future<void> discardSession() async {
-    _restTickSub?.cancel();
+    unawaited(_restTickSub?.cancel());
     _restTickSub = null;
     restTimerService.dispose();
     _lastLoggedCache.clear();
@@ -1398,7 +1398,7 @@ class ActiveSessionNotifier extends StateNotifier<ActiveSessionState> {
     if (sessionId != null) {
       try {
         await _repository.deleteSession(sessionId);
-      } catch (_) {
+      } on Object catch (_) {
         // Swallow — even if delete fails the orphan row is harmless
         // (finishedAt is null so it's filtered out of history/streak).
       }
@@ -1559,7 +1559,7 @@ class ActiveSessionNotifier extends StateNotifier<ActiveSessionState> {
 
   @override
   void dispose() {
-    _restTickSub?.cancel();
+    unawaited(_restTickSub?.cancel());
     restTimerService.dispose();
     super.dispose();
   }

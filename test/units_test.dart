@@ -22,27 +22,27 @@ void main() {
 
   group('convertFromKg', () {
     test('returns kg value unchanged when target is kg', () {
-      expect(convertFromKg(100.0, WeightUnit.kg), 100.0);
+      expect(convertFromKg(100, WeightUnit.kg), 100.0);
     });
 
     test('converts kg to lbs correctly', () {
-      final result = convertFromKg(1.0, WeightUnit.lbs);
+      final result = convertFromKg(1, WeightUnit.lbs);
       expect(result, closeTo(2.20462, 0.00001));
     });
 
     test('converts 100 kg to lbs', () {
-      final result = convertFromKg(100.0, WeightUnit.lbs);
+      final result = convertFromKg(100, WeightUnit.lbs);
       expect(result, closeTo(220.462, 0.001));
     });
 
     test('handles zero', () {
-      expect(convertFromKg(0.0, WeightUnit.lbs), 0.0);
+      expect(convertFromKg(0, WeightUnit.lbs), 0.0);
     });
   });
 
   group('convertToKg', () {
     test('returns value unchanged when source is kg', () {
-      expect(convertToKg(100.0, WeightUnit.kg), 100.0);
+      expect(convertToKg(100, WeightUnit.kg), 100.0);
     });
 
     test('converts lbs to kg correctly', () {
@@ -60,7 +60,7 @@ void main() {
 
   group('formatWeight', () {
     test('formats kg value with one decimal', () {
-      expect(formatWeight(80.0, WeightUnit.kg), '80');
+      expect(formatWeight(80, WeightUnit.kg), '80');
     });
 
     test('formats kg value with non-zero decimal', () {
@@ -68,12 +68,12 @@ void main() {
     });
 
     test('appends unit when withUnit is true', () {
-      expect(formatWeight(80.0, WeightUnit.kg, withUnit: true), '80 kg');
+      expect(formatWeight(80, WeightUnit.kg, withUnit: true), '80 kg');
     });
 
     test('formats lbs conversion', () {
       // 1 kg ≈ 2.2 lbs
-      final result = formatWeight(1.0, WeightUnit.lbs);
+      final result = formatWeight(1, WeightUnit.lbs);
       expect(result, '2.2');
     });
 
@@ -86,7 +86,7 @@ void main() {
     });
 
     test('strips trailing .0 for whole-number result', () {
-      expect(formatWeight(50.0, WeightUnit.kg), '50');
+      expect(formatWeight(50, WeightUnit.kg), '50');
     });
 
     test('respects custom decimals', () {

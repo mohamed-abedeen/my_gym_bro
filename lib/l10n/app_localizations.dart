@@ -1902,6 +1902,18 @@ abstract class AppLocalizations {
   /// **'Sore'**
   String get sore;
 
+  /// No description provided for @tapMuscleToFocus.
+  ///
+  /// In en, this message translates to:
+  /// **'Tap a muscle below to focus it on the body'**
+  String get tapMuscleToFocus;
+
+  /// No description provided for @readyNow.
+  ///
+  /// In en, this message translates to:
+  /// **'Ready now'**
+  String get readyNow;
+
   /// No description provided for @notTrainedYet.
   ///
   /// In en, this message translates to:
@@ -2601,20 +2613,38 @@ abstract class AppLocalizations {
   /// No description provided for @shareNiceWork.
   ///
   /// In en, this message translates to:
-  /// **'Nice work!'**
+  /// **'Nice work.'**
   String get shareNiceWork;
 
-  /// No description provided for @shareStyleNormal.
+  /// No description provided for @shareStyleDark.
   ///
   /// In en, this message translates to:
-  /// **'Normal'**
-  String get shareStyleNormal;
+  /// **'Dark'**
+  String get shareStyleDark;
 
-  /// No description provided for @shareStyleTransparent.
+  /// No description provided for @shareStyleSticker.
   ///
   /// In en, this message translates to:
-  /// **'Transparent'**
-  String get shareStyleTransparent;
+  /// **'Sticker'**
+  String get shareStyleSticker;
+
+  /// No description provided for @shareTemplateEditorial.
+  ///
+  /// In en, this message translates to:
+  /// **'Editorial'**
+  String get shareTemplateEditorial;
+
+  /// No description provided for @shareTemplateAnatomy.
+  ///
+  /// In en, this message translates to:
+  /// **'Anatomy'**
+  String get shareTemplateAnatomy;
+
+  /// No description provided for @shareTemplateHype.
+  ///
+  /// In en, this message translates to:
+  /// **'Hype'**
+  String get shareTemplateHype;
 
   /// No description provided for @shareWorkoutNumber.
   ///
@@ -2622,17 +2652,29 @@ abstract class AppLocalizations {
   /// **'Workout #{count}'**
   String shareWorkoutNumber(int count);
 
-  /// No description provided for @shareLiftedTotal.
+  /// No description provided for @shareTotalVolumeLifted.
   ///
   /// In en, this message translates to:
-  /// **'You lifted a total of'**
-  String get shareLiftedTotal;
+  /// **'Total volume lifted'**
+  String get shareTotalVolumeLifted;
 
-  /// No description provided for @shareYourProgress.
+  /// No description provided for @shareOneSession.
   ///
   /// In en, this message translates to:
-  /// **'Share your progress'**
-  String get shareYourProgress;
+  /// **'One session'**
+  String get shareOneSession;
+
+  /// No description provided for @shareYou.
+  ///
+  /// In en, this message translates to:
+  /// **'You'**
+  String get shareYou;
+
+  /// Hype-card headline; {object} is one of the shareVolume* phrases, e.g. 'a full-grown elephant'.
+  ///
+  /// In en, this message translates to:
+  /// **'Heavier than {object}.'**
+  String shareHeavierThan(String object);
 
   /// No description provided for @shareAnonymous.
   ///
@@ -2700,11 +2742,41 @@ abstract class AppLocalizations {
   /// **'a full-grown elephant'**
   String get shareVolumeElephant;
 
-  /// Caption above the weekly stat grid on the Weekly Progress share card, clarifying the figures cover this week (not just the finished session).
+  /// No description provided for @shareObjectDog.
   ///
   /// In en, this message translates to:
-  /// **'This Week'**
-  String get shareThisWeek;
+  /// **'Dog'**
+  String get shareObjectDog;
+
+  /// No description provided for @shareObjectFridge.
+  ///
+  /// In en, this message translates to:
+  /// **'Fridge'**
+  String get shareObjectFridge;
+
+  /// No description provided for @shareObjectPiano.
+  ///
+  /// In en, this message translates to:
+  /// **'Piano'**
+  String get shareObjectPiano;
+
+  /// No description provided for @shareObjectCar.
+  ///
+  /// In en, this message translates to:
+  /// **'Car'**
+  String get shareObjectCar;
+
+  /// No description provided for @shareObjectVan.
+  ///
+  /// In en, this message translates to:
+  /// **'Van'**
+  String get shareObjectVan;
+
+  /// No description provided for @shareObjectElephant.
+  ///
+  /// In en, this message translates to:
+  /// **'Elephant'**
+  String get shareObjectElephant;
 }
 
 class _AppLocalizationsDelegate

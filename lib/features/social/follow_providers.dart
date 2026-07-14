@@ -34,7 +34,7 @@ final followingIdsProvider = StreamProvider<List<String>>((ref) {
 /// count for "following".
 final myPublicProfileProvider = FutureProvider<PublicProfile?>((ref) {
   final uid = ref.watch(currentUserIdProvider);
-  if (uid == null) return Future<PublicProfile?>.value(null);
+  if (uid == null) return Future<PublicProfile?>.value();
   ref.watch(followingIdsProvider); // refresh counts when the follow set changes
   return ref.watch(followRepositoryProvider).fetchPublicProfile(uid);
 });

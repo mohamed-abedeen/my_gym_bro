@@ -82,7 +82,8 @@ abstract final class ShareCardExporter {
   }
 
   /// Precaches the raster assets a card needs so [capturePng] doesn't snapshot
-  /// a half-loaded frame: the base anatomy/skin PNG and the rank badge PNG.
+  /// a half-loaded frame: the base anatomy/skin PNG, the brand logo, and the
+  /// rank badge PNG.
   ///
   /// The anatomy muscle overlays are SVGs loaded async by `flutter_svg`; they
   /// have no simple precache hook, so mount the card off-screen and give it a
@@ -93,6 +94,8 @@ abstract final class ShareCardExporter {
     Rank? rank,
   }) async {
     await precacheImage(AssetImage(basePngPath), context);
+    if (!context.mounted) return;
+    await precacheImage(const AssetImage('assets/images/mgb_icon.png'), context);
     if (rank != null && context.mounted) {
       try {
         await precacheImage(AssetImage(rank.assetPath), context);

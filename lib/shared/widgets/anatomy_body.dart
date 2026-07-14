@@ -65,14 +65,26 @@ class AnatomyBody extends StatelessWidget {
     this.gender = AnatomyGender.female,
     this.basePngPath,
     this.highlightColor,
+    this.tintFor,
+    this.focusedMuscle,
   });
   final List<MuscleStateInfo> muscleStates;
   final double height;
   final AnatomyGender gender;
 
+  /// Optional per-muscle tint override. Takes precedence over [highlightColor]
+  /// and the muscle's own recovery colour. Used by the recovery sheet to match
+  /// the HSL tint shared between the body and the list.
+  final Color Function(MuscleStateInfo muscle)? tintFor;
+
+  /// When set, that muscle's overlay pops to 0.95 opacity and every other
+  /// muscle dims to 0.12 (focus mode). Null → all muscles at the default 0.85.
+  /// Transitions animate over 250ms.
+  final String? focusedMuscle;
+
   /// Optional override for the base body PNG.
   ///
-  /// When supplied (e.g. from [activeSkinPathProvider]) the skin image is used
+  /// When supplied (e.g. from `activeSkinPathProvider`) the skin image is used
   /// instead of the default anatomy PNG.  Falls back to the built-in default
   /// when `null`.
   final String? basePngPath;
@@ -117,6 +129,14 @@ class AnatomyBody extends StatelessWidget {
       if (isMale) ...?_maleExtraSvgBases[muscle.muscleGroup],
     ];
 
+    final color = tintFor?.call(muscle) ?? highlightColor ?? muscle.color;
+    final opacity = focusedMuscle == null
+        ? 0.85
+        : (muscle.muscleGroup == focusedMuscle ? 0.95 : 0.12);
+
+    // Bake opacity into the srcIn alpha (NOT a wrapping Opacity widget): for
+    // BlendMode.color the alpha must scale the *blend*, letting the skin's
+    // shading show through. A full-alpha blend + widget Opacity over-saturates.
     return [
       for (final base in allBases)
         BlendMask(
@@ -125,7 +145,7 @@ class AnatomyBody extends StatelessWidget {
             _svgPath(gender, base),
             height: height,
             colorFilter: ColorFilter.mode(
-              (highlightColor ?? muscle.color).withValues(alpha: 0.85),
+              color.withValues(alpha: opacity),
               BlendMode.srcIn,
             ),
           ),

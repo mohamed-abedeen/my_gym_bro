@@ -976,6 +976,13 @@ class AppLocalizationsEs extends AppLocalizations {
   String get sore => 'Adolorido';
 
   @override
+  String get tapMuscleToFocus =>
+      'Toca un músculo abajo para enfocarlo en el cuerpo';
+
+  @override
+  String get readyNow => 'Listo ahora';
+
+  @override
   String get notTrainedYet => 'Aún no entrenado';
 
   @override
@@ -1357,13 +1364,22 @@ class AppLocalizationsEs extends AppLocalizations {
   }
 
   @override
-  String get shareNiceWork => '¡Buen trabajo!';
+  String get shareNiceWork => 'Buen trabajo.';
 
   @override
-  String get shareStyleNormal => 'Normal';
+  String get shareStyleDark => 'Oscuro';
 
   @override
-  String get shareStyleTransparent => 'Transparente';
+  String get shareStyleSticker => 'Sticker';
+
+  @override
+  String get shareTemplateEditorial => 'Editorial';
+
+  @override
+  String get shareTemplateAnatomy => 'Anatomía';
+
+  @override
+  String get shareTemplateHype => 'Hype';
 
   @override
   String shareWorkoutNumber(int count) {
@@ -1371,10 +1387,18 @@ class AppLocalizationsEs extends AppLocalizations {
   }
 
   @override
-  String get shareLiftedTotal => 'Levantaste un total de';
+  String get shareTotalVolumeLifted => 'Volumen total levantado';
 
   @override
-  String get shareYourProgress => 'Comparte tu progreso';
+  String get shareOneSession => 'Una sesión';
+
+  @override
+  String get shareYou => 'Tú';
+
+  @override
+  String shareHeavierThan(String object) {
+    return 'Más pesado que $object.';
+  }
 
   @override
   String get shareAnonymous => 'Anónimo';
@@ -1410,5 +1434,20 @@ class AppLocalizationsEs extends AppLocalizations {
   String get shareVolumeElephant => 'un elefante adulto';
 
   @override
-  String get shareThisWeek => 'Esta semana';
+  String get shareObjectDog => 'Perro';
+
+  @override
+  String get shareObjectFridge => 'Nevera';
+
+  @override
+  String get shareObjectPiano => 'Piano';
+
+  @override
+  String get shareObjectCar => 'Coche';
+
+  @override
+  String get shareObjectVan => 'Furgoneta';
+
+  @override
+  String get shareObjectElephant => 'Elefante';
 }

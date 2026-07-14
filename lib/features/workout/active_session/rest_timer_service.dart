@@ -5,6 +5,7 @@ import 'dart:io';
 import 'package:audioplayers/audioplayers.dart';
 import 'package:flutter/foundation.dart';
 import 'package:my_gym_bro/core/services/notification_service.dart';
+import 'package:my_gym_bro/features/workout/active_session/active_session_notifier.dart' show ActiveSessionNotifier;
 import 'package:path_provider/path_provider.dart';
 import 'package:vibration/vibration.dart';
 

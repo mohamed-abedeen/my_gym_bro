@@ -28,7 +28,7 @@ final themeModeProvider = StateProvider<ThemeMode>((ref) => ThemeMode.dark);
 final supabaseProvider = Provider<SupabaseClient?>((ref) {
   try {
     return Supabase.instance.client;
-  } catch (_) { // ignore: avoid_catches_without_on_clauses
+  } on Object catch (_) {
     // Catches both Exception and AssertionError (thrown when Supabase is
     // not initialised — AssertionError is an Error, not an Exception).
     return null;

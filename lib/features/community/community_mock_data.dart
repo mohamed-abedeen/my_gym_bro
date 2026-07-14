@@ -1,8 +1,8 @@
 // Offline / no-backend fallback sample posts. Re-exports the shared models so
 // existing importers (profile, community screen) keep their single import.
-export 'package:my_gym_bro/features/community/community_models.dart';
-
 import 'package:my_gym_bro/features/community/community_models.dart';
+
+export 'package:my_gym_bro/features/community/community_models.dart';
 
 /// Sample posts shown when Supabase is unavailable (offline / not configured),
 /// and — in debug builds — when the real feed is empty. Images are bundled test

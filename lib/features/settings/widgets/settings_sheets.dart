@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:drift/drift.dart' show Value;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -248,7 +250,7 @@ class RestTimeSheet extends ConsumerWidget {
           final selected = current == seconds;
           return GestureDetector(
             onTap: () async {
-              HapticFeedback.selectionClick();
+              unawaited(HapticFeedback.selectionClick());
               final dao = ref.read(userProfileDaoProvider);
               if (profile == null) {
                 await dao.upsert(

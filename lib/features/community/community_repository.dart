@@ -1,8 +1,6 @@
-import 'package:supabase_flutter/supabase_flutter.dart';
-
 import 'package:my_gym_bro/core/security/input_sanitiser.dart';
 import 'package:my_gym_bro/features/community/community_mock_data.dart';
-import 'package:my_gym_bro/features/community/community_models.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 /// Contract for the community feed.
 abstract class CommunityRepository {

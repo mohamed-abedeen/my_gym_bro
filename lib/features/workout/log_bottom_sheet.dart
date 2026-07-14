@@ -1,10 +1,13 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
+import 'package:my_gym_bro/core/router/app_router.dart';
 import 'package:my_gym_bro/core/services/exercise_gif_cache.dart';
 import 'package:my_gym_bro/core/services/units.dart';
 import 'package:my_gym_bro/features/workout/exercise_detail_sheet.dart';
+import 'package:my_gym_bro/features/workout/share/share_card_data.dart';
 import 'package:my_gym_bro/features/workout/workout_providers.dart';
 import 'package:my_gym_bro/l10n/app_localizations.dart';
 import 'package:my_gym_bro/shared/constants.dart';
@@ -165,8 +168,7 @@ class _LogSheetState extends ConsumerState<_LogSheet> {
                     ),
                     // Search: toggles the heatmap date picker. Accent-tinted
                     // while the calendar is open.
-                    _showCalendar
-                        ? GestureDetector(
+                    if (_showCalendar) GestureDetector(
                             onTap: () =>
                                 setState(() => _showCalendar = false),
                             behavior: HitTestBehavior.opaque,
@@ -180,8 +182,7 @@ class _LogSheetState extends ConsumerState<_LogSheet> {
                               child: Icon(Icons.search_rounded,
                                   color: colors.accent, size: 22.sp),
                             ),
-                          )
-                        : LiquidGlassButton(
+                          ) else LiquidGlassButton(
                             width: 48.w,
                             height: 48.h,
                             opacity: 0.15,
@@ -826,7 +827,7 @@ class _SessionCardState extends ConsumerState<_SessionCard> {
                                 (maxSetVolume > 0
                                         ? (v / maxSetVolume).clamp(0.12, 1.0)
                                         : 0.12)
-                                    .toDouble(),
+                                    ,
                             margin: EdgeInsets.symmetric(horizontal: 2.w),
                             decoration: BoxDecoration(
                               color: v >= maxSetVolume
@@ -986,6 +987,13 @@ class _SessionCardState extends ConsumerState<_SessionCard> {
                       height: 48.h,
                       opacity: 0.15,
                       radius: 24.r,
+                      onTap: () => context.push(
+                        AppRoutes.shareCard,
+                        extra: ShareCardData.fromEnrichedSession(
+                          widget.enriched,
+                          hasPr: widget.isPr,
+                        ),
+                      ),
                       child: Icon(Icons.ios_share_rounded,
                           color: colors.textPrimary, size: 20.sp),
                     ),

@@ -1,4 +1,5 @@
 import 'package:flutter/foundation.dart';
+import 'package:my_gym_bro/core/services/crash_reporter.dart' show CrashReporter;
 
 /// Debug-only logger and shared PII scrubber.
 ///
@@ -39,7 +40,7 @@ class SafeLogger {
 
   /// Standard UUID v1–v5.
   static final _uuidRx = RegExp(
-    r'[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}',
+    '[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}',
   );
 
   /// Conservative email regex — good enough for log scrubbing, not for

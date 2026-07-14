@@ -100,7 +100,9 @@ class _ScheduleBuilderScreenState
 
     for (final day in days) {
       if (day.isRestDay ||
-          (day.label?.toLowerCase().contains('rest') ?? false)) continue;
+          (day.label?.toLowerCase().contains('rest') ?? false)) {
+        continue;
+      }
       final scheduledExercises = await dao.getExercises(day.localId);
       final exerciseIds =
           scheduledExercises.map((se) => se.exerciseId).toList();

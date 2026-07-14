@@ -10,8 +10,8 @@ import 'package:my_gym_bro/core/services/exercise_gif_cache.dart';
 import 'package:my_gym_bro/core/services/units.dart';
 import 'package:my_gym_bro/features/community/community_mock_data.dart';
 import 'package:my_gym_bro/features/profile/profile_providers.dart';
-import 'package:my_gym_bro/features/social/follow_providers.dart';
 import 'package:my_gym_bro/features/settings/skin_provider.dart';
+import 'package:my_gym_bro/features/social/follow_providers.dart';
 import 'package:my_gym_bro/features/workout/exercise_detail_sheet.dart';
 import 'package:my_gym_bro/features/workout/workout_providers.dart';
 import 'package:my_gym_bro/l10n/app_localizations.dart';
@@ -385,7 +385,6 @@ class _BannerSectionState extends ConsumerState<_BannerSection> {
                   shape: BoxShape.circle,
                   border: Border.all(
                     color: Colors.white.withValues(alpha: 0.25),
-                    width: 1,
                   ),
                 ),
                 child: Icon(
@@ -664,8 +663,8 @@ class _ProfileSessionCardState extends ConsumerState<_ProfileSessionCard>
     );
     _fadeAnim = CurvedAnimation(
       parent: _controller,
-      curve: const Interval(0.2, 1.0, curve: Curves.easeOut),
-      reverseCurve: const Interval(0.0, 0.35, curve: Curves.easeIn),
+      curve: const Interval(0.2, 1, curve: Curves.easeOut),
+      reverseCurve: const Interval(0, 0.35, curve: Curves.easeIn),
     );
     _chevronAnim = Tween<double>(begin: 0, end: 0.5).animate(
       CurvedAnimation(
@@ -762,7 +761,7 @@ class _ProfileSessionCardState extends ConsumerState<_ProfileSessionCard>
     final durationStr =
         durationH > 0 ? '${durationH}h ${durationM}m' : '${durationM}m';
     final unit = ref.watch(weightUnitProvider);
-    final volume = (convertFromKg(s.totalVolume ?? 0, unit)).round();
+    final volume = convertFromKg(s.totalVolume ?? 0, unit).round();
     final weightUnit = weightUnitLabel(unit);
 
     // Listen for provider changes to drive animation — not inside build logic
@@ -810,7 +809,6 @@ class _ProfileSessionCardState extends ConsumerState<_ProfileSessionCard>
                   children: [
                     Expanded(
                       child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.center,
                         children: [
                           AnimatedBuilder(
                             animation: _expandAnim,
@@ -1111,7 +1109,6 @@ class _SessionStatsGrid extends StatelessWidget {
               child: _StatCell(
                 label: l10n.volume,
                 value: '$volume  $weightUnit',
-                trendValue: null,
               ),
             ),
             SizedBox(width: 32.w),
@@ -1120,7 +1117,6 @@ class _SessionStatsGrid extends StatelessWidget {
                 label: l10n.avgStrength,
                 value: '${exerciseCount > 0 ? (volume ~/ exerciseCount) : 0}',
                 trendValue: '5+',
-                isPositive: true,
               ),
             ),
           ],
@@ -1134,7 +1130,6 @@ class _SessionStatsGrid extends StatelessWidget {
                 label: l10n.totalDuration,
                 value: durationStr,
                 trendValue: '120%',
-                isPositive: true,
               ),
             ),
             SizedBox(width: 32.w),

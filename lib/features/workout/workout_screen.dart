@@ -48,7 +48,7 @@ class WorkoutScreen extends ConsumerWidget {
                 end: Alignment.bottomCenter,
                 colors:
                     isDark
-                        ? [Color(0xFF1A1A1A), AppColors.of(context).black]
+                        ? [const Color(0xFF1A1A1A), AppColors.of(context).black]
                         : [colors.panelBackground, colors.background],
               ),
             ),

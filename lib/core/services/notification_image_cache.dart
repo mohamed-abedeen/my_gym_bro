@@ -27,7 +27,7 @@ class NotificationImageCache {
       final file = await ExerciseGifCache.instance
           .getSingleFile(url)
           .timeout(_timeout);
-      if (!await File(file.path).exists()) return null;
+      if (!File(file.path).existsSync()) return null;
       return file.path;
     } on TimeoutException {
       return null;

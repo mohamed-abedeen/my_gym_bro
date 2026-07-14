@@ -95,7 +95,7 @@ void main() {
 
   test('browse syncs only as many pages as the request needs', () async {
     final repo = buildRepo();
-    final page = await repo.browse(offset: 0, limit: 2);
+    final page = await repo.browse(limit: 2);
     expect(requests, hasLength(1));
     expect(page.items.map((e) => e.exerciseId), ['aaa', 'bbb']);
     expect(page.fromCache, isFalse);
@@ -115,12 +115,12 @@ void main() {
     final repo = buildRepo();
     rateLimited = true; // every request after the first 429s
 
-    final degraded = await repo.browse(offset: 0, limit: 4);
+    final degraded = await repo.browse(limit: 4);
     expect(degraded.fromCache, isTrue);
     expect(degraded.items, hasLength(2)); // only page 1 made it in
 
     rateLimited = false;
-    final resumed = await repo.browse(offset: 0, limit: 4);
+    final resumed = await repo.browse(limit: 4);
     expect(resumed.fromCache, isFalse);
     expect(resumed.items, hasLength(4));
     // The retry resumed from the saved cursor instead of restarting.
@@ -133,7 +133,7 @@ void main() {
     // Fire both without awaiting — pre-fix the two sync loops interleaved
     // on the shared cursor and re-fetched the same pages.
     final results = await Future.wait([
-      repo.browse(offset: 0, limit: 4),
+      repo.browse(limit: 4),
       repo.searchByName('cable'),
     ]);
     expect(requests, hasLength(3)); // whole catalogue fetched exactly once
@@ -151,7 +151,7 @@ void main() {
     // "Next app launch": fresh repo (session sync state reset), same DB.
     final relaunch =
         ExerciseRepository(ExerciseApiService(client: client), dao);
-    final page = await relaunch.browse(offset: 0, limit: 4);
+    final page = await relaunch.browse(limit: 4);
     expect(page.items, hasLength(4));
     expect(page.fromCache, isFalse);
     expect(requests.length, before); // no network at all

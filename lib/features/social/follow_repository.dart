@@ -1,9 +1,9 @@
-import 'package:supabase_flutter/supabase_flutter.dart';
-import 'package:uuid/uuid.dart';
-
+import 'package:my_gym_bro/core/database/app_database.dart' show Follows;
 import 'package:my_gym_bro/core/database/daos/follow_dao.dart';
 import 'package:my_gym_bro/core/services/sync_service.dart';
 import 'package:my_gym_bro/features/social/public_profile.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:uuid/uuid.dart';
 
 /// Coordinates the local [Follows] cache with Supabase for the social graph.
 ///

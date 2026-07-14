@@ -187,11 +187,11 @@ String workoutReminderBodyForRestDays(NotificationTone tone, int restDays) {
     case NotificationTone.supportive:
       return 'Your next session is waiting for you.';
     case NotificationTone.balanced:
-      return 'Keep your streak going. Let\'s train.';
+      return "Keep your streak going. Let's train.";
     case NotificationTone.bold:
-      return 'Your muscles are ready. Let\'s go.';
+      return "Your muscles are ready. Let's go.";
     case NotificationTone.savage:
-      return 'MOVE IT. YOU\'RE WASTING GAINS.';
+      return "MOVE IT. YOU'RE WASTING GAINS.";
   }
 }
 

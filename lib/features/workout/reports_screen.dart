@@ -782,7 +782,7 @@ class _WeightComparePainter extends CustomPainter {
             end: Alignment.bottomCenter,
             colors: [
               thisColor.withValues(alpha: 0.28),
-              thisColor.withValues(alpha: 0.0),
+              thisColor.withValues(alpha: 0),
             ],
           ).createShader(chart),
       )
@@ -1114,7 +1114,6 @@ class _WeekPickerSheetState extends ConsumerState<_WeekPickerSheet> {
                                         color: colors.accent.withValues(
                                           alpha: 0.38,
                                         ),
-                                        width: 1,
                                       ),
                                       borderRadius: BorderRadius.circular(
                                         100.r,
@@ -1167,7 +1166,6 @@ class _WeekPickerSheetState extends ConsumerState<_WeekPickerSheet> {
                     color: colors.accent.withValues(alpha: 0.14),
                     border: Border.all(
                       color: colors.accent.withValues(alpha: 0.30),
-                      width: 1,
                     ),
                     borderRadius: BorderRadius.circular(100.r),
                   ),

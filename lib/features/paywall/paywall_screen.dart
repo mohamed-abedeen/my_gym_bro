@@ -73,7 +73,6 @@ class _PaywallScreenState extends ConsumerState<PaywallScreen> {
               child: SingleChildScrollView(
                 padding: EdgeInsets.symmetric(horizontal: 24.w),
                 child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.center,
                   children: [
                     SizedBox(height: 8.h),
 
@@ -150,7 +149,7 @@ class _PaywallScreenState extends ConsumerState<PaywallScreen> {
                       children: [
                         _PlanCard(
                           label: l10n.monthlyPlan,
-                          sublabel: '\$9.99 / mo',
+                          sublabel: r'$9.99 / mo',
                           selected: _selected == _Plan.monthly,
                           onTap: () =>
                               setState(() => _selected = _Plan.monthly),
@@ -158,7 +157,7 @@ class _PaywallScreenState extends ConsumerState<PaywallScreen> {
                         SizedBox(width: 12.w),
                         _PlanCard(
                           label: l10n.yearlyPlan,
-                          sublabel: '\$49.99 / yr',
+                          sublabel: r'$49.99 / yr',
                           badge: l10n.bestValue,
                           selected: _selected == _Plan.yearly,
                           onTap: () =>

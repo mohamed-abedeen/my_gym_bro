@@ -1,58 +1,130 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
 
-import 'package:my_gym_bro/core/providers/providers.dart';
 import 'package:my_gym_bro/core/services/units.dart';
-import 'package:my_gym_bro/features/settings/skin_provider.dart';
-import 'package:my_gym_bro/features/workout/muscle_recovery_service.dart';
+import 'package:my_gym_bro/features/leaderboard/leaderboard_providers.dart';
+import 'package:my_gym_bro/features/leaderboard/rank.dart';
 import 'package:my_gym_bro/features/workout/share/share_card_data.dart';
-import 'package:my_gym_bro/features/workout/share/share_helpers.dart';
+import 'package:my_gym_bro/features/workout/workout_providers.dart'
+    show userProfileProvider;
 import 'package:my_gym_bro/l10n/app_localizations.dart';
-import 'package:my_gym_bro/shared/widgets/anatomy_body.dart';
 
-/// Shared building blocks + fixed dark palette for the share-card templates.
+/// Shared tokens + building blocks for the v2 share-card templates
+/// (design_handoff_share_cards_v2).
 ///
-/// Colours are committed to the dark look (NOT `AppColors.of(context)`) so the
-/// exported PNG is identical regardless of the viewer's theme — matching the
-/// palette `ShareCardFrame` paints its background with.
+/// Colours are committed to the fixed dark handoff palette (NOT
+/// `AppColors.of(context)`) so the exported PNG is identical regardless of
+/// the viewer's theme. Typography is the bundled `Archivo` variable font
+/// (wght/wdth axes) for display text and `IBMPlexMono` for labels/metadata.
+
+// ── Palette ──
 const kShareAccent = Color(0xFFF0FF00);
-const kShareTextPrimary = Color(0xFFFFFFFF);
-const kShareTextSecondary = Color(0xFF999999);
+const kShareTextPrimary = Color(0xFFF4F4F0);
+const kShareTextSecondary = Color(0xFF8A8A8E);
+const kShareTextTertiary = Color(0xFF6E6E72);
+const kShareWatermark = Color(0xFF5B5B5F);
+const kShareCardBg = Color(0xFF050506);
+const kShareHairline = Color(0x1FFFFFFF); // white @ 12%
+
+/// Metallic gradient clipped to display text (titles, the volume unit).
+const kShareMetallicGradient = LinearGradient(
+  begin: Alignment.topCenter,
+  end: Alignment.bottomCenter,
+  colors: [Color(0xFFFFFFFF), Color(0xFFC9C9CE), Color(0xFF8E8E96)],
+  stops: [0, 0.55, 1],
+);
+
+const kShareBrandLogo = 'assets/images/mgb_icon.png';
 
 /// Whether share cards render on a transparent background (Strava-style
-/// "sticker") instead of the dark canvas. Global so the Normal/Transparent
-/// toggle flips every card at once; `ShareCardFrame` reads it. The exported
-/// PNG keeps real alpha in transparent mode.
+/// "sticker") instead of the dark canvas. Global so the Dark/Sticker toggle
+/// flips every card at once; `ShareCardFrame` reads it. The exported PNG
+/// keeps real alpha in sticker mode.
 final shareCardTransparentProvider = StateProvider<bool>((ref) => false);
 
-/// Big-number style: Familjen Grotesk, tight, for the hero stat figures.
-TextStyle shareNumberStyle(double size, {Color color = kShareTextPrimary}) =>
-    GoogleFonts.familjenGrotesk(
+/// Archivo display style. [width] drives the variable font's wdth axis
+/// (112 = expanded titles, 64 = condensed hype numerals).
+TextStyle shareArchivo(
+  double size, {
+  double weight = 900,
+  double width = 100,
+  double? letterSpacing,
+  double? height,
+  Color? color = kShareTextPrimary,
+}) =>
+    TextStyle(
+      fontFamily: 'Archivo',
       fontSize: size,
-      fontWeight: FontWeight.w700,
       color: color,
-      height: 1,
-      letterSpacing: -0.5,
+      fontWeight: FontWeight.values[weight ~/ 100 - 1],
+      fontVariations: [
+        FontVariation('wght', weight),
+        FontVariation('wdth', width),
+      ],
+      letterSpacing: letterSpacing,
+      height: height,
     );
 
-/// Card title (workout name) style — same Familjen dialect as the numbers.
-TextStyle shareTitleStyle({double size = 30}) => GoogleFonts.familjenGrotesk(
+/// IBM Plex Mono label style. Callers uppercase their text — every mono
+/// string on the cards is uppercase by design.
+TextStyle shareMono(
+  double size, {
+  double letterSpacing = 1.5,
+  Color color = kShareTextSecondary,
+  FontWeight weight = FontWeight.w400,
+  double? height,
+}) =>
+    TextStyle(
+      fontFamily: 'IBMPlexMono',
       fontSize: size,
-      fontWeight: FontWeight.w800,
-      color: kShareTextPrimary,
-      height: 1.05,
-      letterSpacing: -0.5,
+      letterSpacing: letterSpacing,
+      color: color,
+      fontWeight: weight,
+      height: height,
     );
 
-/// Small grey uppercase stat label.
-const shareLabelStyle = TextStyle(
-  color: kShareTextSecondary,
-  fontSize: 12,
-  fontWeight: FontWeight.w600,
-  letterSpacing: 1,
-);
+/// Archivo with a lime stroke instead of a fill — the outlined title word.
+TextStyle shareOutlinedArchivo(
+  double size, {
+  double width = 112,
+  double letterSpacing = -1.2,
+  double height = 0.94,
+  double strokeWidth = 1.5,
+}) =>
+    TextStyle(
+      fontFamily: 'Archivo',
+      fontSize: size,
+      fontWeight: FontWeight.w900,
+      fontVariations: [
+        const FontVariation('wght', 900),
+        FontVariation('wdth', width),
+      ],
+      letterSpacing: letterSpacing,
+      height: height,
+      foreground: Paint()
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = strokeWidth
+        ..color = kShareAccent,
+    );
+
+/// Single-line text filled with the metallic gradient.
+class ShareMetallicText extends StatelessWidget {
+  const ShareMetallicText(this.text, {required this.style, super.key});
+
+  final String text;
+  final TextStyle style;
+
+  @override
+  Widget build(BuildContext context) {
+    return ShaderMask(
+      blendMode: BlendMode.srcIn,
+      shaderCallback: (bounds) =>
+          kShareMetallicGradient.createShader(Offset.zero & bounds.size),
+      child: Text(text, maxLines: 1, style: style.copyWith(color: Colors.white)),
+    );
+  }
+}
 
 /// Volume formatted for display: converted to the user's unit, thousands-
 /// separated, split into number + unit suffix so callers can size them apart.
@@ -64,139 +136,149 @@ const shareLabelStyle = TextStyle(
   );
 }
 
-/// "12,345 kg" — the one-line form used inside stat rows.
+/// "12,345 kg" — the one-line form used inside stat rows and legends.
 String formatShareVolume(double kg, WeightUnit unit) {
   final p = shareVolumeParts(kg, unit);
   return '${p.number} ${p.unit}';
 }
 
-/// Card title (workout name), truncated to two lines.
-class ShareCardTitle extends StatelessWidget {
-  const ShareCardTitle(
-    this.text, {
-    this.size = 30,
-    this.textAlign = TextAlign.left,
-    super.key,
-  });
-
-  final String text;
-  final double size;
-  final TextAlign textAlign;
-
-  @override
-  Widget build(BuildContext context) {
-    return Text(
-      text,
-      maxLines: 2,
-      overflow: TextOverflow.ellipsis,
-      textAlign: textAlign,
-      style: shareTitleStyle(size: size),
-    );
-  }
+/// Splits a workout title for the two-line treatment: everything before the
+/// last space on line 1 (metallic/solid), the last word on line 2 (lime
+/// outline). Single-word titles get line 1 only.
+({String line1, String? line2}) splitShareTitle(String name) {
+  final t = name.trim();
+  final i = t.lastIndexOf(' ');
+  if (i <= 0) return (line1: t, line2: null);
+  return (line1: t.substring(0, i).trim(), line2: t.substring(i + 1));
 }
 
-/// A single stat: big Familjen-Grotesk number over a small grey label.
-class ShareStatTile extends StatelessWidget {
-  const ShareStatTile({
-    required this.value,
-    required this.label,
-    this.valueColor = kShareTextPrimary,
-    this.valueSize = 26,
+/// "SUN · JUL 13 2026" — the mono date line under the card titles.
+String shareDateLine(DateTime date, String locale) {
+  final day = DateFormat('EEE', locale).format(date);
+  final rest = DateFormat('MMM d yyyy', locale).format(date);
+  return '$day · $rest'.toUpperCase();
+}
+
+/// Masthead row: [logo +] "MY GYM BRO" left · "WORKOUT #N" right. When the
+/// workout number is unknown (history shares) the right side shows the date
+/// if [dateFallback] is set (Hype card — it has no date elsewhere), else
+/// nothing (Editorial/Anatomy already carry a date line under the title).
+class ShareMasthead extends StatelessWidget {
+  const ShareMasthead({
+    required this.data,
+    this.showLogo = true,
+    this.dateFallback = false,
     super.key,
   });
 
-  final String value;
-  final String label;
-  final Color valueColor;
-  final double valueSize;
+  final ShareCardData data;
+  final bool showLogo;
+  final bool dateFallback;
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      mainAxisSize: MainAxisSize.min,
+    final l10n = AppLocalizations.of(context);
+    final locale = Localizations.localeOf(context).toString();
+    final String trailing;
+    if (data.workoutNumber > 0) {
+      trailing = l10n.shareWorkoutNumber(data.workoutNumber).toUpperCase();
+    } else if (dateFallback) {
+      trailing = shareDateLine(data.date ?? DateTime.now(), locale);
+    } else {
+      trailing = '';
+    }
+
+    return Row(
       children: [
-        FittedBox(
-          fit: BoxFit.scaleDown,
-          child: Text(
-            value,
-            maxLines: 1,
-            style: shareNumberStyle(valueSize, color: valueColor),
+        if (showLogo) ...[
+          Image.asset(
+            kShareBrandLogo,
+            width: 22,
+            height: 22,
+            fit: BoxFit.contain,
+            opacity: const AlwaysStoppedAnimation(0.9),
+          ),
+          const SizedBox(width: 8),
+        ],
+        Text(
+          l10n.appName.toUpperCase(),
+          style: shareMono(
+            10,
+            weight: FontWeight.w600,
+            letterSpacing: 2.5,
+            color: kShareTextTertiary,
           ),
         ),
-        const SizedBox(height: 6),
-        Text(label.toUpperCase(), style: shareLabelStyle),
+        const Spacer(),
+        Text(
+          trailing,
+          style: shareMono(10, letterSpacing: 2, color: kShareTextTertiary),
+        ),
       ],
     );
   }
 }
 
-/// The Duration | Volume | Sets stat row shared by the flagship cards. Reads
-/// the user's weight unit so volume displays converted + thousands-separated.
-class ShareStatRow extends ConsumerWidget {
-  const ShareStatRow(this.data, {this.valueSize = 26, super.key});
+/// Branding footer: "MYGYMBRO.APP" watermark left [+ logo on Editorial],
+/// athlete name + 24px rank badge right. [showRule] paints the hairline +
+/// 14px padding above (Anatomy/Hype); Editorial spaces itself instead.
+class ShareFooter extends ConsumerWidget {
+  const ShareFooter({this.showRule = true, this.showLogo = false, super.key});
 
-  final ShareCardData data;
-  final double valueSize;
+  final bool showRule;
+  final bool showLogo;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final l10n = AppLocalizations.of(context);
-    final unit = ref.watch(weightUnitProvider);
-    return Row(
+    final rank = ref.watch(myRankProvider);
+    final name = ref.watch(userProfileProvider).valueOrNull?.displayName;
+    final displayName =
+        (name == null || name.trim().isEmpty) ? l10n.shareAnonymous : name;
+
+    final row = Row(
       children: [
-        Expanded(
-          child: ShareStatTile(
-            value: formatShareDuration(data.durationSeconds),
-            label: l10n.duration,
-            valueSize: valueSize,
+        if (showLogo) ...[
+          Image.asset(
+            kShareBrandLogo,
+            width: 20,
+            height: 20,
+            fit: BoxFit.contain,
+            opacity: const AlwaysStoppedAnimation(0.85),
+          ),
+          const SizedBox(width: 8),
+        ],
+        Text(
+          'MYGYMBRO.APP',
+          style: shareMono(10, letterSpacing: 2, color: kShareWatermark),
+        ),
+        const Spacer(),
+        Flexible(
+          child: Text(
+            displayName.toUpperCase(),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: shareMono(10),
           ),
         ),
-        Expanded(
-          child: ShareStatTile(
-            value: formatShareVolume(data.totalVolumeKg, unit),
-            label: l10n.volume,
-            valueColor: kShareAccent,
-            valueSize: valueSize,
-          ),
-        ),
-        Expanded(
-          child: ShareStatTile(
-            value: '${data.totalSets}',
-            label: l10n.sets,
-            valueSize: valueSize,
-          ),
-        ),
+        if (rank != null) ...[
+          const SizedBox(width: 8),
+          Opacity(opacity: 0.9, child: RankBadge(rank, size: 24)),
+        ],
       ],
     );
-  }
-}
 
-/// The worked-muscle anatomy hero, accent-highlighted, sized to [height].
-/// Renders plain when [groups] is empty.
-class ShareAnatomyHero extends ConsumerWidget {
-  const ShareAnatomyHero({
-    required this.groups,
-    required this.height,
-    super.key,
-  });
-
-  final Set<String> groups;
-  final double height;
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    return AnatomyBody(
-      height: height,
-      gender: ref.watch(anatomyGenderProvider),
-      basePngPath: ref.watch(activeSkinPathProvider),
-      highlightColor: kShareAccent,
-      muscleStates: [
-        for (final g in groups)
-          MuscleStateInfo(
-            muscleGroup: g,
-            state: MuscleState.recovering,
-            recoveryPercent: 0,
-          ),
+    if (!showRule) return row;
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        const DecoratedBox(
+          decoration: BoxDecoration(color: kShareHairline),
+          child: SizedBox(height: 1),
+        ),
+        const SizedBox(height: 14),
+        row,
       ],
     );
   }

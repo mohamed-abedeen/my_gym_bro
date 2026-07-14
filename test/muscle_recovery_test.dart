@@ -98,7 +98,7 @@ void main() {
       final percent = service.getRecoveryPercent('Biceps', trained);
       expect(percent, isNotNull);
       expect(
-        percent!,
+        percent,
         closeTo(MuscleRecoveryService.recoveryCurve(0.5), 0.02),
       );
       expect(percent, greaterThan(0.5));
@@ -123,14 +123,14 @@ void main() {
       final justTrained = DateTime.now().subtract(const Duration(minutes: 1));
       final percent = service.getRecoveryPercent('Chest', justTrained);
       expect(percent, isNotNull);
-      expect(percent!, lessThan(0.01));
+      expect(percent, lessThan(0.01));
     });
 
     test('recovery percent is clamped between 0 and 1', () {
       final trained = DateTime.now().subtract(const Duration(hours: 10));
       final percent = service.getRecoveryPercent('Chest', trained);
       expect(percent, isNotNull);
-      expect(percent!, inInclusiveRange(0.0, 1.0));
+      expect(percent, inInclusiveRange(0.0, 1.0));
     });
   });
 
@@ -269,7 +269,7 @@ void main() {
       const info = MuscleStateInfo(
         muscleGroup: 'Chest',
         state: MuscleState.recovered,
-        recoveryPercent: 1.0,
+        recoveryPercent: 1,
       );
       expect(info.soreness, 0.0);
     });

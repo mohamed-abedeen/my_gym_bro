@@ -56,17 +56,13 @@ void _handleAction(String action) {
   switch (action) {
     case _kActionCompleteSet:
       timer.completeSetFromNotification?.call();
-      break;
     case _kActionSkip:
       timer.cancel();
       timer.onCompleteCallback?.call();
-      break;
     case _kActionAdd15:
       timer.addTime(15);
-      break;
     case _kActionSub15:
       timer.addTime(-15);
-      break;
   }
 }
 
@@ -175,9 +171,6 @@ class NotificationService {
     // gray blob there.
     const androidInit = AndroidInitializationSettings('ic_stat_notification');
     final iosInit = DarwinInitializationSettings(
-      requestAlertPermission: true,
-      requestSoundPermission: true,
-      requestBadgePermission: true,
       notificationCategories: _iosCategories(),
     );
     final initSettings =
@@ -208,7 +201,6 @@ class NotificationService {
         _workoutChannelId,
         _workoutChannelName,
         description: _workoutChannelDesc,
-        importance: Importance.defaultImportance,
       );
       // Low importance so it silently appears in the status bar during a
       // workout without making noise every time it is updated.
@@ -406,7 +398,6 @@ class NotificationService {
       // screen / status bar.
       usesChronometer: true,
       when: sessionStartedAt.millisecondsSinceEpoch,
-      showWhen: true,
       category: AndroidNotificationCategory.status,
       visibility: NotificationVisibility.public,
       color: _kBrandAccent,
@@ -423,7 +414,6 @@ class NotificationService {
         const AndroidNotificationAction(
           _kActionCompleteSet,
           '✓ Complete Set',
-          showsUserInterface: false,
         ),
       ],
     );
@@ -496,7 +486,6 @@ class NotificationService {
       autoCancel: false,
       usesChronometer: true,
       when: sessionStartedAt.millisecondsSinceEpoch,
-      showWhen: true,
       category: AndroidNotificationCategory.status,
       visibility: NotificationVisibility.public,
       color: _kBrandAccent,
@@ -514,17 +503,14 @@ class NotificationService {
         const AndroidNotificationAction(
           _kActionSkip,
           'Skip',
-          showsUserInterface: false,
         ),
         const AndroidNotificationAction(
           _kActionSub15,
           '−15s',
-          showsUserInterface: false,
         ),
         const AndroidNotificationAction(
           _kActionAdd15,
           '+15s',
-          showsUserInterface: false,
         ),
       ],
     );
@@ -569,7 +555,6 @@ class NotificationService {
       autoCancel: false,
       usesChronometer: true,
       when: startedAt.millisecondsSinceEpoch,
-      showWhen: true,
       category: AndroidNotificationCategory.status,
       visibility: NotificationVisibility.public,
       color: _kBrandAccent,
@@ -681,8 +666,6 @@ class NotificationService {
       _workoutChannelId,
       _workoutChannelName,
       channelDescription: _workoutChannelDesc,
-      importance: Importance.defaultImportance,
-      priority: Priority.defaultPriority,
     );
     const iosDetails = DarwinNotificationDetails();
     const details =
