@@ -413,6 +413,54 @@ String _titleCase(String s) => s
     .map((w) => w.isNotEmpty ? '${w[0].toUpperCase()}${w.substring(1)}' : w)
     .join(' ');
 
+// ── Localized labels for the code-defined filter categories ──
+// Leaf muscle names and raw equipment values are exercise-DB data and are
+// deliberately shown as-is; only the literal category/grouping labels are
+// translated.
+String _muscleCategoryLabel(AppLocalizations l10n, String label) {
+  switch (label) {
+    case 'Chest':
+      return l10n.chest;
+    case 'Back':
+      return l10n.targetBack;
+    case 'Shoulders':
+      return l10n.shoulders;
+    case 'Arms':
+      return l10n.arms;
+    case 'Legs':
+      return l10n.legs;
+    case 'Core':
+      return l10n.core;
+    case 'Other':
+      return l10n.other;
+    default:
+      return label;
+  }
+}
+
+String _equipmentCategoryLabel(AppLocalizations l10n, String label) {
+  switch (label) {
+    case 'None':
+      return l10n.equipmentNone;
+    case 'Barbell':
+      return l10n.barbell;
+    case 'Dumbbell':
+      return l10n.dumbbell;
+    case 'Kettlebell':
+      return l10n.kettlebell;
+    case 'Machine':
+      return l10n.machine;
+    case 'Resistance Band':
+      return l10n.resistanceBand;
+    case 'Cardio':
+      return l10n.cardio;
+    case 'Other':
+      return l10n.other;
+    default:
+      return label;
+  }
+}
+
 // ═══════════════════════════════════════════════════════════════════
 // Exercise Browser — supports single-pick and multi-pick modes
 // Header: X + checkmark (glass circles)
@@ -775,11 +823,11 @@ class _ExerciseBrowserScreenState
                   // with Exercise objects so one ListView.builder handles both.
                   final items = <Object>[];
                   if (sections.recents.isNotEmpty) {
-                    items.add('Recent Exercises');
+                    items.add(l10n.recentExercises);
                     items.addAll(sections.recents);
                   }
                   if (sections.rest.isNotEmpty) {
-                    items.add('All Exercises');
+                    items.add(l10n.allExercises);
                     items.addAll(sections.rest);
                   }
 
@@ -950,7 +998,9 @@ class _FilterButtonsRow extends ConsumerWidget {
           // Muscle filter
           Expanded(
             child: _FilterChipButton(
-              label: muscleFilter ?? l10n.filterMuscle,
+              label: muscleFilter != null
+                  ? _muscleCategoryLabel(l10n, muscleFilter)
+                  : l10n.filterMuscle,
               isActive: muscleFilter != null,
               onTap: () => _showMuscleFilterSheet(
                 context: context,
@@ -1363,6 +1413,7 @@ class _MuscleFilterSheetState extends State<_MuscleFilterSheet>
   @override
   Widget build(BuildContext context) {
     final colors = AppColors.of(context);
+    final l10n = AppLocalizations.of(context);
     return SafeArea(
       child: Column(
         mainAxisSize: MainAxisSize.min,
@@ -1404,7 +1455,7 @@ class _MuscleFilterSheetState extends State<_MuscleFilterSheet>
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       _FilterMenuItem(
-                        label: cat.label,
+                        label: _muscleCategoryLabel(l10n, cat.label),
                         isSelected: widget.currentValue == muscle,
                         onTap: () => widget.onSelected(muscle),
                       ),
@@ -1441,7 +1492,7 @@ class _MuscleFilterSheetState extends State<_MuscleFilterSheet>
                           children: [
                             Expanded(
                               child: Text(
-                                cat.label,
+                                _muscleCategoryLabel(l10n, cat.label),
                                 style: TextStyle(
                                   color: isGroupSelected
                                       ? colors.accent
@@ -1486,7 +1537,8 @@ class _MuscleFilterSheetState extends State<_MuscleFilterSheet>
                           // have an umbrella filter value (e.g. Shoulders).
                           if (cat.hasAllOption)
                             _SubMuscleItem(
-                              label: 'All ${cat.label}',
+                              label: l10n.allCategory(
+                                  _muscleCategoryLabel(l10n, cat.label)),
                               isSelected:
                                   widget.currentValue == cat.allValue,
                               onTap: () =>
@@ -1694,6 +1746,7 @@ class _EquipmentFilterSheetState extends State<_EquipmentFilterSheet>
   @override
   Widget build(BuildContext context) {
     final colors = AppColors.of(context);
+    final l10n = AppLocalizations.of(context);
     return SafeArea(
       child: Column(
         mainAxisSize: MainAxisSize.min,
@@ -1735,11 +1788,12 @@ class _EquipmentFilterSheetState extends State<_EquipmentFilterSheet>
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       _FilterMenuItem(
-                        label: cat.label,
+                        label: _equipmentCategoryLabel(l10n, cat.label),
                         isSelected: isSelected,
                         onTap: () => widget.onSelected(
                           _EquipmentFilterValue(
-                            displayLabel: cat.label,
+                            displayLabel:
+                                _equipmentCategoryLabel(l10n, cat.label),
                             rawValues: cat.rawValues,
                           ),
                         ),
@@ -1773,7 +1827,7 @@ class _EquipmentFilterSheetState extends State<_EquipmentFilterSheet>
                           children: [
                             Expanded(
                               child: Text(
-                                cat.label,
+                                _equipmentCategoryLabel(l10n, cat.label),
                                 style: TextStyle(
                                   color: isGroupHighlighted
                                       ? colors.accent
@@ -1815,12 +1869,14 @@ class _EquipmentFilterSheetState extends State<_EquipmentFilterSheet>
                         children: [
                           // "All [Category]" — matches every raw value in the group
                           _SubMuscleItem(
-                            label: 'All ${cat.label}',
+                            label: l10n.allCategory(
+                                _equipmentCategoryLabel(l10n, cat.label)),
                             isSelected: _isCategorySelected(cat),
                             isAllOption: true,
                             onTap: () => widget.onSelected(
                               _EquipmentFilterValue(
-                                displayLabel: cat.label,
+                                displayLabel:
+                                    _equipmentCategoryLabel(l10n, cat.label),
                                 rawValues: cat.rawValues,
                               ),
                             ),

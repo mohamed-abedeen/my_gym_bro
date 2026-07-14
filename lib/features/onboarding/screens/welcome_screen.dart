@@ -28,7 +28,7 @@ class WelcomeScreen extends StatelessWidget {
 
               // App name
               Text(
-                'My Gym Bro',
+                l10n.appName,
                 style: TextStyle(
                   fontSize: 36.sp,
                   fontWeight: FontWeight.w700,
@@ -40,7 +40,7 @@ class WelcomeScreen extends StatelessWidget {
 
               // Subtitle
               Text(
-                'Built by Gym Bros, For Gym Bros',
+                l10n.welcomeTagline,
                 textAlign: TextAlign.center,
                 style: TextStyle(
                   fontSize: 18.sp,
@@ -67,7 +67,7 @@ class WelcomeScreen extends StatelessWidget {
                       fontWeight: FontWeight.w600,
                     ),
                   ),
-                  child: const Text('Get Started'),
+                  child: Text(l10n.getStarted),
                 ),
               ),
 

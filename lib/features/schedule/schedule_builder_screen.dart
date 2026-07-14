@@ -5,6 +5,7 @@ import 'package:drift/drift.dart' hide Column;
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:intl/intl.dart';
 import 'package:my_gym_bro/core/database/app_database.dart';
 import 'package:my_gym_bro/core/database/daos/exercise_dao.dart';
 import 'package:my_gym_bro/core/database/daos/schedule_dao.dart';
@@ -70,10 +71,11 @@ class ScheduleBuilderScreen extends ConsumerStatefulWidget {
 
 class _ScheduleBuilderScreenState
     extends ConsumerState<ScheduleBuilderScreen> {
-  final _nameController = TextEditingController(text: 'Program 1');
+  final _nameController = TextEditingController();
   final List<_DayModel> _days = [];
   int _expandedDay = -1;
   bool _saving = false;
+  bool _nameInitialized = false;
   bool get _isEditMode => widget.scheduleId != null;
 
   @override
@@ -81,6 +83,18 @@ class _ScheduleBuilderScreenState
     super.initState();
     if (_isEditMode) {
       _loadExistingSchedule();
+    }
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    // Localized default name — l10n needs an inherited widget, so not initState.
+    if (!_nameInitialized) {
+      _nameInitialized = true;
+      if (!_isEditMode) {
+        _nameController.text = AppLocalizations.of(context).defaultProgramName;
+      }
     }
   }
 
@@ -248,6 +262,7 @@ class _ScheduleBuilderScreenState
   // ── Schedule Name Field ──
   Widget _buildNameField() {
     final colors = AppColors.of(context);
+    final l10n = AppLocalizations.of(context);
     return Container(
       height: 60.h,
       decoration: BoxDecoration(
@@ -274,7 +289,7 @@ class _ScheduleBuilderScreenState
                 fontWeight: FontWeight.w700,
               ),
               decoration: InputDecoration(
-                hintText: 'Schedule Name',
+                hintText: l10n.scheduleName,
                 hintStyle: TextStyle(
                   color: colors.textSecondary,
                   fontSize: 18.sp,
@@ -340,7 +355,7 @@ class _ScheduleBuilderScreenState
     final colors = AppColors.of(context);
     final day = _days[i];
     final isExpanded = i == _expandedDay;
-    final dayLabel = day.label.isNotEmpty ? day.label : 'Day ${i + 1}';
+    final dayLabel = day.label.isNotEmpty ? day.label : l10n.dayNumber(i + 1);
 
     return AnimatedContainer(
       duration: const Duration(milliseconds: 250),
@@ -479,6 +494,7 @@ class _ScheduleBuilderScreenState
   // ── Tag pills for day-of-week and label ──
   Widget _buildTagPills(int dayIndex) {
     final colors = AppColors.of(context);
+    final l10n = AppLocalizations.of(context);
     final day = _days[dayIndex];
 
     return Row(
@@ -495,7 +511,7 @@ class _ScheduleBuilderScreenState
               borderRadius: BorderRadius.circular(14.r),
             ),
             child: Text(
-              day.dayOfWeek.isNotEmpty ? day.dayOfWeek : 'Day',
+              day.dayOfWeek.isNotEmpty ? day.dayOfWeek : l10n.day,
               style: TextStyle(
                 color: day.dayOfWeek.isNotEmpty
                     ? colors.accent
@@ -517,7 +533,7 @@ class _ScheduleBuilderScreenState
               borderRadius: BorderRadius.circular(14.r),
             ),
             child: Text(
-              day.label.isNotEmpty ? day.label : 'Label',
+              day.label.isNotEmpty ? day.label : l10n.label,
               style: TextStyle(
                 color: colors.textPrimary,
                 fontSize: 12.sp,
@@ -681,7 +697,7 @@ class _ScheduleBuilderScreenState
             children: [
               SizedBox(
                 width: 50.w,
-                child: Text('Sets',
+                child: Text(l10n.sets,
                     style: TextStyle(
                       color: colors.textSecondary,
                       fontSize: 13.sp,
@@ -690,7 +706,7 @@ class _ScheduleBuilderScreenState
               ),
               Expanded(
                 child: Center(
-                  child: Text('weights kg',
+                  child: Text(l10n.weightsKg,
                       style: TextStyle(
                         color: colors.textSecondary,
                         fontSize: 13.sp,
@@ -700,7 +716,7 @@ class _ScheduleBuilderScreenState
               ),
               SizedBox(
                 width: 50.w,
-                child: Text('Rips',
+                child: Text(l10n.reps,
                     textAlign: TextAlign.end,
                     style: TextStyle(
                       color: colors.textSecondary,
@@ -837,15 +853,13 @@ class _ScheduleBuilderScreenState
 
   void _showDayOfWeekPicker(int dayIndex) {
     final colors = AppColors.of(context);
-    final weekdays = [
-      'Monday',
-      'Tuesday',
-      'Wednesday',
-      'Thursday',
-      'Friday',
-      'Saturday',
-      'Sunday'
-    ];
+    final l10n = AppLocalizations.of(context);
+    final locale = Localizations.localeOf(context).toString();
+    // Localized weekday names, Monday-first (2023-01-02 is a Monday).
+    final weekdays = List.generate(
+      7,
+      (i) => DateFormat.EEEE(locale).format(DateTime(2023, 1, 2 + i)),
+    );
 
     showCupertinoModalPopup<void>(
       context: context,
@@ -862,14 +876,14 @@ class _ScheduleBuilderScreenState
                 children: [
                   CupertinoButton(
                     padding: EdgeInsets.zero,
-                    child: Text('Cancel',
+                    child: Text(l10n.cancel,
                         style: TextStyle(
                             color: colors.textSecondary, fontSize: 14.sp)),
                     onPressed: () => Navigator.pop(context),
                   ),
                   CupertinoButton(
                     padding: EdgeInsets.zero,
-                    child: Text('Done',
+                    child: Text(l10n.done,
                         style: TextStyle(
                             color: colors.accent, fontSize: 14.sp)),
                     onPressed: () => Navigator.pop(context),
@@ -904,6 +918,7 @@ class _ScheduleBuilderScreenState
 
   void _editDayLabel(int dayIndex) {
     final colors = AppColors.of(context);
+    final l10n = AppLocalizations.of(context);
     final controller = TextEditingController(text: _days[dayIndex].label);
     showDialog<void>(
       context: context,
@@ -911,7 +926,7 @@ class _ScheduleBuilderScreenState
         backgroundColor: colors.panelBackground,
         shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(16.r)),
-        title: Text('Day Label',
+        title: Text(l10n.dayLabel,
             style: TextStyle(
                 color: colors.textPrimary,
                 fontSize: 18.sp,
@@ -921,7 +936,7 @@ class _ScheduleBuilderScreenState
           autofocus: true,
           style: TextStyle(color: colors.textPrimary, fontSize: 16.sp),
           decoration: InputDecoration(
-            hintText: 'e.g. Chest Day',
+            hintText: l10n.dayLabelHint,
             hintStyle:
                 TextStyle(color: colors.textSecondary, fontSize: 16.sp),
             enabledBorder: UnderlineInputBorder(
@@ -933,7 +948,7 @@ class _ScheduleBuilderScreenState
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
-            child: Text('Cancel',
+            child: Text(l10n.cancel,
                 style: TextStyle(
                     color: colors.textSecondary, fontSize: 14.sp)),
           ),
@@ -944,7 +959,7 @@ class _ScheduleBuilderScreenState
               });
               Navigator.pop(ctx);
             },
-            child: Text('Save',
+            child: Text(l10n.save,
                 style:
                     TextStyle(color: colors.accent, fontSize: 14.sp)),
           ),
@@ -955,7 +970,7 @@ class _ScheduleBuilderScreenState
 
   void _editWeight(int dayIdx, int exIdx, int setIdx) {
     _showNumberPicker(
-      title: 'Weight (kg)',
+      title: AppLocalizations.of(context).weightKg,
       initial: _days[dayIdx].exercises[exIdx].sets[setIdx].weight.toInt(),
       min: 0,
       max: 500,
@@ -969,7 +984,7 @@ class _ScheduleBuilderScreenState
 
   void _editReps(int dayIdx, int exIdx, int setIdx) {
     _showNumberPicker(
-      title: 'Reps',
+      title: AppLocalizations.of(context).reps,
       initial: _days[dayIdx].exercises[exIdx].sets[setIdx].reps,
       min: 1,
       max: 100,
@@ -989,6 +1004,7 @@ class _ScheduleBuilderScreenState
     required ValueChanged<int> onDone,
   }) {
     final colors = AppColors.of(context);
+    final l10n = AppLocalizations.of(context);
     var selected = initial;
     showCupertinoModalPopup<void>(
       context: context,
@@ -1005,7 +1021,7 @@ class _ScheduleBuilderScreenState
                 children: [
                   CupertinoButton(
                     padding: EdgeInsets.zero,
-                    child: Text('Cancel',
+                    child: Text(l10n.cancel,
                         style: TextStyle(
                             color: colors.textSecondary, fontSize: 14.sp)),
                     onPressed: () => Navigator.pop(context),
@@ -1017,7 +1033,7 @@ class _ScheduleBuilderScreenState
                           fontWeight: FontWeight.w600)),
                   CupertinoButton(
                     padding: EdgeInsets.zero,
-                    child: Text('Done',
+                    child: Text(l10n.done,
                         style: TextStyle(
                             color: colors.accent, fontSize: 14.sp)),
                     onPressed: () {
@@ -1101,6 +1117,7 @@ class _ScheduleBuilderScreenState
     if (name.isEmpty || _days.isEmpty) return;
 
     setState(() => _saving = true);
+    final l10n = AppLocalizations.of(context);
 
     try {
       final scheduleDao = ScheduleDao(ref.read(databaseProvider));
@@ -1135,7 +1152,7 @@ class _ScheduleBuilderScreenState
             ? day.label
             : (day.dayOfWeek.isNotEmpty
                 ? day.dayOfWeek
-                : 'Day ${d + 1}');
+                : l10n.dayNumber(d + 1));
         final dayId = await scheduleDao.addDay(
           ScheduleDaysCompanion(
             scheduleId: Value(scheduleId),
@@ -1182,6 +1199,7 @@ class _ScheduleBuilderScreenState
   Future<void> _deleteSchedule() async {
     if (!_isEditMode) return;
     final colors = AppColors.of(context);
+    final l10n = AppLocalizations.of(context);
 
     final confirm = await showDialog<bool>(
       context: context,
@@ -1191,7 +1209,7 @@ class _ScheduleBuilderScreenState
           borderRadius: BorderRadius.circular(16.r),
         ),
         title: Text(
-          'Delete Schedule',
+          l10n.deleteSchedule,
           style: TextStyle(
             color: colors.textPrimary,
             fontSize: 18.sp,
@@ -1199,7 +1217,7 @@ class _ScheduleBuilderScreenState
           ),
         ),
         content: Text(
-          'Are you sure you want to delete this schedule? This cannot be undone.',
+          l10n.deleteScheduleConfirm,
           style: TextStyle(
             color: colors.textSecondary,
             fontSize: 14.sp,
@@ -1208,13 +1226,13 @@ class _ScheduleBuilderScreenState
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx, false),
-            child: Text('Cancel',
+            child: Text(l10n.cancel,
                 style: TextStyle(
                     color: colors.textPrimary, fontSize: 14.sp)),
           ),
           TextButton(
             onPressed: () => Navigator.pop(ctx, true),
-            child: Text('Delete',
+            child: Text(l10n.delete,
                 style: TextStyle(color: colors.danger, fontSize: 14.sp)),
           ),
         ],

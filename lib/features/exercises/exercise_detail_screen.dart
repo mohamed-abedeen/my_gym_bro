@@ -385,7 +385,7 @@ class _SummaryTab extends StatelessWidget {
               borderRadius: BorderRadius.circular(12.r),
             ),
             child: Center(
-              child: Text('No data',
+              child: Text(l10n.noData,
                   style: TextStyle(
                       color: colors.textSecondary, fontSize: 13.sp)),
             ),
@@ -680,8 +680,10 @@ class _SessionHistoryCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final dateStr =
-        DateFormat('MMM d, yyyy').format(entry.session.startedAt.toLocal());
+    final dateStr = DateFormat(
+      'MMM d, yyyy',
+      Localizations.localeOf(context).toString(),
+    ).format(entry.session.startedAt.toLocal());
     final title = entry.scheduleName ?? dateStr;
 
     return Container(
@@ -1091,7 +1093,8 @@ class _VolumeBarChart extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final maxVol = data.isEmpty ? 0.0 : data.map((d) => d.volume).reduce(math.max);
-    final fmt = DateFormat('MMM d');
+    final fmt =
+        DateFormat('MMM d', Localizations.localeOf(context).toString());
 
     // Format the peak volume label neatly
     String peakLabel;
@@ -1283,6 +1286,7 @@ class ExerciseStatusScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     Responsive.init(context);
     final colors = AppColors.of(context);
+    final l10n = AppLocalizations.of(context);
 
     return Scaffold(
       backgroundColor: colors.background,
@@ -1357,7 +1361,7 @@ class ExerciseStatusScreen extends StatelessWidget {
                               ),
                             ),
                             Text(
-                              _currentTime(),
+                              _currentTime(context),
                               style: TextStyle(
                                 color: colors.subtitleText,
                                 fontSize: 11.sp,
@@ -1388,7 +1392,7 @@ class ExerciseStatusScreen extends StatelessWidget {
                     padding: EdgeInsets.all(16.w),
                     child: Column(
                       children: [
-                        _setsHeaderRow(colors),
+                        _setsHeaderRow(colors, l10n),
                         SizedBox(height: 8.h),
                         ...(_effectiveSets().asMap().entries.map((entry) {
                           final i = entry.key;
@@ -1434,10 +1438,10 @@ class ExerciseStatusScreen extends StatelessWidget {
                         Row(
                           children: [
                             Expanded(
-                                child: _statBlock(
-                                    colors, 'Volume', volume, colors.success)),
+                                child: _statBlock(colors, l10n.volume, volume,
+                                    colors.success)),
                             Expanded(
-                                child: _statBlock(colors, 'Avg Strength',
+                                child: _statBlock(colors, l10n.avgStrength,
                                     avgStrength, colors.success)),
                           ],
                         ),
@@ -1445,11 +1449,11 @@ class ExerciseStatusScreen extends StatelessWidget {
                         Row(
                           children: [
                             Expanded(
-                                child: _statBlock(colors, 'Total Duration',
+                                child: _statBlock(colors, l10n.totalDuration,
                                     duration, colors.success)),
                             Expanded(
-                                child: _statBlock(
-                                    colors, 'Records', records, colors.success)),
+                                child: _statBlock(colors, l10n.records,
+                                    records, colors.success)),
                           ],
                         ),
                         Container(
@@ -1469,7 +1473,7 @@ class ExerciseStatusScreen extends StatelessWidget {
                                     crossAxisAlignment:
                                         CrossAxisAlignment.start,
                                     children: [
-                                      Text('Cal Burned',
+                                      Text(l10n.calBurned,
                                           style: TextStyle(
                                               color: colors.textPrimary,
                                               fontSize: 10.sp)),
@@ -1487,7 +1491,7 @@ class ExerciseStatusScreen extends StatelessWidget {
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  Text('PROGRESS',
+                                  Text(l10n.progressLabel,
                                       style: TextStyle(
                                           color: colors.textPrimary,
                                           fontSize: 12.sp,
@@ -1529,12 +1533,12 @@ class ExerciseStatusScreen extends StatelessWidget {
     );
   }
 
-  Widget _setsHeaderRow(AppColorsTheme colors) {
+  Widget _setsHeaderRow(AppColorsTheme colors, AppLocalizations l10n) {
     return Row(
       children: [
         SizedBox(
           width: 50.w,
-          child: Text('Sets',
+          child: Text(l10n.sets,
               style: TextStyle(
                   color: colors.subtitleText,
                   fontSize: 13.sp,
@@ -1542,7 +1546,7 @@ class ExerciseStatusScreen extends StatelessWidget {
         ),
         Expanded(
           child: Center(
-            child: Text('weights kg',
+            child: Text(l10n.weightsKg,
                 style: TextStyle(
                     color: colors.subtitleText,
                     fontSize: 13.sp,
@@ -1551,7 +1555,7 @@ class ExerciseStatusScreen extends StatelessWidget {
         ),
         SizedBox(
           width: 50.w,
-          child: Text('Rips',
+          child: Text(l10n.reps,
               textAlign: TextAlign.end,
               style: TextStyle(
                   color: colors.subtitleText,
@@ -1590,13 +1594,10 @@ class ExerciseStatusScreen extends StatelessWidget {
     ];
   }
 
-  String _currentTime() {
-    final now = TimeOfDay.now();
-    final hour = now.hourOfPeriod == 0 ? 12 : now.hourOfPeriod;
-    final minute = now.minute.toString().padLeft(2, '0');
-    final period = now.period == DayPeriod.am ? 'am' : 'pm';
-    return '$hour:$minute$period';
-  }
+  String _currentTime(BuildContext context) =>
+      DateFormat.jm(Localizations.localeOf(context).toString())
+          .format(DateTime.now())
+          .toLowerCase();
 
   Widget _circPlaceholder(AppColorsTheme colors, double size) => Container(
         width: size,

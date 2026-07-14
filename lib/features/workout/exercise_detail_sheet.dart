@@ -45,7 +45,9 @@ class _ExerciseDetailSheet extends ConsumerWidget {
     final weightUnit = weightUnitLabel(unit);
 
     final timeStr = exercise.startedAt != null
-        ? DateFormat('h:mma').format(exercise.startedAt!).toLowerCase()
+        ? DateFormat.jm(Localizations.localeOf(context).toString())
+            .format(exercise.startedAt!)
+            .toLowerCase()
         : '';
 
     final durationMin = exercise.setDetails.length * 2;

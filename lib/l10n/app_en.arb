@@ -675,5 +675,46 @@
     "placeholders": {
       "amount": { "type": "String" }
     }
+  },
+  "getStarted": "Get Started",
+  "welcomeTagline": "Built by Gym Bros, For Gym Bros",
+  "noData": "No data",
+  "progressLabel": "PROGRESS",
+  "weightsKg": "weights kg",
+  "day": "Day",
+  "dayNumber": "Day {number}",
+  "@dayNumber": {
+    "placeholders": {
+      "number": { "type": "int" }
+    }
+  },
+  "label": "Label",
+  "dayLabel": "Day Label",
+  "dayLabelHint": "e.g. Chest Day",
+  "weightKg": "Weight (kg)",
+  "deleteSchedule": "Delete Schedule",
+  "deleteScheduleConfirm": "Are you sure you want to delete this schedule? This cannot be undone.",
+  "defaultProgramName": "Program 1",
+  "recentExercises": "Recent Exercises",
+  "allExercises": "All Exercises",
+  "allCategory": "All {category}",
+  "@allCategory": {
+    "placeholders": {
+      "category": { "type": "String" }
+    }
+  },
+  "other": "Other",
+  "equipmentNone": "None",
+  "barbell": "Barbell",
+  "dumbbell": "Dumbbell",
+  "kettlebell": "Kettlebell",
+  "machine": "Machine",
+  "resistanceBand": "Resistance Band",
+  "cardio": "Cardio",
+  "setsCount": "{count, plural, =1{1 set} other{{count} sets}}",
+  "@setsCount": {
+    "placeholders": {
+      "count": { "type": "int" }
+    }
   }
 }

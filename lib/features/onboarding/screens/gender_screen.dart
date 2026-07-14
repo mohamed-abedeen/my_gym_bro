@@ -75,14 +75,14 @@ class GenderScreen extends ConsumerWidget {
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   _GenderAvatar(
-                    label: 'Male',
+                    label: l10n.male,
                     icon: Icons.male_rounded,
                     isSelected: selected == 'male',
                     onTap: () => notifier.setGender('male'),
                   ),
                   SizedBox(width: 24.w),
                   _GenderAvatar(
-                    label: 'Female',
+                    label: l10n.female,
                     icon: Icons.female_rounded,
                     isSelected: selected == 'female',
                     onTap: () => notifier.setGender('female'),

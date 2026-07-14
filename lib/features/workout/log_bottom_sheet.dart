@@ -887,10 +887,10 @@ class _SessionCardState extends ConsumerState<_SessionCard> {
                 SizedBox(height: 16.h),
                 ...widget.enriched.exercises.map((ex) {
                   final timeStr = ex.startedAt != null
-                      ? DateFormat('h:mma')
+                      ? DateFormat.jm(locale)
                           .format(ex.startedAt!)
                           .toLowerCase()
-                      : '${ex.sets} sets';
+                      : AppLocalizations.of(context).setsCount(ex.sets);
 
                   return GestureDetector(
                     onTap: () => showExerciseDetailSheet(

@@ -1513,4 +1513,95 @@ class AppLocalizationsEn extends AppLocalizations {
   String plateCalcUnreachable(String amount) {
     return 'Unreachable by $amount';
   }
+
+  @override
+  String get getStarted => 'Get Started';
+
+  @override
+  String get welcomeTagline => 'Built by Gym Bros, For Gym Bros';
+
+  @override
+  String get noData => 'No data';
+
+  @override
+  String get progressLabel => 'PROGRESS';
+
+  @override
+  String get weightsKg => 'weights kg';
+
+  @override
+  String get day => 'Day';
+
+  @override
+  String dayNumber(int number) {
+    return 'Day $number';
+  }
+
+  @override
+  String get label => 'Label';
+
+  @override
+  String get dayLabel => 'Day Label';
+
+  @override
+  String get dayLabelHint => 'e.g. Chest Day';
+
+  @override
+  String get weightKg => 'Weight (kg)';
+
+  @override
+  String get deleteSchedule => 'Delete Schedule';
+
+  @override
+  String get deleteScheduleConfirm =>
+      'Are you sure you want to delete this schedule? This cannot be undone.';
+
+  @override
+  String get defaultProgramName => 'Program 1';
+
+  @override
+  String get recentExercises => 'Recent Exercises';
+
+  @override
+  String get allExercises => 'All Exercises';
+
+  @override
+  String allCategory(String category) {
+    return 'All $category';
+  }
+
+  @override
+  String get other => 'Other';
+
+  @override
+  String get equipmentNone => 'None';
+
+  @override
+  String get barbell => 'Barbell';
+
+  @override
+  String get dumbbell => 'Dumbbell';
+
+  @override
+  String get kettlebell => 'Kettlebell';
+
+  @override
+  String get machine => 'Machine';
+
+  @override
+  String get resistanceBand => 'Resistance Band';
+
+  @override
+  String get cardio => 'Cardio';
+
+  @override
+  String setsCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count sets',
+      one: '1 set',
+    );
+    return '$_temp0';
+  }
 }

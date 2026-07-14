@@ -712,94 +712,99 @@ class AppLocalizationsFr extends AppLocalizations {
   String get signInError => 'E-mail ou mot de passe invalide.';
 
   @override
-  String get goalTitle => 'What\'s your main goal\nfor training ?';
+  String get goalTitle =>
+      'Quel est votre objectif principal\nd\'entraînement ?';
 
   @override
-  String get bulking => 'Bulking';
+  String get bulking => 'Prise de masse';
 
   @override
-  String get bulkingDesc => 'Focus on building muscle mass and size.';
+  String get bulkingDesc => 'Priorité à la masse musculaire et au volume.';
 
   @override
-  String get strength => 'Strength';
+  String get strength => 'Force';
 
   @override
-  String get strengthDesc => 'To lift heavier load and get stronger.';
+  String get strengthDesc => 'Soulever plus lourd et devenir plus fort.';
 
   @override
-  String get cutting => 'Cutting';
+  String get cutting => 'Sèche';
 
   @override
-  String get cuttingDesc => 'Reduce body fat while keeping muscle.';
+  String get cuttingDesc =>
+      'Réduire la graisse corporelle en gardant le muscle.';
 
   @override
-  String get maintaining => 'Maintaining';
+  String get maintaining => 'Maintien';
 
   @override
-  String get maintainingDesc => 'Keep your current muscle and fitness.';
+  String get maintainingDesc =>
+      'Conserver votre muscle et votre forme actuels.';
 
   @override
-  String get dataPrivate => 'Your data is private and secure.';
+  String get dataPrivate => 'Vos données sont privées et sécurisées.';
 
   @override
-  String get experienceTitle => 'How much training\nexperience do you have ?';
+  String get experienceTitle =>
+      'Quelle est votre expérience\nen entraînement ?';
 
   @override
   String get base => 'Base';
 
   @override
-  String get baseYears => '0-1 years';
+  String get baseYears => '0-1 an';
 
   @override
-  String get mid => 'Mid';
+  String get mid => 'Moyen';
 
   @override
-  String get midYears => '1-3 years';
+  String get midYears => '1-3 ans';
 
   @override
   String get pro => 'Pro';
 
   @override
-  String get proYears => '3+ years';
+  String get proYears => '3+ ans';
 
   @override
-  String get selectGender => 'Select Your Gender';
+  String get selectGender => 'Sélectionnez votre genre';
 
   @override
-  String get genderSubtitle => 'This helps us personalize your\ntraining plan.';
+  String get genderSubtitle =>
+      'Cela nous aide à personnaliser\nvotre plan d\'entraînement.';
 
   @override
-  String get birthdayTitle => 'What\'s your birthday?';
+  String get birthdayTitle => 'Quelle est votre date de naissance ?';
 
   @override
-  String get weightTitle => 'What is your weight?';
+  String get weightTitle => 'Quel est votre poids ?';
 
   @override
-  String get heightTitle => 'What is your height?';
+  String get heightTitle => 'Quelle est votre taille ?';
 
   @override
-  String get targetZonesTitle => 'What are your target\nzones?';
+  String get targetZonesTitle => 'Quelles sont vos zones\ncibles ?';
 
   @override
-  String get arms => 'Arms';
+  String get arms => 'Bras';
 
   @override
-  String get abs => 'Abs';
+  String get abs => 'Abdos';
 
   @override
-  String get pecs => 'Pecs';
+  String get pecs => 'Pectoraux';
 
   @override
-  String get targetBack => 'Back';
+  String get targetBack => 'Dos';
 
   @override
-  String get legs => 'Legs';
+  String get legs => 'Jambes';
 
   @override
-  String get all => 'All';
+  String get all => 'Tout';
 
   @override
-  String get kgs => 'kgs';
+  String get kgs => 'kg';
 
   @override
   String get lbs => 'lbs';
@@ -811,13 +816,13 @@ class AppLocalizationsFr extends AppLocalizations {
   String get ft => 'ft';
 
   @override
-  String get freeTrial => 'Free Trial';
+  String get freeTrial => 'Essai gratuit';
 
   @override
-  String get yearly => 'Yearly';
+  String get yearly => 'Annuel';
 
   @override
-  String get monthly => 'Monthly';
+  String get monthly => 'Mensuel';
 
   @override
   String get dmMessages => 'Messages';
@@ -946,16 +951,16 @@ class AppLocalizationsFr extends AppLocalizations {
   String get allDifficulties => 'Tous les niveaux';
 
   @override
-  String get exerciseSearchHint => 'What are you looking for ?';
+  String get exerciseSearchHint => 'Que cherchez-vous ?';
 
   @override
-  String get account => 'Account';
+  String get account => 'Compte';
 
   @override
-  String get following => 'Following';
+  String get following => 'Abonnements';
 
   @override
-  String get followers => 'Followers';
+  String get followers => 'Abonnés';
 
   @override
   String get follow => 'Suivre';
@@ -964,7 +969,7 @@ class AppLocalizationsFr extends AppLocalizations {
   String get friends => 'Amis';
 
   @override
-  String get streak => 'Streak';
+  String get streak => 'Série';
 
   @override
   String get widgetStreakStart => 'Démarrer une série';
@@ -978,16 +983,16 @@ class AppLocalizationsFr extends AppLocalizations {
   }
 
   @override
-  String get achievement => 'Achievement';
+  String get achievement => 'Succès';
 
   @override
-  String get posts => 'Posts';
+  String get posts => 'Publications';
 
   @override
-  String get lastSession => 'Last Session';
+  String get lastSession => 'Dernière séance';
 
   @override
-  String get noSessionsYet => 'No sessions yet';
+  String get noSessionsYet => 'Aucune séance pour l\'instant';
 
   @override
   String get noPostsYet => 'Aucune publication pour l\'instant';
@@ -1048,43 +1053,43 @@ class AppLocalizationsFr extends AppLocalizations {
   String get failedToLoadExercises => 'Impossible de charger les exercices';
 
   @override
-  String get tabSummary => 'Summary';
+  String get tabSummary => 'Résumé';
 
   @override
-  String get tabHistory => 'History';
+  String get tabHistory => 'Historique';
 
   @override
-  String get heaviestWeight => 'Heaviest Weight';
+  String get heaviestWeight => 'Poids le plus lourd';
 
   @override
-  String get oneRepMax => 'One Rep Max';
+  String get oneRepMax => '1RM';
 
   @override
-  String get bestSetVolumeLabel => 'Best Set Volume';
+  String get bestSetVolumeLabel => 'Meilleur volume par série';
 
   @override
-  String get bestSessionVolumeLabel => 'Best Session Volume';
+  String get bestSessionVolumeLabel => 'Meilleur volume par séance';
 
   @override
-  String get setRecords => 'Set Records';
+  String get setRecords => 'Records de séries';
 
   @override
-  String get last3Months => 'Last 3 Months';
+  String get last3Months => '3 derniers mois';
 
   @override
-  String get last6Months => 'Last 6 Months';
+  String get last6Months => '6 derniers mois';
 
   @override
-  String get allTime => 'All Time';
+  String get allTime => 'Depuis le début';
 
   @override
-  String get noHistoryYet => 'No history yet';
+  String get noHistoryYet => 'Aucun historique pour l\'instant';
 
   @override
-  String get primaryLabel => 'Primary';
+  String get primaryLabel => 'Principal';
 
   @override
-  String get secondaryLabel => 'Secondary';
+  String get secondaryLabel => 'Secondaire';
 
   @override
   String get removeExercise => 'Supprimer l\'exercice';
@@ -1523,5 +1528,96 @@ class AppLocalizationsFr extends AppLocalizations {
   @override
   String plateCalcUnreachable(String amount) {
     return 'Inatteignable à $amount près';
+  }
+
+  @override
+  String get getStarted => 'Commencer';
+
+  @override
+  String get welcomeTagline => 'Créé par des Gym Bros, pour des Gym Bros';
+
+  @override
+  String get noData => 'Aucune donnée';
+
+  @override
+  String get progressLabel => 'PROGRESSION';
+
+  @override
+  String get weightsKg => 'poids kg';
+
+  @override
+  String get day => 'Jour';
+
+  @override
+  String dayNumber(int number) {
+    return 'Jour $number';
+  }
+
+  @override
+  String get label => 'Libellé';
+
+  @override
+  String get dayLabel => 'Libellé du jour';
+
+  @override
+  String get dayLabelHint => 'ex. : Jour pectoraux';
+
+  @override
+  String get weightKg => 'Poids (kg)';
+
+  @override
+  String get deleteSchedule => 'Supprimer le plan';
+
+  @override
+  String get deleteScheduleConfirm =>
+      'Voulez-vous vraiment supprimer ce plan ? Cette action est irréversible.';
+
+  @override
+  String get defaultProgramName => 'Programme 1';
+
+  @override
+  String get recentExercises => 'Exercices récents';
+
+  @override
+  String get allExercises => 'Tous les exercices';
+
+  @override
+  String allCategory(String category) {
+    return 'Tout : $category';
+  }
+
+  @override
+  String get other => 'Autres';
+
+  @override
+  String get equipmentNone => 'Aucun';
+
+  @override
+  String get barbell => 'Barre';
+
+  @override
+  String get dumbbell => 'Haltère';
+
+  @override
+  String get kettlebell => 'Kettlebell';
+
+  @override
+  String get machine => 'Machine';
+
+  @override
+  String get resistanceBand => 'Bande élastique';
+
+  @override
+  String get cardio => 'Cardio';
+
+  @override
+  String setsCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count séries',
+      one: '1 série',
+    );
+    return '$_temp0';
   }
 }

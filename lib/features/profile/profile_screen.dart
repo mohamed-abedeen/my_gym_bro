@@ -752,6 +752,8 @@ class _ProfileSessionCardState extends ConsumerState<_ProfileSessionCard>
   @override
   Widget build(BuildContext context) {
     final colors = AppColors.of(context);
+    final l10n = AppLocalizations.of(context);
+    final locale = Localizations.localeOf(context).toString();
     final s = widget.enriched.session;
     final durationMin = (s.durationSeconds ?? 0) ~/ 60;
     final durationH = durationMin ~/ 60;
@@ -902,10 +904,10 @@ class _ProfileSessionCardState extends ConsumerState<_ProfileSessionCard>
                       // ── Exercise list ──
                       ...widget.enriched.exercises.map((ex) {
                         final timeStr = ex.startedAt != null
-                            ? DateFormat('h:mma')
+                            ? DateFormat.jm(locale)
                                 .format(ex.startedAt!)
                                 .toLowerCase()
-                            : '${ex.sets} sets';
+                            : l10n.setsCount(ex.sets);
 
                         return GestureDetector(
                           onTap: () => showExerciseDetailSheet(
@@ -1059,7 +1061,7 @@ class _ProfileSessionCardState extends ConsumerState<_ProfileSessionCard>
                     padding:
                         EdgeInsets.fromLTRB(20.w, 4.h, 16.w, 16.h),
                     child: Text(
-                      DateFormat('d / M / yyyy').format(s.startedAt),
+                      DateFormat('d / M / yyyy', locale).format(s.startedAt),
                       style: TextStyle(
                         color: colors.textSecondary,
                         fontSize: 10.sp,

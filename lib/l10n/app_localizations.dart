@@ -2897,6 +2897,162 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Unreachable by {amount}'**
   String plateCalcUnreachable(String amount);
+
+  /// No description provided for @getStarted.
+  ///
+  /// In en, this message translates to:
+  /// **'Get Started'**
+  String get getStarted;
+
+  /// No description provided for @welcomeTagline.
+  ///
+  /// In en, this message translates to:
+  /// **'Built by Gym Bros, For Gym Bros'**
+  String get welcomeTagline;
+
+  /// No description provided for @noData.
+  ///
+  /// In en, this message translates to:
+  /// **'No data'**
+  String get noData;
+
+  /// No description provided for @progressLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'PROGRESS'**
+  String get progressLabel;
+
+  /// No description provided for @weightsKg.
+  ///
+  /// In en, this message translates to:
+  /// **'weights kg'**
+  String get weightsKg;
+
+  /// No description provided for @day.
+  ///
+  /// In en, this message translates to:
+  /// **'Day'**
+  String get day;
+
+  /// No description provided for @dayNumber.
+  ///
+  /// In en, this message translates to:
+  /// **'Day {number}'**
+  String dayNumber(int number);
+
+  /// No description provided for @label.
+  ///
+  /// In en, this message translates to:
+  /// **'Label'**
+  String get label;
+
+  /// No description provided for @dayLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Day Label'**
+  String get dayLabel;
+
+  /// No description provided for @dayLabelHint.
+  ///
+  /// In en, this message translates to:
+  /// **'e.g. Chest Day'**
+  String get dayLabelHint;
+
+  /// No description provided for @weightKg.
+  ///
+  /// In en, this message translates to:
+  /// **'Weight (kg)'**
+  String get weightKg;
+
+  /// No description provided for @deleteSchedule.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete Schedule'**
+  String get deleteSchedule;
+
+  /// No description provided for @deleteScheduleConfirm.
+  ///
+  /// In en, this message translates to:
+  /// **'Are you sure you want to delete this schedule? This cannot be undone.'**
+  String get deleteScheduleConfirm;
+
+  /// No description provided for @defaultProgramName.
+  ///
+  /// In en, this message translates to:
+  /// **'Program 1'**
+  String get defaultProgramName;
+
+  /// No description provided for @recentExercises.
+  ///
+  /// In en, this message translates to:
+  /// **'Recent Exercises'**
+  String get recentExercises;
+
+  /// No description provided for @allExercises.
+  ///
+  /// In en, this message translates to:
+  /// **'All Exercises'**
+  String get allExercises;
+
+  /// No description provided for @allCategory.
+  ///
+  /// In en, this message translates to:
+  /// **'All {category}'**
+  String allCategory(String category);
+
+  /// No description provided for @other.
+  ///
+  /// In en, this message translates to:
+  /// **'Other'**
+  String get other;
+
+  /// No description provided for @equipmentNone.
+  ///
+  /// In en, this message translates to:
+  /// **'None'**
+  String get equipmentNone;
+
+  /// No description provided for @barbell.
+  ///
+  /// In en, this message translates to:
+  /// **'Barbell'**
+  String get barbell;
+
+  /// No description provided for @dumbbell.
+  ///
+  /// In en, this message translates to:
+  /// **'Dumbbell'**
+  String get dumbbell;
+
+  /// No description provided for @kettlebell.
+  ///
+  /// In en, this message translates to:
+  /// **'Kettlebell'**
+  String get kettlebell;
+
+  /// No description provided for @machine.
+  ///
+  /// In en, this message translates to:
+  /// **'Machine'**
+  String get machine;
+
+  /// No description provided for @resistanceBand.
+  ///
+  /// In en, this message translates to:
+  /// **'Resistance Band'**
+  String get resistanceBand;
+
+  /// No description provided for @cardio.
+  ///
+  /// In en, this message translates to:
+  /// **'Cardio'**
+  String get cardio;
+
+  /// No description provided for @setsCount.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 set} other{{count} sets}}'**
+  String setsCount(int count);
 }
 
 class _AppLocalizationsDelegate

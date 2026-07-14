@@ -504,7 +504,7 @@ class _SessionRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final colors = AppColors.of(context);
-    final dayAbbr = DateFormat.E()
+    final dayAbbr = DateFormat.E(Localizations.localeOf(context).toString())
         .format(enriched.session.startedAt)
         .substring(0, 3);
     final label = '$dayAbbr, ${enriched.workoutName}';
