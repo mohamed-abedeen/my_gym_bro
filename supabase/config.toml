@@ -201,8 +201,10 @@ password_requirements = ""
 # rp_origins = ["http://127.0.0.1:3000"]
 
 [auth.rate_limit]
-# Number of emails that can be sent per hour. Requires auth.email.smtp to be enabled.
-email_sent = 2
+# Number of emails that can be sent per hour. Requires auth.email.smtp to be
+# enabled. 30/h fits Resend's free-tier 100/day; raise alongside a paid
+# Resend plan. Mirror in the hosted dashboard (Auth → Rate Limits).
+email_sent = 30
 # Number of SMS messages that can be sent per hour. Requires auth.sms to be enabled.
 sms_sent = 30
 # Number of anonymous sign-ins that can be made per hour per IP address. Requires enable_anonymous_sign_ins = true.
@@ -240,15 +242,21 @@ otp_length = 6
 # (password-reset links use this expiry). Mirror in the hosted dashboard.
 otp_expiry = 1800
 
-# Use a production-ready SMTP server
-# [auth.email.smtp]
-# enabled = true
-# host = "smtp.sendgrid.net"
-# port = 587
-# user = "apikey"
-# pass = "env(SENDGRID_API_KEY)"
-# admin_email = "admin@email.com"
-# sender_name = "Admin"
+# Production SMTP via Resend (free tier: 3k emails/month, 100/day) — the
+# built-in Supabase mailer is capped at ~2 emails/hour, which chokes signup
+# confirmations and password resets the moment real users arrive.
+# Mirror these values in the hosted dashboard (Project Settings →
+# Authentication → SMTP Settings) — config.toml only drives local dev.
+# RESEND_API_KEY lives in the root .env (gitignored); never commit it.
+[auth.email.smtp]
+enabled = true
+host = "smtp.resend.com"
+port = 465
+user = "resend"
+pass = "env(RESEND_API_KEY)"
+# Must be an address on the domain verified in Resend.
+admin_email = "noreply@mygymbro.app"
+sender_name = "MyGymBro"
 
 # Uncomment to customize email template
 # [auth.email.template.invite]
