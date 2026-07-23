@@ -2,6 +2,9 @@
 .env
 .env.*
 
+# Working documents (not part of the app)
+/MyGymBro_Launch_Blockers_and_Weaknesses.pdf
+
 # Miscellaneous
 *.class
 *.log
