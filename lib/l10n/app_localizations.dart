@@ -1902,6 +1902,48 @@ abstract class AppLocalizations {
   /// **'{days}-day streak'**
   String widgetStreakDays(int days);
 
+  /// No description provided for @takeRestDay.
+  ///
+  /// In en, this message translates to:
+  /// **'Take a Rest Day'**
+  String get takeRestDay;
+
+  /// No description provided for @restDayExplainer.
+  ///
+  /// In en, this message translates to:
+  /// **'Not training today? Spend a rest day and your streak stays safe. You get {count} per week.'**
+  String restDayExplainer(int count);
+
+  /// No description provided for @restDaysLeftThisWeek.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} of {total} left this week'**
+  String restDaysLeftThisWeek(int count, int total);
+
+  /// No description provided for @restDayCountLeft.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} left'**
+  String restDayCountLeft(int count);
+
+  /// No description provided for @restDayActiveToday.
+  ///
+  /// In en, this message translates to:
+  /// **'Active today'**
+  String get restDayActiveToday;
+
+  /// No description provided for @restDayNoneLeftThisWeek.
+  ///
+  /// In en, this message translates to:
+  /// **'No rest days left this week'**
+  String get restDayNoneLeftThisWeek;
+
+  /// No description provided for @restDayClaimedToast.
+  ///
+  /// In en, this message translates to:
+  /// **'Rest day used — your streak is safe today.'**
+  String get restDayClaimedToast;
+
   /// No description provided for @posts.
   ///
   /// In en, this message translates to:

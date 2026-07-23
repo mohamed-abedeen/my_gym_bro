@@ -989,6 +989,34 @@ class AppLocalizationsFr extends AppLocalizations {
   }
 
   @override
+  String get takeRestDay => 'Prendre un jour de repos';
+
+  @override
+  String restDayExplainer(int count) {
+    return 'Pas d\'entraînement aujourd\'hui ? Utilise un jour de repos et ta série reste intacte. Tu en as $count par semaine.';
+  }
+
+  @override
+  String restDaysLeftThisWeek(int count, int total) {
+    return '$count sur $total restants cette semaine';
+  }
+
+  @override
+  String restDayCountLeft(int count) {
+    return '$count restants';
+  }
+
+  @override
+  String get restDayActiveToday => 'Actif aujourd\'hui';
+
+  @override
+  String get restDayNoneLeftThisWeek => 'Plus de jours de repos cette semaine';
+
+  @override
+  String get restDayClaimedToast =>
+      'Jour de repos utilisé — ta série est en sécurité aujourd\'hui.';
+
+  @override
   String get posts => 'Publications';
 
   @override

@@ -5,6 +5,7 @@ import 'package:my_gym_bro/core/database/app_database.dart';
 import 'package:my_gym_bro/core/database/daos/exercise_dao.dart';
 import 'package:my_gym_bro/core/database/daos/session_dao.dart';
 import 'package:my_gym_bro/features/workout/calorie_service.dart';
+import 'package:my_gym_bro/features/workout/rest_day_provider.dart';
 import 'package:my_gym_bro/features/workout/workout_providers.dart';
 
 class MockSessionDao extends Mock implements SessionDao {}
@@ -127,12 +128,16 @@ void main() {
   ProviderContainer makeContainer({
     UserProfile? profile,
     List<bool>? scheduleRestPattern,
+    Set<String> restPasses = const {},
   }) {
     final schedule = scheduleRestPattern != null ? _schedule() : null;
     final container = ProviderContainer(
       overrides: [
         sessionDaoProvider.overrideWithValue(sessionDao),
         exerciseDaoProvider.overrideWithValue(exerciseDao),
+        restDayPassesProvider.overrideWith(
+          (ref) => RestDayPassesNotifier.seeded(restPasses),
+        ),
         activeScheduleProvider.overrideWith((ref) => Stream.value(schedule)),
         if (scheduleRestPattern != null)
           scheduleDaysProvider(schedule!.localId).overrideWith(
@@ -277,6 +282,117 @@ void main() {
 
       final container = makeContainer();
       expect(await container.read(streakProvider.future), 0);
+    });
+
+    test('claimed rest day covers a gap that would otherwise break it',
+        () async {
+      when(() => sessionDao.getDistinctSessionDatesDescending(
+            limit: any(named: 'limit'),
+          )).thenAnswer((_) async => [
+            today,
+            // Two full days missing → gap of 2 > default allowance of 1,
+            // but one of them is a claimed rest day.
+            DateTime(today.year, today.month, today.day - 3),
+            DateTime(today.year, today.month, today.day - 4),
+          ]);
+
+      final container = makeContainer(
+        restPasses: {
+          restDayKey(DateTime(today.year, today.month, today.day - 2)),
+        },
+      );
+      expect(await container.read(streakProvider.future), 3);
+    });
+
+    test('claimed rest days keep the streak alive since the last session',
+        () async {
+      when(() => sessionDao.getDistinctSessionDatesDescending(
+            limit: any(named: 'limit'),
+          )).thenAnswer((_) async => [
+            // Last workout 3 days ago → 2 workout-free days behind us,
+            // both claimed as rest days.
+            DateTime(today.year, today.month, today.day - 3),
+            DateTime(today.year, today.month, today.day - 4),
+          ]);
+
+      final container = makeContainer(
+        restPasses: {
+          restDayKey(DateTime(today.year, today.month, today.day - 1)),
+          restDayKey(DateTime(today.year, today.month, today.day - 2)),
+        },
+      );
+      expect(await container.read(streakProvider.future), 2);
+    });
+  });
+
+  // ── streakRiskProvider + rest-day passes ────────────────────────────────
+
+  group('rest-day passes', () {
+    test('claiming today defuses the streak-at-risk warning', () async {
+      when(() => sessionDao.getDistinctSessionDatesDescending(
+            limit: any(named: 'limit'),
+          )).thenAnswer((_) async => [
+            // Last workout 2 days ago → today is the last allowed rest day.
+            DateTime(today.year, today.month, today.day - 2),
+            DateTime(today.year, today.month, today.day - 3),
+          ]);
+
+      final without = makeContainer();
+      expect((await without.read(streakRiskProvider.future)).atRiskToday,
+          isTrue);
+
+      final withPass = makeContainer(restPasses: {restDayKey(today)});
+      final risk = await withPass.read(streakRiskProvider.future);
+      expect(risk.todayClaimed, isTrue);
+      expect(risk.atRiskToday, isFalse);
+    });
+
+    test('claimToday enforces the weekly limit of $kRestDaysPerWeek', () async {
+      final monday = DateTime(
+        today.year,
+        today.month,
+        today.day - (today.weekday - 1),
+      );
+      // Two claims this week on days other than today, so claimToday can't
+      // short-circuit on "already claimed".
+      final thisWeek = [
+        for (var i = 0; i < 7; i++)
+          DateTime(monday.year, monday.month, monday.day + i),
+      ].where((d) => d != today).take(kRestDaysPerWeek);
+
+      final notifier =
+          RestDayPassesNotifier.seeded(thisWeek.map(restDayKey).toSet());
+      addTearDown(notifier.dispose);
+
+      expect(notifier.usedThisWeek(), kRestDaysPerWeek);
+      expect(notifier.remainingThisWeek(), 0);
+      expect(await notifier.claimToday(), isFalse);
+      expect(notifier.claimedToday, isFalse);
+    });
+
+    test("last week's claims do not count against this week", () {
+      final monday = DateTime(
+        today.year,
+        today.month,
+        today.day - (today.weekday - 1),
+      );
+      final notifier = RestDayPassesNotifier.seeded({
+        restDayKey(DateTime(monday.year, monday.month, monday.day - 1)),
+        restDayKey(DateTime(monday.year, monday.month, monday.day - 3)),
+      });
+      addTearDown(notifier.dispose);
+
+      expect(notifier.usedThisWeek(), 0);
+      expect(notifier.remainingThisWeek(), kRestDaysPerWeek);
+    });
+
+    test('claiming an already-claimed day is a no-op success', () async {
+      final notifier = RestDayPassesNotifier.seeded({restDayKey(today)});
+      addTearDown(notifier.dispose);
+
+      expect(notifier.claimedToday, isTrue);
+      expect(await notifier.claimToday(), isTrue);
+      expect(notifier.usedThisWeek(), 1);
     });
   });
 

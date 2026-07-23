@@ -987,6 +987,34 @@ class AppLocalizationsDe extends AppLocalizations {
   }
 
   @override
+  String get takeRestDay => 'Ruhetag einlegen';
+
+  @override
+  String restDayExplainer(int count) {
+    return 'Heute kein Training? Nutze einen Ruhetag und deine Serie bleibt sicher. Du hast $count pro Woche.';
+  }
+
+  @override
+  String restDaysLeftThisWeek(int count, int total) {
+    return '$count von $total diese Woche übrig';
+  }
+
+  @override
+  String restDayCountLeft(int count) {
+    return '$count übrig';
+  }
+
+  @override
+  String get restDayActiveToday => 'Heute aktiv';
+
+  @override
+  String get restDayNoneLeftThisWeek => 'Diese Woche keine Ruhetage mehr übrig';
+
+  @override
+  String get restDayClaimedToast =>
+      'Ruhetag genutzt — deine Serie ist heute sicher.';
+
+  @override
   String get posts => 'Beiträge';
 
   @override

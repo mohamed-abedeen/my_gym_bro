@@ -423,6 +423,29 @@
       "days": {"type": "int"}
     }
   },
+  "takeRestDay": "Take a Rest Day",
+  "restDayExplainer": "Not training today? Spend a rest day and your streak stays safe. You get {count} per week.",
+  "@restDayExplainer": {
+    "placeholders": {
+      "count": {"type": "int"}
+    }
+  },
+  "restDaysLeftThisWeek": "{count} of {total} left this week",
+  "@restDaysLeftThisWeek": {
+    "placeholders": {
+      "count": {"type": "int"},
+      "total": {"type": "int"}
+    }
+  },
+  "restDayCountLeft": "{count} left",
+  "@restDayCountLeft": {
+    "placeholders": {
+      "count": {"type": "int"}
+    }
+  },
+  "restDayActiveToday": "Active today",
+  "restDayNoneLeftThisWeek": "No rest days left this week",
+  "restDayClaimedToast": "Rest day used — your streak is safe today.",
   "posts": "Posts",
   "lastSession": "Last Session",
   "noSessionsYet": "No sessions yet",

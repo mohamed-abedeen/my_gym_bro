@@ -976,6 +976,34 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String get takeRestDay => 'Take a Rest Day';
+
+  @override
+  String restDayExplainer(int count) {
+    return 'Not training today? Spend a rest day and your streak stays safe. You get $count per week.';
+  }
+
+  @override
+  String restDaysLeftThisWeek(int count, int total) {
+    return '$count of $total left this week';
+  }
+
+  @override
+  String restDayCountLeft(int count) {
+    return '$count left';
+  }
+
+  @override
+  String get restDayActiveToday => 'Active today';
+
+  @override
+  String get restDayNoneLeftThisWeek => 'No rest days left this week';
+
+  @override
+  String get restDayClaimedToast =>
+      'Rest day used — your streak is safe today.';
+
+  @override
   String get posts => 'Posts';
 
   @override
