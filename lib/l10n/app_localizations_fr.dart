@@ -1219,6 +1219,59 @@ class AppLocalizationsFr extends AppLocalizations {
   String get deleteWorkoutConfirm => 'Supprimer cet entraînement ?';
 
   @override
+  String get confirmFinishTitle => 'Terminer l\'entraînement ?';
+
+  @override
+  String get confirmFinishBody => 'Il sera enregistré dans ton historique.';
+
+  @override
+  String get confirmDiscardTitle => 'Abandonner l\'entraînement ?';
+
+  @override
+  String get confirmDiscardBody => 'Toute la progression sera perdue.';
+
+  @override
+  String get confirmDeleteWorkoutBody => 'Il sera supprimé de ton historique.';
+
+  @override
+  String get confirmDeleteScheduleTitle => 'Supprimer ce plan ?';
+
+  @override
+  String get confirmDeleteScheduleBody => 'Cette action est irréversible.';
+
+  @override
+  String get confirmSignOutTitle => 'Se déconnecter ?';
+
+  @override
+  String get confirmSignOutBody =>
+      'Vos données locales restent sur cet appareil. Vous devrez vous reconnecter pour synchroniser.';
+
+  @override
+  String get confirmDeleteAccountTitle => 'Supprimer votre compte ?';
+
+  @override
+  String get confirmDeleteAccountBody =>
+      'Cela supprime définitivement toutes vos données — séances, records, plans. Action irréversible.';
+
+  @override
+  String get keepGoing => 'Continuer';
+
+  @override
+  String get holdToDelete => 'Maintenir pour supprimer';
+
+  @override
+  String get holdConfirmed => 'Confirmé';
+
+  @override
+  String get tapAgainToConfirm => 'Touchez à nouveau pour confirmer';
+
+  @override
+  String get exercisesLabel => 'Exercices';
+
+  @override
+  String get newPrLabel => 'Nouveau record';
+
+  @override
   String get leaderboardTab => 'Classement';
 
   @override

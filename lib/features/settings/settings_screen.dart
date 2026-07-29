@@ -28,6 +28,7 @@ import 'package:my_gym_bro/l10n/app_localizations.dart';
 import 'package:my_gym_bro/shared/constants.dart';
 import 'package:my_gym_bro/shared/responsive.dart';
 import 'package:my_gym_bro/shared/widgets/anatomy_body.dart';
+import 'package:my_gym_bro/shared/widgets/confirm_sheet.dart';
 import 'package:my_gym_bro/shared/widgets/user_avatar.dart';
 import 'package:url_launcher/url_launcher.dart';
 
@@ -367,8 +368,7 @@ class SettingsScreen extends ConsumerWidget {
                     iconColor: SettingsBadgeColors.red,
                     label: l10n.deleteAccount,
                     isDestructive: true,
-                    onTap: () =>
-                        _showDeleteAccountDialog(context, ref, l10n, colors),
+                    onTap: () => _showDeleteAccountDialog(context, ref, l10n),
                   ),
                 ],
               ),
@@ -379,8 +379,7 @@ class SettingsScreen extends ConsumerWidget {
                 SettingsSection(
                   children: [
                     SettingsNavRowShell(
-                      onTap: () =>
-                          _showSignOutDialog(context, ref, l10n, colors),
+                      onTap: () => _showSignOutDialog(context, ref, l10n),
                       child: Center(
                         child: Text(
                           l10n.signOut,
@@ -590,106 +589,46 @@ class SettingsScreen extends ConsumerWidget {
 
   // ── Sign out ──
 
-  static void _showSignOutDialog(
+  static Future<void> _showSignOutDialog(
     BuildContext context,
     WidgetRef ref,
     AppLocalizations l10n,
-    AppColorsTheme colors,
-  ) {
-    showDialog<void>(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        backgroundColor: colors.cardElevated,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(20.r),
-        ),
-        title: Text(
-          l10n.signOut,
-          style: TextStyle(
-            color: colors.textPrimary,
-            fontWeight: FontWeight.w700,
-          ),
-        ),
-        content: Text(
-          l10n.signOutConfirm,
-          style: TextStyle(color: colors.subtitleText, fontSize: 14.sp),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(ctx).pop(),
-            child: Text(
-              l10n.cancel,
-              style: TextStyle(color: colors.textPrimary),
-            ),
-          ),
-          TextButton(
-            onPressed: () async {
-              Navigator.of(ctx).pop();
-              await ref.read(authNotifierProvider.notifier).signOut();
-              if (context.mounted) context.go(AppRoutes.signIn);
-            },
-            child: Text(l10n.signOut, style: TextStyle(color: colors.danger)),
-          ),
-        ],
-      ),
+  ) async {
+    final confirmed = await showConfirmSheet(
+      context,
+      tier: ConfirmTier.destructive,
+      title: l10n.confirmSignOutTitle,
+      body: l10n.confirmSignOutBody,
+      confirmLabel: l10n.signOut,
+      icon: Icons.logout_rounded,
     );
+    if (!confirmed) return;
+    await ref.read(authNotifierProvider.notifier).signOut();
+    if (context.mounted) context.go(AppRoutes.signIn);
   }
 
   // ── Delete account dialog ──
 
-  static void _showDeleteAccountDialog(
+  static Future<void> _showDeleteAccountDialog(
     BuildContext context,
     WidgetRef ref,
     AppLocalizations l10n,
-    AppColorsTheme colors,
-  ) {
-    showDialog<void>(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        backgroundColor: colors.cardElevated,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(20.r),
-        ),
-        title: Text(
-          l10n.deleteAccount,
-          style: TextStyle(
-            color: colors.textPrimary,
-            fontWeight: FontWeight.w700,
-          ),
-        ),
-        content: Text(
-          l10n.deleteAccountConfirm,
-          style: TextStyle(color: colors.subtitleText, fontSize: 14.sp),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(ctx).pop(),
-            child: Text(
-              l10n.cancel,
-              style: TextStyle(color: colors.textPrimary),
-            ),
-          ),
-          TextButton(
-            onPressed: () async {
-              Navigator.of(ctx).pop();
-              final ok = await ref
-                  .read(authNotifierProvider.notifier)
-                  .deleteAccount();
-              if (!context.mounted) return;
-              if (ok) {
-                Navigator.of(context).pop();
-              } else {
-                _showSnack(context, l10n.deleteAccountFailed);
-              }
-            },
-            child: Text(
-              l10n.deleteAccountButton,
-              style: TextStyle(color: colors.danger),
-            ),
-          ),
-        ],
-      ),
+  ) async {
+    final confirmed = await showConfirmSheet(
+      context,
+      tier: ConfirmTier.permanent,
+      title: l10n.confirmDeleteAccountTitle,
+      body: l10n.confirmDeleteAccountBody,
+      confirmLabel: l10n.holdToDelete,
     );
+    if (!confirmed || !context.mounted) return;
+    final ok = await ref.read(authNotifierProvider.notifier).deleteAccount();
+    if (!context.mounted) return;
+    if (ok) {
+      Navigator.of(context).pop();
+    } else {
+      _showSnack(context, l10n.deleteAccountFailed);
+    }
   }
 }
 

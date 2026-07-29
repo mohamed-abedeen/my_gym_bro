@@ -12,6 +12,7 @@ import 'package:my_gym_bro/features/workout/workout_providers.dart';
 import 'package:my_gym_bro/l10n/app_localizations.dart';
 import 'package:my_gym_bro/shared/constants.dart';
 import 'package:my_gym_bro/shared/responsive.dart';
+import 'package:my_gym_bro/shared/widgets/confirm_sheet.dart';
 import 'package:my_gym_bro/shared/widgets/liquid_glass_button.dart';
 
 /// Show the Log bottom sheet — stats-forward session cards plus a month
@@ -624,45 +625,15 @@ class _SessionCardState extends ConsumerState<_SessionCard> {
 
   Future<void> _confirmDeleteSession(int sessionId) async {
     final l10n = AppLocalizations.of(context);
-    final colors = AppColors.of(context);
-    final confirmed = await showDialog<bool>(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        backgroundColor: colors.panelBackground,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(20.r),
-        ),
-        title: Text(
-          l10n.deleteWorkout,
-          style: TextStyle(
-            color: colors.textPrimary,
-            fontWeight: FontWeight.w700,
-          ),
-        ),
-        content: Text(
-          l10n.deleteWorkoutConfirm,
-          style: TextStyle(color: colors.textSecondary),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(ctx).pop(false),
-            child: Text(
-              l10n.cancel,
-              style: TextStyle(color: colors.textSecondary),
-            ),
-          ),
-          TextButton(
-            onPressed: () => Navigator.of(ctx).pop(true),
-            child: Text(
-              l10n.delete,
-              style: const TextStyle(color: Colors.redAccent),
-            ),
-          ),
-        ],
-      ),
+    final confirmed = await showConfirmSheet(
+      context,
+      tier: ConfirmTier.destructive,
+      title: l10n.deleteWorkoutConfirm,
+      body: l10n.confirmDeleteWorkoutBody,
+      confirmLabel: l10n.deleteWorkout,
     );
 
-    if (confirmed != true || !mounted) return;
+    if (!confirmed || !mounted) return;
 
     await ref.read(sessionDaoProvider).deleteSession(sessionId);
     // Refresh every downstream view that derives from session history.

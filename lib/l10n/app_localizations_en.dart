@@ -1204,6 +1204,59 @@ class AppLocalizationsEn extends AppLocalizations {
   String get deleteWorkoutConfirm => 'Delete this workout?';
 
   @override
+  String get confirmFinishTitle => 'Finish workout?';
+
+  @override
+  String get confirmFinishBody => 'It\'ll be saved to your history.';
+
+  @override
+  String get confirmDiscardTitle => 'Discard workout?';
+
+  @override
+  String get confirmDiscardBody => 'All progress will be lost.';
+
+  @override
+  String get confirmDeleteWorkoutBody => 'It\'ll be removed from your history.';
+
+  @override
+  String get confirmDeleteScheduleTitle => 'Delete this schedule?';
+
+  @override
+  String get confirmDeleteScheduleBody => 'This cannot be undone.';
+
+  @override
+  String get confirmSignOutTitle => 'Sign out?';
+
+  @override
+  String get confirmSignOutBody =>
+      'Your local data stays on this device. You\'ll need to sign in again to sync.';
+
+  @override
+  String get confirmDeleteAccountTitle => 'Delete your account?';
+
+  @override
+  String get confirmDeleteAccountBody =>
+      'This permanently deletes all your data — sessions, PRs, schedules. This cannot be undone.';
+
+  @override
+  String get keepGoing => 'Keep going';
+
+  @override
+  String get holdToDelete => 'Hold to delete';
+
+  @override
+  String get holdConfirmed => 'Confirmed';
+
+  @override
+  String get tapAgainToConfirm => 'Tap again to confirm';
+
+  @override
+  String get exercisesLabel => 'Exercises';
+
+  @override
+  String get newPrLabel => 'New PR';
+
+  @override
   String get leaderboardTab => 'Leaderboard';
 
   @override

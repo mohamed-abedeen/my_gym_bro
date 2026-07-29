@@ -1216,6 +1216,60 @@ class AppLocalizationsDe extends AppLocalizations {
   String get deleteWorkoutConfirm => 'Dieses Training löschen?';
 
   @override
+  String get confirmFinishTitle => 'Training beenden?';
+
+  @override
+  String get confirmFinishBody => 'Es wird in deinem Verlauf gespeichert.';
+
+  @override
+  String get confirmDiscardTitle => 'Training verwerfen?';
+
+  @override
+  String get confirmDiscardBody => 'Der gesamte Fortschritt geht verloren.';
+
+  @override
+  String get confirmDeleteWorkoutBody => 'Es wird aus deinem Verlauf entfernt.';
+
+  @override
+  String get confirmDeleteScheduleTitle => 'Diesen Plan löschen?';
+
+  @override
+  String get confirmDeleteScheduleBody =>
+      'Das kann nicht rückgängig gemacht werden.';
+
+  @override
+  String get confirmSignOutTitle => 'Abmelden?';
+
+  @override
+  String get confirmSignOutBody =>
+      'Deine lokalen Daten bleiben auf diesem Gerät. Zum Synchronisieren musst du dich erneut anmelden.';
+
+  @override
+  String get confirmDeleteAccountTitle => 'Konto löschen?';
+
+  @override
+  String get confirmDeleteAccountBody =>
+      'Alle deine Daten werden dauerhaft gelöscht — Einheiten, PRs, Pläne. Das kann nicht rückgängig gemacht werden.';
+
+  @override
+  String get keepGoing => 'Weitermachen';
+
+  @override
+  String get holdToDelete => 'Zum Löschen halten';
+
+  @override
+  String get holdConfirmed => 'Bestätigt';
+
+  @override
+  String get tapAgainToConfirm => 'Zum Bestätigen erneut tippen';
+
+  @override
+  String get exercisesLabel => 'Übungen';
+
+  @override
+  String get newPrLabel => 'Neuer PR';
+
+  @override
   String get leaderboardTab => 'Rangliste';
 
   @override

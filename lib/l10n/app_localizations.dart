@@ -2322,6 +2322,108 @@ abstract class AppLocalizations {
   /// **'Delete this workout?'**
   String get deleteWorkoutConfirm;
 
+  /// No description provided for @confirmFinishTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Finish workout?'**
+  String get confirmFinishTitle;
+
+  /// No description provided for @confirmFinishBody.
+  ///
+  /// In en, this message translates to:
+  /// **'It\'ll be saved to your history.'**
+  String get confirmFinishBody;
+
+  /// No description provided for @confirmDiscardTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Discard workout?'**
+  String get confirmDiscardTitle;
+
+  /// No description provided for @confirmDiscardBody.
+  ///
+  /// In en, this message translates to:
+  /// **'All progress will be lost.'**
+  String get confirmDiscardBody;
+
+  /// No description provided for @confirmDeleteWorkoutBody.
+  ///
+  /// In en, this message translates to:
+  /// **'It\'ll be removed from your history.'**
+  String get confirmDeleteWorkoutBody;
+
+  /// No description provided for @confirmDeleteScheduleTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete this schedule?'**
+  String get confirmDeleteScheduleTitle;
+
+  /// No description provided for @confirmDeleteScheduleBody.
+  ///
+  /// In en, this message translates to:
+  /// **'This cannot be undone.'**
+  String get confirmDeleteScheduleBody;
+
+  /// No description provided for @confirmSignOutTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Sign out?'**
+  String get confirmSignOutTitle;
+
+  /// No description provided for @confirmSignOutBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Your local data stays on this device. You\'ll need to sign in again to sync.'**
+  String get confirmSignOutBody;
+
+  /// No description provided for @confirmDeleteAccountTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete your account?'**
+  String get confirmDeleteAccountTitle;
+
+  /// No description provided for @confirmDeleteAccountBody.
+  ///
+  /// In en, this message translates to:
+  /// **'This permanently deletes all your data — sessions, PRs, schedules. This cannot be undone.'**
+  String get confirmDeleteAccountBody;
+
+  /// No description provided for @keepGoing.
+  ///
+  /// In en, this message translates to:
+  /// **'Keep going'**
+  String get keepGoing;
+
+  /// No description provided for @holdToDelete.
+  ///
+  /// In en, this message translates to:
+  /// **'Hold to delete'**
+  String get holdToDelete;
+
+  /// No description provided for @holdConfirmed.
+  ///
+  /// In en, this message translates to:
+  /// **'Confirmed'**
+  String get holdConfirmed;
+
+  /// No description provided for @tapAgainToConfirm.
+  ///
+  /// In en, this message translates to:
+  /// **'Tap again to confirm'**
+  String get tapAgainToConfirm;
+
+  /// No description provided for @exercisesLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Exercises'**
+  String get exercisesLabel;
+
+  /// No description provided for @newPrLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'New PR'**
+  String get newPrLabel;
+
   /// No description provided for @leaderboardTab.
   ///
   /// In en, this message translates to:

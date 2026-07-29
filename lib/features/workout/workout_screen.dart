@@ -20,6 +20,7 @@ import 'package:my_gym_bro/shared/app_fonts.dart';
 import 'package:my_gym_bro/shared/constants.dart';
 import 'package:my_gym_bro/shared/responsive.dart';
 import 'package:my_gym_bro/shared/widgets/anatomy_body.dart';
+import 'package:my_gym_bro/shared/widgets/confirm_sheet.dart';
 import 'package:my_gym_bro/shared/widgets/glass_surface.dart';
 import 'package:my_gym_bro/shared/widgets/liquid_glass_button.dart';
 
@@ -130,33 +131,16 @@ class _ResumeSessionPillState extends ConsumerState<_ResumeSessionPill> {
   }
 
   Future<void> _discard() async {
-    final colors = AppColors.of(context);
     final l10n = AppLocalizations.of(context);
-    final confirmed = await showDialog<bool>(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        backgroundColor: colors.card,
-        title: Text(l10n.discard, style: TextStyle(color: colors.textPrimary)),
-        content: Text(
-          l10n.discardWorkoutConfirm,
-          style: TextStyle(color: colors.textSecondary),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx, false),
-            child: Text(
-              l10n.cancel,
-              style: TextStyle(color: colors.textSecondary),
-            ),
-          ),
-          TextButton(
-            onPressed: () => Navigator.pop(ctx, true),
-            child: Text(l10n.discard, style: TextStyle(color: colors.danger)),
-          ),
-        ],
-      ),
+    final confirmed = await showConfirmSheet(
+      context,
+      tier: ConfirmTier.destructive,
+      title: l10n.confirmDiscardTitle,
+      body: l10n.confirmDiscardBody,
+      confirmLabel: l10n.discard,
+      icon: Icons.close_rounded,
     );
-    if (confirmed != true) return;
+    if (!confirmed) return;
     await ref.read(activeSessionProvider.notifier).discardSession();
   }
 

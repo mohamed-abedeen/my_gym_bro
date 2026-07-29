@@ -17,6 +17,7 @@ import 'package:my_gym_bro/features/workout/workout_providers.dart';
 import 'package:my_gym_bro/l10n/app_localizations.dart';
 import 'package:my_gym_bro/shared/constants.dart';
 import 'package:my_gym_bro/shared/responsive.dart';
+import 'package:my_gym_bro/shared/widgets/confirm_sheet.dart';
 import 'package:my_gym_bro/shared/widgets/liquid_glass_button.dart';
 import 'package:my_gym_bro/shared/widgets/oc_glass_btn.dart';
 
@@ -1198,48 +1199,17 @@ class _ScheduleBuilderScreenState
 
   Future<void> _deleteSchedule() async {
     if (!_isEditMode) return;
-    final colors = AppColors.of(context);
     final l10n = AppLocalizations.of(context);
 
-    final confirm = await showDialog<bool>(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        backgroundColor: colors.panelBackground,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(16.r),
-        ),
-        title: Text(
-          l10n.deleteSchedule,
-          style: TextStyle(
-            color: colors.textPrimary,
-            fontSize: 18.sp,
-            fontWeight: FontWeight.w700,
-          ),
-        ),
-        content: Text(
-          l10n.deleteScheduleConfirm,
-          style: TextStyle(
-            color: colors.textSecondary,
-            fontSize: 14.sp,
-          ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx, false),
-            child: Text(l10n.cancel,
-                style: TextStyle(
-                    color: colors.textPrimary, fontSize: 14.sp)),
-          ),
-          TextButton(
-            onPressed: () => Navigator.pop(ctx, true),
-            child: Text(l10n.delete,
-                style: TextStyle(color: colors.danger, fontSize: 14.sp)),
-          ),
-        ],
-      ),
+    final confirm = await showConfirmSheet(
+      context,
+      tier: ConfirmTier.destructive,
+      title: l10n.confirmDeleteScheduleTitle,
+      body: l10n.confirmDeleteScheduleBody,
+      confirmLabel: l10n.deleteSchedule,
     );
 
-    if (confirm != true || !mounted) return;
+    if (!confirm || !mounted) return;
 
     final dao = ref.read(scheduleDaoProvider);
     await dao.deleteSchedule(widget.scheduleId!);

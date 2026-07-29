@@ -29,6 +29,7 @@ import 'package:my_gym_bro/l10n/app_localizations.dart';
 import 'package:my_gym_bro/shared/constants.dart';
 import 'package:my_gym_bro/shared/responsive.dart';
 import 'package:my_gym_bro/shared/widgets/anatomy_body.dart';
+import 'package:my_gym_bro/shared/widgets/confirm_sheet.dart';
 import 'package:my_gym_bro/shared/widgets/glass_decoration.dart';
 import 'package:my_gym_bro/shared/widgets/glass_surface.dart';
 import 'package:my_gym_bro/shared/widgets/inline_editable_field.dart';
@@ -483,7 +484,6 @@ class _ActiveSessionScreenState extends ConsumerState<ActiveSessionScreen> {
     final session = ref.read(activeSessionProvider);
     final notifier = ref.read(activeSessionProvider.notifier);
     if (session.isFinishing || session.sessionId == null) return;
-    final colors = AppColors.of(context);
     final l10n = AppLocalizations.of(context);
 
     // Always confirm — the Finish/Discard row sits at the bottom of the screen
@@ -493,36 +493,38 @@ class _ActiveSessionScreenState extends ConsumerState<ActiveSessionScreen> {
     final hasIncomplete = session.exercises.any(
       (ex) => ex.sets.any((s) => !s.isCompleted),
     );
-    final confirmed = await showDialog<bool>(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        backgroundColor: colors.card,
-        title: Text(
-          hasIncomplete ? l10n.unfinishedSets : l10n.finish,
-          style: TextStyle(color: colors.textPrimary),
+    final elapsed = session.elapsedSeconds;
+    final h = elapsed ~/ 3600;
+    final m = (elapsed % 3600) ~/ 60;
+    final s = elapsed % 60;
+    final timeStr = h > 0
+        ? '$h:${m.toString().padLeft(2, '0')}:${s.toString().padLeft(2, '0')}'
+        : '$m:${s.toString().padLeft(2, '0')}';
+    final confirmed = await showConfirmSheet(
+      context,
+      tier: ConfirmTier.reversible,
+      title: hasIncomplete ? l10n.unfinishedSets : l10n.confirmFinishTitle,
+      body: hasIncomplete ? l10n.unfinishedSetsMessage : l10n.confirmFinishBody,
+      confirmLabel: l10n.finish,
+      cancelLabel: l10n.keepGoing,
+      summary: [
+        ConfirmSummaryItem(value: timeStr, label: l10n.time),
+        ConfirmSummaryItem(
+          value: '${session.exercises.length}',
+          label: l10n.exercisesLabel,
         ),
-        content: Text(
-          hasIncomplete
-              ? l10n.unfinishedSetsMessage
-              : l10n.finishWorkoutConfirm,
-          style: TextStyle(color: colors.textSecondary),
+        ConfirmSummaryItem(
+          value: '${session.totalCompletedSets}',
+          label: l10n.sets,
         ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx, false),
-            child: Text(
-              l10n.cancel,
-              style: TextStyle(color: colors.textSecondary),
-            ),
-          ),
-          TextButton(
-            onPressed: () => Navigator.pop(ctx, true),
-            child: Text(l10n.finish, style: TextStyle(color: colors.accent)),
-          ),
-        ],
-      ),
+        ConfirmSummaryItem(
+          value: '${notifier.sessionPrCount}',
+          label: l10n.newPrLabel,
+          highlight: true,
+        ),
+      ],
     );
-    if (confirmed != true) return;
+    if (!confirmed) return;
 
     // Snapshot BEFORE finishing: finishSession() resets the live state, so the
     // share card is built from this pre-finish immutable instance, not from a
@@ -576,34 +578,17 @@ class _ActiveSessionScreenState extends ConsumerState<ActiveSessionScreen> {
 
   Future<void> _discard() async {
     final notifier = ref.read(activeSessionProvider.notifier);
-    final colors = AppColors.of(context);
     final l10n = AppLocalizations.of(context);
 
-    final confirmed = await showDialog<bool>(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        backgroundColor: colors.card,
-        title: Text(l10n.discard, style: TextStyle(color: colors.textPrimary)),
-        content: Text(
-          l10n.discardWorkoutConfirm,
-          style: TextStyle(color: colors.textSecondary),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx, false),
-            child: Text(
-              l10n.cancel,
-              style: TextStyle(color: colors.textSecondary),
-            ),
-          ),
-          TextButton(
-            onPressed: () => Navigator.pop(ctx, true),
-            child: Text(l10n.discard, style: TextStyle(color: colors.danger)),
-          ),
-        ],
-      ),
+    final confirmed = await showConfirmSheet(
+      context,
+      tier: ConfirmTier.destructive,
+      title: l10n.confirmDiscardTitle,
+      body: l10n.confirmDiscardBody,
+      confirmLabel: l10n.discard,
+      icon: Icons.close_rounded,
     );
-    if (confirmed != true) return;
+    if (!confirmed) return;
     await notifier.discardSession();
     if (mounted) context.pop();
   }

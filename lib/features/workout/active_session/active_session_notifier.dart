@@ -1114,6 +1114,12 @@ class ActiveSessionNotifier extends StateNotifier<ActiveSessionState> {
   /// PRs scored this session — appended to the post-workout kudos.
   int _sessionPrCount = 0;
 
+  /// PRs scored in the current session (0 when none were celebrated yet or
+  /// the counter belongs to a previous session). Read by the finish-workout
+  /// confirmation sheet's summary strip.
+  int get sessionPrCount =>
+      _celebratedSessionId == state.sessionId ? _sessionPrCount : 0;
+
   /// Fires the "NEW PR!" moment when a completed working set beats the
   /// user's history (heaviest weight or best estimated 1RM) for this
   /// exercise. History = other sessions' completed sets, so the set just
