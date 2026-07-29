@@ -25,6 +25,16 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
   final _passwordCtrl = TextEditingController();
   final _formKey = GlobalKey<FormState>();
   bool _obscure = true;
+  // OAuth completes out-of-band (deep-link → onAuthStateChange), not via the
+  // button's future — so navigation must react to the state transition. Only
+  // armed while a social flow is in flight to keep the password path (which
+  // navigates from its own handler) unaffected.
+  bool _oauthInFlight = false;
+
+  void _startOAuth(Future<void> Function() flow) {
+    setState(() => _oauthInFlight = true);
+    flow();
+  }
 
   @override
   void dispose() {
@@ -85,6 +95,23 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
     final l10n = AppLocalizations.of(context);
     final authState = ref.watch(authNotifierProvider);
     final isLoading = authState.status == AuthStatus.loading;
+
+    ref.listen<AppAuthState>(authNotifierProvider, (previous, next) {
+      if (!_oauthInFlight) return;
+      if (next.status == AuthStatus.authenticated) {
+        _oauthInFlight = false;
+        context.go('/');
+      } else if (next.status == AuthStatus.error) {
+        _oauthInFlight = false;
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(next.errorMessage ??
+                AppLocalizations.of(context).signInError),
+            backgroundColor: AppColors.of(context).danger,
+          ),
+        );
+      }
+    });
 
     return Scaffold(
       backgroundColor: colors.background,
@@ -220,8 +247,8 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
                 _socialButton(
                   label: l10n.continueWithGoogle,
                   icon: Icons.g_mobiledata,
-                  onTap: () =>
-                      ref.read(authNotifierProvider.notifier).signInWithGoogle(),
+                  onTap: () => _startOAuth(
+                      ref.read(authNotifierProvider.notifier).signInWithGoogle),
                   colors: colors,
                 ),
 
@@ -232,8 +259,8 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
                   _socialButton(
                     label: l10n.continueWithApple,
                     icon: Icons.apple,
-                    onTap: () =>
-                        ref.read(authNotifierProvider.notifier).signInWithApple(),
+                    onTap: () => _startOAuth(
+                        ref.read(authNotifierProvider.notifier).signInWithApple),
                     colors: colors,
                   ),
 

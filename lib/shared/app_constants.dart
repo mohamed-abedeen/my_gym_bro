@@ -6,7 +6,11 @@ class AppConstants {
   AppConstants._();
 
   // ── Auth / OAuth ────────────────────────────────────────────────────────
-  static const oauthRedirectUri = 'io.supabase.mygymbro://callback';
+  // Must exactly match an entry in the Supabase redirect allow-list
+  // (supabase/config.toml `additional_redirect_urls` + the hosted dashboard's
+  // Auth → URL Configuration). A URI outside the list silently falls back to
+  // the project's site_url, which may not deep-link back into the app.
+  static const oauthRedirectUri = 'io.supabase.mygymbro://login-callback/';
 
   // ── Subscription ────────────────────────────────────────────────────────
   static const trialDurationDays = 7;

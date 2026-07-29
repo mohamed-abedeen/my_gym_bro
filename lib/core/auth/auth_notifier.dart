@@ -48,7 +48,7 @@ class AuthNotifier extends StateNotifier<AppAuthState> {
     // actually has a session, regardless of which flow produced it.
     final sb = _supabase;
     if (sb != null) {
-      _authSub = sb.auth.onAuthStateChange.listen((data) {
+      _authSub = sb.auth.onAuthStateChange.listen((data) async {
         final user = data.session?.user;
         switch (data.event) {
           case AuthChangeEvent.signedIn:
@@ -56,9 +56,16 @@ class AuthNotifier extends StateNotifier<AppAuthState> {
           case AuthChangeEvent.userUpdated:
           case AuthChangeEvent.initialSession:
             if (user != null) {
+              // OAuth (Google/Apple) sign-ins never ran the signUp() path, so
+              // this device may have no local profile row — without one the
+              // trial/paywall gate and display name are broken. Ensure it
+              // exists before flipping to authenticated so screens that react
+              // to the transition can rely on it.
+              await _ensureLocalProfile(user);
               // RevenueCat login — fire-and-forget; don't block auth state.
               unawaited(_revenueCatLogin(user.id));
               unawaited(_syncService.syncAll());
+              if (!mounted) return;
               state = state.copyWith(
                 status: AuthStatus.authenticated,
                 user: user,
@@ -93,6 +100,68 @@ class AuthNotifier extends StateNotifier<AppAuthState> {
       CrashReporter.recordError(e, reason: 'RevenueCat logIn failed');
     }
   }
+
+  /// Guarantee a local Drift profile row exists for [user].
+  ///
+  /// Email sign-up creates it explicitly, but OAuth (Google/Apple) sessions
+  /// arrive via the deep-link callback with only the remote `user_profiles`
+  /// row (created server-side by the `on_auth_user_created` trigger). Prefer
+  /// pulling that row so the server's trial window is authoritative; fall
+  /// back to local trial defaults when offline.
+  Future<void> _ensureLocalProfile(User user) async {
+    try {
+      final dao = UserProfileDao(_db);
+      if (await dao.getFirst() != null) return;
+
+      Map<String, dynamic>? remote;
+      try {
+        remote = await _supabase
+            ?.from('user_profiles')
+            .select()
+            .eq('user_id', user.id)
+            .isFilter('deleted_at', null)
+            .maybeSingle()
+            .timeout(const Duration(seconds: 5));
+      } on Exception {
+        // Offline / RLS hiccup — fall through to local defaults.
+      }
+
+      final meta = user.userMetadata ?? const <String, dynamic>{};
+      // Mirrors the server trigger's display-name fallback chain.
+      final displayName = (remote?['display_name'] ??
+              meta['display_name'] ??
+              meta['full_name'] ??
+              meta['name'] ??
+              user.email?.split('@').first) as String?;
+      final now = DateTime.now();
+      final trialStart =
+          _parseDate(remote?['trial_started_at'] as String?) ?? now;
+      final trialEnd = _parseDate(remote?['subscription_expires_at'] as String?) ??
+          now.add(const Duration(days: AppConstants.trialDurationDays));
+
+      await dao.upsert(UserProfilesCompanion(
+        remoteId: Value(user.id),
+        displayName: Value(displayName == null
+            ? null
+            : InputSanitiser.sanitise(displayName, maxLength: 100)),
+        goal: Value(remote?['goal'] as String?),
+        experience: Value(remote?['experience'] as String?),
+        trialStartedAt: Value(trialStart),
+        subscriptionStatus:
+            Value((remote?['subscription_status'] as String?) ?? 'trial'),
+        subscriptionExpiresAt: Value(trialEnd),
+        createdAt: Value(now),
+        updatedAt: Value(now),
+      ));
+      await SecureStorage().write('needs_exercise_seed', 'true');
+    } on Exception catch (e) {
+      // Never let profile bootstrap block the auth transition.
+      CrashReporter.recordError(e, reason: 'OAuth local profile bootstrap failed');
+    }
+  }
+
+  static DateTime? _parseDate(String? iso) =>
+      iso == null ? null : DateTime.tryParse(iso)?.toLocal();
 
   // ──────────────────────────────────────────────
   // Sign Up
@@ -245,24 +314,25 @@ class AuthNotifier extends StateNotifier<AppAuthState> {
           status: AuthStatus.error, errorMessage: 'Not connected to server');
       return;
     }
-    state = state.copyWith(status: AuthStatus.loading);
     try {
       // Kicks off the external browser flow and returns immediately. The
       // session lands asynchronously via the deep-link callback and is
       // handled by the onAuthStateChange subscription in the constructor.
+      // Deliberately NOT set to loading: if the user cancels in the browser
+      // no callback ever fires, and a stuck loading state would disable the
+      // whole auth screen with no way to recover.
       await _supabase.auth.signInWithOAuth(
         OAuthProvider.google,
         redirectTo: AppConstants.oauthRedirectUri,
       );
     } on Exception catch (e) {
       state = state.copyWith(
-          status: AuthStatus.error, errorMessage: e.toString());
+          status: AuthStatus.error, errorMessage: _friendlyError(e));
     }
   }
 
   Future<void> signInWithApple() async {
     if (!Platform.isIOS || _supabase == null) return;
-    state = state.copyWith(status: AuthStatus.loading);
     try {
       // See signInWithGoogle — auth completes via the deep-link callback,
       // picked up by the onAuthStateChange listener.
@@ -272,7 +342,7 @@ class AuthNotifier extends StateNotifier<AppAuthState> {
       );
     } on Exception catch (e) {
       state = state.copyWith(
-          status: AuthStatus.error, errorMessage: e.toString());
+          status: AuthStatus.error, errorMessage: _friendlyError(e));
     }
   }
 

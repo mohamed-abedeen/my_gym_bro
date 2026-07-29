@@ -1,9 +1,12 @@
 import 'dart:io';
 
+import 'package:drift/drift.dart' show Value;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:my_gym_bro/core/auth/auth_notifier.dart';
+import 'package:my_gym_bro/core/database/app_database.dart';
+import 'package:my_gym_bro/core/database/daos/user_profile_dao.dart';
 import 'package:my_gym_bro/core/providers/providers.dart';
 import 'package:my_gym_bro/core/security/secure_storage.dart';
 import 'package:my_gym_bro/core/services/notification_tone.dart';
@@ -31,6 +34,36 @@ class _SignUpScreenState extends ConsumerState<SignUpScreen> {
   final _formKey = GlobalKey<FormState>();
   bool _obscure = true;
   bool _seeding = false;
+  // OAuth completes out-of-band (deep-link → onAuthStateChange), not via the
+  // button's future — navigation and onboarding-data merge must react to the
+  // state transition. Armed only while a social flow is in flight so the
+  // email path (handled in _handleSignUp) is unaffected.
+  bool _oauthInFlight = false;
+
+  void _startOAuth(Future<void> Function() flow) {
+    setState(() => _oauthInFlight = true);
+    flow();
+  }
+
+  /// Finish a Google/Apple sign-up: layer the onboarding answers onto the
+  /// profile row the auth listener bootstrapped, then seed + continue.
+  Future<void> _completeOAuthSignUp() async {
+    final onboarding = ref.read(onboardingProvider);
+    try {
+      final dao = UserProfileDao(ref.read(databaseProvider));
+      await dao.mergeIntoFirst(UserProfilesCompanion(
+        goal: Value.absentIfNull(onboarding.goal),
+        experience: Value.absentIfNull(onboarding.experience),
+        gender: Value.absentIfNull(onboarding.gender),
+        bodyWeightKg: Value.absentIfNull(onboarding.weightKg),
+        heightCm: Value.absentIfNull(onboarding.heightCm),
+        notificationTone: Value(onboarding.notificationTone.wireValue),
+      ));
+    } on Exception {
+      // Non-fatal — these fields can all be edited later in Settings.
+    }
+    await _seedExercisesIfNeeded();
+  }
 
   @override
   void dispose() {
@@ -142,6 +175,23 @@ class _SignUpScreenState extends ConsumerState<SignUpScreen> {
     final l10n = AppLocalizations.of(context);
     final authState = ref.watch(authNotifierProvider);
     final isLoading = authState.status == AuthStatus.loading || _seeding;
+
+    ref.listen<AppAuthState>(authNotifierProvider, (previous, next) {
+      if (!_oauthInFlight) return;
+      if (next.status == AuthStatus.authenticated) {
+        _oauthInFlight = false;
+        _completeOAuthSignUp();
+      } else if (next.status == AuthStatus.error) {
+        _oauthInFlight = false;
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(next.errorMessage ??
+                AppLocalizations.of(context).signUpError),
+            backgroundColor: AppColors.of(context).danger,
+          ),
+        );
+      }
+    });
     final pw = _passwordCtrl.text;
     final strength = _passwordStrength(pw);
 
@@ -308,8 +358,9 @@ class _SignUpScreenState extends ConsumerState<SignUpScreen> {
                     _socialButton(
                       label: l10n.continueWithGoogle,
                       icon: Icons.g_mobiledata,
-                      onTap: () =>
-                          ref.read(authNotifierProvider.notifier).signInWithGoogle(),
+                      onTap: () => _startOAuth(ref
+                          .read(authNotifierProvider.notifier)
+                          .signInWithGoogle),
                     ),
 
                     SizedBox(height: 12.h),
@@ -319,8 +370,9 @@ class _SignUpScreenState extends ConsumerState<SignUpScreen> {
                       _socialButton(
                         label: l10n.continueWithApple,
                         icon: Icons.apple,
-                        onTap: () =>
-                            ref.read(authNotifierProvider.notifier).signInWithApple(),
+                        onTap: () => _startOAuth(ref
+                            .read(authNotifierProvider.notifier)
+                            .signInWithApple),
                       ),
 
                     SizedBox(height: 24.h),

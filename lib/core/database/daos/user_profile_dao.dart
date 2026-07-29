@@ -22,6 +22,17 @@ class UserProfileDao extends DatabaseAccessor<AppDatabase>
   Future<int> upsert(UserProfilesCompanion companion) =>
       into(userProfiles).insertOnConflictUpdate(companion);
 
+  /// Merge [data] onto the existing profile row, if any. Used by the OAuth
+  /// sign-up flow to layer the onboarding answers onto the profile that the
+  /// auth listener bootstrapped from the server.
+  Future<void> mergeIntoFirst(UserProfilesCompanion data) async {
+    final current = await getFirst();
+    if (current == null) return;
+    await (update(userProfiles)
+          ..where((t) => t.localId.equals(current.localId)))
+        .write(data);
+  }
+
   /// Update preferred language.
   Future<void> updateLanguage(int localId, String language) =>
       (update(userProfiles)..where((t) => t.localId.equals(localId)))
