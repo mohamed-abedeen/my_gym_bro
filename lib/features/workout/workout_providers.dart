@@ -362,12 +362,19 @@ final userProfileProvider = StreamProvider<UserProfile?>((ref) {
   return ref.watch(userProfileDaoProvider).watchProfile();
 });
 
+/// Compile-time kill switch for the paywall, for TestFlight/friends betas:
+/// built with `--dart-define=BETA_FREE=true` the app never locks and never
+/// shows trial countdowns. Defaults to false, so store release builds are
+/// unaffected. Must never be set in a production lane.
+const bool kBetaFreeAccess = bool.fromEnvironment('BETA_FREE');
+
 /// Whole-app paywall gate. True when access must be blocked: the trial window
 /// has elapsed, or the subscription is expired. Returns false while the
 /// profile is loading or absent (pre-onboarding) so we never lock a user we
 /// don't yet know about. This is the single source of truth for gating —
 /// the router redirect and the paywall both read it.
 final subscriptionLockedProvider = Provider<bool>((ref) {
+  if (kBetaFreeAccess) return false;
   final profile = ref.watch(userProfileProvider).valueOrNull;
   if (profile == null) return false;
   switch (profile.subscriptionStatus) {
@@ -388,6 +395,7 @@ final subscriptionLockedProvider = Provider<bool>((ref) {
 /// a trial (active/expired) or there's no known trial window. 0 means the
 /// trial has just elapsed.
 final trialDaysLeftProvider = Provider<int?>((ref) {
+  if (kBetaFreeAccess) return null;
   final profile = ref.watch(userProfileProvider).valueOrNull;
   if (profile == null || profile.subscriptionStatus != 'trial') return null;
   final end = profile.subscriptionExpiresAt;

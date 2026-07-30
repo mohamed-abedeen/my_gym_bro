@@ -1,0 +1,88 @@
+# Builds a signed iOS IPA on a macOS runner and uploads it to TestFlight.
+# No local Mac needed: signing certificate + provisioning profile are created
+# and fetched automatically via the App Store Connect API (codemagic-cli-tools).
+#
+# Required repository secrets (Settings → Secrets and variables → Actions):
+#   APP_STORE_CONNECT_ISSUER_ID       App Store Connect → Users & Access → Integrations
+#   APP_STORE_CONNECT_KEY_IDENTIFIER  the API key's Key ID
+#   APP_STORE_CONNECT_PRIVATE_KEY     full contents of the downloaded .p8 file
+#   CERTIFICATE_PRIVATE_KEY           an RSA 2048 private key (PEM) used to
+#                                     create/reuse the iOS distribution cert
+# Optional (same names the Android lanes use):
+#   SUPABASE_URL / SUPABASE_ANON_KEY / REVENUECAT_IOS_KEY
+name: TestFlight
+
+on:
+  workflow_dispatch:
+
+concurrency:
+  group: testflight
+  cancel-in-progress: false
+
+jobs:
+  build-and-upload:
+    name: Build iOS IPA + upload to TestFlight
+    runs-on: macos-15
+    timeout-minutes: 60
+    env:
+      BUNDLE_ID: com.mygymbro.myGymBro
+      APP_STORE_CONNECT_ISSUER_ID: ${{ secrets.APP_STORE_CONNECT_ISSUER_ID }}
+      APP_STORE_CONNECT_KEY_IDENTIFIER: ${{ secrets.APP_STORE_CONNECT_KEY_IDENTIFIER }}
+      APP_STORE_CONNECT_PRIVATE_KEY: ${{ secrets.APP_STORE_CONNECT_PRIVATE_KEY }}
+      CERTIFICATE_PRIVATE_KEY: ${{ secrets.CERTIFICATE_PRIVATE_KEY }}
+    steps:
+      - name: Check required secrets
+        run: |
+          missing=0
+          for v in APP_STORE_CONNECT_ISSUER_ID APP_STORE_CONNECT_KEY_IDENTIFIER \
+                   APP_STORE_CONNECT_PRIVATE_KEY CERTIFICATE_PRIVATE_KEY; do
+            if [ -z "${!v}" ]; then
+              echo "::error::secret $v is not set — see the header of this workflow file"
+              missing=1
+            fi
+          done
+          exit $missing
+
+      - uses: actions/checkout@v4
+
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+
+      - run: flutter pub get
+      - run: dart run build_runner build --delete-conflicting-outputs
+      - run: flutter gen-l10n
+
+      - name: Install codemagic-cli-tools
+        run: pipx install codemagic-cli-tools
+
+      - name: Fetch signing files (creates cert + profile on first run)
+        run: |
+          keychain initialize
+          app-store-connect fetch-signing-files "$BUNDLE_ID" \
+            --platform IOS \
+            --type IOS_APP_STORE \
+            --create
+          keychain add-certificates
+          xcode-project use-profiles
+
+      - name: Build IPA
+        run: |
+          # BETA_FREE disables the paywall/trial gate for TestFlight testers.
+          # Remove this define when this lane starts producing store builds.
+          flutter build ipa --release \
+            --build-number=${{ github.run_number }} \
+            --export-options-plist "$HOME/export_options.plist" \
+            --dart-define=BETA_FREE=true \
+            --dart-define=SUPABASE_URL=${{ secrets.SUPABASE_URL }} \
+            --dart-define=SUPABASE_ANON_KEY=${{ secrets.SUPABASE_ANON_KEY }} \
+            --dart-define=REVENUECAT_IOS_KEY=${{ secrets.REVENUECAT_IOS_KEY }}
+
+      - name: Upload to TestFlight
+        run: app-store-connect publish --path build/ios/ipa/*.ipa
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ios-ipa
+          path: build/ios/ipa/*.ipa

@@ -1,6 +1,9 @@
 # Secrets / environment
 .env
 .env.*
+# iOS distribution-certificate private key (backup of the CERTIFICATE_PRIVATE_KEY
+# GitHub secret — regenerating it would orphan the cert Apple has on file)
+/ios_dist_cert_key.pem
 
 # Working documents (not part of the app)
 /MyGymBro_Launch_Blockers_and_Weaknesses.pdf
