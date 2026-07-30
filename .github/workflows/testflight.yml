@@ -49,6 +49,10 @@ jobs:
 
       - uses: subosito/flutter-action@v2
         with:
+          # Pinned to the version the app is developed against. Latest stable
+          # removed CupertinoPageTransitionsBuilder (used in lib/app.dart) —
+          # bump this deliberately together with a local Flutter upgrade.
+          flutter-version: 3.41.1
           channel: stable
           cache: true
 
