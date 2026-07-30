@@ -22,7 +22,9 @@ concurrency:
 jobs:
   build-and-upload:
     name: Build iOS IPA + upload to TestFlight
-    runs-on: macos-15
+    # macos-26 = Xcode 26 / iOS 26 SDK — required by cupertino_native_better's
+    # Liquid Glass APIs (glassEffect etc.); macos-15's Xcode 16 can't compile it.
+    runs-on: macos-26
     timeout-minutes: 60
     env:
       BUNDLE_ID: com.mygymbro.myGymBro
