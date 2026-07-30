@@ -90,6 +90,11 @@
 			<string>UIInterfaceOrientationPortrait</string>
 			<string>UIInterfaceOrientationPortraitUpsideDown</string>
 		</array>
+		<!-- Portrait-only app: App Store validation (ITMS-90474) requires
+		     opting out of iPad multitasking when not all four orientations
+		     are supported. -->
+		<key>UIRequiresFullScreen</key>
+		<true/>
 		<key>UIStatusBarHidden</key>
 		<false/>
 	</dict>
