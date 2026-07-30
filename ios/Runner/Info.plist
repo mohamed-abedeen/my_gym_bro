@@ -73,6 +73,11 @@
 		</array>
 		<key>NSCameraUsageDescription</key>
 		<string>Take a photo for your profile picture.</string>
+		<!-- Never actually triggered (photos only), but the image-picker
+		     library references video-capture APIs, so App Store processing
+		     requires the mic purpose string (ITMS-90683). -->
+		<key>NSMicrophoneUsageDescription</key>
+		<string>The microphone is only used if you record a video with the camera.</string>
 		<key>NSPhotoLibraryUsageDescription</key>
 		<string>Choose a photo for your profile picture.</string>
 		<key>NSPhotoLibraryAddUsageDescription</key>
