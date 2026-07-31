@@ -129,10 +129,9 @@ class _Header extends ConsumerWidget {
           SizedBox(width: 12.w),
           // Avatar — 48x48 liquid glass, taps open Account
           GestureDetector(
-            onTap:
-                () => Navigator.of(context).push(
-                  MaterialPageRoute<void>(builder: (_) => const SettingsScreen()),
-                ),
+            onTap: () => Navigator.of(context).push(
+              MaterialPageRoute<void>(builder: (_) => const SettingsScreen()),
+            ),
             child: LiquidGlassButton(
               width: 48.w,
               height: 48.h,
@@ -166,10 +165,11 @@ class _LeaderboardCard extends ConsumerWidget {
     final rank = ref.watch(myRankProvider);
     // Other users on the weekly global board — drives the avatar row + count.
     final bros = [
-      for (final e in ref
-              .watch(leaderboardProvider(LeaderboardScope.global))
-              .valueOrNull ??
-          const <LeaderboardEntry>[])
+      for (final e
+          in ref
+                  .watch(leaderboardProvider(LeaderboardScope.global))
+                  .valueOrNull ??
+              const <LeaderboardEntry>[])
         if (!e.isMe) e,
     ];
 
@@ -258,8 +258,9 @@ class _LeaderboardCard extends ConsumerWidget {
                               ),
                               child: Center(
                                 child: Padding(
-                                  padding:
-                                      EdgeInsets.symmetric(horizontal: 4.w),
+                                  padding: EdgeInsets.symmetric(
+                                    horizontal: 4.w,
+                                  ),
                                   child: FittedBox(
                                     child: Text(
                                       '+${bros.length - 3}',
@@ -327,74 +328,67 @@ class _HomeWeeklyStrip extends ConsumerWidget {
     final weekData = ref.watch(weekStripProvider(locale));
 
     return weekData.when(
-      data:
-          (days) => Column(
-            children: [
-              Row(
-                children:
-                    days.map((day) {
-                      return Expanded(
-                        child: Padding(
-                          padding: EdgeInsets.symmetric(horizontal: 2.w),
-                          child: _HomeDayPill(day: day),
-                        ),
-                      );
-                    }).toList(),
-              ),
-              SizedBox(height: 6.h),
-              // Flame icons under each day
-              Row(
-                children:
-                    days.map((day) {
-                      return Expanded(
-                        child: SizedBox(
-                          height: 15.h,
-                          child: Center(
-                            child: Icon(
-                              Icons.local_fire_department_rounded,
-                              color:
-                                  day.hasSession
-                                      ? flameColor
-                                      : flameColor.withValues(
-                                        alpha: 0.25,
-                                      ),
-                              size: 15.sp,
-                            ),
-                          ),
-                        ),
-                      );
-                    }).toList(),
-              ),
-            ],
-          ),
-      loading: () => const _WeekStripSkeleton(),
-      error:
-          (_, __) => SizedBox(
-            height: 95.h,
-            child: Center(
-              child: GestureDetector(
-                onTap: () => ref.invalidate(weekStripProvider(locale)),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Icon(
-                      Icons.refresh_rounded,
-                      color: AppColors.of(context).textSecondary,
-                      size: 16.sp,
-                    ),
-                    SizedBox(width: 6.w),
-                    Text(
-                      AppLocalizations.of(context).retry,
-                      style: TextStyle(
-                        color: AppColors.of(context).textSecondary,
-                        fontSize: 13.sp,
-                      ),
-                    ),
-                  ],
+      data: (days) => Column(
+        children: [
+          Row(
+            children: days.map((day) {
+              return Expanded(
+                child: Padding(
+                  padding: EdgeInsets.symmetric(horizontal: 2.w),
+                  child: _HomeDayPill(day: day),
                 ),
-              ),
+              );
+            }).toList(),
+          ),
+          SizedBox(height: 6.h),
+          // Flame icons under each day
+          Row(
+            children: days.map((day) {
+              return Expanded(
+                child: SizedBox(
+                  height: 15.h,
+                  child: Center(
+                    child: Icon(
+                      Icons.local_fire_department_rounded,
+                      color: day.hasSession
+                          ? flameColor
+                          : flameColor.withValues(alpha: 0.25),
+                      size: 15.sp,
+                    ),
+                  ),
+                ),
+              );
+            }).toList(),
+          ),
+        ],
+      ),
+      loading: () => const _WeekStripSkeleton(),
+      error: (_, __) => SizedBox(
+        height: 95.h,
+        child: Center(
+          child: GestureDetector(
+            onTap: () => ref.invalidate(weekStripProvider(locale)),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(
+                  Icons.refresh_rounded,
+                  color: AppColors.of(context).textSecondary,
+                  size: 16.sp,
+                ),
+                SizedBox(width: 6.w),
+                Text(
+                  AppLocalizations.of(context).retry,
+                  style: TextStyle(
+                    color: AppColors.of(context).textSecondary,
+                    fontSize: 13.sp,
+                  ),
+                ),
+              ],
             ),
           ),
+        ),
+      ),
     );
   }
 }
@@ -541,10 +535,7 @@ class _StatusSection extends ConsumerWidget {
                 Expanded(
                   child: ClipRRect(
                     borderRadius: BorderRadius.circular(24.r),
-                    child: _WeeklyProgressCard(
-                      l10n: l10n,
-                      unit: unit,
-                    ),
+                    child: _WeeklyProgressCard(l10n: l10n, unit: unit),
                   ),
                 ),
               ],
@@ -577,32 +568,33 @@ class _HealingCard extends ConsumerWidget {
         clipBehavior: Clip.antiAlias,
         child: Stack(
           children: [
-            // Anatomy body — scaled to fit card
+            // Anatomy body — inset on all sides so the sheet never touches
+            // the 24.r rounded corners (it used to run edge-to-edge).
             Positioned.fill(
               top: 60.h,
+              left: 14.w,
+              right: 14.w,
+              bottom: 12.h,
               child: Opacity(
                 opacity: 0.7,
                 child: muscleStates.when(
-                  data:
-                      (states) => AnatomyBody(
-                        muscleStates: states,
-                        height: 280.h,
-                        gender: ref.watch(anatomyGenderProvider),
-                        basePngPath: ref.watch(activeSkinPathProvider),
-                      ),
-                  loading:
-                      () => ShimmerBox(
-                        width: double.infinity,
-                        height: 280.h,
-                        borderRadius: BorderRadius.circular(12.r),
-                      ),
-                  error:
-                      (_, __) => AnatomyBody(
-                        muscleStates: const [],
-                        height: 280.h,
-                        gender: ref.watch(anatomyGenderProvider),
-                        basePngPath: ref.watch(activeSkinPathProvider),
-                      ),
+                  data: (states) => AnatomyBody(
+                    muscleStates: states,
+                    height: 280.h,
+                    gender: ref.watch(anatomyGenderProvider),
+                    basePngPath: ref.watch(activeSkinPathProvider),
+                  ),
+                  loading: () => ShimmerBox(
+                    width: double.infinity,
+                    height: 280.h,
+                    borderRadius: BorderRadius.circular(12.r),
+                  ),
+                  error: (_, __) => AnatomyBody(
+                    muscleStates: const [],
+                    height: 280.h,
+                    gender: ref.watch(anatomyGenderProvider),
+                    basePngPath: ref.watch(activeSkinPathProvider),
+                  ),
                 ),
               ),
             ),
@@ -653,7 +645,6 @@ class _HealingCard extends ConsumerWidget {
 // ── Small Info Card — 193x64, radius 24 ──
 
 class _SmallInfoCard extends StatelessWidget {
-
   const _SmallInfoCard({
     required this.icon,
     required this.iconColor,
@@ -733,72 +724,70 @@ class _WeeklyProgressCard extends ConsumerWidget {
       ),
       padding: EdgeInsets.fromLTRB(16.w, 12.h, 16.w, 12.h),
       child: stats.when(
-        data:
-            (s) => Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                // "Weekly Progress"
-                Text(
-                  l10n.weeklyProgress,
-                  style: TextStyle(
-                    color: colors.textPrimary,
-                    fontSize: 15.sp,
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
-                SizedBox(height: 2.h),
-                // Volume
-                _StatRow(
-                  label: l10n.volume,
-                  value: formatWeight(
-                    s.totalVolume,
-                    unit,
-                    decimals: 0,
-                    withUnit: true,
-                  ),
-                  trend: s.volumeTrend,
-                ),
-                SizedBox(height: 2.h),
-                // Total Duration
-                _StatRow(
-                  label: l10n.totalDuration,
-                  value: s.formattedDuration,
-                  trend: s.durationTrend,
-                  trendSuffix: '%',
-                ),
-                SizedBox(height: 2.h),
-                // Avg Strength
-                _StatRow(
-                  label: l10n.avgStrength,
-                  value: '${s.avgStrength.toInt()}',
-                  trend: s.strengthTrend,
-                  trendPrefix:
-                      s.strengthTrend != null && s.strengthTrend! > 0 ? '' : '',
-                  isPositiveTrend:
-                      s.strengthTrend == null || s.strengthTrend! >= 0,
-                ),
-                SizedBox(height: 2.h),
-                // Records
-                _StatRow(
-                  label: l10n.records,
-                  value: ref
-                      .watch(recordsProvider)
-                      .when(
-                        data: (r) => '${r.count}',
-                        loading: () => '--',
-                        error: (_, __) => '0',
-                      ),
-                ),
-              ],
-            ),
-        loading:
-            () => Center(
-              child: CircularProgressIndicator(
-                color: colors.accent,
-                strokeWidth: 2.w,
+        data: (s) => Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            // "Weekly Progress"
+            Text(
+              l10n.weeklyProgress,
+              style: TextStyle(
+                color: colors.textPrimary,
+                fontSize: 15.sp,
+                fontWeight: FontWeight.w500,
               ),
             ),
+            SizedBox(height: 2.h),
+            // Volume
+            _StatRow(
+              label: l10n.volume,
+              value: formatWeight(
+                s.totalVolume,
+                unit,
+                decimals: 0,
+                withUnit: true,
+              ),
+              trend: s.volumeTrend,
+            ),
+            SizedBox(height: 2.h),
+            // Total Duration
+            _StatRow(
+              label: l10n.totalDuration,
+              value: s.formattedDuration,
+              trend: s.durationTrend,
+              trendSuffix: '%',
+            ),
+            SizedBox(height: 2.h),
+            // Avg Strength
+            _StatRow(
+              label: l10n.avgStrength,
+              value: '${s.avgStrength.toInt()}',
+              trend: s.strengthTrend,
+              trendPrefix: s.strengthTrend != null && s.strengthTrend! > 0
+                  ? ''
+                  : '',
+              isPositiveTrend: s.strengthTrend == null || s.strengthTrend! >= 0,
+            ),
+            SizedBox(height: 2.h),
+            // Records
+            _StatRow(
+              label: l10n.records,
+              value: ref
+                  .watch(recordsProvider)
+                  .when(
+                    data: (r) => '${r.count}',
+                    loading: () => '--',
+                    error: (_, __) => '0',
+                  ),
+            ),
+          ],
+        ),
+        loading: () => Center(
+          child: CircularProgressIndicator(
+            color: colors.accent,
+            strokeWidth: 2.w,
+          ),
+        ),
         error: (_, __) => const SizedBox.shrink(),
       ),
     );
@@ -806,7 +795,6 @@ class _WeeklyProgressCard extends ConsumerWidget {
 }
 
 class _StatRow extends StatelessWidget {
-
   const _StatRow({
     required this.label,
     required this.value,
@@ -825,8 +813,9 @@ class _StatRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final colors = AppColors.of(context);
-    final trendColor =
-        isPositiveTrend ? colors.trendPositive : colors.trendNegative;
+    final trendColor = isPositiveTrend
+        ? colors.trendPositive
+        : colors.trendNegative;
     final hasTrend = trend != null;
 
     return Row(

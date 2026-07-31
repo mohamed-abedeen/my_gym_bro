@@ -177,6 +177,7 @@ class _ActiveSessionScreenState extends ConsumerState<ActiveSessionScreen> {
     );
 
     final bottomPad = MediaQuery.of(context).padding.bottom;
+    final topPad = MediaQuery.of(context).padding.top;
 
     return Scaffold(
       backgroundColor: colors.background,
@@ -313,7 +314,7 @@ class _ActiveSessionScreenState extends ConsumerState<ActiveSessionScreen> {
             Positioned(
               left: 14.w,
               right: 14.w,
-              top: 4.h,
+              top: topPad + 4.h,
               child: TweenAnimationBuilder<double>(
                 tween: Tween(begin: 0, end: 1),
                 duration: const Duration(milliseconds: 220),
@@ -333,12 +334,13 @@ class _ActiveSessionScreenState extends ConsumerState<ActiveSessionScreen> {
               ),
             ),
 
-          // ── Top stats capsule — sits at the very top so the camera
-          // notch / Dynamic Island lands in the gap between Sets & Volume ──
+          // ── Top stats capsule — below the status bar / Dynamic Island
+          // row (the system clock + island own that row; the workout Live
+          // Activity already puts timer + set progress IN the island) ──
           Positioned(
             left: 20.w,
             right: 20.w,
-            top: 8.h,
+            top: topPad + 8.h,
             child: _TopStatsCapsule(
               session: session,
               notifier: notifier,
@@ -1034,94 +1036,102 @@ class _TopStatsCapsule extends StatelessWidget {
         ),
     ];
 
-    return Container(
-      height: 54.h,
-      padding: EdgeInsets.symmetric(horizontal: 18.w),
-      decoration: BoxDecoration(
-        color: Colors.black,
-        borderRadius: BorderRadius.circular(28.r),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.25),
-            blurRadius: 14.w,
-            offset: Offset(0, 4.h),
-          ),
-        ],
-      ),
-      child: Row(
-        children: [
-          Expanded(
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                // Time — tap to pause/resume the session clock.
-                // button trait so screen readers know it's actionable; the
-                // "Time" label + value announce from the child texts.
-                Semantics(
-                  button: true,
-                  child: GestureDetector(
-                    onTap: () {
-                      HapticFeedback.selectionClick();
-                      if (paused) {
-                        notifier.resume();
-                      } else {
-                        notifier.pause();
-                      }
-                    },
-                    behavior: HitTestBehavior.opaque,
-                    child: _StatColumn(
-                      label: l10n.time,
-                      value: ValueListenableBuilder<int>(
-                        valueListenable: elapsed,
-                        builder: (_, seconds, __) =>
-                            Text(_fmt(seconds), style: _valueStyle),
+    // The whole capsule toggles the anatomy island; the inner Time
+    // (pause/resume) and mini-body detectors sit deeper in the tree, so
+    // they win the gesture arena and keep their own taps.
+    return GestureDetector(
+      onTap: onBodyTap,
+      behavior: HitTestBehavior.opaque,
+      child: Container(
+        height: 54.h,
+        padding: EdgeInsets.symmetric(horizontal: 18.w),
+        decoration: BoxDecoration(
+          color: Colors.black,
+          borderRadius: BorderRadius.circular(28.r),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.25),
+              blurRadius: 14.w,
+              offset: Offset(0, 4.h),
+            ),
+          ],
+        ),
+        child: Row(
+          children: [
+            Expanded(
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  // Time — tap to pause/resume the session clock.
+                  // button trait so screen readers know it's actionable; the
+                  // "Time" label + value announce from the child texts.
+                  Semantics(
+                    button: true,
+                    child: GestureDetector(
+                      onTap: () {
+                        HapticFeedback.selectionClick();
+                        if (paused) {
+                          notifier.resume();
+                        } else {
+                          notifier.pause();
+                        }
+                      },
+                      behavior: HitTestBehavior.opaque,
+                      child: _StatColumn(
+                        label: l10n.time,
+                        value: ValueListenableBuilder<int>(
+                          valueListenable: elapsed,
+                          builder: (_, seconds, __) =>
+                              Text(_fmt(seconds), style: _valueStyle),
+                        ),
                       ),
                     ),
                   ),
-                ),
-                _StatColumn(
-                  label: l10n.sets,
-                  value: Text(
-                    '${session.totalCompletedSets}',
-                    style: _valueStyle,
-                  ),
-                ),
-              ],
-            ),
-          ),
-          // Center gap — the phone's camera notch / punch hole sits here,
-          // between Sets and Volume.
-          SizedBox(width: 120.w),
-          Expanded(
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                _StatColumn(
-                  label: l10n.volume,
-                  value: Text(
-                    '${vol.round()} ${isLbs ? 'lbs' : 'kg'}',
-                    style: _valueStyle,
-                  ),
-                ),
-                // Tap the mini body to expand the anatomy island; it hides
-                // while the island is open (the island shows the bodies).
-                GestureDetector(
-                  onTap: onBodyTap,
-                  behavior: HitTestBehavior.opaque,
-                  child: Opacity(
-                    opacity: bodyHidden ? 0 : 1,
-                    child: AnatomyBody(
-                      muscleStates: muscleStates,
-                      height: 42.h,
-                      gender: gender,
-                      basePngPath: skinPath,
+                  _StatColumn(
+                    label: l10n.sets,
+                    value: Text(
+                      '${session.totalCompletedSets}',
+                      style: _valueStyle,
                     ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
-          ),
-        ],
+            // Center gap between the two stat groups. (The bar used to
+            // straddle the camera notch with a 120.w hole here; it now sits
+            // below the status bar, so this is just breathing room.)
+            SizedBox(width: 28.w),
+            Expanded(
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  _StatColumn(
+                    label: l10n.volume,
+                    value: Text(
+                      '${vol.round()} ${isLbs ? 'lbs' : 'kg'}',
+                      style: _valueStyle,
+                    ),
+                  ),
+                  // Tap the mini body to expand the anatomy island; it hides
+                  // while the island is open (the island shows the bodies).
+                  GestureDetector(
+                    onTap: onBodyTap,
+                    behavior: HitTestBehavior.opaque,
+                    child: Opacity(
+                      opacity: bodyHidden ? 0 : 1,
+                      child: AnatomyBody(
+                        muscleStates: muscleStates,
+                        height: 42.h,
+                        gender: gender,
+                        basePngPath: skinPath,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -1813,8 +1823,10 @@ class _SetRowState extends State<_SetRow> {
                       showPlateCalculatorSheet(
                         context,
                         unit: unit,
-                        initialWeight:
-                            convertFromKg(widget.set.weight ?? 0, unit),
+                        initialWeight: convertFromKg(
+                          widget.set.weight ?? 0,
+                          unit,
+                        ),
                       );
                     },
                     behavior: HitTestBehavior.opaque,
