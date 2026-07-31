@@ -67,13 +67,15 @@ void main() {
   });
 
   /// Mocks the purchases_flutter channel; [onPurchase] runs when the
-  /// paywall calls purchasePackage.
-  void mockPurchases({Object? Function()? onPurchase}) {
+  /// paywall calls purchasePackage. [configured] gates every Purchases call
+  /// (mirroring the SDK): false skips the initState price fetch AND makes
+  /// the purchase/restore flows bail out before reaching the store.
+  void mockPurchases({Object? Function()? onPurchase, bool configured = false}) {
     TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
         .setMockMethodCallHandler(channel, (call) async {
       switch (call.method) {
         case 'isConfigured':
-          return false; // skips the initState price fetch
+          return configured;
         case 'getOfferings':
           return _offeringsJson();
         case 'purchasePackage':
@@ -117,6 +119,7 @@ void main() {
         (tester) async {
       // PurchasesErrorCode index 1 == purchaseCancelledError.
       mockPurchases(
+        configured: true,
         onPurchase: () =>
             throw PlatformException(code: '1', message: 'cancelled'),
       );
@@ -137,6 +140,7 @@ void main() {
         (tester) async {
       // PurchasesErrorCode index 2 == storeProblemError.
       mockPurchases(
+        configured: true,
         onPurchase: () =>
             throw PlatformException(code: '2', message: 'store problem'),
       );

@@ -20,8 +20,13 @@ class SubscriptionSyncService {
   /// Pull the latest CustomerInfo from RevenueCat and write it through to
   /// the local profile. Best-effort — a network or auth failure is logged
   /// in debug mode and swallowed so the app keeps running.
+  ///
+  /// The isConfigured guard is load-bearing: on iOS an unconfigured SDK
+  /// doesn't throw, it fatalErrors and kills the process (uncatchable from
+  /// Dart), so every Purchases.* call must be gated on it.
   static Future<void> syncNow(UserProfileDao dao) async {
     try {
+      if (!await Purchases.isConfigured) return;
       final info = await Purchases.getCustomerInfo();
       await _apply(dao, info);
     } on Object catch (e) {
@@ -32,8 +37,11 @@ class SubscriptionSyncService {
   /// Install a one-time listener that mirrors CustomerInfo updates into
   /// the profile. Safe to call repeatedly — the SDK deduplicates listeners.
   static void listen(UserProfileDao dao) {
-    Purchases.addCustomerInfoUpdateListener((info) {
-      _apply(dao, info);
+    Purchases.isConfigured.then((configured) {
+      if (!configured) return;
+      Purchases.addCustomerInfoUpdateListener((info) {
+        _apply(dao, info);
+      });
     });
   }
 

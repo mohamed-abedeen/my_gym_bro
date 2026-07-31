@@ -55,6 +55,7 @@ void main() {
   void mockCustomerInfo(Map<String, Object?> payload) {
     TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
         .setMockMethodCallHandler(channel, (call) async {
+      if (call.method == 'isConfigured') return true;
       if (call.method == 'getCustomerInfo') return payload;
       return null;
     });

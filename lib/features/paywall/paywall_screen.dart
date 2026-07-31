@@ -352,6 +352,12 @@ class _PaywallScreenState extends ConsumerState<PaywallScreen> {
       _error = null;
     });
     try {
+      // Unconfigured Purchases fatalErrors on iOS — bail with the normal
+      // "no offerings" copy instead of dying.
+      if (!await Purchases.isConfigured) {
+        setState(() => _error = l10n.noOfferingsAvailable);
+        return;
+      }
       final offerings = await Purchases.getOfferings();
       final current = offerings.current;
       if (current == null) {
@@ -396,6 +402,10 @@ class _PaywallScreenState extends ConsumerState<PaywallScreen> {
       _error = null;
     });
     try {
+      if (!await Purchases.isConfigured) {
+        setState(() => _error = l10n.restoreFailed);
+        return;
+      }
       await Purchases.restorePurchases();
       await SubscriptionSyncService.syncNow(ref.read(userProfileDaoProvider));
       if (mounted) _dismiss();

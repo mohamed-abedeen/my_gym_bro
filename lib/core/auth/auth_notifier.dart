@@ -95,6 +95,9 @@ class AuthNotifier extends StateNotifier<AppAuthState> {
 
   Future<void> _revenueCatLogin(String userId) async {
     try {
+      // isConfigured guard: unconfigured Purchases fatalErrors on iOS
+      // (process death, not a catchable exception).
+      if (!await Purchases.isConfigured) return;
       await Purchases.logIn(userId);
     } on Exception catch (e) {
       CrashReporter.recordError(e, reason: 'RevenueCat logIn failed');
@@ -224,11 +227,7 @@ class AuthNotifier extends StateNotifier<AppAuthState> {
       await SecureStorage().write('needs_exercise_seed', 'true');
 
       // RevenueCat login
-      try {
-        await Purchases.logIn(user.id);
-      } on Exception catch (e) {
-        CrashReporter.recordError(e, reason: 'RevenueCat logIn failed');
-      }
+      await _revenueCatLogin(user.id);
 
       state = state.copyWith(status: AuthStatus.authenticated, user: user);
     } on AuthException catch (e) {
@@ -267,11 +266,7 @@ class AuthNotifier extends StateNotifier<AppAuthState> {
       }
 
       // RevenueCat login
-      try {
-        await Purchases.logIn(user.id);
-      } on Exception catch (e) {
-        CrashReporter.recordError(e, reason: 'RevenueCat logIn failed');
-      }
+      await _revenueCatLogin(user.id);
 
       // Sync
       unawaited(_syncService.syncAll());
@@ -292,7 +287,7 @@ class AuthNotifier extends StateNotifier<AppAuthState> {
     state = state.copyWith(status: AuthStatus.loading);
     try {
       try {
-        await Purchases.logOut();
+        if (await Purchases.isConfigured) await Purchases.logOut();
       } on Exception catch (e) {
         CrashReporter.recordError(e, reason: 'RevenueCat logOut failed');
       }
@@ -388,7 +383,7 @@ class AuthNotifier extends StateNotifier<AppAuthState> {
       }
 
       try {
-        await Purchases.logOut();
+        if (await Purchases.isConfigured) await Purchases.logOut();
       } on Exception catch (e) {
         CrashReporter.recordError(e, reason: 'RevenueCat logOut failed');
       }
