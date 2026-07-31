@@ -1,11 +1,16 @@
 import 'package:flutter/material.dart';
 
+/// App-wide color flavor. [classic] is the lime/orange brand look; [pink]
+/// swaps both light and dark palettes for soft-rose variants (muted pink
+/// accents on subtly tinted neutrals — deliberately not full-on pink).
+/// Combined with [ThemeMode] this yields four palettes.
+enum AppThemeFlavor { classic, pink }
+
 /// Dynamic color theme that adapts to light/dark mode.
 ///
 /// Access via `AppColors.of(context)` in any widget's build method.
 @immutable
 class AppColorsTheme extends ThemeExtension<AppColorsTheme> {
-
   const AppColorsTheme({
     required this.background,
     required this.card,
@@ -74,10 +79,16 @@ class AppColorsTheme extends ThemeExtension<AppColorsTheme> {
     cardElevated: Color(0xFF29292B),
     divider: Color(0xFF414546),
     subtitleText: Color(0xFF9B9B9B),
-    avatarPlaceholder: Color(0xFF616161),   // AppColors.of(context).avatarPlaceholder
-    avatarPlaceholderDark: Color(0xFF424242), // AppColors.of(context).avatarPlaceholderDark
-    avatarPlaceholderDarker: Color(0xFF212121), // AppColors.of(context).avatarPlaceholderDarker
-    overlayBlack: Color(0x80000000),         // black 50%
+    avatarPlaceholder: Color(
+      0xFF616161,
+    ), // AppColors.of(context).avatarPlaceholder
+    avatarPlaceholderDark: Color(
+      0xFF424242,
+    ), // AppColors.of(context).avatarPlaceholderDark
+    avatarPlaceholderDarker: Color(
+      0xFF212121,
+    ), // AppColors.of(context).avatarPlaceholderDarker
+    overlayBlack: Color(0x80000000), // black 50%
     todayPillText: Color(0xFF000000),
     black: Color(0xFF000000),
     white: Color(0xFFFFFFFF),
@@ -101,7 +112,7 @@ class AppColorsTheme extends ThemeExtension<AppColorsTheme> {
     cardElevated: Color(0xFFFFFFFF),
     divider: Color(0xFFD1D1D6),
     subtitleText: Color(0xFF8E8E93),
-    avatarPlaceholder: Color(0xFFBDBDBD),   // lighter grey for light mode
+    avatarPlaceholder: Color(0xFFBDBDBD), // lighter grey for light mode
     avatarPlaceholderDark: Color(0xFF9E9E9E),
     avatarPlaceholderDarker: Color(0xFF757575),
     overlayBlack: Color(0x80000000),
@@ -110,6 +121,73 @@ class AppColorsTheme extends ThemeExtension<AppColorsTheme> {
     white: Color(0xFFFFFFFF),
     grey: Color(0xFF9E9E9E),
   );
+
+  /// Pink-flavor dark: true black stays, surfaces get a faint plum cast,
+  /// and the lime accent becomes a soft rose that still reads on black.
+  static const pinkDark = AppColorsTheme(
+    background: Color(0xFF000000),
+    card: Color(0xFF1A1417),
+    accent: Color(0xFFFF7AA2),
+    textPrimary: Color(0xFFFFFFFF),
+    textSecondary: Color(0xFFA3939A),
+    success: Color(0xFF49995C),
+    amber: Color(0xFFEF9F27),
+    danger: Color(0xFFFF0004),
+    muscleUntrained: Color(0xFF8C8084),
+    trendPositive: Color(0xFF49995C),
+    trendNegative: Color(0xFFFF0004),
+    separator: Color(0xFF413B3E),
+    panelBackground: Color(0xFF201A1D),
+    cardElevated: Color(0xFF2D2529),
+    divider: Color(0xFF4A4145),
+    subtitleText: Color(0xFFA09097),
+    avatarPlaceholder: Color(0xFF616161),
+    avatarPlaceholderDark: Color(0xFF424242),
+    avatarPlaceholderDarker: Color(0xFF212121),
+    overlayBlack: Color(0x80000000),
+    todayPillText: Color(0xFF000000),
+    black: Color(0xFF000000),
+    white: Color(0xFFFFFFFF),
+    grey: Color(0xFF9E9E9E),
+  );
+
+  /// Pink-flavor light: pink-tinted off-white backdrop, white cards, muted
+  /// raspberry accent — pink, but restrained.
+  static const pinkLight = AppColorsTheme(
+    background: Color(0xFFFAF2F5),
+    card: Color(0xFFFFFFFF),
+    accent: Color(0xFFE0567F),
+    textPrimary: Color(0xFF231A1E),
+    textSecondary: Color(0xFF97868D),
+    success: Color(0xFF34C759),
+    amber: Color(0xFFFF9500),
+    danger: Color(0xFFFF3B30),
+    muscleUntrained: Color(0xFFDCC5CE),
+    trendPositive: Color(0xFF34C759),
+    trendNegative: Color(0xFFFF3B30),
+    separator: Color(0xFFE9D4DC),
+    panelBackground: Color(0xFFF2DFE7),
+    cardElevated: Color(0xFFFFFFFF),
+    divider: Color(0xFFE9D4DC),
+    subtitleText: Color(0xFF97868D),
+    avatarPlaceholder: Color(0xFFCFB2BD),
+    avatarPlaceholderDark: Color(0xFFB0919E),
+    avatarPlaceholderDarker: Color(0xFF876A76),
+    overlayBlack: Color(0x80000000),
+    todayPillText: Color(0xFF000000),
+    black: Color(0xFF000000),
+    white: Color(0xFFFFFFFF),
+    grey: Color(0xFF9E9E9E),
+  );
+
+  /// Palette lookup for a flavor + brightness pair.
+  static AppColorsTheme resolve(AppThemeFlavor flavor, Brightness brightness) =>
+      switch ((flavor, brightness)) {
+        (AppThemeFlavor.classic, Brightness.dark) => dark,
+        (AppThemeFlavor.classic, Brightness.light) => light,
+        (AppThemeFlavor.pink, Brightness.dark) => pinkDark,
+        (AppThemeFlavor.pink, Brightness.light) => pinkLight,
+      };
 
   @override
   AppColorsTheme copyWith({
@@ -137,33 +215,33 @@ class AppColorsTheme extends ThemeExtension<AppColorsTheme> {
     Color? black,
     Color? white,
     Color? grey,
-  }) =>
-      AppColorsTheme(
-        background: background ?? this.background,
-        card: card ?? this.card,
-        accent: accent ?? this.accent,
-        textPrimary: textPrimary ?? this.textPrimary,
-        textSecondary: textSecondary ?? this.textSecondary,
-        success: success ?? this.success,
-        amber: amber ?? this.amber,
-        danger: danger ?? this.danger,
-        muscleUntrained: muscleUntrained ?? this.muscleUntrained,
-        trendPositive: trendPositive ?? this.trendPositive,
-        trendNegative: trendNegative ?? this.trendNegative,
-        separator: separator ?? this.separator,
-        panelBackground: panelBackground ?? this.panelBackground,
-        cardElevated: cardElevated ?? this.cardElevated,
-        divider: divider ?? this.divider,
-        subtitleText: subtitleText ?? this.subtitleText,
-        avatarPlaceholder: avatarPlaceholder ?? this.avatarPlaceholder,
-        avatarPlaceholderDark: avatarPlaceholderDark ?? this.avatarPlaceholderDark,
-        avatarPlaceholderDarker: avatarPlaceholderDarker ?? this.avatarPlaceholderDarker,
-        overlayBlack: overlayBlack ?? this.overlayBlack,
-        todayPillText: todayPillText ?? this.todayPillText,
-        black: black ?? this.black,
-        white: white ?? this.white,
-        grey: grey ?? this.grey,
-      );
+  }) => AppColorsTheme(
+    background: background ?? this.background,
+    card: card ?? this.card,
+    accent: accent ?? this.accent,
+    textPrimary: textPrimary ?? this.textPrimary,
+    textSecondary: textSecondary ?? this.textSecondary,
+    success: success ?? this.success,
+    amber: amber ?? this.amber,
+    danger: danger ?? this.danger,
+    muscleUntrained: muscleUntrained ?? this.muscleUntrained,
+    trendPositive: trendPositive ?? this.trendPositive,
+    trendNegative: trendNegative ?? this.trendNegative,
+    separator: separator ?? this.separator,
+    panelBackground: panelBackground ?? this.panelBackground,
+    cardElevated: cardElevated ?? this.cardElevated,
+    divider: divider ?? this.divider,
+    subtitleText: subtitleText ?? this.subtitleText,
+    avatarPlaceholder: avatarPlaceholder ?? this.avatarPlaceholder,
+    avatarPlaceholderDark: avatarPlaceholderDark ?? this.avatarPlaceholderDark,
+    avatarPlaceholderDarker:
+        avatarPlaceholderDarker ?? this.avatarPlaceholderDarker,
+    overlayBlack: overlayBlack ?? this.overlayBlack,
+    todayPillText: todayPillText ?? this.todayPillText,
+    black: black ?? this.black,
+    white: white ?? this.white,
+    grey: grey ?? this.grey,
+  );
 
   @override
   AppColorsTheme lerp(AppColorsTheme? other, double t) {
@@ -185,9 +263,21 @@ class AppColorsTheme extends ThemeExtension<AppColorsTheme> {
       cardElevated: Color.lerp(cardElevated, other.cardElevated, t)!,
       divider: Color.lerp(divider, other.divider, t)!,
       subtitleText: Color.lerp(subtitleText, other.subtitleText, t)!,
-      avatarPlaceholder: Color.lerp(avatarPlaceholder, other.avatarPlaceholder, t)!,
-      avatarPlaceholderDark: Color.lerp(avatarPlaceholderDark, other.avatarPlaceholderDark, t)!,
-      avatarPlaceholderDarker: Color.lerp(avatarPlaceholderDarker, other.avatarPlaceholderDarker, t)!,
+      avatarPlaceholder: Color.lerp(
+        avatarPlaceholder,
+        other.avatarPlaceholder,
+        t,
+      )!,
+      avatarPlaceholderDark: Color.lerp(
+        avatarPlaceholderDark,
+        other.avatarPlaceholderDark,
+        t,
+      )!,
+      avatarPlaceholderDarker: Color.lerp(
+        avatarPlaceholderDarker,
+        other.avatarPlaceholderDarker,
+        t,
+      )!,
       overlayBlack: Color.lerp(overlayBlack, other.overlayBlack, t)!,
       todayPillText: Color.lerp(todayPillText, other.todayPillText, t)!,
       black: Color.lerp(black, other.black, t)!,

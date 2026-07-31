@@ -6,7 +6,7 @@ import 'package:my_gym_bro/shared/responsive.dart';
 /// iOS-Settings-style building blocks for the settings screen.
 ///
 /// Flat-iOS design (handoff option 1a): a section is a flat solid card
-/// holding compact rows — leading flat color badge, label, trailing
+/// holding roomy rows — leading flat color badge, label, trailing
 /// value/control, hairline inset dividers. No glass, no gradients.
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -47,7 +47,7 @@ class SettingsSection extends StatelessWidget {
   final String? header;
   final List<Widget> children;
 
-  /// Card corner radius. Defaults to 16 (sections); profile card uses 18.
+  /// Card corner radius. Defaults to 18 (sections and profile card).
   final double? radius;
 
   @override
@@ -60,7 +60,7 @@ class SettingsSection extends StatelessWidget {
       if (i < children.length - 1) {
         rows.add(
           Padding(
-            padding: EdgeInsets.only(left: 49.w),
+            padding: EdgeInsets.only(left: 62.w),
             child: Container(height: 0.7, color: colors.divider),
           ),
         );
@@ -72,11 +72,11 @@ class SettingsSection extends StatelessWidget {
       children: [
         if (header != null)
           Padding(
-            padding: EdgeInsets.only(left: 6.w, bottom: 6.h),
+            padding: EdgeInsets.only(left: 8.w, bottom: 8.h),
             child: Text(
               header!.toUpperCase(),
               style: TextStyle(
-                fontSize: 11.sp,
+                fontSize: 12.sp,
                 fontWeight: FontWeight.w600,
                 letterSpacing: 0.6,
                 color: colors.subtitleText,
@@ -88,7 +88,7 @@ class SettingsSection extends StatelessWidget {
           clipBehavior: Clip.antiAlias,
           decoration: BoxDecoration(
             color: colors.card,
-            borderRadius: BorderRadius.circular(radius ?? 16.r),
+            borderRadius: BorderRadius.circular(radius ?? 18.r),
           ),
           child: Column(children: rows),
         ),
@@ -112,13 +112,13 @@ class SettingsIconBadge extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      width: 26.w,
-      height: 26.w,
+      width: 34.w,
+      height: 34.w,
       decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(7.r),
+        borderRadius: BorderRadius.circular(9.r),
         color: color,
       ),
-      child: Icon(icon, color: Colors.white, size: 15.sp),
+      child: Icon(icon, color: Colors.white, size: 19.sp),
     );
   }
 }
@@ -180,7 +180,7 @@ class SettingsNavRowShell extends StatelessWidget {
       onTap: onTap,
       child: Padding(
         padding:
-            padding ?? EdgeInsets.symmetric(horizontal: 12.w, vertical: 10.h),
+            padding ?? EdgeInsets.symmetric(horizontal: 14.w, vertical: 13.h),
         child: child,
       ),
     );
@@ -220,7 +220,7 @@ class SettingsNavRow extends StatelessWidget {
     return _PressableRow(
       onTap: onTap,
       child: Padding(
-        padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 9.h),
+        padding: EdgeInsets.symmetric(horizontal: 14.w, vertical: 13.h),
         child: Row(
           children: [
             SettingsIconBadge(icon: icon, color: iconColor),
@@ -287,18 +287,18 @@ class SettingsSwitchRow extends StatelessWidget {
     final colors = AppColors.of(context);
 
     return Padding(
-      padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 9.h),
+      padding: EdgeInsets.symmetric(horizontal: 14.w, vertical: 13.h),
       child: Row(
         children: [
           SettingsIconBadge(icon: icon, color: iconColor),
-          SizedBox(width: 11.w),
+          SizedBox(width: 14.w),
           Expanded(
             child: Text(
               label,
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
               style: TextStyle(
-                fontSize: 14.sp,
+                fontSize: 16.sp,
                 fontWeight: FontWeight.w500,
                 color: colors.textPrimary,
               ),
@@ -311,21 +311,21 @@ class SettingsSwitchRow extends StatelessWidget {
             },
             child: AnimatedContainer(
               duration: const Duration(milliseconds: 150),
-              width: 40.w,
-              height: 24.w,
+              width: 48.w,
+              height: 28.w,
               padding: EdgeInsets.all(2.w),
               decoration: BoxDecoration(
                 // iOS system green on / grouped-grey off, both themes.
                 color: value ? const Color(0xFF34C759) : colors.panelBackground,
-                borderRadius: BorderRadius.circular(12.w),
+                borderRadius: BorderRadius.circular(14.w),
               ),
               child: AnimatedAlign(
                 duration: const Duration(milliseconds: 150),
                 curve: Curves.easeOut,
                 alignment: value ? Alignment.centerRight : Alignment.centerLeft,
                 child: Container(
-                  width: 20.w,
-                  height: 20.w,
+                  width: 24.w,
+                  height: 24.w,
                   decoration: const BoxDecoration(
                     shape: BoxShape.circle,
                     color: Colors.white,

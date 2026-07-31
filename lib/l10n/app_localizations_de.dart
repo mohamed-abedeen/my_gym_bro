@@ -1378,6 +1378,151 @@ class AppLocalizationsDe extends AppLocalizations {
   String get settingsSectionAppearance => 'Darstellung';
 
   @override
+  String get settingsSectionPersonal => 'Persönliches';
+
+  @override
+  String get pinkMode => 'Pink-Modus';
+
+  @override
+  String get premadeTitle => 'Pro-Programme';
+
+  @override
+  String get premadeSubtitle =>
+      'Fertige Pläne für jede Situation — ohne Einrichtung';
+
+  @override
+  String get premadeCategoryAll => 'Alle';
+
+  @override
+  String get premadeCategoryQuick => 'Schnell';
+
+  @override
+  String get premadeCategoryHome => 'Zuhause';
+
+  @override
+  String get premadeCategoryCalisthenics => 'Calisthenics';
+
+  @override
+  String get premadeCategoryCore => 'Core';
+
+  @override
+  String get premadeLevelBeginner => 'Anfänger';
+
+  @override
+  String get premadeLevelIntermediate => 'Fortgeschritten';
+
+  @override
+  String get premadeLevelAdvanced => 'Profi';
+
+  @override
+  String premadeMinutes(int minutes) {
+    return '$minutes Min.';
+  }
+
+  @override
+  String premadeDaysCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count Tage',
+      one: '1 Tag',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String premadeExercisesCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count Übungen',
+      one: '1 Übung',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get premadeAdd => 'Zu meinen Programmen hinzufügen';
+
+  @override
+  String get premadeAdded => 'Hinzugefügt! Du findest es im Training-Tab.';
+
+  @override
+  String get premadeDayFullBody => 'Ganzkörper';
+
+  @override
+  String get premadeDayUpper => 'Oberkörper';
+
+  @override
+  String get premadeDayLower => 'Unterkörper';
+
+  @override
+  String get premadeDayPush => 'Push';
+
+  @override
+  String get premadeDayPull => 'Pull';
+
+  @override
+  String get premadeDayLegsCore => 'Beine & Core';
+
+  @override
+  String get premadeDayCore => 'Core';
+
+  @override
+  String get premadeDayArms => 'Arme';
+
+  @override
+  String get premadeWakeUpName => '5-Minuten-Wachmacher';
+
+  @override
+  String get premadeWakeUpTagline => 'Schneller Ganzkörper-Boost am Morgen';
+
+  @override
+  String get premadeCoreBlastName => '5-Minuten-Core-Blast';
+
+  @override
+  String get premadeCoreBlastTagline => 'Vier Übungen, brennender Core';
+
+  @override
+  String get premadeArmPumpName => '5-Minuten-Armpump';
+
+  @override
+  String get premadeArmPumpTagline => 'Schnelles Finish für Bizeps und Trizeps';
+
+  @override
+  String get premadeHomeFullBodyName => 'Ganzkörper zuhause';
+
+  @override
+  String get premadeHomeFullBodyTagline => 'Drei Tage ganz ohne Geräte';
+
+  @override
+  String get premadeHomeDumbbellName => 'Kurzhantel-Plan zuhause';
+
+  @override
+  String get premadeHomeDumbbellTagline =>
+      'Ganzkörper mit nur zwei Kurzhanteln';
+
+  @override
+  String get premadeCalisthenicsBasicsName => 'Calisthenics-Grundlagen';
+
+  @override
+  String get premadeCalisthenicsBasicsTagline =>
+      'Meistere Push, Pull und Squat';
+
+  @override
+  String get premadeCalisthenicsStrengthName => 'Calisthenics-Kraft';
+
+  @override
+  String get premadeCalisthenicsStrengthTagline =>
+      'Schwerere Skills mit Körpergewicht';
+
+  @override
+  String get premadeCoreAbsName => 'Core & Bauch';
+
+  @override
+  String get premadeCoreAbsTagline => 'Zwei Tage für eine starke Mitte';
+
+  @override
   String get settingsSectionWorkout => 'Training';
 
   @override

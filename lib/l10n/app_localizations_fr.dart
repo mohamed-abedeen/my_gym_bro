@@ -1380,6 +1380,151 @@ class AppLocalizationsFr extends AppLocalizations {
   String get settingsSectionAppearance => 'Apparence';
 
   @override
+  String get settingsSectionPersonal => 'Personnel';
+
+  @override
+  String get pinkMode => 'Mode Rose';
+
+  @override
+  String get premadeTitle => 'Programmes Pro';
+
+  @override
+  String get premadeSubtitle =>
+      'Des plans prêts pour chaque situation, sans réglages';
+
+  @override
+  String get premadeCategoryAll => 'Tous';
+
+  @override
+  String get premadeCategoryQuick => 'Rapide';
+
+  @override
+  String get premadeCategoryHome => 'Maison';
+
+  @override
+  String get premadeCategoryCalisthenics => 'Callisthénie';
+
+  @override
+  String get premadeCategoryCore => 'Gainage';
+
+  @override
+  String get premadeLevelBeginner => 'Débutant';
+
+  @override
+  String get premadeLevelIntermediate => 'Intermédiaire';
+
+  @override
+  String get premadeLevelAdvanced => 'Avancé';
+
+  @override
+  String premadeMinutes(int minutes) {
+    return '$minutes min';
+  }
+
+  @override
+  String premadeDaysCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count jours',
+      one: '1 jour',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String premadeExercisesCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count exercices',
+      one: '1 exercice',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get premadeAdd => 'Ajouter à mes programmes';
+
+  @override
+  String get premadeAdded =>
+      'Ajouté ! Retrouve-le dans l\'onglet Entraînement.';
+
+  @override
+  String get premadeDayFullBody => 'Corps complet';
+
+  @override
+  String get premadeDayUpper => 'Haut du corps';
+
+  @override
+  String get premadeDayLower => 'Bas du corps';
+
+  @override
+  String get premadeDayPush => 'Push';
+
+  @override
+  String get premadeDayPull => 'Pull';
+
+  @override
+  String get premadeDayLegsCore => 'Jambes et gainage';
+
+  @override
+  String get premadeDayCore => 'Gainage';
+
+  @override
+  String get premadeDayArms => 'Bras';
+
+  @override
+  String get premadeWakeUpName => 'Réveil en 5 minutes';
+
+  @override
+  String get premadeWakeUpTagline => 'Coup de boost complet du matin';
+
+  @override
+  String get premadeCoreBlastName => 'Gainage express en 5 minutes';
+
+  @override
+  String get premadeCoreBlastTagline => 'Quatre exercices, abdos en feu';
+
+  @override
+  String get premadeArmPumpName => 'Pump des bras en 5 minutes';
+
+  @override
+  String get premadeArmPumpTagline => 'Final rapide biceps-triceps';
+
+  @override
+  String get premadeHomeFullBodyName => 'Corps complet à la maison';
+
+  @override
+  String get premadeHomeFullBodyTagline => 'Trois jours sans matériel';
+
+  @override
+  String get premadeHomeDumbbellName => 'Plan haltères à la maison';
+
+  @override
+  String get premadeHomeDumbbellTagline => 'Corps complet avec deux haltères';
+
+  @override
+  String get premadeCalisthenicsBasicsName => 'Bases de callisthénie';
+
+  @override
+  String get premadeCalisthenicsBasicsTagline =>
+      'Maîtrise pompes, tractions et squats';
+
+  @override
+  String get premadeCalisthenicsStrengthName => 'Force en callisthénie';
+
+  @override
+  String get premadeCalisthenicsStrengthTagline =>
+      'Progressions plus dures au poids du corps';
+
+  @override
+  String get premadeCoreAbsName => 'Gainage et abdos';
+
+  @override
+  String get premadeCoreAbsTagline => 'Deux jours pour un centre plus fort';
+
+  @override
   String get settingsSectionWorkout => 'Entraînement';
 
   @override

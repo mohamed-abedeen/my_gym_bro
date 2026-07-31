@@ -604,6 +604,68 @@
   },
   "noChallengesYet": "No active challenges yet",
   "settingsSectionAppearance": "Appearance",
+  "settingsSectionPersonal": "Personal",
+  "pinkMode": "Pink Mode",
+  "premadeTitle": "Pro Programs",
+  "premadeSubtitle": "Ready-made plans for every situation — no setup needed",
+  "premadeCategoryAll": "All",
+  "premadeCategoryQuick": "Quick",
+  "premadeCategoryHome": "Home",
+  "premadeCategoryCalisthenics": "Calisthenics",
+  "premadeCategoryCore": "Core",
+  "premadeLevelBeginner": "Beginner",
+  "premadeLevelIntermediate": "Intermediate",
+  "premadeLevelAdvanced": "Advanced",
+  "premadeMinutes": "{minutes} min",
+  "@premadeMinutes": {
+    "placeholders": {
+      "minutes": {
+        "type": "int"
+      }
+    }
+  },
+  "premadeDaysCount": "{count, plural, =1{1 day} other{{count} days}}",
+  "@premadeDaysCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "premadeExercisesCount": "{count, plural, =1{1 exercise} other{{count} exercises}}",
+  "@premadeExercisesCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "premadeAdd": "Add to my programs",
+  "premadeAdded": "Added! Find it on the Workout tab.",
+  "premadeDayFullBody": "Full Body",
+  "premadeDayUpper": "Upper Body",
+  "premadeDayLower": "Lower Body",
+  "premadeDayPush": "Push",
+  "premadeDayPull": "Pull",
+  "premadeDayLegsCore": "Legs & Core",
+  "premadeDayCore": "Core",
+  "premadeDayArms": "Arms",
+  "premadeWakeUpName": "5-Minute Wake-Up",
+  "premadeWakeUpTagline": "Quick full-body morning boost",
+  "premadeCoreBlastName": "5-Minute Core Blast",
+  "premadeCoreBlastTagline": "Four moves, one burning core",
+  "premadeArmPumpName": "5-Minute Arm Pump",
+  "premadeArmPumpTagline": "Fast biceps and triceps finisher",
+  "premadeHomeFullBodyName": "Home Full Body",
+  "premadeHomeFullBodyTagline": "Three no-equipment days at home",
+  "premadeHomeDumbbellName": "Home Dumbbell Plan",
+  "premadeHomeDumbbellTagline": "Full body with just two dumbbells",
+  "premadeCalisthenicsBasicsName": "Calisthenics Basics",
+  "premadeCalisthenicsBasicsTagline": "Master push, pull and squat",
+  "premadeCalisthenicsStrengthName": "Calisthenics Strength",
+  "premadeCalisthenicsStrengthTagline": "Harder skills, heavier bodyweight work",
+  "premadeCoreAbsName": "Core & Abs",
+  "premadeCoreAbsTagline": "Two focused days for a stronger middle",
   "settingsSectionWorkout": "Workout",
   "settingsSectionGeneral": "General",
   "settingsSectionData": "Data & Account",

@@ -9,6 +9,7 @@ import 'package:my_gym_bro/core/security/secure_storage.dart';
 import 'package:my_gym_bro/core/services/exercise_api_service.dart';
 import 'package:my_gym_bro/core/services/exercise_repository.dart';
 import 'package:my_gym_bro/core/services/sync_service.dart';
+import 'package:my_gym_bro/shared/constants.dart';
 import 'package:my_gym_bro/shared/widgets/anatomy_body.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -23,6 +24,12 @@ final localeProvider = StateProvider<Locale?>((ref) => null);
 
 /// Theme mode provider — defaults to dark.
 final themeModeProvider = StateProvider<ThemeMode>((ref) => ThemeMode.dark);
+
+/// Color flavor provider — classic (lime/orange) by default; pink swaps in
+/// the soft-rose palettes. Overridden at startup from secure storage.
+final themeFlavorProvider = StateProvider<AppThemeFlavor>(
+  (ref) => AppThemeFlavor.classic,
+);
 
 /// Supabase client provider — returns null if Supabase wasn't initialized.
 final supabaseProvider = Provider<SupabaseClient?>((ref) {
@@ -61,8 +68,9 @@ final syncServiceProvider = Provider<SyncService>((ref) {
 });
 
 /// Auth notifier provider.
-final authNotifierProvider =
-    StateNotifierProvider<AuthNotifier, AppAuthState>((ref) {
+final authNotifierProvider = StateNotifierProvider<AuthNotifier, AppAuthState>((
+  ref,
+) {
   final db = ref.watch(databaseProvider);
   final supabase = ref.watch(supabaseProvider);
   final syncService = ref.watch(syncServiceProvider);
@@ -90,15 +98,17 @@ class AnatomyGenderNotifier extends StateNotifier<AnatomyGender> {
 
   Future<void> set(AnatomyGender gender) async {
     state = gender;
-    await SecureStorage()
-        .write(_key, gender == AnatomyGender.female ? 'female' : 'male');
+    await SecureStorage().write(
+      _key,
+      gender == AnatomyGender.female ? 'female' : 'male',
+    );
   }
 }
 
 final anatomyGenderProvider =
     StateNotifierProvider<AnatomyGenderNotifier, AnatomyGender>(
-  (ref) => AnatomyGenderNotifier(),
-);
+      (ref) => AnatomyGenderNotifier(),
+    );
 
 /// Reads the bundled app version + build number once at startup. Cached
 /// after the first read, so it's safe to watch from any screen footer.

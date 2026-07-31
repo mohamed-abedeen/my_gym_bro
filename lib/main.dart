@@ -20,22 +20,26 @@ import 'package:my_gym_bro/core/services/notification_service.dart';
 import 'package:my_gym_bro/core/services/program_seeder.dart';
 import 'package:my_gym_bro/core/services/subscription_sync_service.dart';
 import 'package:my_gym_bro/features/workout/workout_providers.dart';
+import 'package:my_gym_bro/shared/constants.dart';
 import 'package:my_gym_bro/shared/widgets/app_error_screen.dart';
 import 'package:purchases_flutter/purchases_flutter.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 void main() {
-  runZonedGuarded<void>(() async {
-    WidgetsFlutterBinding.ensureInitialized();
-    await _bootstrap();
-  }, (error, stack) {
-    CrashReporter.recordError(
-      error,
-      stackTrace: stack,
-      reason: 'Uncaught zone error',
-      fatal: true,
-    );
-  });
+  runZonedGuarded<void>(
+    () async {
+      WidgetsFlutterBinding.ensureInitialized();
+      await _bootstrap();
+    },
+    (error, stack) {
+      CrashReporter.recordError(
+        error,
+        stackTrace: stack,
+        reason: 'Uncaught zone error',
+        fatal: true,
+      );
+    },
+  );
 }
 
 Future<void> _bootstrap() async {
@@ -47,10 +51,9 @@ Future<void> _bootstrap() async {
   // OFL licenses for the bundled share-card fonts (Archivo, IBM Plex Mono).
   LicenseRegistry.addLicense(() async* {
     for (final f in ['OFL-Archivo.txt', 'OFL-IBMPlexMono.txt']) {
-      yield LicenseEntryWithLineBreaks(
-        ['assets/fonts'],
-        await rootBundle.loadString('assets/fonts/$f'),
-      );
+      yield LicenseEntryWithLineBreaks([
+        'assets/fonts',
+      ], await rootBundle.loadString('assets/fonts/$f'));
     }
   });
   // Release builds show a branded screen instead of the grey crash screen.
@@ -131,6 +134,7 @@ Future<void> _bootstrap() async {
 
   Locale? savedLocale;
   ThemeMode? savedTheme;
+  AppThemeFlavor? savedFlavor;
   int? lastScheduleId;
   try {
     final profile = await UserProfileDao(db).getFirst();
@@ -147,12 +151,23 @@ Future<void> _bootstrap() async {
       savedTheme = ThemeMode.dark;
     }
 
-    final lastScheduleStr =
-        await secureStorage.read('last_selected_schedule_id');
-    lastScheduleId =
-        lastScheduleStr != null ? int.tryParse(lastScheduleStr) : null;
+    final flavorStr = await secureStorage.read('theme_flavor');
+    if (flavorStr == AppThemeFlavor.pink.name) {
+      savedFlavor = AppThemeFlavor.pink;
+    }
+
+    final lastScheduleStr = await secureStorage.read(
+      'last_selected_schedule_id',
+    );
+    lastScheduleId = lastScheduleStr != null
+        ? int.tryParse(lastScheduleStr)
+        : null;
   } on Object catch (error, stack) {
-    CrashReporter.recordError(error, stackTrace: stack, reason: 'Startup reads failed');
+    CrashReporter.recordError(
+      error,
+      stackTrace: stack,
+      reason: 'Startup reads failed',
+    );
   }
   mark('reads done -- calling runApp');
 
@@ -164,6 +179,8 @@ Future<void> _bootstrap() async {
         localeProvider.overrideWith((ref) => savedLocale),
         if (savedTheme != null)
           themeModeProvider.overrideWith((ref) => savedTheme!),
+        if (savedFlavor != null)
+          themeFlavorProvider.overrideWith((ref) => savedFlavor!),
         if (lastScheduleId != null)
           workoutCardStateProvider.overrideWith(
             (ref) => WorkoutCardState(selectedScheduleId: lastScheduleId),
@@ -187,8 +204,11 @@ Future<void> _bootstrap() async {
   // RevenueCat/Supabase aren't configured or the device is offline.
   final profileDao = UserProfileDao(db);
   SubscriptionSyncService.listen(profileDao);
-  unawaited(SubscriptionSyncService.syncNow(profileDao)
-      .then((_) => SubscriptionSyncService.verifyServer(profileDao)));
+  unawaited(
+    SubscriptionSyncService.syncNow(
+      profileDao,
+    ).then((_) => SubscriptionSyncService.verifyServer(profileDao)),
+  );
 
   mark('runApp returned -- bootstrap complete');
 }
@@ -208,8 +228,11 @@ Future<void> _backgroundDbInit(AppDatabase db) async {
     await programSeeder.ensureStarterCached();
     await programSeeder.seedIfNeeded();
   } on Exception catch (e, stack) {
-    CrashReporter.recordError(e,
-        stackTrace: stack, reason: 'Background DB init failed');
+    CrashReporter.recordError(
+      e,
+      stackTrace: stack,
+      reason: 'Background DB init failed',
+    );
   } finally {
     exerciseApi.dispose();
   }

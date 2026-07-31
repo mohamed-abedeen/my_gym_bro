@@ -2622,6 +2622,252 @@ abstract class AppLocalizations {
   /// **'Appearance'**
   String get settingsSectionAppearance;
 
+  /// No description provided for @settingsSectionPersonal.
+  ///
+  /// In en, this message translates to:
+  /// **'Personal'**
+  String get settingsSectionPersonal;
+
+  /// No description provided for @pinkMode.
+  ///
+  /// In en, this message translates to:
+  /// **'Pink Mode'**
+  String get pinkMode;
+
+  /// No description provided for @premadeTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Pro Programs'**
+  String get premadeTitle;
+
+  /// No description provided for @premadeSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Ready-made plans for every situation — no setup needed'**
+  String get premadeSubtitle;
+
+  /// No description provided for @premadeCategoryAll.
+  ///
+  /// In en, this message translates to:
+  /// **'All'**
+  String get premadeCategoryAll;
+
+  /// No description provided for @premadeCategoryQuick.
+  ///
+  /// In en, this message translates to:
+  /// **'Quick'**
+  String get premadeCategoryQuick;
+
+  /// No description provided for @premadeCategoryHome.
+  ///
+  /// In en, this message translates to:
+  /// **'Home'**
+  String get premadeCategoryHome;
+
+  /// No description provided for @premadeCategoryCalisthenics.
+  ///
+  /// In en, this message translates to:
+  /// **'Calisthenics'**
+  String get premadeCategoryCalisthenics;
+
+  /// No description provided for @premadeCategoryCore.
+  ///
+  /// In en, this message translates to:
+  /// **'Core'**
+  String get premadeCategoryCore;
+
+  /// No description provided for @premadeLevelBeginner.
+  ///
+  /// In en, this message translates to:
+  /// **'Beginner'**
+  String get premadeLevelBeginner;
+
+  /// No description provided for @premadeLevelIntermediate.
+  ///
+  /// In en, this message translates to:
+  /// **'Intermediate'**
+  String get premadeLevelIntermediate;
+
+  /// No description provided for @premadeLevelAdvanced.
+  ///
+  /// In en, this message translates to:
+  /// **'Advanced'**
+  String get premadeLevelAdvanced;
+
+  /// No description provided for @premadeMinutes.
+  ///
+  /// In en, this message translates to:
+  /// **'{minutes} min'**
+  String premadeMinutes(int minutes);
+
+  /// No description provided for @premadeDaysCount.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 day} other{{count} days}}'**
+  String premadeDaysCount(int count);
+
+  /// No description provided for @premadeExercisesCount.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 exercise} other{{count} exercises}}'**
+  String premadeExercisesCount(int count);
+
+  /// No description provided for @premadeAdd.
+  ///
+  /// In en, this message translates to:
+  /// **'Add to my programs'**
+  String get premadeAdd;
+
+  /// No description provided for @premadeAdded.
+  ///
+  /// In en, this message translates to:
+  /// **'Added! Find it on the Workout tab.'**
+  String get premadeAdded;
+
+  /// No description provided for @premadeDayFullBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Full Body'**
+  String get premadeDayFullBody;
+
+  /// No description provided for @premadeDayUpper.
+  ///
+  /// In en, this message translates to:
+  /// **'Upper Body'**
+  String get premadeDayUpper;
+
+  /// No description provided for @premadeDayLower.
+  ///
+  /// In en, this message translates to:
+  /// **'Lower Body'**
+  String get premadeDayLower;
+
+  /// No description provided for @premadeDayPush.
+  ///
+  /// In en, this message translates to:
+  /// **'Push'**
+  String get premadeDayPush;
+
+  /// No description provided for @premadeDayPull.
+  ///
+  /// In en, this message translates to:
+  /// **'Pull'**
+  String get premadeDayPull;
+
+  /// No description provided for @premadeDayLegsCore.
+  ///
+  /// In en, this message translates to:
+  /// **'Legs & Core'**
+  String get premadeDayLegsCore;
+
+  /// No description provided for @premadeDayCore.
+  ///
+  /// In en, this message translates to:
+  /// **'Core'**
+  String get premadeDayCore;
+
+  /// No description provided for @premadeDayArms.
+  ///
+  /// In en, this message translates to:
+  /// **'Arms'**
+  String get premadeDayArms;
+
+  /// No description provided for @premadeWakeUpName.
+  ///
+  /// In en, this message translates to:
+  /// **'5-Minute Wake-Up'**
+  String get premadeWakeUpName;
+
+  /// No description provided for @premadeWakeUpTagline.
+  ///
+  /// In en, this message translates to:
+  /// **'Quick full-body morning boost'**
+  String get premadeWakeUpTagline;
+
+  /// No description provided for @premadeCoreBlastName.
+  ///
+  /// In en, this message translates to:
+  /// **'5-Minute Core Blast'**
+  String get premadeCoreBlastName;
+
+  /// No description provided for @premadeCoreBlastTagline.
+  ///
+  /// In en, this message translates to:
+  /// **'Four moves, one burning core'**
+  String get premadeCoreBlastTagline;
+
+  /// No description provided for @premadeArmPumpName.
+  ///
+  /// In en, this message translates to:
+  /// **'5-Minute Arm Pump'**
+  String get premadeArmPumpName;
+
+  /// No description provided for @premadeArmPumpTagline.
+  ///
+  /// In en, this message translates to:
+  /// **'Fast biceps and triceps finisher'**
+  String get premadeArmPumpTagline;
+
+  /// No description provided for @premadeHomeFullBodyName.
+  ///
+  /// In en, this message translates to:
+  /// **'Home Full Body'**
+  String get premadeHomeFullBodyName;
+
+  /// No description provided for @premadeHomeFullBodyTagline.
+  ///
+  /// In en, this message translates to:
+  /// **'Three no-equipment days at home'**
+  String get premadeHomeFullBodyTagline;
+
+  /// No description provided for @premadeHomeDumbbellName.
+  ///
+  /// In en, this message translates to:
+  /// **'Home Dumbbell Plan'**
+  String get premadeHomeDumbbellName;
+
+  /// No description provided for @premadeHomeDumbbellTagline.
+  ///
+  /// In en, this message translates to:
+  /// **'Full body with just two dumbbells'**
+  String get premadeHomeDumbbellTagline;
+
+  /// No description provided for @premadeCalisthenicsBasicsName.
+  ///
+  /// In en, this message translates to:
+  /// **'Calisthenics Basics'**
+  String get premadeCalisthenicsBasicsName;
+
+  /// No description provided for @premadeCalisthenicsBasicsTagline.
+  ///
+  /// In en, this message translates to:
+  /// **'Master push, pull and squat'**
+  String get premadeCalisthenicsBasicsTagline;
+
+  /// No description provided for @premadeCalisthenicsStrengthName.
+  ///
+  /// In en, this message translates to:
+  /// **'Calisthenics Strength'**
+  String get premadeCalisthenicsStrengthName;
+
+  /// No description provided for @premadeCalisthenicsStrengthTagline.
+  ///
+  /// In en, this message translates to:
+  /// **'Harder skills, heavier bodyweight work'**
+  String get premadeCalisthenicsStrengthTagline;
+
+  /// No description provided for @premadeCoreAbsName.
+  ///
+  /// In en, this message translates to:
+  /// **'Core & Abs'**
+  String get premadeCoreAbsName;
+
+  /// No description provided for @premadeCoreAbsTagline.
+  ///
+  /// In en, this message translates to:
+  /// **'Two focused days for a stronger middle'**
+  String get premadeCoreAbsTagline;
+
   /// No description provided for @settingsSectionWorkout.
   ///
   /// In en, this message translates to:

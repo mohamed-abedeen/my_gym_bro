@@ -32,6 +32,9 @@ class MyGymBroApp extends ConsumerWidget {
     final locale = ref.watch(localeProvider);
     final router = ref.watch(routerProvider);
     final themeMode = ref.watch(themeModeProvider);
+    final flavor = ref.watch(themeFlavorProvider);
+    final lightColors = AppColorsTheme.resolve(flavor, Brightness.light);
+    final darkColors = AppColorsTheme.resolve(flavor, Brightness.dark);
 
     return MaterialApp.router(
       title: 'My Gym Bro',
@@ -46,21 +49,21 @@ class MyGymBroApp extends ConsumerWidget {
       themeMode: themeMode,
       theme: ThemeData.light().copyWith(
         pageTransitionsTheme: _pageTransitionsTheme,
-        scaffoldBackgroundColor: AppColorsTheme.light.background,
+        scaffoldBackgroundColor: lightColors.background,
         colorScheme: ColorScheme.light(
-          primary: AppColorsTheme.light.accent,
-          surface: AppColorsTheme.light.card,
+          primary: lightColors.accent,
+          surface: lightColors.card,
         ),
-        extensions: const [AppColorsTheme.light],
+        extensions: [lightColors],
       ),
       darkTheme: ThemeData.dark().copyWith(
         pageTransitionsTheme: _pageTransitionsTheme,
-        scaffoldBackgroundColor: AppColorsTheme.dark.background,
+        scaffoldBackgroundColor: darkColors.background,
         colorScheme: ColorScheme.dark(
-          primary: AppColorsTheme.dark.accent,
-          surface: AppColorsTheme.dark.card,
+          primary: darkColors.accent,
+          surface: darkColors.card,
         ),
-        extensions: const [AppColorsTheme.dark],
+        extensions: [darkColors],
       ),
 
       // Router

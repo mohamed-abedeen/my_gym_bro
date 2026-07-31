@@ -34,10 +34,10 @@ import 'package:url_launcher/url_launcher.dart';
 
 /// Settings — flat-iOS redesign (handoff option 1a).
 ///
-/// Grouped flat white cards (Appearance / Workout / Notifications /
-/// General / Data & Account) on the plain grouped-grey backdrop, with
-/// compact iOS-Settings rows: flat color badges, inline segmented controls
-/// for two-state choices, and sheets for everything else.
+/// Grouped flat white cards (Appearance / Personal / Workout /
+/// Notifications / General / Data & Account) on the plain grouped-grey
+/// backdrop, with roomy iOS-Settings rows: flat color badges, inline
+/// segmented controls for two-state choices, and sheets for everything else.
 class SettingsScreen extends ConsumerWidget {
   const SettingsScreen({super.key});
 
@@ -52,6 +52,8 @@ class SettingsScreen extends ConsumerWidget {
     final weightUnit = profile.valueOrNull?.weightUnit ?? 'kg';
     final authState = ref.watch(authNotifierProvider);
     final isSignedIn = authState.status == AuthStatus.authenticated;
+    // Pink mode is offered only to users who picked female in onboarding.
+    final isFemale = profile.valueOrNull?.gender == 'female';
 
     return Scaffold(
       backgroundColor: colors.background,
@@ -130,6 +132,21 @@ class SettingsScreen extends ConsumerWidget {
                       SecureStorage().write('theme_mode', newMode.toString());
                     },
                   ),
+                  if (isFemale)
+                    SettingsSwitchRow(
+                      icon: Icons.favorite_rounded,
+                      iconColor: SettingsBadgeColors.pink,
+                      label: l10n.pinkMode,
+                      value:
+                          ref.watch(themeFlavorProvider) == AppThemeFlavor.pink,
+                      onChanged: (val) {
+                        final flavor = val
+                            ? AppThemeFlavor.pink
+                            : AppThemeFlavor.classic;
+                        ref.read(themeFlavorProvider.notifier).state = flavor;
+                        SecureStorage().write('theme_flavor', flavor.name);
+                      },
+                    ),
                   SettingsSegmentedRow(
                     icon: Icons.accessibility_new_rounded,
                     iconColor: SettingsBadgeColors.teal,
@@ -147,21 +164,12 @@ class SettingsScreen extends ConsumerWidget {
                 ],
               ),
 
-              SizedBox(height: 18.h),
+              SizedBox(height: 20.h),
 
-              // ── Workout ──
+              // ── Personal ──
               SettingsSection(
-                header: l10n.settingsSectionWorkout,
+                header: l10n.settingsSectionPersonal,
                 children: [
-                  SettingsSegmentedRow(
-                    icon: Icons.fitness_center_rounded,
-                    iconColor: SettingsBadgeColors.blue,
-                    label: l10n.weightUnit,
-                    options: const ['KG', 'LBS'],
-                    selectedIndex: weightUnit == 'lbs' ? 1 : 0,
-                    onChanged: (i) =>
-                        _setWeightUnit(ref, i == 1 ? 'lbs' : 'kg'),
-                  ),
                   SettingsNavRow(
                     icon: Icons.monitor_weight_rounded,
                     iconColor: SettingsBadgeColors.green,
@@ -185,6 +193,24 @@ class SettingsScreen extends ConsumerWidget {
                     label: l10n.bodyFat,
                     value: _bodyFatLabel(ref.watch(bodyFatPctProvider), l10n),
                     onTap: () => showBodyFatSheet(context, ref),
+                  ),
+                ],
+              ),
+
+              SizedBox(height: 20.h),
+
+              // ── Workout ──
+              SettingsSection(
+                header: l10n.settingsSectionWorkout,
+                children: [
+                  SettingsSegmentedRow(
+                    icon: Icons.fitness_center_rounded,
+                    iconColor: SettingsBadgeColors.blue,
+                    label: l10n.weightUnit,
+                    options: const ['KG', 'LBS'],
+                    selectedIndex: weightUnit == 'lbs' ? 1 : 0,
+                    onChanged: (i) =>
+                        _setWeightUnit(ref, i == 1 ? 'lbs' : 'kg'),
                   ),
                   SettingsNavRow(
                     icon: Icons.timer_rounded,
