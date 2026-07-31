@@ -47,10 +47,9 @@ class WorkoutScreen extends ConsumerWidget {
               gradient: LinearGradient(
                 begin: Alignment.topCenter,
                 end: Alignment.bottomCenter,
-                colors:
-                    isDark
-                        ? [const Color(0xFF1A1A1A), AppColors.of(context).black]
-                        : [colors.panelBackground, colors.background],
+                colors: isDark
+                    ? [const Color(0xFF1A1A1A), AppColors.of(context).black]
+                    : [colors.panelBackground, colors.background],
               ),
             ),
           ),
@@ -100,8 +99,7 @@ class _ResumeSessionPill extends ConsumerStatefulWidget {
   const _ResumeSessionPill();
 
   @override
-  ConsumerState<_ResumeSessionPill> createState() =>
-      _ResumeSessionPillState();
+  ConsumerState<_ResumeSessionPill> createState() => _ResumeSessionPillState();
 }
 
 class _ResumeSessionPillState extends ConsumerState<_ResumeSessionPill> {
@@ -156,20 +154,19 @@ class _ResumeSessionPillState extends ConsumerState<_ResumeSessionPill> {
       required Widget child,
       required VoidCallback onTap,
       Color? color,
-    }) =>
-        GestureDetector(
-          onTap: onTap,
-          behavior: HitTestBehavior.opaque,
-          child: Container(
-            width: 48.w,
-            height: 48.w,
-            decoration: BoxDecoration(
-              color: color ?? Colors.white.withValues(alpha: 0.08),
-              shape: BoxShape.circle,
-            ),
-            child: Center(child: child),
-          ),
-        );
+    }) => GestureDetector(
+      onTap: onTap,
+      behavior: HitTestBehavior.opaque,
+      child: Container(
+        width: 48.w,
+        height: 48.w,
+        decoration: BoxDecoration(
+          color: color ?? Colors.white.withValues(alpha: 0.08),
+          shape: BoxShape.circle,
+        ),
+        child: Center(child: child),
+      ),
+    );
 
     return Positioned(
       left: 20.w,
@@ -345,30 +342,27 @@ class _AnatomySection extends ConsumerWidget {
         height: 350.h,
         child: Center(
           child: muscleStates.when(
-            data:
-                (states) => AnatomyBody(
-                  muscleStates: states,
-                  height: 350.h,
-                  gender: ref.watch(anatomyGenderProvider),
-                  basePngPath: ref.watch(activeSkinPathProvider),
+            data: (states) => AnatomyBody(
+              muscleStates: states,
+              height: 350.h,
+              gender: ref.watch(anatomyGenderProvider),
+              basePngPath: ref.watch(activeSkinPathProvider),
+            ),
+            loading: () => SizedBox(
+              height: 350.h,
+              child: Center(
+                child: CircularProgressIndicator(
+                  color: colors.accent,
+                  strokeWidth: 2.w,
                 ),
-            loading:
-                () => SizedBox(
-                  height: 350.h,
-                  child: Center(
-                    child: CircularProgressIndicator(
-                      color: colors.accent,
-                      strokeWidth: 2.w,
-                    ),
-                  ),
-                ),
-            error:
-                (_, __) => AnatomyBody(
-                  muscleStates: const [],
-                  height: 350.h,
-                  gender: ref.watch(anatomyGenderProvider),
-                  basePngPath: ref.watch(activeSkinPathProvider),
-                ),
+              ),
+            ),
+            error: (_, __) => AnatomyBody(
+              muscleStates: const [],
+              height: 350.h,
+              gender: ref.watch(anatomyGenderProvider),
+              basePngPath: ref.watch(activeSkinPathProvider),
+            ),
           ),
         ),
       ),
@@ -445,32 +439,28 @@ class _SessionsLogCard extends ConsumerWidget {
             SizedBox(height: 16.h),
             Expanded(
               child: enriched.when(
-                data:
-                    (list) =>
-                        list.isEmpty
-                            ? Center(
-                              child: Text(
-                                l10n.noRecordsYet,
-                                style: TextStyle(
-                                  color: colors.textSecondary,
-                                  fontSize: 12.sp,
-                                ),
-                              ),
-                            )
-                            : Column(
-                              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                              children:
-                                  list
-                                      .map((e) => _SessionRow(enriched: e))
-                                      .toList(),
-                            ),
-                loading:
-                    () => Center(
-                      child: CircularProgressIndicator(
-                        color: colors.accent,
-                        strokeWidth: 2.w,
+                data: (list) => list.isEmpty
+                    ? Center(
+                        child: Text(
+                          l10n.noRecordsYet,
+                          style: TextStyle(
+                            color: colors.textSecondary,
+                            fontSize: 12.sp,
+                          ),
+                        ),
+                      )
+                    : Column(
+                        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                        children: list
+                            .map((e) => _SessionRow(enriched: e))
+                            .toList(),
                       ),
-                    ),
+                loading: () => Center(
+                  child: CircularProgressIndicator(
+                    color: colors.accent,
+                    strokeWidth: 2.w,
+                  ),
+                ),
                 error: (_, __) => const SizedBox.shrink(),
               ),
             ),
@@ -573,47 +563,41 @@ class _StatusLogCard extends ConsumerWidget {
             ),
             SizedBox(height: 8.h),
             stats.when(
-              data:
-                  (s) => Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      _StatLine(
-                        label: l10n.volume,
-                        value: formatWeight(
-                          s.totalVolume,
-                          unit,
-                          decimals: 0,
-                          withUnit: true,
-                        ),
-                        trend: s.volumeTrend,
-                      ),
-                      SizedBox(height: 2.h),
-                      _StatLine(
-                        label: l10n.totalDuration,
-                        value: s.formattedDuration,
-                        trend: s.durationTrend,
-                        trendSuffix: '%',
-                      ),
-                      SizedBox(height: 2.h),
-                      _StatLine(
-                        label: l10n.avgStrength,
-                        value: formatWeight(
-                          s.avgStrength,
-                          unit,
-                          decimals: 0,
-                        ),
-                        trend: s.strengthTrend,
-                      ),
-                    ],
-                  ),
-              loading:
-                  () => Center(
-                    child: CircularProgressIndicator(
-                      color: colors.accent,
-                      strokeWidth: 2.w,
+              data: (s) => Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  _StatLine(
+                    label: l10n.volume,
+                    value: formatWeight(
+                      s.totalVolume,
+                      unit,
+                      decimals: 0,
+                      withUnit: true,
                     ),
+                    trend: s.volumeTrend,
                   ),
+                  SizedBox(height: 2.h),
+                  _StatLine(
+                    label: l10n.totalDuration,
+                    value: s.formattedDuration,
+                    trend: s.durationTrend,
+                    trendSuffix: '%',
+                  ),
+                  SizedBox(height: 2.h),
+                  _StatLine(
+                    label: l10n.avgStrength,
+                    value: formatWeight(s.avgStrength, unit, decimals: 0),
+                    trend: s.strengthTrend,
+                  ),
+                ],
+              ),
+              loading: () => Center(
+                child: CircularProgressIndicator(
+                  color: colors.accent,
+                  strokeWidth: 2.w,
+                ),
+              ),
               error: (_, __) => const SizedBox.shrink(),
             ),
           ],
@@ -669,16 +653,16 @@ class _StatLine extends StatelessWidget {
         if (trend != null) ...[
           Text(
             '${trend! >= 0 ? '+' : ''}${trend!.toInt()}$trendSuffix',
-            style:
-                isPositive
-                    ? AppFonts.trendPositive(context)
-                    : AppFonts.trendNegative(context),
+            style: isPositive
+                ? AppFonts.trendPositive(context)
+                : AppFonts.trendNegative(context),
           ),
           SizedBox(width: 2.w),
           // Arrow rotated -90deg (pointing up-right / down-right)
           Transform.rotate(
-            angle:
-                isPositive ? AppAngles.quarterTurnCcw : AppAngles.quarterTurnCw,
+            angle: isPositive
+                ? AppAngles.quarterTurnCcw
+                : AppAngles.quarterTurnCw,
             child: Icon(
               Icons.arrow_forward_rounded,
               color: isPositive ? colors.trendPositive : colors.trendNegative,
@@ -741,11 +725,10 @@ class _ScheduleCardState extends ConsumerState<_ScheduleCard> {
     // Resolve which schedule is selected (default: the active one)
     final selected = schedules.firstWhere(
       (s) => s.localId == cardState.selectedScheduleId,
-      orElse:
-          () => schedules.firstWhere(
-            (s) => s.isActive,
-            orElse: () => schedules.first,
-          ),
+      orElse: () => schedules.firstWhere(
+        (s) => s.isActive,
+        orElse: () => schedules.first,
+      ),
     );
 
     // Watch the days for the selected schedule
@@ -767,10 +750,9 @@ class _ScheduleCardState extends ConsumerState<_ScheduleCard> {
     // their choice. (Keyed on an explicit flag, NOT `currentPage == 0` —
     // that made swiping back to the first card impossible, since landing
     // on page 0 re-triggered the auto jump.)
-    final effectivePage =
-        (!cardState.userPickedPage && autoPage != null)
-            ? autoPage
-            : cardState.currentPage;
+    final effectivePage = (!cardState.userPickedPage && autoPage != null)
+        ? autoPage
+        : cardState.currentPage;
     final safePage = effectivePage.clamp(0, totalPages - 1);
 
     // Create the PageController once, then sync page changes via jumpToPage
@@ -905,15 +887,14 @@ class _AddDayCard extends StatelessWidget {
                 ),
                 // Bottom: program picker or "New Program"
                 GestureDetector(
-                  onTap:
-                      allSchedules.length > 1 && schedule != null
-                          ? () => _showProgramPicker(
-                            context,
-                            schedule!,
-                            allSchedules,
-                            onProgramChanged,
-                          )
-                          : () => context.push(AppRoutes.scheduleBuilder),
+                  onTap: allSchedules.length > 1 && schedule != null
+                      ? () => _showProgramPicker(
+                          context,
+                          schedule!,
+                          allSchedules,
+                          onProgramChanged,
+                        )
+                      : () => context.push(AppRoutes.scheduleBuilder),
                   child: Padding(
                     padding: EdgeInsets.only(top: 8.h),
                     child: Row(
@@ -947,11 +928,10 @@ class _AddDayCard extends StatelessWidget {
             children: [
               // Green + button
               GestureDetector(
-                onTap:
-                    () => context.push(
-                      AppRoutes.scheduleBuilder,
-                      extra: schedule?.localId,
-                    ),
+                onTap: () => context.push(
+                  AppRoutes.scheduleBuilder,
+                  extra: schedule?.localId,
+                ),
                 child: Container(
                   width: 69.w,
                   height: 68.h,
@@ -961,7 +941,11 @@ class _AddDayCard extends StatelessWidget {
                       AppRadius.scheduleCircle.r,
                     ),
                   ),
-                  child: Icon(Icons.add, color: colors.todayPillText, size: 46.sp),
+                  child: Icon(
+                    Icons.add,
+                    color: colors.todayPillText,
+                    size: 46.sp,
+                  ),
                 ),
               ),
               SizedBox(height: 8.h),
@@ -977,7 +961,11 @@ class _AddDayCard extends StatelessWidget {
                       AppRadius.scheduleCircle.r,
                     ),
                   ),
-                  child: Icon(Icons.search, color: colors.todayPillText, size: 33.sp),
+                  child: Icon(
+                    Icons.search,
+                    color: colors.todayPillText,
+                    size: 33.sp,
+                  ),
                 ),
               ),
             ],
@@ -1066,13 +1054,12 @@ class _DayCard extends ConsumerWidget {
                 ),
                 // Program name selector at bottom
                 GestureDetector(
-                  onTap:
-                      () => _showProgramPicker(
-                        context,
-                        schedule,
-                        allSchedules,
-                        onProgramChanged,
-                      ),
+                  onTap: () => _showProgramPicker(
+                    context,
+                    schedule,
+                    allSchedules,
+                    onProgramChanged,
+                  ),
                   child: Padding(
                     padding: EdgeInsets.only(top: 8.h),
                     child: Row(
@@ -1125,11 +1112,10 @@ class _DayCard extends ConsumerWidget {
               SizedBox(height: 8.h),
               // Edit button
               GestureDetector(
-                onTap:
-                    () => context.push(
-                      AppRoutes.scheduleBuilder,
-                      extra: schedule.localId,
-                    ),
+                onTap: () => context.push(
+                  AppRoutes.scheduleBuilder,
+                  extra: schedule.localId,
+                ),
                 child: Container(
                   width: 69.w,
                   height: 64.h,
@@ -1152,7 +1138,6 @@ class _DayCard extends ConsumerWidget {
       ),
     );
   }
-
 }
 
 // ── Shared program picker — used by both _DayCard and _AddDayCard ──
@@ -1198,6 +1183,25 @@ Future<void> _showProgramPicker(
       )
       ..add(divider);
   }
+  // Pre-made programs library
+  items
+    ..add(
+      PopupMenuItem<int>(
+        value: -2,
+        height: 40.h,
+        child: Center(
+          child: Text(
+            AppLocalizations.of(context).premadeTitle,
+            style: TextStyle(
+              color: white,
+              fontSize: 15.sp,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+        ),
+      ),
+    )
+    ..add(divider);
   // "Create +" action
   items.add(
     PopupMenuItem<int>(
@@ -1233,6 +1237,8 @@ Future<void> _showProgramPicker(
   if (selected == null || !context.mounted) return;
   if (selected == -1) {
     unawaited(context.push(AppRoutes.scheduleBuilder));
+  } else if (selected == -2) {
+    unawaited(context.push(AppRoutes.premadePrograms));
   } else {
     onProgramChanged?.call(selected);
   }
@@ -1260,8 +1266,9 @@ class _PageDots extends StatelessWidget {
           height: 8.w,
           margin: EdgeInsets.only(right: i < count - 1 ? 8.w : 0),
           decoration: BoxDecoration(
-            color:
-                isActive ? colors.accent : AppColors.of(context).white.withValues(alpha: 0.25),
+            color: isActive
+                ? colors.accent
+                : AppColors.of(context).white.withValues(alpha: 0.25),
             shape: BoxShape.circle,
           ),
         );

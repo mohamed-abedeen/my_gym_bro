@@ -20,6 +20,7 @@ import 'package:my_gym_bro/features/onboarding/screens/welcome_screen.dart';
 import 'package:my_gym_bro/features/paywall/paywall_screen.dart';
 import 'package:my_gym_bro/features/profile/profile_screen.dart';
 import 'package:my_gym_bro/features/scaffold/my_gym_bro_scaffold.dart';
+import 'package:my_gym_bro/features/schedule/premade_programs_screen.dart';
 import 'package:my_gym_bro/features/schedule/schedule_builder_screen.dart';
 import 'package:my_gym_bro/features/settings/settings_screen.dart';
 import 'package:my_gym_bro/features/workout/active_session/active_session_screen.dart';
@@ -63,6 +64,7 @@ class AppRoutes {
   static const activeSession = '/session';
   static const shareCard = '/session/share';
   static const scheduleBuilder = '/schedule/build';
+  static const premadePrograms = '/programs';
   static const paywall = '/paywall';
 
   // Profile
@@ -80,37 +82,28 @@ class AppRoutes {
 MaterialPage<T> _platformPage<T>({
   required Widget child,
   required GoRouterState state,
-}) =>
-    MaterialPage<T>(
-      key: state.pageKey,
-      child: child,
-    );
+}) => MaterialPage<T>(key: state.pageKey, child: child);
 
 /// Crossfade transition — for splash/welcome where a slide feels wrong.
 CustomTransitionPage<T> _fadePage<T>({
   required Widget child,
   required GoRouterState state,
   Duration duration = const Duration(milliseconds: 350),
-}) =>
-    CustomTransitionPage<T>(
-      key: state.pageKey,
-      child: child,
-      transitionDuration: duration,
-      reverseTransitionDuration: duration,
-      transitionsBuilder: (context, animation, secondaryAnimation, child) {
-        return FadeTransition(opacity: animation, child: child);
-      },
-    );
+}) => CustomTransitionPage<T>(
+  key: state.pageKey,
+  child: child,
+  transitionDuration: duration,
+  reverseTransitionDuration: duration,
+  transitionsBuilder: (context, animation, secondaryAnimation, child) {
+    return FadeTransition(opacity: animation, child: child);
+  },
+);
 
 /// No transition — used for the root scaffold (it's the base, nothing slides).
 NoTransitionPage<T> _noTransitionPage<T>({
   required Widget child,
   required GoRouterState state,
-}) =>
-    NoTransitionPage<T>(
-      key: state.pageKey,
-      child: child,
-    );
+}) => NoTransitionPage<T>(key: state.pageKey, child: child);
 
 /// Slide-up transition — iOS fullscreen-dialog feel for modal flows
 /// (active session, share card, paywall). Pop reverses it automatically.
@@ -119,30 +112,29 @@ CustomTransitionPage<T> _slideUpPage<T>({
   required Widget child,
   required GoRouterState state,
   Duration duration = const Duration(milliseconds: 350),
-}) =>
-    CustomTransitionPage<T>(
-      key: state.pageKey,
-      child: child,
-      transitionDuration: duration,
-      reverseTransitionDuration: duration,
-      transitionsBuilder: (context, animation, secondaryAnimation, child) {
-        if (MediaQuery.disableAnimationsOf(context)) {
-          return FadeTransition(opacity: animation, child: child);
-        }
-        final curved = CurvedAnimation(
-          parent: animation,
-          curve: Curves.easeOutCubic,
-          reverseCurve: Curves.easeInCubic,
-        );
-        return SlideTransition(
-          position: Tween<Offset>(
-            begin: const Offset(0, 1),
-            end: Offset.zero,
-          ).animate(curved),
-          child: child,
-        );
-      },
+}) => CustomTransitionPage<T>(
+  key: state.pageKey,
+  child: child,
+  transitionDuration: duration,
+  reverseTransitionDuration: duration,
+  transitionsBuilder: (context, animation, secondaryAnimation, child) {
+    if (MediaQuery.disableAnimationsOf(context)) {
+      return FadeTransition(opacity: animation, child: child);
+    }
+    final curved = CurvedAnimation(
+      parent: animation,
+      curve: Curves.easeOutCubic,
+      reverseCurve: Curves.easeInCubic,
     );
+    return SlideTransition(
+      position: Tween<Offset>(
+        begin: const Offset(0, 1),
+        end: Offset.zero,
+      ).animate(curved),
+      child: child,
+    );
+  },
+);
 
 // ═══════════════════════════════════════════════════════════════════════════
 // ROUTER PROVIDER
@@ -161,8 +153,9 @@ GoRouter? globalRouter;
 final routerProvider = Provider<GoRouter>((ref) {
   // Bridges the Riverpod lock state into a Listenable so GoRouter re-runs its
   // redirect when the trial elapses or a purchase/restore unlocks access.
-  final lockNotifier =
-      ValueNotifier<bool>(ref.read(subscriptionLockedProvider));
+  final lockNotifier = ValueNotifier<bool>(
+    ref.read(subscriptionLockedProvider),
+  );
   ref.listen<bool>(subscriptionLockedProvider, (_, next) {
     lockNotifier.value = next;
   });
@@ -230,8 +223,8 @@ final routerProvider = Provider<GoRouter>((ref) {
       ),
       GoRoute(
         path: AppRoutes.onboardingNotificationTone,
-        pageBuilder: (context, state) => _platformPage(
-            child: const NotificationToneScreen(), state: state),
+        pageBuilder: (context, state) =>
+            _platformPage(child: const NotificationToneScreen(), state: state),
       ),
       GoRoute(
         path: AppRoutes.onboardingLanguage,
@@ -311,11 +304,14 @@ final routerProvider = Provider<GoRouter>((ref) {
         },
       ),
       GoRoute(
+        path: AppRoutes.premadePrograms,
+        pageBuilder: (context, state) =>
+            _platformPage(child: const PremadeProgramsScreen(), state: state),
+      ),
+      GoRoute(
         path: AppRoutes.paywall,
-        pageBuilder: (context, state) => _slideUpPage(
-          child: const PaywallScreen(),
-          state: state,
-        ),
+        pageBuilder: (context, state) =>
+            _slideUpPage(child: const PaywallScreen(), state: state),
       ),
 
       // ────────────────────────────────────────────────────────────────────
@@ -337,7 +333,8 @@ final routerProvider = Provider<GoRouter>((ref) {
       final locked = ref.read(subscriptionLockedProvider);
       if (!locked) return null;
       final loc = state.matchedLocation;
-      final exempt = loc == AppRoutes.paywall ||
+      final exempt =
+          loc == AppRoutes.paywall ||
           loc == AppRoutes.splash ||
           loc.startsWith('/auth') ||
           loc.startsWith('/onboarding');
