@@ -308,13 +308,13 @@ class _ActiveSessionScreenState extends ConsumerState<ActiveSessionScreen> {
             ),
           ),
 
-          // ── Anatomy island — Dynamic-Island-style dark glass card that
-          // expands down from the top capsule when the mini body is tapped ──
+          // ── Anatomy panel — dark glass card that expands down from the
+          // top stats bar when the mini body (or the bar) is tapped ──
           if (_showAnatomy)
             Positioned(
               left: 14.w,
               right: 14.w,
-              top: topPad + 4.h,
+              top: topPad + 58.h,
               child: TweenAnimationBuilder<double>(
                 tween: Tween(begin: 0, end: 1),
                 duration: const Duration(milliseconds: 220),
@@ -334,18 +334,21 @@ class _ActiveSessionScreenState extends ConsumerState<ActiveSessionScreen> {
               ),
             ),
 
-          // ── Top stats capsule — below the status bar / Dynamic Island
-          // row (the system clock + island own that row; the workout Live
-          // Activity already puts timer + set progress IN the island) ──
+          // ── Top stats bar — full-bleed frosted strip that includes the
+          // status-bar area, like a regular app bar. Deliberately NOT a
+          // floating rounded capsule: that read as a fake Dynamic Island
+          // under the real one (the workout Live Activity owns the island
+          // whenever the app is backgrounded). ──
           Positioned(
-            left: 20.w,
-            right: 20.w,
-            top: topPad + 8.h,
+            left: 0,
+            right: 0,
+            top: 0,
             child: _TopStatsCapsule(
               session: session,
               notifier: notifier,
               elapsed: _elapsed,
               l10n: l10n,
+              topPad: topPad,
               gender: ref.watch(anatomyGenderProvider),
               skinPath: ref.watch(activeSkinPathProvider),
               onBodyTap: () => setState(() => _showAnatomy = !_showAnatomy),
@@ -997,6 +1000,7 @@ class _TopStatsCapsule extends StatelessWidget {
     required this.notifier,
     required this.elapsed,
     required this.l10n,
+    required this.topPad,
     required this.gender,
     required this.skinPath,
     required this.onBodyTap,
@@ -1006,6 +1010,10 @@ class _TopStatsCapsule extends StatelessWidget {
   final ActiveSessionNotifier notifier;
   final ValueNotifier<int> elapsed;
   final AppLocalizations l10n;
+
+  /// Status-bar (safe-area top) inset — the strip extends behind it and
+  /// keeps its content below it.
+  final double topPad;
   final AnatomyGender gender;
   final String skinPath;
   final VoidCallback onBodyTap;
@@ -1036,23 +1044,24 @@ class _TopStatsCapsule extends StatelessWidget {
         ),
     ];
 
-    // Frosted GlassSurface bar (NOT a black pill — that read as a fake
-    // Dynamic Island; the real island shows the workout Live Activity).
-    // Tapping anywhere on it toggles the anatomy island; the inner Time
-    // (pause/resume) and mini-body detectors sit deeper in the tree, so
-    // they win the gesture arena and keep their own taps.
+    // Full-bleed frosted strip (square corners, spans the status bar) so
+    // it reads as an app bar — NOT a floating capsule, which looked like
+    // a fake Dynamic Island under the real one. Tapping anywhere on it
+    // toggles the anatomy panel; the inner Time (pause/resume) and
+    // mini-body detectors sit deeper in the tree, so they win the
+    // gesture arena and keep their own taps.
     return GlassSurface(
       onTap: onBodyTap,
-      height: 54.h,
-      radius: 20.r,
-      tint: Colors.black.withValues(alpha: 0.45),
-      borderColor: Colors.white.withValues(alpha: 0.12),
+      height: topPad + 52.h,
+      radius: 0,
+      border: false,
+      tint: Colors.black.withValues(alpha: 0.40),
       shadow: BoxShadow(
-        color: Colors.black.withValues(alpha: 0.25),
+        color: Colors.black.withValues(alpha: 0.18),
         blurRadius: 14.w,
         offset: Offset(0, 4.h),
       ),
-      padding: EdgeInsets.symmetric(horizontal: 18.w),
+      padding: EdgeInsets.fromLTRB(20.w, topPad, 20.w, 0),
       child: Row(
         children: [
           Expanded(
