@@ -70,6 +70,12 @@ jobs:
             --platform IOS \
             --type IOS_APP_STORE \
             --create
+          # The Live Activity widget extension is its own bundle id and needs
+          # its own App ID + provisioning profile (created via the API too).
+          app-store-connect fetch-signing-files "$BUNDLE_ID.MyGymBroLiveActivity" \
+            --platform IOS \
+            --type IOS_APP_STORE \
+            --create
           keychain add-certificates
           xcode-project use-profiles
 

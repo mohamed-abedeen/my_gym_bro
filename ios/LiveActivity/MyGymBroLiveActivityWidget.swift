@@ -11,6 +11,7 @@ import ActivityKit
 import SwiftUI
 import WidgetKit
 
+@main
 @available(iOS 16.1, *)
 public struct MyGymBroLiveActivityWidgetBundle: WidgetBundle {
     public init() {}

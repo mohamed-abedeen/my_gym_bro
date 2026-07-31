@@ -1036,102 +1036,98 @@ class _TopStatsCapsule extends StatelessWidget {
         ),
     ];
 
-    // The whole capsule toggles the anatomy island; the inner Time
+    // Frosted GlassSurface bar (NOT a black pill — that read as a fake
+    // Dynamic Island; the real island shows the workout Live Activity).
+    // Tapping anywhere on it toggles the anatomy island; the inner Time
     // (pause/resume) and mini-body detectors sit deeper in the tree, so
     // they win the gesture arena and keep their own taps.
-    return GestureDetector(
+    return GlassSurface(
       onTap: onBodyTap,
-      behavior: HitTestBehavior.opaque,
-      child: Container(
-        height: 54.h,
-        padding: EdgeInsets.symmetric(horizontal: 18.w),
-        decoration: BoxDecoration(
-          color: Colors.black,
-          borderRadius: BorderRadius.circular(28.r),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: 0.25),
-              blurRadius: 14.w,
-              offset: Offset(0, 4.h),
-            ),
-          ],
-        ),
-        child: Row(
-          children: [
-            Expanded(
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  // Time — tap to pause/resume the session clock.
-                  // button trait so screen readers know it's actionable; the
-                  // "Time" label + value announce from the child texts.
-                  Semantics(
-                    button: true,
-                    child: GestureDetector(
-                      onTap: () {
-                        HapticFeedback.selectionClick();
-                        if (paused) {
-                          notifier.resume();
-                        } else {
-                          notifier.pause();
-                        }
-                      },
-                      behavior: HitTestBehavior.opaque,
-                      child: _StatColumn(
-                        label: l10n.time,
-                        value: ValueListenableBuilder<int>(
-                          valueListenable: elapsed,
-                          builder: (_, seconds, __) =>
-                              Text(_fmt(seconds), style: _valueStyle),
-                        ),
-                      ),
-                    ),
-                  ),
-                  _StatColumn(
-                    label: l10n.sets,
-                    value: Text(
-                      '${session.totalCompletedSets}',
-                      style: _valueStyle,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            // Center gap between the two stat groups. (The bar used to
-            // straddle the camera notch with a 120.w hole here; it now sits
-            // below the status bar, so this is just breathing room.)
-            SizedBox(width: 28.w),
-            Expanded(
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  _StatColumn(
-                    label: l10n.volume,
-                    value: Text(
-                      '${vol.round()} ${isLbs ? 'lbs' : 'kg'}',
-                      style: _valueStyle,
-                    ),
-                  ),
-                  // Tap the mini body to expand the anatomy island; it hides
-                  // while the island is open (the island shows the bodies).
-                  GestureDetector(
-                    onTap: onBodyTap,
+      height: 54.h,
+      radius: 20.r,
+      tint: Colors.black.withValues(alpha: 0.45),
+      borderColor: Colors.white.withValues(alpha: 0.12),
+      shadow: BoxShadow(
+        color: Colors.black.withValues(alpha: 0.25),
+        blurRadius: 14.w,
+        offset: Offset(0, 4.h),
+      ),
+      padding: EdgeInsets.symmetric(horizontal: 18.w),
+      child: Row(
+        children: [
+          Expanded(
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                // Time — tap to pause/resume the session clock.
+                // button trait so screen readers know it's actionable; the
+                // "Time" label + value announce from the child texts.
+                Semantics(
+                  button: true,
+                  child: GestureDetector(
+                    onTap: () {
+                      HapticFeedback.selectionClick();
+                      if (paused) {
+                        notifier.resume();
+                      } else {
+                        notifier.pause();
+                      }
+                    },
                     behavior: HitTestBehavior.opaque,
-                    child: Opacity(
-                      opacity: bodyHidden ? 0 : 1,
-                      child: AnatomyBody(
-                        muscleStates: muscleStates,
-                        height: 42.h,
-                        gender: gender,
-                        basePngPath: skinPath,
+                    child: _StatColumn(
+                      label: l10n.time,
+                      value: ValueListenableBuilder<int>(
+                        valueListenable: elapsed,
+                        builder: (_, seconds, __) =>
+                            Text(_fmt(seconds), style: _valueStyle),
                       ),
                     ),
                   ),
-                ],
-              ),
+                ),
+                _StatColumn(
+                  label: l10n.sets,
+                  value: Text(
+                    '${session.totalCompletedSets}',
+                    style: _valueStyle,
+                  ),
+                ),
+              ],
             ),
-          ],
-        ),
+          ),
+          // Center gap between the two stat groups. (The bar used to
+          // straddle the camera notch with a 120.w hole here; it now sits
+          // below the status bar, so this is just breathing room.)
+          SizedBox(width: 28.w),
+          Expanded(
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                _StatColumn(
+                  label: l10n.volume,
+                  value: Text(
+                    '${vol.round()} ${isLbs ? 'lbs' : 'kg'}',
+                    style: _valueStyle,
+                  ),
+                ),
+                // Tap the mini body to expand the anatomy island; it hides
+                // while the island is open (the island shows the bodies).
+                GestureDetector(
+                  onTap: onBodyTap,
+                  behavior: HitTestBehavior.opaque,
+                  child: Opacity(
+                    opacity: bodyHidden ? 0 : 1,
+                    child: AnatomyBody(
+                      muscleStates: muscleStates,
+                      height: 42.h,
+                      gender: gender,
+                      basePngPath: skinPath,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
       ),
     );
   }
