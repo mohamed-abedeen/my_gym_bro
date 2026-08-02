@@ -122,6 +122,7 @@ class _ConfirmSheet extends StatelessWidget {
     return Semantics(
       scopesRoute: true,
       namesRoute: true,
+      explicitChildNodes: true,
       label: title,
       child: Container(
         width: double.infinity,
