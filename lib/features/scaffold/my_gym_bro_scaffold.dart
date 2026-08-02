@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:my_gym_bro/core/security/secure_storage.dart';
 import 'package:my_gym_bro/core/services/subscription_sync_service.dart';
 import 'package:my_gym_bro/features/community/community_screen.dart';
 import 'package:my_gym_bro/features/home/home_screen.dart';
@@ -107,6 +108,12 @@ class _MyGymBroScaffoldState extends ConsumerState<MyGymBroScaffold>
         unawaited(showRankUp(context, Rank.fromComposite(r.state.composite)));
       }
       if (r.state != stored) unawaited(store.save(r.state));
+    });
+
+    // Persist the selected tab so a cold start after an OS background kill
+    // restores it (read back in main.dart's bootstrap overrides).
+    ref.listen(navIndexProvider, (_, next) {
+      unawaited(SecureStorage().write('last_nav_index', '$next'));
     });
 
     // Re-plan the scheduled achievement notifications whenever the streak

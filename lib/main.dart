@@ -22,6 +22,7 @@ import 'package:my_gym_bro/core/services/subscription_sync_service.dart';
 import 'package:my_gym_bro/features/workout/workout_providers.dart';
 import 'package:my_gym_bro/shared/constants.dart';
 import 'package:my_gym_bro/shared/widgets/app_error_screen.dart';
+import 'package:my_gym_bro/shared/widgets/bottom_nav_pill.dart';
 import 'package:purchases_flutter/purchases_flutter.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
@@ -136,6 +137,7 @@ Future<void> _bootstrap() async {
   ThemeMode? savedTheme;
   AppThemeFlavor? savedFlavor;
   int? lastScheduleId;
+  int? savedNavIndex;
   try {
     final profile = await UserProfileDao(db).getFirst();
     mark('profile read done');
@@ -162,6 +164,11 @@ Future<void> _bootstrap() async {
     lastScheduleId = lastScheduleStr != null
         ? int.tryParse(lastScheduleStr)
         : null;
+
+    // Last selected bottom tab — restored after the OS kills the
+    // backgrounded process so returning doesn't dump the user on Home.
+    final navIndexStr = await secureStorage.read('last_nav_index');
+    savedNavIndex = navIndexStr != null ? int.tryParse(navIndexStr) : null;
   } on Object catch (error, stack) {
     CrashReporter.recordError(
       error,
@@ -185,6 +192,8 @@ Future<void> _bootstrap() async {
           workoutCardStateProvider.overrideWith(
             (ref) => WorkoutCardState(selectedScheduleId: lastScheduleId),
           ),
+        if (savedNavIndex != null && savedNavIndex >= 0 && savedNavIndex <= 2)
+          navIndexProvider.overrideWith((ref) => savedNavIndex!),
       ],
       child: const MyGymBroApp(),
     ),
