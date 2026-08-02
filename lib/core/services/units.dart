@@ -25,6 +25,20 @@ double convertToKg(double value, WeightUnit source) {
   return source == WeightUnit.lbs ? value / kLbsPerKg : value;
 }
 
+/// Insert thousands separators into a plain numeric string
+/// ("10000" → "10,000", "10000.5" → "10,000.5"). Only the integer part
+/// is grouped; sign and decimals pass through untouched.
+String groupDigits(String s) {
+  final dot = s.indexOf('.');
+  final intPart = dot == -1 ? s : s.substring(0, dot);
+  final rest = dot == -1 ? '' : s.substring(dot);
+  final grouped = intPart.replaceAllMapped(
+    RegExp(r'\B(?=(\d{3})+(?!\d))'),
+    (_) => ',',
+  );
+  return '$grouped$rest';
+}
+
 /// Format a kg-stored weight for display in the user's current unit.
 ///
 /// [decimals] controls precision. 1 decimal is the default — enough for gym
@@ -41,7 +55,8 @@ String formatWeight(
       ? v.round().toString()
       : v.toStringAsFixed(decimals);
   // Strip trailing ".0" for clean integer display when applicable.
-  final clean = s.endsWith('.0') ? s.substring(0, s.length - 2) : s;
+  final clean =
+      groupDigits(s.endsWith('.0') ? s.substring(0, s.length - 2) : s);
   return withUnit ? '$clean ${weightUnitLabel(unit)}' : clean;
 }
 

@@ -712,7 +712,8 @@ class _WeightComparePainter extends CustomPainter {
     final step = peakVal <= 50 ? 25.0 : (peakVal <= 200 ? 50.0 : 100.0);
     final axisMax = math.max(step, (peakVal / step).ceilToDouble() * step);
 
-    final leftGutter = _tp('${axisMax.round()}', axisTextColor).width + 8;
+    final leftGutter =
+        _tp(groupDigits('${axisMax.round()}'), axisTextColor).width + 8;
     final bottomGutter = textSize + 10;
     final topPad = textSize + 8;
     final chart = Rect.fromLTRB(
@@ -735,7 +736,8 @@ class _WeightComparePainter extends CustomPainter {
           grid,
         );
       }
-      final tp = _tp('${(axisMax * i / 4).round()}', axisTextColor);
+      final tp =
+          _tp(groupDigits('${(axisMax * i / 4).round()}'), axisTextColor);
       tp.paint(canvas, Offset(chart.left - tp.width - 6, y - tp.height / 2));
     }
 

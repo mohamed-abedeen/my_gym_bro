@@ -7,6 +7,7 @@ import 'package:intl/intl.dart';
 import 'package:my_gym_bro/core/database/app_database.dart';
 import 'package:my_gym_bro/core/database/daos/session_dao.dart';
 import 'package:my_gym_bro/core/services/exercise_gif_cache.dart';
+import 'package:my_gym_bro/core/services/units.dart' show groupDigits;
 import 'package:my_gym_bro/features/workout/workout_providers.dart';
 import 'package:my_gym_bro/l10n/app_localizations.dart';
 import 'package:my_gym_bro/shared/constants.dart';
@@ -495,7 +496,7 @@ class _SummaryTab extends StatelessWidget {
                     child: _RecordCard(
                       label: l10n.bestSetVolumeLabel,
                       value: records.bestSetVolume != null
-                          ? '${records.bestSetVolume!.toStringAsFixed(0)} kg'
+                          ? '${groupDigits(records.bestSetVolume!.toStringAsFixed(0))} kg'
                           : '—',
                       isHighlighted:
                           recordFilter == _RecordFilter.bestSetVolume,
@@ -507,7 +508,7 @@ class _SummaryTab extends StatelessWidget {
                     child: _RecordCard(
                       label: l10n.bestSessionVolumeLabel,
                       value: records.bestSessionVolume != null
-                          ? '${records.bestSessionVolume!.toStringAsFixed(0)} kg'
+                          ? '${groupDigits(records.bestSessionVolume!.toStringAsFixed(0))} kg'
                           : '—',
                       isHighlighted: false,
                       colors: colors,
@@ -589,7 +590,7 @@ class _SummaryTab extends StatelessWidget {
                     _SetRecordRow(
                       label: l10n.bestSetVolumeLabel,
                       value: records.bestSetVolume != null
-                          ? '${records.bestSetVolume!.toStringAsFixed(0)} kg'
+                          ? '${groupDigits(records.bestSetVolume!.toStringAsFixed(0))} kg'
                           : '—',
                       colors: colors,
                       isLast: true,

@@ -851,7 +851,8 @@ class _DualLinePainter extends CustomPainter {
 
     // Reserve gutters: left for axis numbers, bottom for months, top for
     // the series labels.
-    final leftGutter = _text('${axisMax.round()}', axisTextColor).width + 10;
+    final leftGutter =
+        _text(groupDigits('${axisMax.round()}'), axisTextColor).width + 10;
     final bottomGutter = textSize + 10;
     final topPad = textSize + 10;
     final chart = Rect.fromLTRB(
@@ -874,7 +875,8 @@ class _DualLinePainter extends CustomPainter {
           grid,
         );
       }
-      final tp = _text('${(axisMax * i / 4).round()}', axisTextColor);
+      final tp =
+          _text(groupDigits('${(axisMax * i / 4).round()}'), axisTextColor);
       tp.paint(canvas, Offset(chart.left - tp.width - 8, y - tp.height / 2));
     }
 

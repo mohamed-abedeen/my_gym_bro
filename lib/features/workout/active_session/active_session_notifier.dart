@@ -11,6 +11,7 @@ import 'package:my_gym_bro/core/services/live_activity_service.dart';
 import 'package:my_gym_bro/core/services/notification_image_cache.dart';
 import 'package:my_gym_bro/core/services/notification_service.dart';
 import 'package:my_gym_bro/core/services/notification_tone.dart';
+import 'package:my_gym_bro/core/services/units.dart' show groupDigits;
 import 'package:my_gym_bro/core/services/widget_sync_service.dart';
 import 'package:my_gym_bro/features/settings/app_settings_provider.dart';
 import 'package:my_gym_bro/features/workout/active_session/rest_timer_service.dart';
@@ -1353,7 +1354,7 @@ class ActiveSessionNotifier extends StateNotifier<ActiveSessionState> {
       final vol = _weightUnit == 'lbs'
           ? state.totalVolume * _kLbsPerKg
           : state.totalVolume;
-      final stats = '$completedSets sets · ${vol.round()} '
+      final stats = '$completedSets sets · ${groupDigits('${vol.round()}')} '
           '$_weightUnit · ${(durationSecs / 60).round().clamp(1, 9999)} min';
       final prSuffix = _sessionPrCount > 0
           ? kudosPrSuffixForTone(_tone, _sessionPrCount)
@@ -1394,7 +1395,8 @@ class ActiveSessionNotifier extends StateNotifier<ActiveSessionState> {
       if (crossed == null) return;
       final display =
           _weightUnit == 'lbs' ? (crossed * _kLbsPerKg).round() : crossed;
-      body = milestoneVolumeBodyForTone(_tone, '$display $_weightUnit');
+      body = milestoneVolumeBodyForTone(
+          _tone, '${groupDigits('$display')} $_weightUnit');
     }
     await NotificationService.showAchievement(
       id: NotificationService.milestoneNotificationId,
@@ -1463,9 +1465,9 @@ class ActiveSessionNotifier extends StateNotifier<ActiveSessionState> {
   String displayWeight(double? weightKg) {
     if (weightKg == null) return '0';
     if (_weightUnit == 'lbs') {
-      return (weightKg * _kLbsPerKg).toStringAsFixed(0);
+      return groupDigits((weightKg * _kLbsPerKg).toStringAsFixed(0));
     }
-    return weightKg.toStringAsFixed(0);
+    return groupDigits(weightKg.toStringAsFixed(0));
   }
 
   /// Display duration in decimal minutes (e.g. 330 s → "5.5").
@@ -1501,7 +1503,8 @@ class ActiveSessionNotifier extends StateNotifier<ActiveSessionState> {
     final vol = _weightUnit == 'lbs'
         ? state.totalVolume * 2.20462
         : state.totalVolume;
-    return '${state.totalCompletedSets} sets · ${vol.round()} $_weightUnit this session';
+    return '${state.totalCompletedSets} sets · '
+        '${groupDigits('${vol.round()}')} $_weightUnit this session';
   }
 
   /// Push the "active set" notification (State A).

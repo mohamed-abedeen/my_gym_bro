@@ -2,6 +2,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'package:my_gym_bro/core/services/notification_service.dart';
 import 'package:my_gym_bro/core/services/notification_tone.dart';
+import 'package:my_gym_bro/core/services/units.dart' show groupDigits;
 import 'package:my_gym_bro/features/workout/muscle_recovery_service.dart';
 import 'package:my_gym_bro/features/workout/workout_providers.dart';
 
@@ -110,7 +111,7 @@ class AchievementPlanner {
       body: weeklyRecapBodyForTone(
         tone,
         sessions: thisWeekSessions,
-        volume: '${vol.round()} $unit',
+        volume: '${groupDigits('${vol.round()}')} $unit',
         deltaPct: deltaPct,
       ),
       when: fireAt,

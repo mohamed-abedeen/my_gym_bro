@@ -1114,7 +1114,7 @@ class _TopStatsCapsule extends StatelessWidget {
                 _StatColumn(
                   label: l10n.volume,
                   value: Text(
-                    '${vol.round()} ${isLbs ? 'lbs' : 'kg'}',
+                    '${groupDigits('${vol.round()}')} ${isLbs ? 'lbs' : 'kg'}',
                     style: _valueStyle,
                   ),
                 ),
