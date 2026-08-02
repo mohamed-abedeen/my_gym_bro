@@ -17,8 +17,7 @@ import 'package:my_gym_bro/shared/constants.dart';
 import 'package:my_gym_bro/shared/responsive.dart';
 
 /// Screen 6 — Create Account (/onboarding/signup)
-/// Name + Email + Password fields. Password strength bar.
-/// Apple (iOS) + Google social buttons.
+/// OAuth-only: Google (all platforms) + Apple (iOS). No email/password.
 /// Exercise seeding overlay after successful signup.
 class SignUpScreen extends ConsumerStatefulWidget {
   const SignUpScreen({super.key});
@@ -28,16 +27,10 @@ class SignUpScreen extends ConsumerStatefulWidget {
 }
 
 class _SignUpScreenState extends ConsumerState<SignUpScreen> {
-  final _nameCtrl = TextEditingController();
-  final _emailCtrl = TextEditingController();
-  final _passwordCtrl = TextEditingController();
-  final _formKey = GlobalKey<FormState>();
-  bool _obscure = true;
   bool _seeding = false;
   // OAuth completes out-of-band (deep-link → onAuthStateChange), not via the
   // button's future — navigation and onboarding-data merge must react to the
-  // state transition. Armed only while a social flow is in flight so the
-  // email path (handled in _handleSignUp) is unaffected.
+  // state transition. Armed only while a social flow is in flight.
   bool _oauthInFlight = false;
 
   void _startOAuth(Future<void> Function() flow) {
@@ -63,87 +56,6 @@ class _SignUpScreenState extends ConsumerState<SignUpScreen> {
       // Non-fatal — these fields can all be edited later in Settings.
     }
     await _seedExercisesIfNeeded();
-  }
-
-  @override
-  void dispose() {
-    _nameCtrl.dispose();
-    _emailCtrl.dispose();
-    _passwordCtrl.dispose();
-    super.dispose();
-  }
-
-  // ── Password strength ──
-  double _passwordStrength(String pw) {
-    if (pw.isEmpty) return 0;
-    var score = 0.0;
-    if (pw.length >= 8) score += 0.25;
-    if (pw.contains(RegExp('[A-Z]'))) score += 0.25;
-    if (pw.contains(RegExp('[0-9]'))) score += 0.25;
-    if (pw.contains(RegExp(r'[!@#$%^&*(),.?":{}|<>]'))) score += 0.25;
-    return score;
-  }
-
-  Color _strengthColor(BuildContext context, double strength) {
-    final colors = AppColors.of(context);
-    if (strength <= 0.25) return colors.danger;
-    if (strength <= 0.5) return colors.amber;
-    if (strength <= 0.75) return colors.amber;
-    return colors.accent;
-  }
-
-  String _strengthLabel(BuildContext context, double strength) {
-    final l10n = AppLocalizations.of(context);
-    if (strength <= 0.25) return l10n.passwordStrengthWeak;
-    if (strength <= 0.75) return l10n.passwordStrengthMedium;
-    return l10n.passwordStrengthStrong;
-  }
-
-  bool _isValidEmail(String email) =>
-      RegExp(r'^[\w\-.]+@([\w-]+\.)+[\w-]{2,}$').hasMatch(email.trim());
-
-  bool _isValidPassword(String pw) =>
-      pw.length >= 8 &&
-      pw.contains(RegExp('[A-Z]')) &&
-      pw.contains(RegExp('[0-9]')) &&
-      pw.contains(RegExp(r'[!@#$%^&*(),.?":{}|<>]'));
-
-  Future<void> _handleSignUp() async {
-    if (!_formKey.currentState!.validate()) return;
-
-    final onboarding = ref.read(onboardingProvider);
-    final authNotifier = ref.read(authNotifierProvider.notifier);
-
-    await authNotifier.signUp(
-      name: _nameCtrl.text,
-      email: _emailCtrl.text,
-      password: _passwordCtrl.text,
-      goal: onboarding.goal,
-      experience: onboarding.experience,
-      gender: onboarding.gender,
-      bodyWeightKg: onboarding.weightKg,
-      heightCm: onboarding.heightCm,
-      notificationTone: onboarding.notificationTone.wireValue,
-    );
-
-    final authState = ref.read(authNotifierProvider);
-    if (!mounted) return;
-
-    if (authState.status == AuthStatus.error) {
-      final colors = AppColors.of(context);
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-              authState.errorMessage ?? AppLocalizations.of(context).signUpError),
-          backgroundColor: colors.danger,
-        ),
-      );
-      return;
-    }
-
-    if (authState.status == AuthStatus.authenticated) {
-      await _seedExercisesIfNeeded();
-    }
   }
 
   Future<void> _seedExercisesIfNeeded() async {
@@ -192,8 +104,6 @@ class _SignUpScreenState extends ConsumerState<SignUpScreen> {
         );
       }
     });
-    final pw = _passwordCtrl.text;
-    final strength = _passwordStrength(pw);
 
     return Scaffold(
       backgroundColor: colors.background,
@@ -202,205 +112,72 @@ class _SignUpScreenState extends ConsumerState<SignUpScreen> {
           children: [
             SingleChildScrollView(
               padding: EdgeInsets.symmetric(horizontal: 24.w),
-              child: Form(
-                key: _formKey,
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    SizedBox(height: 60.h),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  SizedBox(height: 60.h),
 
-                    Text(
-                      l10n.signUp,
-                      style: TextStyle(
-                        fontSize: 28.sp,
-                        fontWeight: FontWeight.w700,
-                        color: colors.textPrimary,
-                      ),
+                  Text(
+                    l10n.signUp,
+                    style: TextStyle(
+                      fontSize: 28.sp,
+                      fontWeight: FontWeight.w700,
+                      color: colors.textPrimary,
                     ),
+                  ),
 
-                    SizedBox(height: 32.h),
+                  SizedBox(height: 48.h),
 
-                    // Name field
-                    TextFormField(
-                      controller: _nameCtrl,
-                      style: TextStyle(color: colors.textPrimary),
-                      decoration: _inputDecoration(l10n.nameLabel),
-                      validator: (v) =>
-                          (v == null || v.trim().isEmpty) ? l10n.nameRequired : null,
-                      textInputAction: TextInputAction.next,
-                    ),
-
-                    SizedBox(height: 16.h),
-
-                    // Email field
-                    TextFormField(
-                      controller: _emailCtrl,
-                      style: TextStyle(color: colors.textPrimary),
-                      decoration: _inputDecoration(l10n.emailLabel),
-                      keyboardType: TextInputType.emailAddress,
-                      validator: (v) =>
-                          !_isValidEmail(v ?? '') ? l10n.emailInvalid : null,
-                      textInputAction: TextInputAction.next,
-                    ),
-
-                    SizedBox(height: 16.h),
-
-                    // Password field
-                    TextFormField(
-                      controller: _passwordCtrl,
-                      style: TextStyle(color: colors.textPrimary),
-                      decoration: _inputDecoration(l10n.passwordLabel).copyWith(
-                        suffixIcon: IconButton(
-                          icon: Icon(
-                            _obscure ? Icons.visibility_off : Icons.visibility,
-                            color: colors.textSecondary,
-                          ),
-                          onPressed: () =>
-                              setState(() => _obscure = !_obscure),
-                        ),
-                      ),
-                      obscureText: _obscure,
-                      onChanged: (_) => setState(() {}),
-                      validator: (v) => !_isValidPassword(v ?? '')
-                          ? l10n.passwordRequirements
-                          : null,
-                    ),
-
-                    SizedBox(height: 8.h),
-
-                    // Password strength bar
-                    if (pw.isNotEmpty) ...[
-                      ClipRRect(
-                        borderRadius: BorderRadius.circular(4.r),
-                        child: LinearProgressIndicator(
-                          value: strength,
-                          backgroundColor: colors.card,
-                          valueColor:
-                              AlwaysStoppedAnimation(_strengthColor(context, strength)),
-                          minHeight: 4.h,
-                        ),
-                      ),
-                      SizedBox(height: 4.h),
-                      Text(
-                        _strengthLabel(context, strength),
-                        style: TextStyle(
-                          fontSize: 12.sp,
-                          color: _strengthColor(context, strength),
-                        ),
-                      ),
-                    ],
-
-                    SizedBox(height: 8.h),
-                    Text(
-                      l10n.passwordRequirements,
-                      style: TextStyle(
-                        fontSize: 12.sp,
-                        color: colors.textSecondary,
-                      ),
-                    ),
-
-                    SizedBox(height: 32.h),
-
-                    // Sign Up button
-                    SizedBox(
-                      width: double.infinity,
-                      height: 56.h,
-                      child: ElevatedButton(
-                        onPressed: isLoading ? null : _handleSignUp,
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: colors.accent,
-                          foregroundColor: colors.background,
-                          disabledBackgroundColor: colors.card,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(16.r),
-                          ),
-                          textStyle: TextStyle(
-                            fontSize: 17.sp,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                        child: isLoading
-                            ? SizedBox(
-                                width: 24.sp,
-                                height: 24.sp,
-                                child: CircularProgressIndicator(
-                                  strokeWidth: 2.w,
-                                  color: colors.textSecondary,
-                                ),
-                              )
-                            : Text(l10n.signUp),
-                      ),
-                    ),
-
-                    SizedBox(height: 24.h),
-
-                    // Or divider
-                    Row(
-                      children: [
-                        Expanded(
-                            child:
-                                Divider(color: colors.textSecondary, thickness: 0.5)),
-                        Padding(
-                          padding: EdgeInsets.symmetric(horizontal: 16.w),
-                          child: Text(l10n.orDivider,
-                              style: TextStyle(
-                                  color: colors.textSecondary, fontSize: 14.sp)),
-                        ),
-                        Expanded(
-                            child:
-                                Divider(color: colors.textSecondary, thickness: 0.5)),
-                      ],
-                    ),
-
-                    SizedBox(height: 24.h),
-
-                    // Google sign in
-                    _socialButton(
-                      label: l10n.continueWithGoogle,
-                      icon: Icons.g_mobiledata,
-                      onTap: () => _startOAuth(ref
-                          .read(authNotifierProvider.notifier)
-                          .signInWithGoogle),
-                    ),
-
-                    SizedBox(height: 12.h),
-
-                    // Apple sign in (iOS only)
-                    if (Platform.isIOS)
-                      _socialButton(
-                        label: l10n.continueWithApple,
-                        icon: Icons.apple,
-                        onTap: () => _startOAuth(ref
+                  // Google sign in
+                  _socialButton(
+                    label: l10n.continueWithGoogle,
+                    icon: Icons.g_mobiledata,
+                    onTap: isLoading
+                        ? null
+                        : () => _startOAuth(ref
                             .read(authNotifierProvider.notifier)
-                            .signInWithApple),
-                      ),
+                            .signInWithGoogle),
+                  ),
 
-                    SizedBox(height: 24.h),
+                  SizedBox(height: 12.h),
 
-                    // Skip button (dev/testing — bypass auth)
-                    Center(
-                      child: TextButton(
-                        onPressed: () async {
-                          final router = GoRouter.of(context);
-                          await _seedExercisesIfNeeded();
-                          if (!mounted) return;
-                          router.go('/');
-                        },
-                        child: Text(
-                          l10n.skip,
-                          style: TextStyle(
-                            color: colors.textSecondary,
-                            fontSize: 14.sp,
-                            decoration: TextDecoration.underline,
-                            decorationColor: colors.textSecondary,
-                          ),
+                  // Apple sign in (iOS only)
+                  if (Platform.isIOS)
+                    _socialButton(
+                      label: l10n.continueWithApple,
+                      icon: Icons.apple,
+                      onTap: isLoading
+                          ? null
+                          : () => _startOAuth(ref
+                              .read(authNotifierProvider.notifier)
+                              .signInWithApple),
+                    ),
+
+                  SizedBox(height: 24.h),
+
+                  // Skip button (dev/testing — bypass auth)
+                  Center(
+                    child: TextButton(
+                      onPressed: () async {
+                        final router = GoRouter.of(context);
+                        await _seedExercisesIfNeeded();
+                        if (!mounted) return;
+                        router.go('/');
+                      },
+                      child: Text(
+                        l10n.skip,
+                        style: TextStyle(
+                          color: colors.textSecondary,
+                          fontSize: 14.sp,
+                          decoration: TextDecoration.underline,
+                          decorationColor: colors.textSecondary,
                         ),
                       ),
                     ),
+                  ),
 
-                    SizedBox(height: 40.h),
-                  ],
-                ),
+                  SizedBox(height: 40.h),
+                ],
               ),
             ),
 
@@ -431,36 +208,10 @@ class _SignUpScreenState extends ConsumerState<SignUpScreen> {
     );
   }
 
-  InputDecoration _inputDecoration(String label) {
-    final colors = AppColors.of(context);
-    return InputDecoration(
-      labelText: label,
-      labelStyle: TextStyle(color: colors.textSecondary),
-      filled: true,
-      fillColor: colors.card,
-      border: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(12.r),
-        borderSide: BorderSide.none,
-      ),
-      focusedBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(12.r),
-        borderSide: BorderSide(color: colors.accent, width: 1.5),
-      ),
-      errorBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(12.r),
-        borderSide: BorderSide(color: colors.danger),
-      ),
-      focusedErrorBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(12.r),
-        borderSide: BorderSide(color: colors.danger, width: 1.5),
-      ),
-    );
-  }
-
   Widget _socialButton({
     required String label,
     required IconData icon,
-    required VoidCallback onTap,
+    required VoidCallback? onTap,
   }) {
     final colors = AppColors.of(context);
     return SizedBox(

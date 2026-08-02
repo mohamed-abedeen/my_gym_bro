@@ -1,6 +1,8 @@
 import 'dart:async';
+import 'dart:convert';
 import 'dart:io';
 
+import 'package:crypto/crypto.dart';
 import 'package:drift/drift.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -12,6 +14,7 @@ import 'package:my_gym_bro/core/services/crash_reporter.dart';
 import 'package:my_gym_bro/core/services/sync_service.dart';
 import 'package:my_gym_bro/shared/app_constants.dart';
 import 'package:purchases_flutter/purchases_flutter.dart';
+import 'package:sign_in_with_apple/sign_in_with_apple.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 /// Authentication state.
@@ -329,12 +332,36 @@ class AuthNotifier extends StateNotifier<AppAuthState> {
   Future<void> signInWithApple() async {
     if (!Platform.isIOS || _supabase == null) return;
     try {
-      // See signInWithGoogle — auth completes via the deep-link callback,
-      // picked up by the onAuthStateChange listener.
-      await _supabase.auth.signInWithOAuth(
-        OAuthProvider.apple,
-        redirectTo: AppConstants.oauthRedirectUri,
+      // Native Sign in with Apple sheet → Supabase id-token exchange. No
+      // browser round-trip; the session still lands via the same
+      // onAuthStateChange listener as the Google flow, so the screens'
+      // out-of-band completion handling covers both.
+      final rawNonce = _supabase.auth.generateRawNonce();
+      final hashedNonce = sha256.convert(utf8.encode(rawNonce)).toString();
+      final credential = await SignInWithApple.getAppleIDCredential(
+        scopes: [
+          AppleIDAuthorizationScopes.email,
+          AppleIDAuthorizationScopes.fullName,
+        ],
+        nonce: hashedNonce,
       );
+      final idToken = credential.identityToken;
+      if (idToken == null) {
+        state = state.copyWith(
+            status: AuthStatus.error,
+            errorMessage: 'Apple sign-in returned no credential');
+        return;
+      }
+      await _supabase.auth.signInWithIdToken(
+        provider: OAuthProvider.apple,
+        idToken: idToken,
+        nonce: rawNonce,
+      );
+    } on SignInWithAppleAuthorizationException catch (e) {
+      // User dismissed the native sheet — not an error.
+      if (e.code == AuthorizationErrorCode.canceled) return;
+      state = state.copyWith(
+          status: AuthStatus.error, errorMessage: _friendlyError(e));
     } on Exception catch (e) {
       state = state.copyWith(
           status: AuthStatus.error, errorMessage: _friendlyError(e));
