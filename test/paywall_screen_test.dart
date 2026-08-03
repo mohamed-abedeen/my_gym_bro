@@ -26,7 +26,7 @@ Map<String, Object?> _offeringsJson() {
     'identifier': r'$rc_annual',
     'packageType': 'ANNUAL',
     'product': <String, Object?>{
-      'identifier': 'mgb_yearly',
+      'identifier': 'mgb_premium_annual',
       'description': 'Yearly plan',
       'title': 'Yearly',
       'price': 49.99,

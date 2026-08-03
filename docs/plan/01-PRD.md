@@ -69,7 +69,7 @@ A paid app for people who train regularly and want a tool that's both rigorous (
 ### 4.1 Model — Hard Paywall + Trial
 - **Subscription-only.** The entire app is premium.
 - **7-day free trial**, then a subscription is **required** to continue.
-- Products: `mgb_monthly`, `mgb_yearly` via **RevenueCat**.
+- Products: `mgb_premium_monthly`, `mgb_premium_annual` via **RevenueCat**.
 - Entitlement source of truth: `UserProfiles.subscriptionStatus` (`trial` / `active` / `grace_period` / `expired`), reconciled by `SubscriptionSyncService`; server truth via RevenueCat webhook; trial-window fallback via `verify-subscription`.
 
 ### 4.2 Trial & Gate Behavior

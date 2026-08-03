@@ -36,8 +36,8 @@ class _PaywallScreenState extends ConsumerState<PaywallScreen> {
   String? _yearlyPrice;
 
   // RevenueCat product identifiers — update to match your dashboard
-  static const _monthlyId = 'mgb_monthly';
-  static const _yearlyId = 'mgb_yearly';
+  static const _monthlyId = 'mgb_premium_monthly';
+  static const _yearlyId = 'mgb_premium_annual';
 
   @override
   void initState() {

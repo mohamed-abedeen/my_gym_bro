@@ -29,7 +29,7 @@ Map<String, Object?> _premiumEntitlement({required String expirationDate}) => {
       'willRenew': true,
       'latestPurchaseDate': '2026-07-01T00:00:00Z',
       'originalPurchaseDate': '2026-07-01T00:00:00Z',
-      'productIdentifier': 'mgb_yearly',
+      'productIdentifier': 'mgb_premium_annual',
       'isSandbox': false,
       'expirationDate': expirationDate,
     };

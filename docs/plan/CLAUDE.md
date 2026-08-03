@@ -120,7 +120,7 @@ assets/
 ## 🔒 Monetization Rules
 
 - All purchases go through **RevenueCat** (`purchases_flutter`). Entitlement: premium access.
-- Products: `mgb_monthly`, `mgb_yearly` (offerings fetched live).
+- Products: `mgb_premium_monthly`, `mgb_premium_annual` (offerings fetched live).
 - The **paywall gate** must read a single source of truth: the local `UserProfiles.subscriptionStatus` reconciled by `SubscriptionSyncService` (trial / active / grace_period / expired).
 - The RevenueCat webhook (`revenuecat-webhook`) is the server-side truth; `verify-subscription` falls back to the `trial_started_at` window.
 - "Restore Purchases" and "Delete Account" must always work (store requirement).
