@@ -588,6 +588,24 @@ abstract class AppLocalizations {
   /// **'Yearly'**
   String get yearlyPlan;
 
+  /// No description provided for @pricePerMonth.
+  ///
+  /// In en, this message translates to:
+  /// **'{price} / a month'**
+  String pricePerMonth(String price);
+
+  /// No description provided for @pricePerYear.
+  ///
+  /// In en, this message translates to:
+  /// **'{price} / Yearly'**
+  String pricePerYear(String price);
+
+  /// No description provided for @saveWithYearly.
+  ///
+  /// In en, this message translates to:
+  /// **'Save nearly 50% of your money with the yearly plan'**
+  String get saveWithYearly;
+
   /// No description provided for @bestValue.
   ///
   /// In en, this message translates to:

@@ -87,30 +87,28 @@ void main() {
   }
 
   group('paywall gate copy', () {
-    testWidgets('locked shows subscribe copy, no trial badge, no close',
+    testWidgets('locked shows subscribe CTA, no free-trial copy, no back',
         (tester) async {
       await tester.pumpWidget(_app(locked: true));
       await tester.pumpAndSettle();
 
-      // Headline + CTA both carry the expired copy.
-      expect(find.text(l10n.subscribeToContinue), findsNWidgets(2));
-      expect(find.text(l10n.trialBadge), findsNothing);
-      expect(find.text(l10n.startTrial), findsNothing);
+      // The CTA carries the expired copy; no free-trial framing.
+      expect(find.text(l10n.subscribeToContinue), findsOneWidget);
+      expect(find.text(l10n.freeTrial), findsNothing);
       expect(find.text(l10n.cancelAnytime), findsNothing);
       // Gate active — the paywall must not be dismissible.
-      expect(find.byIcon(Icons.close_rounded), findsNothing);
+      expect(find.byIcon(Icons.arrow_back_ios_new_rounded), findsNothing);
     });
 
-    testWidgets('unlocked shows start-trial copy with badge and close button',
+    testWidgets('unlocked shows free-trial CTA and a back button',
         (tester) async {
       await tester.pumpWidget(_app(locked: false));
       await tester.pumpAndSettle();
 
-      expect(find.text(l10n.startTrial), findsNWidgets(2));
-      expect(find.text(l10n.trialBadge), findsOneWidget);
+      expect(find.text(l10n.freeTrial), findsOneWidget);
       expect(find.text(l10n.cancelAnytime), findsOneWidget);
       expect(find.text(l10n.subscribeToContinue), findsNothing);
-      expect(find.byIcon(Icons.close_rounded), findsOneWidget);
+      expect(find.byIcon(Icons.arrow_back_ios_new_rounded), findsOneWidget);
     });
   });
 
@@ -126,14 +124,14 @@ void main() {
       await tester.pumpWidget(_app(locked: false));
       await tester.pumpAndSettle();
 
-      final cta = find.widgetWithText(ElevatedButton, l10n.startTrial);
+      final cta = find.widgetWithText(ElevatedButton, l10n.freeTrial);
       await tester.ensureVisible(cta);
       await tester.tap(cta);
       await tester.pumpAndSettle();
 
       expect(find.text(l10n.purchaseFailed), findsNothing);
       // The CTA recovered from its loading state.
-      expect(find.text(l10n.startTrial), findsNWidgets(2));
+      expect(find.text(l10n.freeTrial), findsOneWidget);
     });
 
     testWidgets('a real purchase failure shows the error message',
@@ -147,7 +145,7 @@ void main() {
       await tester.pumpWidget(_app(locked: false));
       await tester.pumpAndSettle();
 
-      final cta = find.widgetWithText(ElevatedButton, l10n.startTrial);
+      final cta = find.widgetWithText(ElevatedButton, l10n.freeTrial);
       await tester.ensureVisible(cta);
       await tester.tap(cta);
       await tester.pumpAndSettle();

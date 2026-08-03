@@ -271,6 +271,20 @@ class AppLocalizationsFr extends AppLocalizations {
   String get yearlyPlan => 'Annuel';
 
   @override
+  String pricePerMonth(String price) {
+    return '$price / par mois';
+  }
+
+  @override
+  String pricePerYear(String price) {
+    return '$price / par an';
+  }
+
+  @override
+  String get saveWithYearly =>
+      'Économisez près de 50 % avec l\'abonnement annuel';
+
+  @override
   String get bestValue => 'Meilleure offre';
 
   @override

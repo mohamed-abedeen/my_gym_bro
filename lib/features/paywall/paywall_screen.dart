@@ -7,15 +7,22 @@ import 'package:go_router/go_router.dart';
 import 'package:my_gym_bro/core/router/app_router.dart';
 import 'package:my_gym_bro/core/services/crash_reporter.dart';
 import 'package:my_gym_bro/core/services/subscription_sync_service.dart';
+import 'package:my_gym_bro/features/workout/muscle_recovery_service.dart';
 import 'package:my_gym_bro/features/workout/workout_providers.dart';
 import 'package:my_gym_bro/l10n/app_localizations.dart';
 import 'package:my_gym_bro/shared/constants.dart';
 import 'package:my_gym_bro/shared/responsive.dart';
+import 'package:my_gym_bro/shared/widgets/anatomy_body.dart';
 import 'package:purchases_flutter/purchases_flutter.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Paywall Screen
+//
+// Layout follows the Figma spec: a swipeable anatomy showcase (male body with
+// one muscle group lit in the brand accent per page) fills the top, stacked
+// plan pills + the accent "Free Trial" CTA anchor the bottom. Apple-required
+// disclosures (auto-renew, restore, Terms/Privacy) stay in a compact footer.
 // ─────────────────────────────────────────────────────────────────────────────
 
 class PaywallScreen extends ConsumerStatefulWidget {
@@ -34,6 +41,20 @@ class _PaywallScreenState extends ConsumerState<PaywallScreen> {
   // until fetched — the plan cards fall back to static placeholder strings.
   String? _monthlyPrice;
   String? _yearlyPrice;
+  String? _yearlyPerMonth;
+
+  // Anatomy showcase — each page lights one muscle group in the accent.
+  final _heroController = PageController();
+  int _heroPage = 0;
+  static const _heroMuscles = <String>[
+    'Chest',
+    'Lats',
+    'Shoulders',
+    'Biceps',
+    'Core',
+    'Quads',
+    'Calves',
+  ];
 
   // RevenueCat product identifiers — update to match your dashboard
   static const _monthlyId = 'mgb_premium_monthly';
@@ -45,6 +66,12 @@ class _PaywallScreenState extends ConsumerState<PaywallScreen> {
     unawaited(_loadPrices());
   }
 
+  @override
+  void dispose() {
+    _heroController.dispose();
+    super.dispose();
+  }
+
   /// Fetch store prices for the plan cards. RevenueCat is not configured in
   /// dev (placeholder keys skip `Purchases.configure`), so any failure just
   /// keeps the static fallback prices — the screen must always render.
@@ -53,26 +80,44 @@ class _PaywallScreenState extends ConsumerState<PaywallScreen> {
       if (!await Purchases.isConfigured) return;
       final current = (await Purchases.getOfferings()).current;
       if (current == null || !mounted) return;
+      final monthly = _productFor(current, _monthlyId, current.monthly);
+      final annual = _productFor(current, _yearlyId, current.annual);
       setState(() {
-        _monthlyPrice = _priceFor(current, _monthlyId, current.monthly);
-        _yearlyPrice = _priceFor(current, _yearlyId, current.annual);
+        _monthlyPrice = monthly?.priceString;
+        _yearlyPrice = annual?.priceString;
+        _yearlyPerMonth = annual == null ? null : _perMonth(annual);
       });
     } on Exception {
       // Offerings unavailable — keep fallbacks.
     }
   }
 
-  static String? _priceFor(
+  static StoreProduct? _productFor(
     Offering offering,
     String productId,
     Package? fallback,
   ) {
     for (final p in offering.availablePackages) {
-      if (p.storeProduct.identifier == productId) {
-        return p.storeProduct.priceString;
-      }
+      if (p.storeProduct.identifier == productId) return p.storeProduct;
     }
-    return fallback?.storeProduct.priceString;
+    return fallback?.storeProduct;
+  }
+
+  /// The yearly plan's effective monthly cost, formatted to mirror the store's
+  /// own currency presentation (symbol/placement) by swapping the numeric part
+  /// of the annual `priceString`. Returns null if the string has no number.
+  static String? _perMonth(StoreProduct annual) {
+    final match = RegExp('[0-9][0-9.,]*').firstMatch(annual.priceString);
+    if (match == null) return null;
+    final original = match.group(0)!;
+    // Treat ',' as the decimal separator when it trails any '.' (e.g. 49,99).
+    final decimalIsComma = original.contains(',') &&
+        (!original.contains('.') ||
+            original.lastIndexOf(',') > original.lastIndexOf('.'));
+    final perMonth = (annual.price / 12.0)
+        .toStringAsFixed(2)
+        .replaceAll('.', decimalIsComma ? ',' : '.');
+    return annual.priceString.replaceRange(match.start, match.end, perMonth);
   }
 
   @override
@@ -83,253 +128,243 @@ class _PaywallScreenState extends ConsumerState<PaywallScreen> {
 
     // When the gate is active (trial elapsed / expired) the paywall is the
     // only way forward — it must not be dismissible by back gesture or a
-    // close button. When opened voluntarily (e.g. from Settings) it is.
+    // back button. When opened voluntarily (e.g. from Settings) it is.
     final locked = ref.watch(subscriptionLockedProvider);
 
-    final features = [
-      (Icons.fitness_center_rounded, l10n.trialFeature1),
-      (Icons.library_books_rounded, l10n.trialFeature2),
-      (Icons.calendar_month_rounded, l10n.trialFeature3),
-      (Icons.insights_rounded, l10n.trialFeature4),
-    ];
+    final screenH = MediaQuery.of(context).size.height;
+    final heroH = (screenH * 0.42).clamp(240.0, 440.0);
 
     return PopScope(
       canPop: !locked,
       child: Scaffold(
-      backgroundColor: colors.background,
-      body: SafeArea(
-        child: Column(
-          children: [
-            // ── Close button — hidden while the gate is active
-            if (!locked)
-              Align(
-                alignment: Alignment.topRight,
-                child: Padding(
-                  padding: EdgeInsets.only(top: 8.h, right: 16.w),
-                  child: IconButton(
-                    icon: Icon(Icons.close_rounded,
-                        color: colors.textSecondary, size: 24.sp),
-                    onPressed: () => context.pop(),
+        backgroundColor: colors.background,
+        body: SafeArea(
+          child: SingleChildScrollView(
+            child: Column(
+              children: [
+                // ── Back button — hidden while the gate is active
+                SizedBox(
+                  height: 44.h,
+                  child: locked
+                      ? null
+                      : Align(
+                          alignment: Alignment.centerLeft,
+                          child: Padding(
+                            padding: EdgeInsets.only(left: 8.w),
+                            child: IconButton(
+                              icon: Icon(
+                                Icons.arrow_back_ios_new_rounded,
+                                color: colors.textPrimary,
+                                size: 22.sp,
+                              ),
+                              onPressed: () => context.pop(),
+                            ),
+                          ),
+                        ),
+                ),
+
+                // ── Anatomy showcase carousel
+                SizedBox(
+                  height: heroH,
+                  child: PageView.builder(
+                    controller: _heroController,
+                    onPageChanged: (i) => setState(() => _heroPage = i),
+                    itemCount: _heroMuscles.length,
+                    itemBuilder: (_, i) => Center(
+                      child: AnatomyBody(
+                        gender: AnatomyGender.male,
+                        height: heroH,
+                        highlightColor: colors.accent,
+                        muscleStates: [
+                          MuscleStateInfo(
+                            muscleGroup: _heroMuscles[i],
+                            state: MuscleState.recovering,
+                            recoveryPercent: 1,
+                          ),
+                        ],
+                      ),
+                    ),
                   ),
                 ),
-              ),
 
-            Expanded(
-              child: SingleChildScrollView(
-                padding: EdgeInsets.symmetric(horizontal: 24.w),
-                child: Column(
+                SizedBox(height: 16.h),
+
+                // ── Page dots
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    SizedBox(height: 8.h),
-
-                    // ── Badge — trial copy only while a trial is available
-                    if (!locked)
-                      Container(
-                        padding: EdgeInsets.symmetric(
-                            horizontal: 14.w, vertical: 6.h),
+                    for (var i = 0; i < _heroMuscles.length; i++)
+                      AnimatedContainer(
+                        duration: const Duration(milliseconds: 200),
+                        margin: EdgeInsets.symmetric(horizontal: 3.w),
+                        width: (i == _heroPage ? 8 : 6).w,
+                        height: (i == _heroPage ? 8 : 6).w,
                         decoration: BoxDecoration(
-                          color: colors.accent,
-                          borderRadius:
-                              BorderRadius.circular(AppRadius.button),
-                        ),
-                        child: Text(
-                          l10n.trialBadge,
-                          style: TextStyle(
-                            fontSize: 13.sp,
-                            fontWeight: FontWeight.w700,
-                            color: colors.black,
-                          ),
+                          shape: BoxShape.circle,
+                          color: i == _heroPage
+                              ? colors.accent
+                              : colors.textSecondary.withValues(alpha: 0.4),
                         ),
                       ),
+                  ],
+                ),
 
-                    SizedBox(height: 20.h),
+                SizedBox(height: 24.h),
 
-                    // ── Headline — trial copy vs. expired copy
-                    Text(
-                      locked ? l10n.subscribeToContinue : l10n.startTrial,
-                      textAlign: TextAlign.center,
-                      style: TextStyle(
-                        fontSize: 28.sp,
-                        fontWeight: FontWeight.w800,
-                        color: colors.textPrimary,
-                        height: 1.2,
+                // ── Plan pills + CTA + disclosures
+                Padding(
+                  padding: EdgeInsets.symmetric(horizontal: 24.w),
+                  child: Column(
+                    children: [
+                      _PlanPill(
+                        label: l10n.monthlyPlan,
+                        sublabel: l10n
+                            .pricePerMonth(_monthlyPrice ?? r'$7.99'),
+                        selected: _selected == _Plan.monthly,
+                        onTap: () =>
+                            setState(() => _selected = _Plan.monthly),
                       ),
-                    ),
-
-                    SizedBox(height: 32.h),
-
-                    // ── Feature list
-                    ...features.map((f) => Padding(
-                          padding: EdgeInsets.only(bottom: 16.h),
-                          child: Row(
-                            children: [
-                              Container(
-                                width: 44.w,
-                                height: 44.w,
-                                decoration: BoxDecoration(
-                                  color: colors.card,
-                                  borderRadius:
-                                      BorderRadius.circular(12.r),
-                                ),
-                                child: Icon(f.$1,
-                                    color: colors.accent, size: 22.sp),
-                              ),
-                              SizedBox(width: 16.w),
-                              Expanded(
-                                child: Text(
-                                  f.$2,
-                                  style: TextStyle(
-                                    fontSize: 15.sp,
-                                    color: colors.textPrimary,
-                                  ),
-                                ),
-                              ),
-                              Icon(Icons.check_circle_rounded,
-                                  color: colors.success, size: 20.sp),
-                            ],
-                          ),
-                        )),
-
-                    SizedBox(height: 28.h),
-
-                    // ── Plan selector
-                    Row(
-                      children: [
-                        _PlanCard(
-                          label: l10n.monthlyPlan,
-                          sublabel: _monthlyPrice ?? r'$9.99 / mo',
-                          selected: _selected == _Plan.monthly,
-                          onTap: () =>
-                              setState(() => _selected = _Plan.monthly),
-                        ),
-                        SizedBox(width: 12.w),
-                        _PlanCard(
-                          label: l10n.yearlyPlan,
-                          sublabel: _yearlyPrice ?? r'$49.99 / yr',
-                          badge: l10n.bestValue,
-                          selected: _selected == _Plan.yearly,
-                          onTap: () =>
-                              setState(() => _selected = _Plan.yearly),
-                        ),
-                      ],
-                    ),
-
-                    SizedBox(height: 12.h),
-
-                    // ── Error message
-                    if (_error != null)
-                      Padding(
-                        padding: EdgeInsets.only(bottom: 8.h),
-                        child: Text(
-                          _error!,
-                          style: TextStyle(
-                              color: colors.danger, fontSize: 13.sp),
-                          textAlign: TextAlign.center,
-                        ),
+                      SizedBox(height: 12.h),
+                      _PlanPill(
+                        label: l10n.yearlyPlan,
+                        sublabel: l10n
+                            .pricePerMonth(_yearlyPerMonth ?? r'$4.20'),
+                        selected: _selected == _Plan.yearly,
+                        onTap: () =>
+                            setState(() => _selected = _Plan.yearly),
                       ),
 
-                    SizedBox(height: 8.h),
+                      SizedBox(height: 8.h),
 
-                    // ── CTA button
-                    SizedBox(
-                      width: double.infinity,
-                      height: 56.h,
-                      child: ElevatedButton(
-                        onPressed: _loading ? null : _purchase,
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: colors.accent,
-                          foregroundColor: colors.black,
-                          disabledBackgroundColor:
-                              colors.accent.withValues(alpha: 0.5),
-                          shape: RoundedRectangleBorder(
-                            borderRadius:
-                                BorderRadius.circular(AppRadius.button),
-                          ),
-                          textStyle: TextStyle(
-                            fontSize: 17.sp,
-                            fontWeight: FontWeight.w700,
-                          ),
-                        ),
-                        child: _loading
-                            ? SizedBox(
-                                width: 22.w,
-                                height: 22.w,
-                                child: CircularProgressIndicator(
-                                  strokeWidth: 2.5,
-                                  color: colors.black,
-                                ),
-                              )
-                            : Text(locked
-                                ? l10n.subscribeToContinue
-                                : l10n.startTrial),
-                      ),
-                    ),
-
-                    SizedBox(height: 16.h),
-
-                    // ── Cancel anytime disclaimer — trial copy only
-                    if (!locked) ...[
+                      // ── Yearly billed-amount caption
                       Text(
-                        l10n.cancelAnytime,
-                        textAlign: TextAlign.center,
+                        l10n.pricePerYear(_yearlyPrice ?? r'$49.99'),
                         style: TextStyle(
                           fontSize: 12.sp,
                           color: colors.textSecondary,
                         ),
                       ),
-                      SizedBox(height: 8.h),
-                    ],
 
-                    // ── Auto-renewal disclosure (Apple 3.1.2)
-                    Text(
-                      l10n.autoRenewDisclosure,
-                      textAlign: TextAlign.center,
-                      style: TextStyle(
-                        fontSize: 11.sp,
-                        color: colors.textSecondary,
+                      SizedBox(height: 16.h),
+
+                      // ── Error message
+                      if (_error != null)
+                        Padding(
+                          padding: EdgeInsets.only(bottom: 12.h),
+                          child: Text(
+                            _error!,
+                            style: TextStyle(
+                                color: colors.danger, fontSize: 13.sp),
+                            textAlign: TextAlign.center,
+                          ),
+                        ),
+
+                      // ── CTA button
+                      SizedBox(
+                        width: double.infinity,
+                        height: 64.h,
+                        child: ElevatedButton(
+                          onPressed: _loading ? null : _purchase,
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: colors.accent,
+                            foregroundColor: colors.black,
+                            disabledBackgroundColor:
+                                colors.accent.withValues(alpha: 0.5),
+                            shape: RoundedRectangleBorder(
+                              borderRadius:
+                                  BorderRadius.circular(AppRadius.button),
+                            ),
+                            textStyle: TextStyle(
+                              fontSize: 22.sp,
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
+                          child: _loading
+                              ? SizedBox(
+                                  width: 24.w,
+                                  height: 24.w,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2.5,
+                                    color: colors.black,
+                                  ),
+                                )
+                              : Text(locked
+                                  ? l10n.subscribeToContinue
+                                  : l10n.freeTrial),
+                        ),
                       ),
-                    ),
 
-                    SizedBox(height: 4.h),
+                      SizedBox(height: 14.h),
 
-                    // ── Terms of Use / Privacy Policy links
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        _footerLink(
-                            l10n.termsOfUse, 'https://mygymbro.app/terms'),
+                      // ── Yearly-savings blurb
+                      Text(
+                        l10n.saveWithYearly,
+                        textAlign: TextAlign.center,
+                        style: TextStyle(
+                          fontSize: 11.sp,
+                          fontWeight: FontWeight.w600,
+                          color: colors.textSecondary,
+                        ),
+                      ),
+
+                      SizedBox(height: 16.h),
+
+                      // ── Cancel-anytime disclaimer — trial copy only
+                      if (!locked) ...[
                         Text(
-                          '·',
+                          l10n.cancelAnytime,
+                          textAlign: TextAlign.center,
                           style: TextStyle(
-                            fontSize: 12.sp,
+                            fontSize: 11.sp,
                             color: colors.textSecondary,
                           ),
                         ),
-                        _footerLink(l10n.privacyPolicy,
-                            'https://mygymbro.app/privacy'),
+                        SizedBox(height: 4.h),
                       ],
-                    ),
 
-                    // ── Restore purchases
-                    TextButton(
-                      onPressed: _loading ? null : _restore,
-                      child: Text(
-                        l10n.restoreSubscription,
+                      // ── Auto-renewal disclosure (Apple 3.1.2)
+                      Text(
+                        l10n.autoRenewDisclosure,
+                        textAlign: TextAlign.center,
                         style: TextStyle(
-                          fontSize: 13.sp,
+                          fontSize: 11.sp,
                           color: colors.textSecondary,
-                          decoration: TextDecoration.underline,
                         ),
                       ),
-                    ),
 
-                    SizedBox(height: 24.h),
-                  ],
+                      // ── Terms / Privacy / Restore
+                      Wrap(
+                        alignment: WrapAlignment.center,
+                        crossAxisAlignment: WrapCrossAlignment.center,
+                        children: [
+                          _footerLink(
+                              l10n.termsOfUse, 'https://mygymbro.app/terms'),
+                          _footerDot(colors),
+                          _footerLink(l10n.privacyPolicy,
+                              'https://mygymbro.app/privacy'),
+                          _footerDot(colors),
+                          TextButton(
+                            onPressed: _loading ? null : _restore,
+                            child: Text(
+                              l10n.restoreSubscription,
+                              style: TextStyle(
+                                fontSize: 12.sp,
+                                color: colors.textSecondary,
+                                decoration: TextDecoration.underline,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+
+                      SizedBox(height: 16.h),
+                    ],
+                  ),
                 ),
-              ),
+              ],
             ),
-          ],
+          ),
         ),
-      ),
       ),
     );
   }
@@ -423,6 +458,11 @@ class _PaywallScreenState extends ConsumerState<PaywallScreen> {
     }
   }
 
+  Widget _footerDot(AppColorsTheme colors) => Text(
+        '·',
+        style: TextStyle(fontSize: 12.sp, color: colors.textSecondary),
+      );
+
   Widget _footerLink(String label, String url) {
     final colors = AppColors.of(context);
     return TextButton(
@@ -458,82 +498,63 @@ class _PaywallScreenState extends ConsumerState<PaywallScreen> {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Plan card widget
+// Plan pill widget
 // ─────────────────────────────────────────────────────────────────────────────
 
 enum _Plan { monthly, yearly }
 
-class _PlanCard extends StatelessWidget {
-  const _PlanCard({
+class _PlanPill extends StatelessWidget {
+  const _PlanPill({
     required this.label,
     required this.sublabel,
     required this.selected,
     required this.onTap,
-    this.badge,
   });
 
   final String label;
   final String sublabel;
-  final String? badge;
   final bool selected;
   final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
     final colors = AppColors.of(context);
-    return Expanded(
-      child: GestureDetector(
-        onTap: onTap,
-        child: AnimatedContainer(
-          duration: const Duration(milliseconds: 200),
-          padding: EdgeInsets.symmetric(vertical: 16.h, horizontal: 12.w),
-          decoration: BoxDecoration(
-            color: selected ? colors.accent.withValues(alpha: 0.12) : colors.card,
-            borderRadius: BorderRadius.circular(16.r),
-            border: Border.all(
-              color: selected ? colors.accent : colors.separator,
-              width: selected ? 2 : 1,
+    return GestureDetector(
+      onTap: onTap,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
+        width: double.infinity,
+        padding: EdgeInsets.symmetric(vertical: 14.h, horizontal: 20.w),
+        decoration: BoxDecoration(
+          color: selected
+              ? colors.accent.withValues(alpha: 0.10)
+              : colors.card,
+          borderRadius: BorderRadius.circular(AppRadius.button),
+          border: Border.all(
+            color: selected ? colors.accent : colors.separator,
+            width: selected ? 2 : 1,
+          ),
+        ),
+        child: Column(
+          children: [
+            Text(
+              label,
+              style: TextStyle(
+                fontSize: 26.sp,
+                fontWeight: FontWeight.w700,
+                color: selected ? colors.accent : colors.textPrimary,
+              ),
             ),
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              if (badge != null)
-                Container(
-                  margin: EdgeInsets.only(bottom: 8.h),
-                  padding: EdgeInsets.symmetric(
-                      horizontal: 8.w, vertical: 3.h),
-                  decoration: BoxDecoration(
-                    color: colors.accent,
-                    borderRadius: BorderRadius.circular(6.r),
-                  ),
-                  child: Text(
-                    badge!,
-                    style: TextStyle(
-                      fontSize: 10.sp,
-                      fontWeight: FontWeight.w700,
-                      color: colors.black,
-                    ),
-                  ),
-                ),
-              Text(
-                label,
-                style: TextStyle(
-                  fontSize: 16.sp,
-                  fontWeight: FontWeight.w700,
-                  color: selected ? colors.accent : colors.textPrimary,
-                ),
+            SizedBox(height: 2.h),
+            Text(
+              sublabel,
+              style: TextStyle(
+                fontSize: 13.sp,
+                fontWeight: FontWeight.w600,
+                color: colors.textSecondary,
               ),
-              SizedBox(height: 4.h),
-              Text(
-                sublabel,
-                style: TextStyle(
-                  fontSize: 13.sp,
-                  color: colors.textSecondary,
-                ),
-              ),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
     );

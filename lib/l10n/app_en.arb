@@ -129,6 +129,19 @@
   "restoreSubscription": "Restore purchases",
   "monthlyPlan": "Monthly",
   "yearlyPlan": "Yearly",
+  "pricePerMonth": "{price} / a month",
+  "@pricePerMonth": {
+    "placeholders": {
+      "price": { "type": "String" }
+    }
+  },
+  "pricePerYear": "{price} / Yearly",
+  "@pricePerYear": {
+    "placeholders": {
+      "price": { "type": "String" }
+    }
+  },
+  "saveWithYearly": "Save nearly 50% of your money with the yearly plan",
   "bestValue": "Best Value",
   "trialBadge": "7-day free trial",
   "subscribeToContinue": "Subscribe to continue",

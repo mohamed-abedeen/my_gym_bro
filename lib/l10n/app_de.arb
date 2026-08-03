@@ -87,6 +87,19 @@
   "restoreSubscription": "Käufe wiederherstellen",
   "monthlyPlan": "Monatlich",
   "yearlyPlan": "Jährlich",
+  "pricePerMonth": "{price} / Monat",
+  "@pricePerMonth": {
+    "placeholders": {
+      "price": { "type": "String" }
+    }
+  },
+  "pricePerYear": "{price} / Jahr",
+  "@pricePerYear": {
+    "placeholders": {
+      "price": { "type": "String" }
+    }
+  },
+  "saveWithYearly": "Spare fast 50 % mit dem Jahresabo",
   "bestValue": "Bestes Angebot",
   "trialBadge": "7 Tage kostenlos",
   "subscribeToContinue": "Abonnieren, um fortzufahren",

@@ -87,6 +87,19 @@
   "restoreSubscription": "Restaurer les achats",
   "monthlyPlan": "Mensuel",
   "yearlyPlan": "Annuel",
+  "pricePerMonth": "{price} / par mois",
+  "@pricePerMonth": {
+    "placeholders": {
+      "price": { "type": "String" }
+    }
+  },
+  "pricePerYear": "{price} / par an",
+  "@pricePerYear": {
+    "placeholders": {
+      "price": { "type": "String" }
+    }
+  },
+  "saveWithYearly": "Économisez près de 50 % avec l'abonnement annuel",
   "bestValue": "Meilleure offre",
   "trialBadge": "Essai gratuit 7 jours",
   "subscribeToContinue": "Abonnez-vous pour continuer",
