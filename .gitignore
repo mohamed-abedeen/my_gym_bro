@@ -1,6 +1,10 @@
 # Secrets / environment
 .env
 .env.*
+
+# Claude Code: personal per-machine settings (shared team settings live in
+# .claude/settings.json, which IS tracked)
+.claude/settings.local.json
 # iOS distribution-certificate private key (backup of the CERTIFICATE_PRIVATE_KEY
 # GitHub secret — regenerating it would orphan the cert Apple has on file)
 /ios_dist_cert_key.pem

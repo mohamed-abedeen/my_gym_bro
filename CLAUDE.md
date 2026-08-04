@@ -13,7 +13,7 @@ The app has **three** glass styles. Reuse the shared widgets below — **don't i
 ### "Make it glassy" → pick the style by context, and say which you chose
 When the user says **"make X glassy"** (or "glass", "glassify"), the look is **context-dependent** — choose based on what X is, then tell them which you applied:
 - **General surfaces** (cards, sheets, list rows, secondary/icon buttons, panels) → **frosted `GlassSurface`**.
-- **Prominent, nav-like chrome** (floating bars, the bottom-nav family, hero/primary action buttons, top-of-screen chrome) → **refractive `RefractiveGlass`** (matches the bottom nav + active-workout chrome).
+- **Prominent, nav-like chrome** (floating bars, the bottom-nav family, hero/primary action buttons, top-of-screen chrome) → **refractive `RefractiveGlass`** (the "liquid" shader look).
 - If it's genuinely ambiguous, default to frosted and ask.
 
 **Frosted `GlassSurface`** is the Telegram-style look: a real `BackdropFilter` Gaussian blur + a translucent tint + a hairline border.
@@ -25,10 +25,10 @@ When the user says **"make X glassy"** (or "glass", "glassify"), the look is **c
 - Real blur is GPU-heavier than flat fills — scope it to bars/sheets/cards; use `AppGlass.blurButton` for small chips.
 
 ### Refractive — `RefractiveGlass` (prominent / nav-like chrome)
-The `oc_liquid_glass` shader look (iOS-26-ish refraction + specular). Use it for prominent, nav-like chrome (floating bars, hero buttons, the nav family) to match the bottom nav + active-workout chrome — or whenever the user asks for the "refractive / liquid / like-the-nav" look.
+The `oc_liquid_glass` shader look (iOS-26-ish refraction + specular). Use it for prominent, nav-like chrome (floating bars, hero buttons, the nav family) — or whenever the user asks for the "refractive / liquid" look.
 
-- Widget: `lib/shared/widgets/refractive_glass.dart` (wraps `oc_liquid_glass`; settings matched to the nav).
-- Currently used by: `LiquidGlassButton`/`OcGlassBtn` with `refractive: true` (no always-on surface right now). The active-workout Add Set bar *was* refractive but is now **frosted** — see the list rule below. Set rows/check buttons are frosted `GlassSurface` pills; the non-iOS nav pill is frosted, rebuilt to a Figma spec — see the nav section.
+- Widget: `lib/shared/widgets/refractive_glass.dart` (wraps `oc_liquid_glass`).
+- **Currently dormant** — no call site passes `refractive: true`; every live surface is frosted (or the native iOS nav). The opt-in flag on `LiquidGlassButton`/`OcGlassBtn` is the entry point when something deliberately goes refractive. The active-workout chrome is now fully **frosted**: full-bleed frosted top bar (no floating capsule), frosted Add Set bar, frosted `GlassSurface` set rows/check pills. The non-iOS nav pill is frosted, rebuilt to a Figma spec — see the nav section.
 - **Never place it inside a scrolling viewport.** The shader is an *unclipped* BackdropFilter that force-writes opaque pixels across the whole enclosing clip — inside a list on Android (Impeller) it paints the entire viewport black while scrolling (visible in light mode; dark mode hides it). Outside scrollables (floating bars, overlays) it's fine.
 - `oc_liquid_glass` is retained **only** for this refractive look. Don't add it to new surfaces unless you're deliberately going refractive.
 
@@ -58,8 +58,18 @@ Real Apple Liquid Glass via `cupertino_native_better` (`CNTabBar`), **iOS only**
 
 ---
 
+## 📌 Cross-cutting product facts (newer than some plan docs — these win)
+- **Auth is Google + Apple sign-in only** (native Sign in with Apple on iOS). There is no email/password flow; don't add one.
+- **RevenueCat product IDs**: `mgb_premium_monthly` / `mgb_premium_annual`.
+- **Big numbers always get thousands separators** — "10,000 kg", never "10000 kg" — on every screen.
+- **Status sheet**: converting it from weekly to all-time (weekly stats move to reports) was attempted once and **rejected/reverted**. Don't retry without designing it with the user first.
+- Don't bulk-restyle or bulk-replace buttons (e.g. swapping to `OcGlassBtn` en masse) — each restyle needs per-change approval.
+- Every change must stay compliant with Apple App Store and Google Play policies (see `docs/plan/CLAUDE.md`).
+
+---
+
 ## 🗄️ Drift migrations must stay idempotent
-`lib/core/database/app_database.dart` is at **schemaVersion 15**. Columns are declared in the table definitions, so a fresh `createAll()` already adds them — which means raw `ALTER TABLE … ADD COLUMN` in `onUpgrade` can crash with "duplicate column" on version-inconsistent DBs.
+`lib/core/database/app_database.dart` is at **schemaVersion 16**. Columns are declared in the table definitions, so a fresh `createAll()` already adds them — which means raw `ALTER TABLE … ADD COLUMN` in `onUpgrade` can crash with "duplicate column" on version-inconsistent DBs.
 
 - **Every `ADD COLUMN` migration must go through `_addColumnIfMissing(table, column, definition)`.**
 - **Guard `createTable(...)` with `_hasTable(name)`.**
