@@ -53,7 +53,7 @@ lib/
 ├── core/
 │   ├── auth/                      # auth_notifier.dart (Supabase auth + RevenueCat login)
 │   ├── database/
-│   │   ├── app_database.dart      # Drift schema (v12) + .g.dart
+│   │   ├── app_database.dart      # Drift schema (v16) + .g.dart
 │   │   └── daos/                  # One DAO per aggregate
 │   ├── providers/                 # Riverpod DI (db, supabase, sync, auth)
 │   ├── router/                    # go_router config
@@ -61,12 +61,12 @@ lib/
 │   └── services/                  # sync, subscription_sync, notifications, seeders, widgets
 ├── features/
 │   ├── onboarding/                # Multi-screen intake → Supabase on signup
-│   ├── auth/                      # sign in
+│   ├── auth/                      # sign in (OAuth-only: Google + native Apple on iOS)
 │   ├── workout/                   # workout tab, active session, rest timer, logs, recovery
 │   ├── schedule/                  # schedule/program builder
 │   ├── exercises/                 # browser + detail
 │   ├── home/                      # dashboard
-│   ├── community/                 # feed (+ dm/ → TO BE REMOVED)
+│   ├── community/                 # feed (DMs removed in v1)
 │   ├── leaderboard/               # leaderboard + challenges
 │   ├── profile/                   # profile screen + providers
 │   ├── settings/                  # settings + skins
@@ -80,7 +80,7 @@ supabase/
 └── functions/                     # Deno edge functions
 
 assets/
-├── exercises.json                 # Seed catalog
+├── exercises_starter.json         # Small offline fallback (catalogue syncs from the exercise API)
 ├── anatomy/                       # Per-muscle SVGs (male/female) + base PNGs
 ├── skins/                         # Skin PNGs (male/female variants)
 └── audio/, images/, icons/
@@ -182,4 +182,4 @@ assets/
 
 ---
 
-**Current Phase:** Phase 1 — Paywall enforcement + DM removal (see `06-IMPLEMENTATION.md`).
+**Current status:** phases 1–3 are built (see `06-IMPLEMENTATION.md` for phase order). For the live state of external services and release readiness — TestFlight lane, RevenueCat/ASC, Supabase cloud, Firebase, licensing — read **`SETUP-STATUS.md`** before touching any of them.

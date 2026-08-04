@@ -65,6 +65,7 @@ Real Apple Liquid Glass via `cupertino_native_better` (`CNTabBar`), **iOS only**
 - **Status sheet**: converting it from weekly to all-time (weekly stats move to reports) was attempted once and **rejected/reverted**. Don't retry without designing it with the user first.
 - Don't bulk-restyle or bulk-replace buttons (e.g. swapping to `OcGlassBtn` en masse) — each restyle needs per-change approval.
 - Every change must stay compliant with Apple App Store and Google Play policies (see `docs/plan/CLAUDE.md`).
+- **External services are half-configured** (RevenueCat/ASC, Supabase cloud deploy, Firebase, exercise-data license). Read [`docs/plan/SETUP-STATUS.md`](docs/plan/SETUP-STATUS.md) before touching billing, sync, push, CI, or anything cloud-side — and keep that doc updated when you change service state.
 
 ---
 
