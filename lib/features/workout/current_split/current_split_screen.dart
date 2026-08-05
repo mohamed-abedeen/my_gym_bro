@@ -38,6 +38,7 @@ class CurrentSplitScreen extends ConsumerWidget {
             if (data == null) {
               return _TopControls(onBack: onBack, scheduleId: scheduleId);
             }
+            final resolvedScheduleId = data.schedule.localId;
             return Padding(
               padding: const EdgeInsets.fromLTRB(
                 AppSizes.contentPaddingH,
@@ -49,16 +50,17 @@ class CurrentSplitScreen extends ConsumerWidget {
                 key: const Key('current_split_screen'),
                 slivers: [
                   SliverToBoxAdapter(
-                    child: _TopControls(onBack: onBack, scheduleId: scheduleId),
+                    child: _TopControls(
+                      onBack: onBack,
+                      scheduleId: resolvedScheduleId,
+                    ),
                   ),
                   const SliverToBoxAdapter(child: SizedBox(height: 14)),
                   SliverToBoxAdapter(child: _Hero(data: data)),
                   const SliverToBoxAdapter(child: SizedBox(height: 14)),
                   SliverToBoxAdapter(child: _Metrics(data: data)),
                   const SliverToBoxAdapter(child: SizedBox(height: 14)),
-                  SliverToBoxAdapter(
-                    child: _QuickActions(scheduleId: scheduleId),
-                  ),
+                  const SliverToBoxAdapter(child: _QuickActions()),
                   const SliverToBoxAdapter(child: SizedBox(height: 24)),
                   SliverToBoxAdapter(child: _PlanHeading()),
                   const SliverToBoxAdapter(child: SizedBox(height: 12)),
@@ -69,7 +71,7 @@ class CurrentSplitScreen extends ConsumerWidget {
                         bottom: index == data.days.length - 1 ? 20 : 10,
                       ),
                       child: _DayRow(
-                        scheduleId: scheduleId,
+                        scheduleId: resolvedScheduleId,
                         summary: data.days[index],
                         fallbackDayNumber: index + 1,
                       ),
@@ -298,9 +300,7 @@ class _Metric extends StatelessWidget {
 }
 
 class _QuickActions extends StatelessWidget {
-  const _QuickActions({required this.scheduleId});
-
-  final int scheduleId;
+  const _QuickActions();
 
   @override
   Widget build(BuildContext context) {

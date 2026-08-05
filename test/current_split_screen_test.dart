@@ -75,11 +75,11 @@ void main() {
     ),
   );
 
-  Future<int> seedSelectedSchedule() async {
+  Future<({int scheduleId, int dayId})> seedSelectedSchedule() async {
     final scheduleId = await container
         .read(scheduleDaoProvider)
         .createSchedule(SchedulesCompanion.insert(name: 'Compact plan'));
-    await container
+    final dayId = await container
         .read(scheduleDaoProvider)
         .addDay(
           ScheduleDaysCompanion.insert(
@@ -91,7 +91,7 @@ void main() {
     container.read(workoutCardStateProvider.notifier).state = WorkoutCardState(
       selectedScheduleId: scheduleId,
     );
-    return scheduleId;
+    return (scheduleId: scheduleId, dayId: dayId);
   }
 
   Future<void> pumpUi(WidgetTester tester) async {
@@ -238,8 +238,9 @@ void main() {
     (tester) async {
       await tester.binding.setSurfaceSize(const Size(390, 844));
       addTearDown(() => tester.binding.setSurfaceSize(null));
-      final scheduleId = await seedSelectedSchedule();
-      await container
+      final fixture = await seedSelectedSchedule();
+      final scheduleId = fixture.scheduleId;
+      final restDayId = await container
           .read(scheduleDaoProvider)
           .addDay(
             ScheduleDaysCompanion.insert(
@@ -281,7 +282,10 @@ void main() {
         find.byKey(const Key('current_split_plan_heading')),
         findsOneWidget,
       );
-      expect(find.byKey(const Key('current_split_day_1')), findsOneWidget);
+      expect(
+        find.byKey(Key('current_split_day_${fixture.dayId}')),
+        findsOneWidget,
+      );
       expect(
         tester.getTopLeft(find.byKey(const Key('current_split_metrics'))).dy,
         lessThan(
@@ -319,10 +323,10 @@ void main() {
         greaterThan(tester.getTopLeft(statistics).dx),
       );
       await tester.scrollUntilVisible(
-        find.byKey(const Key('current_split_day_2')),
+        find.byKey(Key('current_split_day_$restDayId')),
         220,
       );
-      expect(find.byKey(const Key('current_split_day_2')), findsOneWidget);
+      expect(find.byKey(Key('current_split_day_$restDayId')), findsOneWidget);
       await tester.scrollUntilVisible(
         find.byKey(const Key('current_split_discover_disabled')),
         220,
@@ -337,7 +341,8 @@ void main() {
   testWidgets(
     'navigates current split edit and day actions with schedule extras',
     (tester) async {
-      final scheduleId = await seedSelectedSchedule();
+      final fixture = await seedSelectedSchedule();
+      final scheduleId = fixture.scheduleId;
       container.read(currentSplitScheduleIdProvider.notifier).state =
           scheduleId;
       Object? scheduleBuilderExtra;
@@ -373,23 +378,106 @@ void main() {
       router.go('/');
       await tester.pumpAndSettle();
       await tester.scrollUntilVisible(
-        find.byKey(const Key('current_split_day_1')),
+        find.byKey(Key('current_split_day_${fixture.dayId}')),
         220,
       );
-      await tester.tap(find.byKey(const Key('current_split_day_1')));
+      await tester.tap(find.byKey(Key('current_split_day_${fixture.dayId}')));
       await tester.pumpAndSettle();
       expect(
         scheduleBuilderExtra,
         isA<ScheduleBuilderArgs>()
             .having((args) => args.scheduleId, 'schedule id', scheduleId)
-            .having((args) => args.initialDayLocalId, 'initial day', 1),
+            .having(
+              (args) => args.initialDayLocalId,
+              'initial day',
+              fixture.dayId,
+            ),
+      );
+    },
+  );
+
+  testWidgets(
+    'fallback navigation uses the resolved active schedule identity',
+    (tester) async {
+      final activeScheduleId = await container
+          .read(scheduleDaoProvider)
+          .createSchedule(
+            SchedulesCompanion.insert(
+              name: 'Fallback active plan',
+              isActive: const Value(true),
+            ),
+          );
+      final activeDayId = await container
+          .read(scheduleDaoProvider)
+          .addDay(
+            ScheduleDaysCompanion.insert(
+              scheduleId: activeScheduleId,
+              dayIndex: 0,
+              label: const Value('Fallback day'),
+            ),
+          );
+      final nonexistentScheduleId = activeScheduleId + 100000;
+      container.read(currentSplitScheduleIdProvider.notifier).state =
+          nonexistentScheduleId;
+      Object? scheduleBuilderExtra;
+      final router = GoRouter(
+        routes: [
+          GoRoute(path: '/', builder: (_, _) => const WorkoutScreen()),
+          GoRoute(
+            path: AppRoutes.scheduleBuilder,
+            builder: (_, state) {
+              scheduleBuilderExtra = state.extra;
+              return const SizedBox();
+            },
+          ),
+          GoRoute(
+            path: AppRoutes.settings,
+            builder: (_, _) => const SizedBox(),
+          ),
+        ],
+      );
+      addTearDown(router.dispose);
+      await tester.pumpWidget(routerApp(router));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Fallback active plan'), findsOneWidget);
+      await tester.tap(find.byKey(const Key('current_split_edit_button')));
+      await tester.pumpAndSettle();
+      expect(
+        scheduleBuilderExtra,
+        isA<ScheduleBuilderArgs>().having(
+          (args) => args.scheduleId,
+          'resolved schedule id',
+          activeScheduleId,
+        ),
+      );
+
+      router.go('/');
+      await tester.pumpAndSettle();
+      final dayRow = find.byKey(Key('current_split_day_$activeDayId'));
+      await tester.scrollUntilVisible(dayRow, 220);
+      await tester.tap(dayRow);
+      await tester.pumpAndSettle();
+      expect(
+        scheduleBuilderExtra,
+        isA<ScheduleBuilderArgs>()
+            .having(
+              (args) => args.scheduleId,
+              'resolved schedule id',
+              activeScheduleId,
+            )
+            .having(
+              (args) => args.initialDayLocalId,
+              'resolved day id',
+              activeDayId,
+            ),
       );
     },
   );
 
   testWidgets('marks nutrition disabled and opens settings', (tester) async {
     final semanticsHandle = tester.ensureSemantics();
-    final scheduleId = await seedSelectedSchedule();
+    final scheduleId = (await seedSelectedSchedule()).scheduleId;
     container.read(currentSplitScheduleIdProvider.notifier).state = scheduleId;
     var openedSettings = false;
     final router = GoRouter(
@@ -435,7 +523,7 @@ void main() {
   testWidgets('opens reports from the current split progress action', (
     tester,
   ) async {
-    final scheduleId = await seedSelectedSchedule();
+    final scheduleId = (await seedSelectedSchedule()).scheduleId;
     container.read(currentSplitScheduleIdProvider.notifier).state = scheduleId;
     final router = GoRouter(
       routes: [
@@ -469,7 +557,7 @@ void main() {
   testWidgets('current split overview has no overflow at target phone sizes', (
     tester,
   ) async {
-    final scheduleId = await seedSelectedSchedule();
+    final scheduleId = (await seedSelectedSchedule()).scheduleId;
     container.read(currentSplitScheduleIdProvider.notifier).state = scheduleId;
     final router = GoRouter(
       routes: [
