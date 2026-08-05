@@ -22,6 +22,21 @@ import 'package:my_gym_bro/shared/responsive.dart';
 import 'package:my_gym_bro/shared/widgets/bottom_nav_pill.dart';
 import 'package:my_gym_bro/shared/widgets/ios_native_nav.dart';
 
+enum RootBackAction { deferToRouter, closeCurrentSplit, goHome, handleHomeExit }
+
+RootBackAction decideRootBackAction({
+  required bool routerCanPop,
+  required int navIndex,
+  required int? currentSplitScheduleId,
+}) {
+  if (routerCanPop) return RootBackAction.deferToRouter;
+  if (navIndex == 1 && currentSplitScheduleId != null) {
+    return RootBackAction.closeCurrentSplit;
+  }
+  if (navIndex != 0) return RootBackAction.goHome;
+  return RootBackAction.handleHomeExit;
+}
+
 /// Main app scaffold — animated tab switching with floating nav pill.
 ///
 /// Pages: [HomeScreen, WorkoutScreen, CommunityScreen]
@@ -207,16 +222,23 @@ class _MyGymBroScaffoldState extends ConsumerState<MyGymBroScaffold>
   /// on Home a double-back within 2s exits.
   /// Returns true when the event was consumed.
   Future<bool> _handleRootBack() async {
-    if (GoRouter.of(context).canPop()) return false; // let the router pop
-    if (ref.read(navIndexProvider) == 1 &&
-        ref.read(currentSplitScheduleIdProvider) != null) {
-      ref.read(currentSplitScheduleIdProvider.notifier).state = null;
-      return true;
-    }
-    if (ref.read(navIndexProvider) != 0) {
-      ref.read(navIndexProvider.notifier).state = 0;
-      _lastBackAt = null; // exit window starts fresh on Home
-      return true;
+    final action = decideRootBackAction(
+      routerCanPop: GoRouter.of(context).canPop(),
+      navIndex: ref.read(navIndexProvider),
+      currentSplitScheduleId: ref.read(currentSplitScheduleIdProvider),
+    );
+    switch (action) {
+      case RootBackAction.deferToRouter:
+        return false;
+      case RootBackAction.closeCurrentSplit:
+        ref.read(currentSplitScheduleIdProvider.notifier).state = null;
+        return true;
+      case RootBackAction.goHome:
+        ref.read(navIndexProvider.notifier).state = 0;
+        _lastBackAt = null; // exit window starts fresh on Home
+        return true;
+      case RootBackAction.handleHomeExit:
+        break;
     }
     final now = DateTime.now();
     if (_lastBackAt != null &&
