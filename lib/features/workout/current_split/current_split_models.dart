@@ -3,12 +3,12 @@ import 'package:my_gym_bro/core/services/exercise_mapping.dart';
 import 'package:my_gym_bro/features/workout/muscle_recovery_service.dart';
 
 class CurrentSplitDaySummary {
-  const CurrentSplitDaySummary({
+  CurrentSplitDaySummary({
     required this.day,
     required this.exerciseCount,
     required this.plannedSetCount,
-    required this.muscleGroups,
-  });
+    required List<String> muscleGroups,
+  }) : muscleGroups = List.unmodifiable(muscleGroups);
 
   final ScheduleDay day;
   final int exerciseCount;
@@ -19,15 +19,16 @@ class CurrentSplitDaySummary {
 }
 
 class CurrentSplitOverviewData {
-  const CurrentSplitOverviewData({
+  CurrentSplitOverviewData({
     required this.schedule,
-    required this.days,
+    required List<CurrentSplitDaySummary> days,
     required this.trainingDayCount,
     required this.restDayCount,
     required this.totalExerciseCount,
     required this.totalPlannedSets,
-    required this.plannedMuscleGroups,
-  });
+    required Set<String> plannedMuscleGroups,
+  }) : days = List.unmodifiable(days),
+       plannedMuscleGroups = Set.unmodifiable(plannedMuscleGroups);
 
   final Schedule schedule;
   final List<CurrentSplitDaySummary> days;
@@ -66,7 +67,12 @@ CurrentSplitOverviewData buildCurrentSplitOverview({
 
   final plannedMuscleGroups = <String>{};
   final summaries = days.toList()
-    ..sort((first, second) => first.dayIndex.compareTo(second.dayIndex));
+    ..sort((first, second) {
+      final dayIndexComparison = first.dayIndex.compareTo(second.dayIndex);
+      return dayIndexComparison != 0
+          ? dayIndexComparison
+          : first.localId.compareTo(second.localId);
+    });
   final daySummaries = summaries
       .map((day) {
         final scheduledForDay = scheduledByDayId[day.localId] ?? const [];

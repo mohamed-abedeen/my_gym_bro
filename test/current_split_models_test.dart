@@ -169,4 +169,127 @@ void main() {
     expect(overview.plannedMuscleGroups, isEmpty);
     expect(overview.anatomyMuscles, isEmpty);
   });
+
+  test(
+    'preserves caller day ordering while sorting equal indices by local ID',
+    () {
+      final callerDays = [
+        _day(id: 3, dayIndex: 1, label: 'Third'),
+        _day(id: 2, dayIndex: 0, label: 'Second'),
+        _day(id: 1, dayIndex: 0, label: 'First'),
+      ];
+
+      final overview = buildCurrentSplitOverview(
+        schedule: _schedule(),
+        days: callerDays,
+        scheduledExercises: const [],
+        exercises: const [],
+      );
+
+      expect(callerDays.map((day) => day.localId), [3, 2, 1]);
+      expect(overview.days.map((summary) => summary.day.localId), [1, 2, 3]);
+    },
+  );
+
+  test('filters blank, Cardio, and duplicate planned muscle groups', () {
+    final overview = buildCurrentSplitOverview(
+      schedule: _schedule(),
+      days: [_day(id: 1, dayIndex: 0, label: 'Push')],
+      scheduledExercises: [
+        _scheduledExercise(id: 1, dayId: 1, exerciseId: 'bench', targetSets: 3),
+        _scheduledExercise(id: 2, dayId: 1, exerciseId: 'fly', targetSets: 3),
+        _scheduledExercise(id: 3, dayId: 1, exerciseId: 'run', targetSets: 1),
+        _scheduledExercise(
+          id: 4,
+          dayId: 1,
+          exerciseId: 'extension',
+          targetSets: 2,
+        ),
+      ],
+      exercises: [
+        _exercise(
+          id: 1,
+          exerciseId: 'bench',
+          name: 'Bench press',
+          muscleGroup: 'Chest',
+        ),
+        _exercise(
+          id: 2,
+          exerciseId: 'fly',
+          name: 'Chest fly',
+          muscleGroup: 'Chest',
+        ),
+        _exercise(id: 3, exerciseId: 'run', name: 'Run', muscleGroup: 'Cardio'),
+        _exercise(
+          id: 4,
+          exerciseId: 'extension',
+          name: 'Triceps extension',
+          muscleGroup: ' ',
+          targetMuscles: '["triceps"]',
+        ),
+      ],
+    );
+
+    expect(overview.days.single.muscleGroups, ['Chest', 'Triceps']);
+    expect(overview.plannedMuscleGroups.toList(), ['Chest', 'Triceps']);
+  });
+
+  test('exposes immutable collection outputs from direct construction', () {
+    final summaryMuscles = <String>['Chest'];
+    final overviewDays = <CurrentSplitDaySummary>[
+      CurrentSplitDaySummary(
+        day: _day(id: 1, dayIndex: 0, label: 'Push'),
+        exerciseCount: 1,
+        plannedSetCount: 3,
+        muscleGroups: summaryMuscles,
+      ),
+    ];
+    final overviewGroups = <String>{'Chest'};
+    final overview = CurrentSplitOverviewData(
+      schedule: _schedule(),
+      days: overviewDays,
+      trainingDayCount: 1,
+      restDayCount: 0,
+      totalExerciseCount: 1,
+      totalPlannedSets: 3,
+      plannedMuscleGroups: overviewGroups,
+    );
+
+    summaryMuscles.add('Triceps');
+    overviewDays.clear();
+    overviewGroups.add('Triceps');
+
+    expect(overview.days.single.muscleGroups, ['Chest']);
+    expect(overview.days, hasLength(1));
+    expect(overview.plannedMuscleGroups, {'Chest'});
+    expect(
+      () => overview.days.single.muscleGroups.add('Triceps'),
+      throwsUnsupportedError,
+    );
+    expect(
+      () => overview.days.add(overview.days.single),
+      throwsUnsupportedError,
+    );
+    expect(
+      () => overview.plannedMuscleGroups.add('Triceps'),
+      throwsUnsupportedError,
+    );
+  });
+
+  test('returns anatomy muscles in planned muscle-group order', () {
+    final overview = CurrentSplitOverviewData(
+      schedule: _schedule(),
+      days: const [],
+      trainingDayCount: 0,
+      restDayCount: 0,
+      totalExerciseCount: 0,
+      totalPlannedSets: 0,
+      plannedMuscleGroups: {'Lats', 'Chest'},
+    );
+
+    expect(overview.anatomyMuscles.map((muscle) => muscle.muscleGroup), [
+      'Lats',
+      'Chest',
+    ]);
+  });
 }
