@@ -94,6 +94,11 @@ void main() {
     return scheduleId;
   }
 
+  Future<void> pumpUi(WidgetTester tester) async {
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 500));
+  }
+
   testWidgets('opens the currently displayed schedule from a populated day', (
     tester,
   ) async {
@@ -127,7 +132,7 @@ void main() {
     );
 
     await tester.pumpWidget(app());
-    await tester.pumpAndSettle();
+    await pumpUi(tester);
 
     expect(activeId, isNot(selectedId));
     expect(find.text('Picker-selected plan'), findsOneWidget);
@@ -149,7 +154,7 @@ void main() {
     expect(find.byIcon(Icons.edit_rounded), findsNothing);
 
     await tester.drag(find.byType(PageView), const Offset(-600, 0));
-    await tester.pumpAndSettle();
+    await tester.pump(const Duration(milliseconds: 500));
     expect(
       find.byIcon(Icons.search),
       findsOneWidget,
@@ -157,10 +162,10 @@ void main() {
     );
 
     await tester.drag(find.byType(PageView), const Offset(600, 0));
-    await tester.pumpAndSettle();
+    await tester.pump(const Duration(milliseconds: 500));
 
     await tester.tap(openButton);
-    await tester.pumpAndSettle();
+    await pumpUi(tester);
 
     expect(find.byKey(const Key('current_split_screen')), findsOneWidget);
     expect(container.read(currentSplitScheduleIdProvider), selectedId);
@@ -176,7 +181,7 @@ void main() {
     expect(backSemantics.flagsCollection.isButton, isTrue);
 
     await tester.tap(find.byKey(const Key('current_split_back_button')));
-    await tester.pumpAndSettle();
+    await tester.pump();
 
     expect(find.byKey(const Key('current_split_screen')), findsNothing);
     expect(find.byKey(const Key('current_split_open_button')), findsOneWidget);
@@ -384,7 +389,6 @@ void main() {
 
   testWidgets('marks nutrition disabled and opens settings', (tester) async {
     final semanticsHandle = tester.ensureSemantics();
-    addTearDown(semanticsHandle.dispose);
     final scheduleId = await seedSelectedSchedule();
     container.read(currentSplitScheduleIdProvider.notifier).state = scheduleId;
     var openedSettings = false;
@@ -416,13 +420,16 @@ void main() {
           .hasAction(SemanticsAction.tap),
       isFalse,
     );
-    await tester.scrollUntilVisible(
-      find.byKey(const Key('current_split_action_settings')),
-      180,
-    );
-    await tester.tap(find.byKey(const Key('current_split_action_settings')));
+    final settings = find.byKey(const Key('current_split_action_settings'));
+    await Scrollable.ensureVisible(tester.element(settings), alignment: 0.5);
+    await tester.pump();
+    final settingsCenter = tester.getCenter(settings);
+    final viewport = tester.getRect(find.byType(CustomScrollView));
+    expect(viewport.contains(settingsCenter), isTrue);
+    await tester.tap(settings);
     await tester.pumpAndSettle();
     expect(openedSettings, isTrue);
+    semanticsHandle.dispose();
   });
 
   testWidgets('opens reports from the current split progress action', (
