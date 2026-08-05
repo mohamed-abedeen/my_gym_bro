@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:drift/drift.dart';
 import 'package:drift/native.dart';
 import 'package:flutter/material.dart';
@@ -6,9 +8,23 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:my_gym_bro/core/database/app_database.dart';
 import 'package:my_gym_bro/core/database/daos/schedule_dao.dart';
 import 'package:my_gym_bro/core/providers/providers.dart';
+import 'package:my_gym_bro/core/router/app_router.dart';
 import 'package:my_gym_bro/features/schedule/schedule_builder_screen.dart';
+import 'package:my_gym_bro/features/workout/workout_providers.dart';
 import 'package:my_gym_bro/l10n/app_localizations.dart';
 import 'package:my_gym_bro/shared/constants.dart';
+
+class _DelayedScheduleDao extends ScheduleDao {
+  _DelayedScheduleDao(super.db, this._release);
+
+  final Future<void> _release;
+
+  @override
+  Future<List<Schedule>> getAll() async {
+    await _release;
+    return super.getAll();
+  }
+}
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
@@ -28,8 +44,12 @@ void main() {
 
   tearDown(() => db.close());
 
-  Widget app(Widget child) => ProviderScope(
-    overrides: [databaseProvider.overrideWithValue(db)],
+  Widget app(Widget child, {ScheduleDao? scheduleDaoOverride}) => ProviderScope(
+    overrides: [
+      databaseProvider.overrideWithValue(db),
+      if (scheduleDaoOverride != null)
+        scheduleDaoProvider.overrideWithValue(scheduleDaoOverride),
+    ],
     child: MaterialApp(
       theme: ThemeData(extensions: const [AppColorsTheme.dark]),
       localizationsDelegates: AppLocalizations.localizationsDelegates,
@@ -97,6 +117,23 @@ void main() {
     );
   }
 
+  Future<({int scheduleId, int targetDayId})> seedDays(int count) async {
+    final scheduleId = await scheduleDao.createSchedule(
+      SchedulesCompanion.insert(name: 'Long split'),
+    );
+    var targetDayId = -1;
+    for (var index = 0; index < count; index++) {
+      targetDayId = await scheduleDao.addDay(
+        ScheduleDaysCompanion.insert(
+          scheduleId: scheduleId,
+          dayIndex: index,
+          label: Value('Day ${index + 1}'),
+        ),
+      );
+    }
+    return (scheduleId: scheduleId, targetDayId: targetDayId);
+  }
+
   testWidgets('focuses the requested existing training day after loading', (
     tester,
   ) async {
@@ -127,6 +164,46 @@ void main() {
     expect(
       find.byKey(Key('schedule_builder_day_content_${ids.pushId}')),
       findsNothing,
+    );
+  });
+
+  testWidgets('scrolls a requested lower day into the phone viewport', (
+    tester,
+  ) async {
+    final originalSize = tester.view.physicalSize;
+    final originalDevicePixelRatio = tester.view.devicePixelRatio;
+    tester.view.physicalSize = const Size(390, 560);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(() {
+      tester.view.physicalSize = originalSize;
+      tester.view.devicePixelRatio = originalDevicePixelRatio;
+    });
+    final ids = await seedDays(8);
+
+    await tester.pumpWidget(
+      app(
+        ScheduleBuilderScreen(
+          scheduleId: ids.scheduleId,
+          initialDayLocalId: ids.targetDayId,
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(
+      find.byKey(Key('schedule_builder_day_${ids.targetDayId}')).hitTestable(),
+      findsOneWidget,
+    );
+    expect(
+      find
+          .descendant(
+            of: find.byKey(
+              Key('schedule_builder_day_content_${ids.targetDayId}'),
+            ),
+            matching: find.text(l10n.day),
+          )
+          .hitTestable(),
+      findsOneWidget,
     );
   });
 
@@ -190,9 +267,21 @@ void main() {
       await tester.pumpAndSettle();
 
       final days = await scheduleDao.getDays(ids.scheduleId);
+      expect(days.map((day) => day.label), ['Push', 'Rest', 'Pull']);
+      expect(days.map((day) => day.isRestDay), [false, true, false]);
       final rest = days.singleWhere((day) => day.label == 'Rest');
+      final push = days.singleWhere((day) => day.label == 'Push');
+      final pull = days.singleWhere((day) => day.label == 'Pull');
       expect(rest.isRestDay, isTrue);
       expect(await scheduleDao.getExercises(rest.localId), isEmpty);
+      final pushExercises = await scheduleDao.getExercises(push.localId);
+      final pullExercises = await scheduleDao.getExercises(pull.localId);
+      expect(pushExercises.single.exerciseId, 'bench');
+      expect(pushExercises.single.targetSets, 3);
+      expect(pushExercises.single.targetReps, 10);
+      expect(pullExercises.single.exerciseId, 'row');
+      expect(pullExercises.single.targetSets, 3);
+      expect(pullExercises.single.targetReps, 10);
     },
   );
 
@@ -241,10 +330,42 @@ void main() {
     },
   );
 
+  testWidgets('does not write to a disposed schedule editor after loading', (
+    tester,
+  ) async {
+    final ids = await seedSchedule();
+    final release = Completer<void>();
+
+    await tester.pumpWidget(
+      app(
+        ScheduleBuilderScreen(scheduleId: ids.scheduleId),
+        scheduleDaoOverride: _DelayedScheduleDao(db, release.future),
+      ),
+    );
+    await tester.pumpWidget(const SizedBox());
+    release.complete();
+    await tester.pumpAndSettle();
+
+    expect(tester.takeException(), equals(null));
+  });
+
   test('ScheduleBuilderArgs retains schedule and initial day identifiers', () {
     const args = ScheduleBuilderArgs(scheduleId: 12, initialDayLocalId: 34);
 
     expect(args.scheduleId, 12);
     expect(args.initialDayLocalId, 34);
+  });
+
+  test('converts schedule builder route extras compatibly', () {
+    final none = scheduleBuilderArgsFromExtra(null);
+    final legacy = scheduleBuilderArgsFromExtra(12);
+    const explicit = ScheduleBuilderArgs(scheduleId: 23, initialDayLocalId: 45);
+
+    expect(none.scheduleId, equals(null));
+    expect(none.initialDayLocalId, equals(null));
+    expect(legacy.scheduleId, 12);
+    expect(legacy.initialDayLocalId, equals(null));
+    expect(scheduleBuilderArgsFromExtra(explicit), same(explicit));
+    expect(() => scheduleBuilderArgsFromExtra('invalid'), throwsArgumentError);
   });
 }
