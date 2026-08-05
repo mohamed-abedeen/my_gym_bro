@@ -29,7 +29,8 @@ class ScheduleDao extends DatabaseAccessor<AppDatabase>
   /// Stream one schedule by local ID.
   Stream<Schedule?> watchById(int localId) =>
       (select(schedules)..where((t) => t.localId.equals(localId)))
-          .watchSingleOrNull();
+          .watchSingleOrNull()
+          .distinct();
 
   /// Create a new schedule.
   Future<int> createSchedule(SchedulesCompanion companion) =>
@@ -86,6 +87,7 @@ class ScheduleDao extends DatabaseAccessor<AppDatabase>
           ..where(scheduleDays.scheduleId.equals(scheduleId))
           ..orderBy([
             OrderingTerm.asc(scheduleDays.dayIndex),
+            OrderingTerm.asc(scheduleDays.localId),
             OrderingTerm.asc(scheduledExercises.orderIndex),
             OrderingTerm.asc(scheduledExercises.localId),
           ]);
