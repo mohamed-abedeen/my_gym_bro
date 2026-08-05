@@ -26,6 +26,11 @@ class ScheduleDao extends DatabaseAccessor<AppDatabase>
       (select(schedules)..where((t) => t.isActive.equals(true)))
           .watchSingleOrNull();
 
+  /// Stream one schedule by local ID.
+  Stream<Schedule?> watchById(int localId) =>
+      (select(schedules)..where((t) => t.localId.equals(localId)))
+          .watchSingleOrNull();
+
   /// Create a new schedule.
   Future<int> createSchedule(SchedulesCompanion companion) =>
       into(schedules).insert(companion);
@@ -67,6 +72,30 @@ class ScheduleDao extends DatabaseAccessor<AppDatabase>
             ..where((t) => t.scheduleDayId.equals(scheduleDayId))
             ..orderBy([(t) => OrderingTerm.asc(t.orderIndex)]))
           .get();
+
+  /// Stream all exercises belonging to a schedule, ordered by day and
+  /// exercise position so callers can aggregate them deterministically.
+  Stream<List<ScheduledExercise>> watchExercisesForSchedule(int scheduleId) {
+    final query =
+        select(scheduledExercises).join([
+            innerJoin(
+              scheduleDays,
+              scheduleDays.localId.equalsExp(scheduledExercises.scheduleDayId),
+            ),
+          ])
+          ..where(scheduleDays.scheduleId.equals(scheduleId))
+          ..orderBy([
+            OrderingTerm.asc(scheduleDays.dayIndex),
+            OrderingTerm.asc(scheduledExercises.orderIndex),
+            OrderingTerm.asc(scheduledExercises.localId),
+          ]);
+
+    return query.watch().map(
+      (rows) => rows
+          .map((row) => row.readTable(scheduledExercises))
+          .toList(growable: false),
+    );
+  }
 
   /// Add an exercise to a schedule day.
   Future<int> addExercise(ScheduledExercisesCompanion companion) =>
