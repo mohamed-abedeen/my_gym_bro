@@ -500,6 +500,9 @@ class AppLocalizationsDe extends AppLocalizations {
   String get back => 'Zurück';
 
   @override
+  String get openCurrentSplit => 'Aktuellen Trainingsplan öffnen';
+
+  @override
   String get share => 'Teilen';
 
   @override

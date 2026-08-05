@@ -501,6 +501,9 @@ class AppLocalizationsFr extends AppLocalizations {
   String get back => 'Retour';
 
   @override
+  String get openCurrentSplit => 'Ouvrir le programme actuel';
+
+  @override
   String get share => 'Partager';
 
   @override

@@ -495,6 +495,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get back => 'Back';
 
   @override
+  String get openCurrentSplit => 'Open current split';
+
+  @override
   String get share => 'Share';
 
   @override

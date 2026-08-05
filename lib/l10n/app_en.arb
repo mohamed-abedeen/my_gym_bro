@@ -220,6 +220,7 @@
   "edit": "Edit",
   "done": "Done",
   "back": "Back",
+  "openCurrentSplit": "Open current split",
   "share": "Share",
   "schedule": "Schedule",
   "noScheduleYet": "No schedule yet",

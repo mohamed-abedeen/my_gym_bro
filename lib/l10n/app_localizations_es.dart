@@ -498,6 +498,9 @@ class AppLocalizationsEs extends AppLocalizations {
   String get back => 'Atrás';
 
   @override
+  String get openCurrentSplit => 'Abrir rutina actual';
+
+  @override
   String get share => 'Compartir';
 
   @override

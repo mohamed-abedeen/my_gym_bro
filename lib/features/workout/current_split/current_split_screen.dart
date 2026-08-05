@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:my_gym_bro/l10n/app_localizations.dart';
 
 class CurrentSplitScreen extends ConsumerWidget {
   const CurrentSplitScreen({
@@ -18,10 +19,17 @@ class CurrentSplitScreen extends ConsumerWidget {
         key: const Key('current_split_screen'),
         child: Align(
           alignment: Alignment.topLeft,
-          child: IconButton(
+          child: Semantics(
             key: const Key('current_split_back_button'),
-            onPressed: onBack,
-            icon: const Icon(Icons.arrow_back_rounded),
+            button: true,
+            label: AppLocalizations.of(context).back,
+            onTap: onBack,
+            excludeSemantics: true,
+            child: IconButton(
+              onPressed: onBack,
+              tooltip: AppLocalizations.of(context).back,
+              icon: const Icon(Icons.arrow_back_rounded),
+            ),
           ),
         ),
       ),

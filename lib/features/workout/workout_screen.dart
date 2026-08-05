@@ -1121,24 +1121,35 @@ class _DayCard extends ConsumerWidget {
               ),
               SizedBox(height: 8.h),
               // Current split button
-              GestureDetector(
-                key: const Key('current_split_open_button'),
-                onTap: () =>
-                    ref.read(currentSplitScheduleIdProvider.notifier).state =
-                        schedule.localId,
-                child: Container(
-                  width: 69.w,
-                  height: 64.h,
-                  decoration: BoxDecoration(
-                    color: AppColors.of(context).white,
-                    borderRadius: BorderRadius.circular(
-                      AppRadius.scheduleCircle.r,
+              Semantics(
+                button: true,
+                label: l10n.openCurrentSplit,
+                child: GestureDetector(
+                  key: const Key('current_split_open_button'),
+                  behavior: HitTestBehavior.opaque,
+                  onTap: () =>
+                      ref.read(currentSplitScheduleIdProvider.notifier).state =
+                          schedule.localId,
+                  child: ConstrainedBox(
+                    constraints: const BoxConstraints(
+                      minWidth: 44,
+                      minHeight: 44,
                     ),
-                  ),
-                  child: Icon(
-                    Icons.search_rounded,
-                    color: AppColors.of(context).black,
-                    size: 33.sp,
+                    child: Container(
+                      width: 69.w,
+                      height: 64.h,
+                      decoration: BoxDecoration(
+                        color: AppColors.of(context).white,
+                        borderRadius: BorderRadius.circular(
+                          AppRadius.scheduleCircle.r,
+                        ),
+                      ),
+                      child: Icon(
+                        Icons.search_rounded,
+                        color: AppColors.of(context).black,
+                        size: 33.sp,
+                      ),
+                    ),
                   ),
                 ),
               ),

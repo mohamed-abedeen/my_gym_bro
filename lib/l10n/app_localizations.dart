@@ -1014,6 +1014,12 @@ abstract class AppLocalizations {
   /// **'Back'**
   String get back;
 
+  /// No description provided for @openCurrentSplit.
+  ///
+  /// In en, this message translates to:
+  /// **'Open current split'**
+  String get openCurrentSplit;
+
   /// No description provided for @share.
   ///
   /// In en, this message translates to:
