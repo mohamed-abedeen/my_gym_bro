@@ -671,6 +671,13 @@ void main() {
         find.byKey(const Key('current_split_back_button')),
         findsOneWidget,
       );
+      expect(
+        tester
+            .getSemantics(find.byKey(const Key('current_split_edit_button')))
+            .getSemanticsData()
+            .hasAction(SemanticsAction.tap),
+        isFalse,
+      );
       await tester.pump(const Duration(seconds: 1));
       expect(tester.binding.hasScheduledFrame, isFalse);
     },
@@ -850,8 +857,90 @@ void main() {
       find.text('Dein Trainingsplan konnte nicht geladen werden.'),
       findsOneWidget,
     );
+    expect(
+      tester
+          .getSemantics(find.byKey(const Key('current_split_edit_button')))
+          .getSemanticsData()
+          .hasAction(SemanticsAction.tap),
+      isFalse,
+    );
     await tester.tap(find.byKey(const Key('current_split_retry')));
     await tester.pumpAndSettle();
     expect(attempts, greaterThanOrEqualTo(2));
+  });
+
+  testWidgets('disables edit while a retained plan refreshes or fails', (
+    tester,
+  ) async {
+    final refresh = Completer<CurrentSplitOverviewData?>();
+    var attempts = 0;
+    const scheduleId = 407;
+    final overviewData = CurrentSplitOverviewData(
+      schedule: const Schedule(
+        localId: scheduleId,
+        syncStatus: 'synced',
+        name: 'Retained plan',
+        isActive: true,
+      ),
+      days: const [],
+      trainingDayCount: 0,
+      restDayCount: 0,
+      totalExerciseCount: 0,
+      totalPlannedSets: 0,
+      plannedMuscleGroups: const {},
+    );
+    final stateContainer = ProviderContainer(
+      overrides: [
+        databaseProvider.overrideWithValue(db),
+        currentSplitOverviewProvider(scheduleId).overrideWith((ref) {
+          attempts++;
+          return attempts == 1 ? Future.value(overviewData) : refresh.future;
+        }),
+      ],
+    );
+    addTearDown(stateContainer.dispose);
+
+    await tester.pumpWidget(
+      UncontrolledProviderScope(
+        container: stateContainer,
+        child: MaterialApp(
+          theme: ThemeData(extensions: const [AppColorsTheme.dark]),
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
+          home: Scaffold(
+            body: CurrentSplitScreen(scheduleId: scheduleId, onBack: () {}),
+          ),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+    final edit = find.byKey(const Key('current_split_edit_button'));
+    expect(
+      tester
+          .getSemantics(edit)
+          .getSemanticsData()
+          .hasAction(SemanticsAction.tap),
+      isTrue,
+    );
+
+    stateContainer.invalidate(currentSplitOverviewProvider(scheduleId));
+    await tester.pump(const Duration(milliseconds: 1));
+    expect(
+      tester
+          .getSemantics(edit)
+          .getSemanticsData()
+          .hasAction(SemanticsAction.tap),
+      isFalse,
+    );
+
+    refresh.completeError(StateError('offline'));
+    await tester.pumpAndSettle();
+    expect(
+      tester
+          .getSemantics(edit)
+          .getSemanticsData()
+          .hasAction(SemanticsAction.tap),
+      isFalse,
+    );
   });
 }

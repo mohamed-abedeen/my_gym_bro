@@ -27,7 +27,14 @@ class CurrentSplitScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final overview = ref.watch(currentSplitOverviewProvider(scheduleId));
-    final resolvedScheduleId = overview.valueOrNull?.schedule.localId;
+    final canEdit =
+        overview is AsyncData<CurrentSplitOverviewData?> &&
+        !overview.isLoading &&
+        !overview.isRefreshing &&
+        !overview.hasError;
+    final resolvedScheduleId = canEdit
+        ? overview.valueOrNull?.schedule.localId
+        : null;
 
     return ColoredBox(
       color: AppColors.of(context).background,
