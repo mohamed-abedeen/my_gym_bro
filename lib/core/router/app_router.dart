@@ -296,9 +296,14 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: AppRoutes.scheduleBuilder,
         pageBuilder: (context, state) {
-          final scheduleId = state.extra as int?;
+          final args = state.extra is ScheduleBuilderArgs
+              ? state.extra! as ScheduleBuilderArgs
+              : ScheduleBuilderArgs(scheduleId: state.extra as int?);
           return _platformPage(
-            child: ScheduleBuilderScreen(scheduleId: scheduleId),
+            child: ScheduleBuilderScreen(
+              scheduleId: args.scheduleId,
+              initialDayLocalId: args.initialDayLocalId,
+            ),
             state: state,
           );
         },
