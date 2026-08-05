@@ -98,6 +98,16 @@ class ExerciseDao extends DatabaseAccessor<AppDatabase>
   Future<List<Exercise>> findByExerciseIds(List<String> exerciseIds) =>
       (select(exercises)..where((t) => t.exerciseId.isIn(exerciseIds))).get();
 
+  /// Stream exercise metadata for the requested exercise IDs.
+  Stream<List<Exercise>> watchByExerciseIds(List<String> exerciseIds) {
+    if (exerciseIds.isEmpty) return Stream.value(const []);
+
+    return (select(exercises)
+          ..where((t) => t.exerciseId.isIn(exerciseIds))
+          ..orderBy([(t) => OrderingTerm.asc(t.exerciseId)]))
+        .watch();
+  }
+
   /// Update the muscleGroup column for a single exercise.
   Future<void> updateMuscleGroup(String exerciseId, String muscleGroup) =>
       (update(exercises)..where((t) => t.exerciseId.equals(exerciseId)))

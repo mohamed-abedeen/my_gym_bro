@@ -92,11 +92,14 @@ class ScheduleDao extends DatabaseAccessor<AppDatabase>
             OrderingTerm.asc(scheduledExercises.localId),
           ]);
 
-    return query.watch().map(
-      (rows) => rows
-          .map((row) => row.readTable(scheduledExercises))
-          .toList(growable: false),
-    );
+    return query
+        .watch()
+        .map(
+          (rows) => rows
+              .map((row) => row.readTable(scheduledExercises))
+              .toList(growable: false),
+        )
+        .distinct(_sameScheduledExercises);
   }
 
   /// Add an exercise to a schedule day.
@@ -134,4 +137,15 @@ class ScheduleDao extends DatabaseAccessor<AppDatabase>
           ..where((t) => t.scheduleId.equals(scheduleId)))
         .go();
   }
+}
+
+bool _sameScheduledExercises(
+  List<ScheduledExercise> previous,
+  List<ScheduledExercise> next,
+) {
+  if (previous.length != next.length) return false;
+  for (var index = 0; index < previous.length; index++) {
+    if (previous[index] != next[index]) return false;
+  }
+  return true;
 }
