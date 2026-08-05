@@ -196,6 +196,51 @@ void main() {
     },
   );
 
+  testWidgets(
+    'keeps unsaved day identity stable when a saved ID matches its index',
+    (tester) async {
+      final ids = await seedSchedule();
+
+      await tester.pumpWidget(
+        app(ScheduleBuilderScreen(scheduleId: ids.scheduleId)),
+      );
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.text(l10n.addDay));
+      await tester.pumpAndSettle();
+      expect(tester.takeException(), equals(null));
+
+      final firstNewDay = find.byKey(const Key('schedule_builder_day_new-0'));
+      expect(firstNewDay, findsOneWidget);
+
+      await tester.tap(find.text(l10n.addDay));
+      await tester.pumpAndSettle();
+      expect(tester.takeException(), equals(null));
+
+      final secondNewDay = find.byKey(const Key('schedule_builder_day_new-1'));
+      expect(secondNewDay, findsOneWidget);
+
+      await tester.tap(
+        find.descendant(
+          of: firstNewDay,
+          matching: find.byIcon(Icons.calendar_today_rounded),
+        ),
+      );
+      await tester.pumpAndSettle();
+      await tester.tap(
+        find.descendant(
+          of: firstNewDay,
+          matching: find.byIcon(Icons.delete_outline_rounded),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      expect(tester.takeException(), equals(null));
+      expect(firstNewDay, findsNothing);
+      expect(secondNewDay, findsOneWidget);
+    },
+  );
+
   test('ScheduleBuilderArgs retains schedule and initial day identifiers', () {
     const args = ScheduleBuilderArgs(scheduleId: 12, initialDayLocalId: 34);
 

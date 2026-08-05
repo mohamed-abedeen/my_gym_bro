@@ -35,11 +35,13 @@ class _DayModel {
   _DayModel({
     required this.label,
     required this.dayOfWeek,
+    required this.uiKey,
     this.sourceLocalId,
     this.isRestDay = false,
     List<_ExerciseModel>? exercises,
   }) : exercises = exercises ?? [];
 
+  final String uiKey;
   final int? sourceLocalId;
   String label;
   String dayOfWeek; // e.g. "Saturday", "Monday"
@@ -92,6 +94,7 @@ class _ScheduleBuilderScreenState extends ConsumerState<ScheduleBuilderScreen> {
   int _expandedDay = -1;
   bool _saving = false;
   bool _nameInitialized = false;
+  int _nextNewDayId = 0;
   bool get _isEditMode => widget.scheduleId != null;
 
   @override
@@ -163,6 +166,7 @@ class _ScheduleBuilderScreenState extends ConsumerState<ScheduleBuilderScreen> {
           label: day.label ?? '',
           sourceLocalId: day.localId,
           dayOfWeek: '',
+          uiKey: 'saved-${day.localId}',
           isRestDay: day.isRestDay,
           exercises: exModels,
         ),
@@ -392,163 +396,168 @@ class _ScheduleBuilderScreenState extends ConsumerState<ScheduleBuilderScreen> {
     final day = _days[i];
     final isExpanded = i == _expandedDay;
     final dayLabel = day.label.isNotEmpty ? day.label : l10n.dayNumber(i + 1);
-    final dayKeyId = day.sourceLocalId ?? i;
+    final publicDayKeyId = day.sourceLocalId?.toString() ?? day.uiKey;
 
-    return AnimatedContainer(
-      key: Key('schedule_builder_day_$dayKeyId'),
-      duration: const Duration(milliseconds: 250),
-      curve: Curves.easeInOut,
-      decoration: BoxDecoration(
-        color: colors.cardElevated,
-        borderRadius: BorderRadius.circular(25.r),
-      ),
-      padding: EdgeInsets.all(16.w),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // ── Day header row ──
-          GestureDetector(
-            onTap: () => setState(() {
-              _expandedDay = _expandedDay == i ? -1 : i;
-            }),
-            behavior: HitTestBehavior.opaque,
-            child: Row(
-              children: [
-                Icon(
-                  Icons.calendar_today_rounded,
-                  color: colors.accent,
-                  size: 20.sp,
-                ),
-                SizedBox(width: 10.w),
-                Expanded(
-                  child: Text(
-                    dayLabel,
-                    style: TextStyle(
-                      color: colors.textPrimary,
-                      fontSize: 18.sp,
-                      fontWeight: FontWeight.w700,
-                    ),
-                  ),
-                ),
-                if (isExpanded) ...[
-                  GestureDetector(
-                    onTap: () {
-                      setState(() {
-                        _days.removeAt(i);
-                        if (_expandedDay >= _days.length) {
-                          _expandedDay = _days.length - 1;
-                        }
-                      });
-                    },
-                    child: Icon(
-                      Icons.delete_outline_rounded,
-                      color: colors.textPrimary,
-                      size: 20.sp,
-                    ),
-                  ),
-                  SizedBox(width: 12.w),
-                ],
-                Icon(
-                  isExpanded
-                      ? Icons.keyboard_arrow_up_rounded
-                      : Icons.keyboard_arrow_down_rounded,
-                  color: colors.textPrimary,
-                  size: 28.sp,
-                ),
-              ],
-            ),
-          ),
-
-          // ── Expanded content ──
-          if (isExpanded)
-            KeyedSubtree(
-              key: Key('schedule_builder_day_content_$dayKeyId'),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+    return KeyedSubtree(
+      key: Key('schedule_builder_day_$publicDayKeyId'),
+      child: AnimatedContainer(
+        key: ValueKey<String>(day.uiKey),
+        duration: const Duration(milliseconds: 250),
+        curve: Curves.easeInOut,
+        decoration: BoxDecoration(
+          color: colors.cardElevated,
+          borderRadius: BorderRadius.circular(25.r),
+        ),
+        padding: EdgeInsets.all(16.w),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // ── Day header row ──
+            GestureDetector(
+              onTap: () => setState(() {
+                _expandedDay = _expandedDay == i ? -1 : i;
+              }),
+              behavior: HitTestBehavior.opaque,
+              child: Row(
                 children: [
-                  SizedBox(height: 10.h),
-
-                  // ── Tag pills (day of week + label) ──
-                  _buildTagPills(i),
-                  if (!day.isRestDay) ...[
-                    SizedBox(height: 16.h),
-
-                    // ── Exercises (drag-to-reorder) ──
-                    // shrinkWrap + NeverScrollableScrollPhysics prevent scroll
-                    // conflicts with the outer ListView.
-                    ReorderableListView(
-                      shrinkWrap: true,
-                      physics: const NeverScrollableScrollPhysics(),
-                      buildDefaultDragHandles: false,
-                      onReorderItem: (oldIndex, newIndex) {
+                  Icon(
+                    Icons.calendar_today_rounded,
+                    color: colors.accent,
+                    size: 20.sp,
+                  ),
+                  SizedBox(width: 10.w),
+                  Expanded(
+                    child: Text(
+                      dayLabel,
+                      style: TextStyle(
+                        color: colors.textPrimary,
+                        fontSize: 18.sp,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                  ),
+                  if (isExpanded) ...[
+                    GestureDetector(
+                      onTap: () {
                         setState(() {
-                          final moved = _days[i].exercises.removeAt(oldIndex);
-                          _days[i].exercises.insert(newIndex, moved);
+                          _days.removeAt(i);
+                          if (_expandedDay >= _days.length) {
+                            _expandedDay = _days.length - 1;
+                          }
                         });
                       },
-                      children: [
-                        for (
-                          var exIdx = 0;
-                          exIdx < day.exercises.length;
-                          exIdx++
-                        )
-                          _buildExerciseRow(
-                            i,
-                            exIdx,
-                            day.exercises[exIdx],
-                            l10n,
-                            // exerciseId is guaranteed unique within a day.
-                            key: ValueKey(day.exercises[exIdx].exerciseId),
-                          ),
-                      ],
-                    ),
-
-                    // Divider before Add Exercise
-                    if (day.exercises.isNotEmpty) ...[
-                      Container(
-                        height: 1,
-                        color: colors.divider,
-                        margin: EdgeInsets.symmetric(vertical: 8.h),
-                      ),
-                    ],
-
-                    // ── Add Exercise button ──
-                    GestureDetector(
-                      key: Key('schedule_builder_add_exercise_$dayKeyId'),
-                      onTap: () => _pickExercise(i),
-                      child: Padding(
-                        padding: EdgeInsets.symmetric(vertical: 8.h),
-                        child: Row(
-                          children: [
-                            LiquidGlassButton(
-                              width: 36.w,
-                              height: 36.h,
-                              opacity: 0.15,
-                              radius: 18.r,
-                              child: Icon(
-                                Icons.add_rounded,
-                                color: colors.textPrimary,
-                                size: 20.sp,
-                              ),
-                            ),
-                            SizedBox(width: 10.w),
-                            Text(
-                              l10n.addExercise,
-                              style: TextStyle(
-                                color: colors.textPrimary,
-                                fontSize: 14.sp,
-                                fontWeight: FontWeight.w700,
-                              ),
-                            ),
-                          ],
-                        ),
+                      child: Icon(
+                        Icons.delete_outline_rounded,
+                        color: colors.textPrimary,
+                        size: 20.sp,
                       ),
                     ),
+                    SizedBox(width: 12.w),
                   ],
+                  Icon(
+                    isExpanded
+                        ? Icons.keyboard_arrow_up_rounded
+                        : Icons.keyboard_arrow_down_rounded,
+                    color: colors.textPrimary,
+                    size: 28.sp,
+                  ),
                 ],
               ),
             ),
-        ],
+
+            // ── Expanded content ──
+            if (isExpanded)
+              KeyedSubtree(
+                key: Key('schedule_builder_day_content_$publicDayKeyId'),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    SizedBox(height: 10.h),
+
+                    // ── Tag pills (day of week + label) ──
+                    _buildTagPills(i),
+                    if (!day.isRestDay) ...[
+                      SizedBox(height: 16.h),
+
+                      // ── Exercises (drag-to-reorder) ──
+                      // shrinkWrap + NeverScrollableScrollPhysics prevent scroll
+                      // conflicts with the outer ListView.
+                      ReorderableListView(
+                        shrinkWrap: true,
+                        physics: const NeverScrollableScrollPhysics(),
+                        buildDefaultDragHandles: false,
+                        onReorderItem: (oldIndex, newIndex) {
+                          setState(() {
+                            final moved = _days[i].exercises.removeAt(oldIndex);
+                            _days[i].exercises.insert(newIndex, moved);
+                          });
+                        },
+                        children: [
+                          for (
+                            var exIdx = 0;
+                            exIdx < day.exercises.length;
+                            exIdx++
+                          )
+                            _buildExerciseRow(
+                              i,
+                              exIdx,
+                              day.exercises[exIdx],
+                              l10n,
+                              // exerciseId is guaranteed unique within a day.
+                              key: ValueKey(day.exercises[exIdx].exerciseId),
+                            ),
+                        ],
+                      ),
+
+                      // Divider before Add Exercise
+                      if (day.exercises.isNotEmpty) ...[
+                        Container(
+                          height: 1,
+                          color: colors.divider,
+                          margin: EdgeInsets.symmetric(vertical: 8.h),
+                        ),
+                      ],
+
+                      // ── Add Exercise button ──
+                      GestureDetector(
+                        key: Key(
+                          'schedule_builder_add_exercise_$publicDayKeyId',
+                        ),
+                        onTap: () => _pickExercise(i),
+                        child: Padding(
+                          padding: EdgeInsets.symmetric(vertical: 8.h),
+                          child: Row(
+                            children: [
+                              LiquidGlassButton(
+                                width: 36.w,
+                                height: 36.h,
+                                opacity: 0.15,
+                                radius: 18.r,
+                                child: Icon(
+                                  Icons.add_rounded,
+                                  color: colors.textPrimary,
+                                  size: 20.sp,
+                                ),
+                              ),
+                              SizedBox(width: 10.w),
+                              Text(
+                                l10n.addExercise,
+                                style: TextStyle(
+                                  color: colors.textPrimary,
+                                  fontSize: 14.sp,
+                                  fontWeight: FontWeight.w700,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ],
+                  ],
+                ),
+              ),
+          ],
+        ),
       ),
     );
   }
@@ -933,7 +942,9 @@ class _ScheduleBuilderScreenState extends ConsumerState<ScheduleBuilderScreen> {
 
   void _addDay() {
     setState(() {
-      _days.add(_DayModel(label: '', dayOfWeek: ''));
+      _days.add(
+        _DayModel(label: '', dayOfWeek: '', uiKey: 'new-${_nextNewDayId++}'),
+      );
       _expandedDay = _days.length - 1;
     });
   }
