@@ -1848,4 +1848,47 @@ class AppLocalizationsFr extends AppLocalizations {
     );
     return '$_temp0';
   }
+
+  @override
+  String get currentPlanEyebrow => 'PLAN ACTUEL';
+
+  @override
+  String get currentSplitDescription =>
+      'Une routine hebdomadaire équilibrée pour progresser régulièrement.';
+
+  @override
+  String trainingDaysCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count jours d\'entraînement',
+      one: '1 jour d\'entraînement',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get currentSplitTrainingDays => 'Jours d\'entraînement';
+
+  @override
+  String get currentSplitPlannedSets => 'Séries prévues';
+
+  @override
+  String get currentSplitRestDays => 'Jours de repos';
+
+  @override
+  String get currentSplitProgress => 'Progression';
+
+  @override
+  String get currentSplitNutrition => 'Nutrition';
+
+  @override
+  String get currentSplitStatistics => 'Statistiques';
+
+  @override
+  String get currentSplitWeeklyPlan => 'Ton programme hebdomadaire';
+
+  @override
+  String get currentSplitDiscoverPlans =>
+      'Découvrir d\'autres programmes d\'entraînement';
 }

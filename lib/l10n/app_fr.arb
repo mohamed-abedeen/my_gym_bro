@@ -656,5 +656,21 @@
   "allTime": "Depuis le début",
   "noHistoryYet": "Aucun historique pour l'instant",
   "primaryLabel": "Principal",
-  "secondaryLabel": "Secondaire"
+  "secondaryLabel": "Secondaire",
+  "currentPlanEyebrow": "PLAN ACTUEL",
+  "currentSplitDescription": "Une routine hebdomadaire équilibrée pour progresser régulièrement.",
+  "trainingDaysCount": "{count, plural, =1{1 jour d'entraînement} other{{count} jours d'entraînement}}",
+  "@trainingDaysCount": {
+    "placeholders": {
+      "count": { "type": "int" }
+    }
+  },
+  "currentSplitTrainingDays": "Jours d'entraînement",
+  "currentSplitPlannedSets": "Séries prévues",
+  "currentSplitRestDays": "Jours de repos",
+  "currentSplitProgress": "Progression",
+  "currentSplitNutrition": "Nutrition",
+  "currentSplitStatistics": "Statistiques",
+  "currentSplitWeeklyPlan": "Ton programme hebdomadaire",
+  "currentSplitDiscoverPlans": "Découvrir d'autres programmes d'entraînement"
 }

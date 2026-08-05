@@ -1830,4 +1830,46 @@ class AppLocalizationsEn extends AppLocalizations {
     );
     return '$_temp0';
   }
+
+  @override
+  String get currentPlanEyebrow => 'CURRENT PLAN';
+
+  @override
+  String get currentSplitDescription =>
+      'A balanced weekly routine built for steady progress.';
+
+  @override
+  String trainingDaysCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count training days',
+      one: '1 training day',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get currentSplitTrainingDays => 'Training days';
+
+  @override
+  String get currentSplitPlannedSets => 'Planned sets';
+
+  @override
+  String get currentSplitRestDays => 'Rest days';
+
+  @override
+  String get currentSplitProgress => 'Progress';
+
+  @override
+  String get currentSplitNutrition => 'Nutrition';
+
+  @override
+  String get currentSplitStatistics => 'Statistics';
+
+  @override
+  String get currentSplitWeeklyPlan => 'Your Weekly Plan';
+
+  @override
+  String get currentSplitDiscoverPlans => 'Discover other training plans';
 }

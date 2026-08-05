@@ -815,5 +815,21 @@
     "placeholders": {
       "count": { "type": "int" }
     }
-  }
+  },
+  "currentPlanEyebrow": "CURRENT PLAN",
+  "currentSplitDescription": "A balanced weekly routine built for steady progress.",
+  "trainingDaysCount": "{count, plural, =1{1 training day} other{{count} training days}}",
+  "@trainingDaysCount": {
+    "placeholders": {
+      "count": { "type": "int" }
+    }
+  },
+  "currentSplitTrainingDays": "Training days",
+  "currentSplitPlannedSets": "Planned sets",
+  "currentSplitRestDays": "Rest days",
+  "currentSplitProgress": "Progress",
+  "currentSplitNutrition": "Nutrition",
+  "currentSplitStatistics": "Statistics",
+  "currentSplitWeeklyPlan": "Your Weekly Plan",
+  "currentSplitDiscoverPlans": "Discover other training plans"
 }
