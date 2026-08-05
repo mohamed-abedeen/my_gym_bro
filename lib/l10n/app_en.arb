@@ -831,5 +831,30 @@
   "currentSplitNutrition": "Nutrition",
   "currentSplitStatistics": "Statistics",
   "currentSplitWeeklyPlan": "Your Weekly Plan",
-  "currentSplitDiscoverPlans": "Discover other training plans"
+  "currentSplitDiscoverPlans": "Discover other training plans",
+  "currentSplitLoading": "Your current training plan is loading",
+  "@currentSplitLoading": {
+    "description": "Status message shown while the current split data loads."
+  },
+  "currentSplitNoPlanMessage": "You do not have a training plan yet.",
+  "@currentSplitNoPlanMessage": {
+    "description": "Explanation shown when no requested or active plan exists."
+  },
+  "currentSplitEmptyPlanMessage": "Your plan does not have any days yet.",
+  "@currentSplitEmptyPlanMessage": {
+    "description": "Explanation shown when a plan exists but has no scheduled days."
+  },
+  "currentSplitCreatePlan": "Create training plan",
+  "currentSplitBuildPlan": "Build your plan",
+  "currentSplitLoadError": "Your training plan could not be loaded.",
+  "currentSplitEditPlan": "Edit training plan",
+  "currentSplitOpenPlanDay": "Open training day",
+  "currentSplitUnavailable": "Unavailable",
+  "currentSplitExercisesCount": "{count, plural, =1{1 exercise} other{{count} exercises}}",
+  "@currentSplitExercisesCount": {
+    "description": "Number of exercises in a plan or plan day.",
+    "placeholders": {
+      "count": { "type": "int" }
+    }
+  }
 }

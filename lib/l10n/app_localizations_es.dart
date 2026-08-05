@@ -1883,4 +1883,45 @@ class AppLocalizationsEs extends AppLocalizations {
   @override
   String get currentSplitDiscoverPlans =>
       'Descubre otros planes de entrenamiento';
+
+  @override
+  String get currentSplitLoading =>
+      'Tu plan de entrenamiento actual se está cargando';
+
+  @override
+  String get currentSplitNoPlanMessage =>
+      'Todavía no tienes un plan de entrenamiento.';
+
+  @override
+  String get currentSplitEmptyPlanMessage => 'Tu plan todavía no tiene días.';
+
+  @override
+  String get currentSplitCreatePlan => 'Crear plan de entrenamiento';
+
+  @override
+  String get currentSplitBuildPlan => 'Crear tu plan';
+
+  @override
+  String get currentSplitLoadError =>
+      'No se pudo cargar tu plan de entrenamiento.';
+
+  @override
+  String get currentSplitEditPlan => 'Editar plan de entrenamiento';
+
+  @override
+  String get currentSplitOpenPlanDay => 'Abrir día de entrenamiento';
+
+  @override
+  String get currentSplitUnavailable => 'No disponible';
+
+  @override
+  String currentSplitExercisesCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count ejercicios',
+      one: '1 ejercicio',
+    );
+    return '$_temp0';
+  }
 }

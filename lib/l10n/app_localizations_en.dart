@@ -1872,4 +1872,44 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get currentSplitDiscoverPlans => 'Discover other training plans';
+
+  @override
+  String get currentSplitLoading => 'Your current training plan is loading';
+
+  @override
+  String get currentSplitNoPlanMessage =>
+      'You do not have a training plan yet.';
+
+  @override
+  String get currentSplitEmptyPlanMessage =>
+      'Your plan does not have any days yet.';
+
+  @override
+  String get currentSplitCreatePlan => 'Create training plan';
+
+  @override
+  String get currentSplitBuildPlan => 'Build your plan';
+
+  @override
+  String get currentSplitLoadError => 'Your training plan could not be loaded.';
+
+  @override
+  String get currentSplitEditPlan => 'Edit training plan';
+
+  @override
+  String get currentSplitOpenPlanDay => 'Open training day';
+
+  @override
+  String get currentSplitUnavailable => 'Unavailable';
+
+  @override
+  String currentSplitExercisesCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count exercises',
+      one: '1 exercise',
+    );
+    return '$_temp0';
+  }
 }

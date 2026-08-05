@@ -1891,4 +1891,46 @@ class AppLocalizationsFr extends AppLocalizations {
   @override
   String get currentSplitDiscoverPlans =>
       'Découvrir d\'autres programmes d\'entraînement';
+
+  @override
+  String get currentSplitLoading =>
+      'Ton programme d’entraînement actuel se charge';
+
+  @override
+  String get currentSplitNoPlanMessage =>
+      'Tu n’as pas encore de programme d’entraînement.';
+
+  @override
+  String get currentSplitEmptyPlanMessage =>
+      'Ton programme n’a pas encore de jours.';
+
+  @override
+  String get currentSplitCreatePlan => 'Créer un programme d’entraînement';
+
+  @override
+  String get currentSplitBuildPlan => 'Créer ton programme';
+
+  @override
+  String get currentSplitLoadError =>
+      'Impossible de charger ton programme d’entraînement.';
+
+  @override
+  String get currentSplitEditPlan => 'Modifier le programme d’entraînement';
+
+  @override
+  String get currentSplitOpenPlanDay => 'Ouvrir le jour d’entraînement';
+
+  @override
+  String get currentSplitUnavailable => 'Indisponible';
+
+  @override
+  String currentSplitExercisesCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count exercices',
+      one: '1 exercice',
+    );
+    return '$_temp0';
+  }
 }

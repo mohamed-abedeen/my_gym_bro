@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:ui' show SemanticsAction;
 
 import 'package:drift/drift.dart' hide isNull;
@@ -11,7 +12,9 @@ import 'package:my_gym_bro/core/database/app_database.dart';
 import 'package:my_gym_bro/core/providers/providers.dart';
 import 'package:my_gym_bro/core/router/app_router.dart';
 import 'package:my_gym_bro/features/schedule/schedule_builder_screen.dart';
+import 'package:my_gym_bro/features/workout/current_split/current_split_models.dart';
 import 'package:my_gym_bro/features/workout/current_split/current_split_providers.dart';
+import 'package:my_gym_bro/features/workout/current_split/current_split_screen.dart';
 import 'package:my_gym_bro/features/workout/reports_screen.dart';
 import 'package:my_gym_bro/features/workout/workout_providers.dart';
 import 'package:my_gym_bro/features/workout/workout_screen.dart';
@@ -75,17 +78,20 @@ void main() {
     ),
   );
 
-  Future<({int scheduleId, int dayId})> seedSelectedSchedule() async {
+  Future<({int scheduleId, int dayId})> seedSelectedSchedule({
+    String scheduleName = 'Compact plan',
+    String dayName = 'Compact day',
+  }) async {
     final scheduleId = await container
         .read(scheduleDaoProvider)
-        .createSchedule(SchedulesCompanion.insert(name: 'Compact plan'));
+        .createSchedule(SchedulesCompanion.insert(name: scheduleName));
     final dayId = await container
         .read(scheduleDaoProvider)
         .addDay(
           ScheduleDaysCompanion.insert(
             scheduleId: scheduleId,
             dayIndex: 0,
-            label: const Value('Compact day'),
+            label: Value(dayName),
           ),
         );
     container.read(workoutCardStateProvider.notifier).state = WorkoutCardState(
@@ -557,7 +563,12 @@ void main() {
   testWidgets('current split overview has no overflow at target phone sizes', (
     tester,
   ) async {
-    final scheduleId = (await seedSelectedSchedule()).scheduleId;
+    final scheduleId = (await seedSelectedSchedule(
+      scheduleName:
+          'A deliberately long training schedule name that needs more than two ordinary lines',
+      dayName:
+          'A deliberately long training-day label that should remain usable at large text sizes',
+    )).scheduleId;
     container.read(currentSplitScheduleIdProvider.notifier).state = scheduleId;
     final router = GoRouter(
       routes: [
@@ -571,6 +582,10 @@ void main() {
     );
     addTearDown(router.dispose);
     addTearDown(() => tester.binding.setSurfaceSize(null));
+    tester.binding.platformDispatcher.textScaleFactorTestValue = 2;
+    addTearDown(
+      () => tester.binding.platformDispatcher.clearTextScaleFactorTestValue(),
+    );
 
     for (final size in const [Size(390, 844), Size(430, 932)]) {
       await tester.binding.setSurfaceSize(size);
@@ -586,5 +601,171 @@ void main() {
         reason: 'at ${size.width}x${size.height}',
       );
     }
+  });
+
+  testWidgets(
+    'shows a localized loading state without losing back navigation',
+    (tester) async {
+      final pending = Completer<CurrentSplitOverviewData?>();
+      final loadingContainer = ProviderContainer(
+        overrides: [
+          databaseProvider.overrideWithValue(db),
+          currentSplitOverviewProvider(
+            42,
+          ).overrideWith((ref) => pending.future),
+        ],
+      );
+      addTearDown(loadingContainer.dispose);
+
+      await tester.pumpWidget(
+        UncontrolledProviderScope(
+          container: loadingContainer,
+          child: MaterialApp(
+            locale: const Locale('de'),
+            theme: ThemeData(extensions: const [AppColorsTheme.dark]),
+            localizationsDelegates: AppLocalizations.localizationsDelegates,
+            supportedLocales: AppLocalizations.supportedLocales,
+            home: MediaQuery(
+              data: const MediaQueryData(disableAnimations: true),
+              child: Scaffold(
+                body: CurrentSplitScreen(scheduleId: 42, onBack: () {}),
+              ),
+            ),
+          ),
+        ),
+      );
+      await tester.pump();
+
+      expect(find.byKey(const Key('current_split_loading')), findsOneWidget);
+      expect(
+        find.text('Dein aktueller Trainingsplan wird geladen'),
+        findsOneWidget,
+      );
+      expect(
+        find.byKey(const Key('current_split_back_button')),
+        findsOneWidget,
+      );
+      await tester.pump(const Duration(seconds: 1));
+      expect(tester.binding.hasScheduledFrame, isFalse);
+    },
+  );
+
+  testWidgets('shows localized no-plan and empty-plan actions', (tester) async {
+    final noPlanContainer = ProviderContainer(
+      overrides: [
+        databaseProvider.overrideWithValue(db),
+        currentSplitOverviewProvider(43).overrideWith((ref) async => null),
+      ],
+    );
+    addTearDown(noPlanContainer.dispose);
+
+    await tester.pumpWidget(
+      UncontrolledProviderScope(
+        container: noPlanContainer,
+        child: MaterialApp(
+          locale: const Locale('de'),
+          theme: ThemeData(extensions: const [AppColorsTheme.dark]),
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
+          home: Scaffold(
+            body: CurrentSplitScreen(scheduleId: 43, onBack: () {}),
+          ),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.byKey(const Key('current_split_no_plan')), findsOneWidget);
+    expect(find.text('Du hast noch keinen Trainingsplan.'), findsOneWidget);
+    expect(find.byKey(const Key('current_split_create_plan')), findsOneWidget);
+
+    final emptyData = CurrentSplitOverviewData(
+      schedule: const Schedule(
+        localId: 44,
+        syncStatus: 'synced',
+        name: 'Empty plan',
+        isActive: true,
+      ),
+      days: const [],
+      trainingDayCount: 0,
+      restDayCount: 0,
+      totalExerciseCount: 0,
+      totalPlannedSets: 0,
+      plannedMuscleGroups: const {},
+    );
+    final emptyContainer = ProviderContainer(
+      overrides: [
+        databaseProvider.overrideWithValue(db),
+        currentSplitOverviewProvider(44).overrideWith((ref) async => emptyData),
+      ],
+    );
+    addTearDown(emptyContainer.dispose);
+
+    await tester.pumpWidget(
+      UncontrolledProviderScope(
+        container: emptyContainer,
+        child: MaterialApp(
+          locale: const Locale('es'),
+          theme: ThemeData(extensions: const [AppColorsTheme.dark]),
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
+          home: Scaffold(
+            body: CurrentSplitScreen(scheduleId: 44, onBack: () {}),
+          ),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.scrollUntilVisible(
+      find.byKey(const Key('current_split_empty_plan')),
+      220,
+    );
+    expect(find.byKey(const Key('current_split_empty_plan')), findsOneWidget);
+    expect(find.text('Tu plan todavía no tiene días.'), findsOneWidget);
+    expect(find.byType(InkWell), isNot(findsNothing));
+    await tester.pumpWidget(const SizedBox());
+    await tester.pump(const Duration(milliseconds: 1));
+  });
+
+  testWidgets('shows a localized error and retries the overview provider', (
+    tester,
+  ) async {
+    var attempts = 0;
+    final errorContainer = ProviderContainer(
+      overrides: [
+        databaseProvider.overrideWithValue(db),
+        currentSplitOverviewProvider(45).overrideWith((ref) async {
+          attempts++;
+          throw StateError('offline');
+        }),
+      ],
+    );
+    addTearDown(errorContainer.dispose);
+
+    await tester.pumpWidget(
+      UncontrolledProviderScope(
+        container: errorContainer,
+        child: MaterialApp(
+          locale: const Locale('de'),
+          theme: ThemeData(extensions: const [AppColorsTheme.dark]),
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
+          home: Scaffold(
+            body: CurrentSplitScreen(scheduleId: 45, onBack: () {}),
+          ),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.byKey(const Key('current_split_error')), findsOneWidget);
+    expect(
+      find.text('Dein Trainingsplan konnte nicht geladen werden.'),
+      findsOneWidget,
+    );
+    await tester.tap(find.byKey(const Key('current_split_retry')));
+    await tester.pumpAndSettle();
+    expect(attempts, greaterThanOrEqualTo(2));
   });
 }

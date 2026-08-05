@@ -3515,6 +3515,66 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Discover other training plans'**
   String get currentSplitDiscoverPlans;
+
+  /// Status message shown while the current split data loads.
+  ///
+  /// In en, this message translates to:
+  /// **'Your current training plan is loading'**
+  String get currentSplitLoading;
+
+  /// Explanation shown when no requested or active plan exists.
+  ///
+  /// In en, this message translates to:
+  /// **'You do not have a training plan yet.'**
+  String get currentSplitNoPlanMessage;
+
+  /// Explanation shown when a plan exists but has no scheduled days.
+  ///
+  /// In en, this message translates to:
+  /// **'Your plan does not have any days yet.'**
+  String get currentSplitEmptyPlanMessage;
+
+  /// No description provided for @currentSplitCreatePlan.
+  ///
+  /// In en, this message translates to:
+  /// **'Create training plan'**
+  String get currentSplitCreatePlan;
+
+  /// No description provided for @currentSplitBuildPlan.
+  ///
+  /// In en, this message translates to:
+  /// **'Build your plan'**
+  String get currentSplitBuildPlan;
+
+  /// No description provided for @currentSplitLoadError.
+  ///
+  /// In en, this message translates to:
+  /// **'Your training plan could not be loaded.'**
+  String get currentSplitLoadError;
+
+  /// No description provided for @currentSplitEditPlan.
+  ///
+  /// In en, this message translates to:
+  /// **'Edit training plan'**
+  String get currentSplitEditPlan;
+
+  /// No description provided for @currentSplitOpenPlanDay.
+  ///
+  /// In en, this message translates to:
+  /// **'Open training day'**
+  String get currentSplitOpenPlanDay;
+
+  /// No description provided for @currentSplitUnavailable.
+  ///
+  /// In en, this message translates to:
+  /// **'Unavailable'**
+  String get currentSplitUnavailable;
+
+  /// Number of exercises in a plan or plan day.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 exercise} other{{count} exercises}}'**
+  String currentSplitExercisesCount(int count);
 }
 
 class _AppLocalizationsDelegate
