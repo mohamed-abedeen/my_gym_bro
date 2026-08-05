@@ -27,8 +27,7 @@ class CurrentSplitScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final overview = ref.watch(currentSplitOverviewProvider(scheduleId));
-    final displayedScheduleId =
-        overview.valueOrNull?.schedule.localId ?? scheduleId;
+    final resolvedScheduleId = overview.valueOrNull?.schedule.localId;
 
     return ColoredBox(
       color: AppColors.of(context).background,
@@ -46,7 +45,7 @@ class CurrentSplitScreen extends ConsumerWidget {
               SliverToBoxAdapter(
                 child: _TopControls(
                   onBack: onBack,
-                  scheduleId: displayedScheduleId,
+                  scheduleId: resolvedScheduleId,
                 ),
               ),
               const SliverToBoxAdapter(child: SizedBox(height: 14)),
@@ -83,8 +82,10 @@ class CurrentSplitScreen extends ConsumerWidget {
                               context,
                             ).currentSplitCreatePlan,
                             actionKey: const Key('current_split_create_plan'),
-                            onAction: () =>
-                                context.push(AppRoutes.scheduleBuilder),
+                            onAction: () => context.push(
+                              AppRoutes.scheduleBuilder,
+                              extra: const ScheduleBuilderArgs(),
+                            ),
                           ),
                         ),
                       ]
@@ -249,12 +250,16 @@ class _TopControls extends StatelessWidget {
   const _TopControls({required this.onBack, required this.scheduleId});
 
   final VoidCallback onBack;
-  final int scheduleId;
+  final int? scheduleId;
 
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
     final colors = AppColors.of(context);
+    final canEdit = scheduleId != null;
+    final editLabel = canEdit
+        ? l10n.currentSplitEditPlan
+        : '${l10n.currentSplitEditPlan}, ${l10n.currentSplitUnavailable}';
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
@@ -274,18 +279,23 @@ class _TopControls extends StatelessWidget {
         Semantics(
           key: const Key('current_split_edit_button'),
           button: true,
-          label: l10n.currentSplitEditPlan,
-          onTap: () => context.push(
-            AppRoutes.scheduleBuilder,
-            extra: ScheduleBuilderArgs(scheduleId: scheduleId),
-          ),
+          enabled: canEdit,
+          label: editLabel,
+          onTap: canEdit
+              ? () => context.push(
+                  AppRoutes.scheduleBuilder,
+                  extra: ScheduleBuilderArgs(scheduleId: scheduleId),
+                )
+              : null,
           excludeSemantics: true,
           child: IconButton(
-            onPressed: () => context.push(
-              AppRoutes.scheduleBuilder,
-              extra: ScheduleBuilderArgs(scheduleId: scheduleId),
-            ),
-            tooltip: l10n.currentSplitEditPlan,
+            onPressed: canEdit
+                ? () => context.push(
+                    AppRoutes.scheduleBuilder,
+                    extra: ScheduleBuilderArgs(scheduleId: scheduleId),
+                  )
+                : null,
+            tooltip: editLabel,
             constraints: const BoxConstraints(minWidth: 44, minHeight: 44),
             icon: Icon(Icons.more_horiz_rounded, color: colors.textPrimary),
           ),
@@ -436,10 +446,7 @@ class _Metrics extends StatelessWidget {
             value: data.trainingDayCount,
             label: l10n.currentSplitTrainingDays,
           ),
-          _Metric(
-            value: data.totalExerciseCount,
-            label: l10n.currentSplitExercisesCount(data.totalExerciseCount),
-          ),
+          _Metric(value: data.totalExerciseCount, label: l10n.exercisesLabel),
           _Metric(
             value: data.totalPlannedSets,
             label: l10n.currentSplitPlannedSets,

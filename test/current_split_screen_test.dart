@@ -328,6 +328,21 @@ void main() {
         tester.getTopLeft(settings).dx,
         greaterThan(tester.getTopLeft(statistics).dx),
       );
+      for (final control in [
+        find.byKey(const Key('current_split_edit_button')),
+        find.byKey(const Key('current_split_action_progress')),
+        find.byKey(Key('current_split_day_${fixture.dayId}')),
+      ]) {
+        final size = tester.getSize(control);
+        expect(size.width, greaterThanOrEqualTo(44));
+        expect(size.height, greaterThanOrEqualTo(44));
+      }
+      final daySemantics = tester
+          .getSemantics(find.byKey(Key('current_split_day_${fixture.dayId}')))
+          .getSemanticsData();
+      expect(daySemantics.label, contains('Compact day'));
+      expect(daySemantics.label, contains('0 exercises'));
+      expect('Compact day'.allMatches(daySemantics.label).length, 1);
       await tester.scrollUntilVisible(
         find.byKey(Key('current_split_day_$restDayId')),
         220,
@@ -341,6 +356,13 @@ void main() {
         find.byKey(const Key('current_split_discover_disabled')),
         findsOneWidget,
       );
+      final discoverSemantics = tester
+          .getSemantics(
+            find.byKey(const Key('current_split_discover_disabled')),
+          )
+          .getSemanticsData();
+      expect(discoverSemantics.hasAction(SemanticsAction.tap), isFalse);
+      expect(discoverSemantics.label, contains('Unavailable'));
     },
   );
 
@@ -513,6 +535,10 @@ void main() {
           .getSemanticsData()
           .hasAction(SemanticsAction.tap),
       isFalse,
+    );
+    expect(
+      tester.getSemantics(nutrition).getSemanticsData().label,
+      contains('Unavailable'),
     );
     final settings = find.byKey(const Key('current_split_action_settings'));
     await Scrollable.ensureVisible(tester.element(settings), alignment: 0.5);
@@ -726,6 +752,66 @@ void main() {
     expect(find.byType(InkWell), isNot(findsNothing));
     await tester.pumpWidget(const SizedBox());
     await tester.pump(const Duration(milliseconds: 1));
+  });
+
+  testWidgets('no-plan uses typed create mode and disables stale edit', (
+    tester,
+  ) async {
+    final noPlanContainer = ProviderContainer(
+      overrides: [
+        databaseProvider.overrideWithValue(db),
+        currentSplitOverviewProvider(404).overrideWith((ref) async => null),
+      ],
+    );
+    addTearDown(noPlanContainer.dispose);
+    Object? scheduleBuilderExtra;
+    final router = GoRouter(
+      routes: [
+        GoRoute(
+          path: '/',
+          builder: (_, _) => CurrentSplitScreen(scheduleId: 404, onBack: () {}),
+        ),
+        GoRoute(
+          path: AppRoutes.scheduleBuilder,
+          builder: (_, state) {
+            scheduleBuilderExtra = state.extra;
+            return const SizedBox();
+          },
+        ),
+      ],
+    );
+    addTearDown(router.dispose);
+
+    await tester.pumpWidget(
+      UncontrolledProviderScope(
+        container: noPlanContainer,
+        child: MaterialApp.router(
+          locale: const Locale('de'),
+          theme: ThemeData(extensions: const [AppColorsTheme.dark]),
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
+          routerConfig: router,
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    final edit = find.byKey(const Key('current_split_edit_button'));
+    final editSemantics = tester.getSemantics(edit).getSemanticsData();
+    expect(editSemantics.hasAction(SemanticsAction.tap), isFalse);
+    expect(editSemantics.label, contains('Nicht verfügbar'));
+    await tester.tap(edit);
+    await tester.pump();
+    expect(scheduleBuilderExtra, isNull);
+
+    await tester.tap(find.byKey(const Key('current_split_create_plan')));
+    await tester.pumpAndSettle();
+    expect(
+      scheduleBuilderExtra,
+      isA<ScheduleBuilderArgs>()
+          .having((args) => args.scheduleId, 'schedule id', isNull)
+          .having((args) => args.initialDayLocalId, 'initial day', isNull),
+    );
   });
 
   testWidgets('shows a localized error and retries the overview provider', (
