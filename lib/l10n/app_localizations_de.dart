@@ -500,6 +500,9 @@ class AppLocalizationsDe extends AppLocalizations {
   String get back => 'Zurück';
 
   @override
+  String get openCurrentSplit => 'Aktuellen Trainingsplan öffnen';
+
+  @override
   String get share => 'Teilen';
 
   @override
@@ -1842,6 +1845,88 @@ class AppLocalizationsDe extends AppLocalizations {
       locale: localeName,
       other: '$count Sätze',
       one: '1 Satz',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get currentPlanEyebrow => 'AKTUELLER PLAN';
+
+  @override
+  String get currentSplitDescription =>
+      'Eine ausgewogene Wochenroutine für stetige Fortschritte.';
+
+  @override
+  String trainingDaysCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count Trainingstage',
+      one: '1 Trainingstag',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get currentSplitTrainingDays => 'Trainingstage';
+
+  @override
+  String get currentSplitPlannedSets => 'Geplante Sätze';
+
+  @override
+  String get currentSplitRestDays => 'Ruhetage';
+
+  @override
+  String get currentSplitProgress => 'Fortschritt';
+
+  @override
+  String get currentSplitNutrition => 'Ernährung';
+
+  @override
+  String get currentSplitStatistics => 'Statistiken';
+
+  @override
+  String get currentSplitWeeklyPlan => 'Dein Wochenplan';
+
+  @override
+  String get currentSplitDiscoverPlans => 'Weitere Trainingspläne entdecken';
+
+  @override
+  String get currentSplitLoading => 'Dein aktueller Trainingsplan wird geladen';
+
+  @override
+  String get currentSplitNoPlanMessage => 'Du hast noch keinen Trainingsplan.';
+
+  @override
+  String get currentSplitEmptyPlanMessage =>
+      'Dein Trainingsplan hat noch keine Tage.';
+
+  @override
+  String get currentSplitCreatePlan => 'Trainingsplan erstellen';
+
+  @override
+  String get currentSplitBuildPlan => 'Trainingsplan erstellen';
+
+  @override
+  String get currentSplitLoadError =>
+      'Dein Trainingsplan konnte nicht geladen werden.';
+
+  @override
+  String get currentSplitEditPlan => 'Trainingsplan bearbeiten';
+
+  @override
+  String get currentSplitOpenPlanDay => 'Trainingstag öffnen';
+
+  @override
+  String get currentSplitUnavailable => 'Nicht verfügbar';
+
+  @override
+  String currentSplitExercisesCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count Übungen',
+      one: '1 Übung',
     );
     return '$_temp0';
   }

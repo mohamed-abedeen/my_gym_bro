@@ -11,6 +11,8 @@ import 'package:my_gym_bro/core/security/secure_storage.dart';
 import 'package:my_gym_bro/core/services/units.dart';
 import 'package:my_gym_bro/features/settings/skin_provider.dart';
 import 'package:my_gym_bro/features/workout/active_session/active_session_notifier.dart';
+import 'package:my_gym_bro/features/workout/current_split/current_split_providers.dart';
+import 'package:my_gym_bro/features/workout/current_split/current_split_screen.dart';
 import 'package:my_gym_bro/features/workout/log_bottom_sheet.dart';
 import 'package:my_gym_bro/features/workout/muscle_detail_sheet.dart';
 import 'package:my_gym_bro/features/workout/status_bottom_sheet.dart';
@@ -30,6 +32,14 @@ class WorkoutScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final currentSplitScheduleId = ref.watch(currentSplitScheduleIdProvider);
+    if (currentSplitScheduleId != null) {
+      return CurrentSplitScreen(
+        scheduleId: currentSplitScheduleId,
+        onBack: () =>
+            ref.read(currentSplitScheduleIdProvider.notifier).state = null,
+      );
+    }
     final l10n = AppLocalizations.of(context);
     final isDark = ref.watch(themeModeProvider) == ThemeMode.dark;
     final colors = AppColors.of(context);
@@ -1110,25 +1120,36 @@ class _DayCard extends ConsumerWidget {
                 ),
               ),
               SizedBox(height: 8.h),
-              // Edit button
-              GestureDetector(
-                onTap: () => context.push(
-                  AppRoutes.scheduleBuilder,
-                  extra: schedule.localId,
-                ),
-                child: Container(
-                  width: 69.w,
-                  height: 64.h,
-                  decoration: BoxDecoration(
-                    color: AppColors.of(context).white,
-                    borderRadius: BorderRadius.circular(
-                      AppRadius.scheduleCircle.r,
+              // Current split button
+              Semantics(
+                button: true,
+                label: l10n.openCurrentSplit,
+                child: GestureDetector(
+                  key: const Key('current_split_open_button'),
+                  behavior: HitTestBehavior.opaque,
+                  onTap: () =>
+                      ref.read(currentSplitScheduleIdProvider.notifier).state =
+                          schedule.localId,
+                  child: ConstrainedBox(
+                    constraints: const BoxConstraints(
+                      minWidth: 44,
+                      minHeight: 44,
                     ),
-                  ),
-                  child: Icon(
-                    Icons.edit_rounded,
-                    color: AppColors.of(context).black,
-                    size: 33.sp,
+                    child: Container(
+                      width: 69.w,
+                      height: 64.h,
+                      decoration: BoxDecoration(
+                        color: AppColors.of(context).white,
+                        borderRadius: BorderRadius.circular(
+                          AppRadius.scheduleCircle.r,
+                        ),
+                      ),
+                      child: Icon(
+                        Icons.search_rounded,
+                        color: AppColors.of(context).black,
+                        size: 33.sp,
+                      ),
+                    ),
                   ),
                 ),
               ),

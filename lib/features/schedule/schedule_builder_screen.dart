@@ -23,20 +23,35 @@ import 'package:my_gym_bro/shared/widgets/oc_glass_btn.dart';
 
 // ── Local UI Models ──
 
-class _DayModel {
+/// Navigation data for opening the schedule editor at an existing day.
+class ScheduleBuilderArgs {
+  const ScheduleBuilderArgs({this.scheduleId, this.initialDayLocalId});
 
+  final int? scheduleId;
+  final int? initialDayLocalId;
+}
+
+class _DayModel {
   _DayModel({
     required this.label,
+    required this.dayOfWeek,
+    required this.scrollKey,
+    required this.uiKey,
+    this.sourceLocalId,
+    this.isRestDay = false,
     List<_ExerciseModel>? exercises,
   }) : exercises = exercises ?? [];
+
+  final GlobalKey scrollKey;
+  final String uiKey;
+  final int? sourceLocalId;
   String label;
-  String dayOfWeek = ''; // e.g. "Saturday", "Monday"
-  bool isRestDay = false;
+  String dayOfWeek; // e.g. "Saturday", "Monday"
+  bool isRestDay;
   final List<_ExerciseModel> exercises;
 }
 
 class _ExerciseModel {
-
   _ExerciseModel({
     required this.exerciseId,
     required this.name,
@@ -61,22 +76,27 @@ class _SetModel {
 // ═══════════════════════════════════════════════════════════════════
 
 class ScheduleBuilderScreen extends ConsumerStatefulWidget {
+  const ScheduleBuilderScreen({
+    super.key,
+    this.scheduleId,
+    this.initialDayLocalId,
+  });
 
-  const ScheduleBuilderScreen({super.key, this.scheduleId});
   final int? scheduleId;
+  final int? initialDayLocalId;
 
   @override
   ConsumerState<ScheduleBuilderScreen> createState() =>
       _ScheduleBuilderScreenState();
 }
 
-class _ScheduleBuilderScreenState
-    extends ConsumerState<ScheduleBuilderScreen> {
+class _ScheduleBuilderScreenState extends ConsumerState<ScheduleBuilderScreen> {
   final _nameController = TextEditingController();
   final List<_DayModel> _days = [];
   int _expandedDay = -1;
   bool _saving = false;
   bool _nameInitialized = false;
+  int _nextNewDayId = 0;
   bool get _isEditMode => widget.scheduleId != null;
 
   @override
@@ -100,60 +120,105 @@ class _ScheduleBuilderScreenState
   }
 
   Future<void> _loadExistingSchedule() async {
+    final scheduleId = widget.scheduleId;
+    final initialDayLocalId = widget.initialDayLocalId;
     final dao = ref.read(scheduleDaoProvider);
     final exerciseDao = ref.read(exerciseDaoProvider);
 
     final schedules = await dao.getAll();
-    final schedule =
-        schedules.where((s) => s.localId == widget.scheduleId).firstOrNull;
+    if (!mounted) return;
+    final schedule = schedules
+        .where((s) => s.localId == scheduleId)
+        .firstOrNull;
     if (schedule == null) return;
 
     _nameController.text = schedule.name;
 
     final days = await dao.getDays(schedule.localId);
+    if (!mounted) return;
     final dayModels = <_DayModel>[];
 
     for (final day in days) {
-      if (day.isRestDay ||
-          (day.label?.toLowerCase().contains('rest') ?? false)) {
-        continue;
+      final exModels = <_ExerciseModel>[];
+      if (!day.isRestDay) {
+        final scheduledExercises = await dao.getExercises(day.localId);
+        if (!mounted) return;
+        final exerciseIds = scheduledExercises
+            .map((se) => se.exerciseId)
+            .toList();
+        final exercises = exerciseIds.isNotEmpty
+            ? await exerciseDao.findByExerciseIds(exerciseIds)
+            : <Exercise>[];
+        if (!mounted) return;
+        final exerciseMap = {for (final e in exercises) e.exerciseId: e};
+
+        exModels.addAll(
+          scheduledExercises.map((se) {
+            final ex = exerciseMap[se.exerciseId];
+            final sets = List.generate(
+              se.targetSets,
+              (_) => _SetModel()..reps = se.targetReps,
+            );
+            return _ExerciseModel(
+              exerciseId: se.exerciseId,
+              name: ex?.name ?? se.exerciseId,
+              gifUrl: ex?.gifUrl,
+              sets: sets,
+            );
+          }),
+        );
       }
-      final scheduledExercises = await dao.getExercises(day.localId);
-      final exerciseIds =
-          scheduledExercises.map((se) => se.exerciseId).toList();
-      final exercises = exerciseIds.isNotEmpty
-          ? await exerciseDao.findByExerciseIds(exerciseIds)
-          : <Exercise>[];
-      final exerciseMap = {for (final e in exercises) e.exerciseId: e};
 
-      final exModels = scheduledExercises.map((se) {
-        final ex = exerciseMap[se.exerciseId];
-        final sets = List.generate(
-          se.targetSets,
-          (_) => _SetModel()..reps = se.targetReps,
-        );
-        return _ExerciseModel(
-          exerciseId: se.exerciseId,
-          name: ex?.name ?? se.exerciseId,
-          gifUrl: ex?.gifUrl,
-          sets: sets,
-        );
-      }).toList();
-
-      dayModels.add(_DayModel(
-        label: day.label ?? '',
-        exercises: exModels,
-      ));
+      dayModels.add(
+        _DayModel(
+          label: day.label ?? '',
+          sourceLocalId: day.localId,
+          dayOfWeek: '',
+          scrollKey: GlobalKey(
+            debugLabel: 'schedule-builder-saved-${day.localId}',
+          ),
+          uiKey: 'saved-${day.localId}',
+          isRestDay: day.isRestDay,
+          exercises: exModels,
+        ),
+      );
     }
 
-    if (mounted) {
-      setState(() {
-        _days
-          ..clear()
-          ..addAll(dayModels);
-        _expandedDay = _days.isNotEmpty ? 0 : -1;
-      });
-    }
+    if (!mounted) return;
+    _DayModel? initialDay;
+    setState(() {
+      _days
+        ..clear()
+        ..addAll(dayModels);
+      final initialIndex = _days.indexWhere(
+        (day) => day.sourceLocalId == initialDayLocalId,
+      );
+      initialDay = initialIndex >= 0 ? _days[initialIndex] : null;
+      _expandedDay = initialIndex >= 0
+          ? initialIndex
+          : (_days.isNotEmpty ? 0 : -1);
+    });
+    if (initialDay != null) _scrollToDay(initialDay!);
+  }
+
+  void _scrollToDay(_DayModel day) {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      final targetContext = day.scrollKey.currentContext;
+      if (targetContext == null) return;
+      final disableAnimations =
+          MediaQuery.maybeOf(context)?.disableAnimations ?? false;
+      unawaited(
+        Scrollable.ensureVisible(
+          targetContext,
+          alignment: 0.2,
+          duration: disableAnimations
+              ? Duration.zero
+              : const Duration(milliseconds: 250),
+          curve: Curves.easeInOut,
+        ),
+      );
+    });
   }
 
   @override
@@ -177,7 +242,10 @@ class _ScheduleBuilderScreenState
             // ── Header: X + (trash in edit mode) + checkmark ──
             Padding(
               padding: EdgeInsets.fromLTRB(
-                AppSizes.contentPaddingH.w, 10.h, AppSizes.contentPaddingH.w, 0,
+                AppSizes.contentPaddingH.w,
+                10.h,
+                AppSizes.contentPaddingH.w,
+                0,
               ),
               child: Row(
                 children: [
@@ -185,7 +253,7 @@ class _ScheduleBuilderScreenState
                   OcGlassBtn(
                     type: OcGlassBtnType.close,
                     size: 40,
-                    onTap: () => Navigator.of(context).pop(),
+                    onTap: _saving ? null : () => Navigator.of(context).pop(),
                   ),
                   const Spacer(),
                   if (_isEditMode) ...[
@@ -193,14 +261,11 @@ class _ScheduleBuilderScreenState
                     OcGlassBtn(
                       type: OcGlassBtnType.delete,
                       size: 40,
-                      onTap: _deleteSchedule,
+                      onTap: _saving ? null : _deleteSchedule,
                     ),
                     SizedBox(width: 10.w),
                     // Share — liquid glass
-                    const OcGlassBtn(
-                      type: OcGlassBtnType.share,
-                      size: 40,
-                    ),
+                    const OcGlassBtn(type: OcGlassBtnType.share, size: 40),
                     SizedBox(width: 10.w),
                   ],
                   // Done / Save — liquid glass (green checkmark when ready)
@@ -273,12 +338,14 @@ class _ScheduleBuilderScreenState
       padding: EdgeInsets.symmetric(horizontal: 16.w),
       child: Row(
         children: [
-          Text('Tt',
-              style: TextStyle(
-                color: colors.textPrimary,
-                fontSize: 20.sp,
-                fontWeight: FontWeight.w700,
-              )),
+          Text(
+            'Tt',
+            style: TextStyle(
+              color: colors.textPrimary,
+              fontSize: 20.sp,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
           SizedBox(width: 12.w),
           Expanded(
             child: TextField(
@@ -302,8 +369,7 @@ class _ScheduleBuilderScreenState
               ),
             ),
           ),
-          Icon(Icons.edit_rounded,
-              color: colors.textPrimary, size: 16.sp),
+          Icon(Icons.edit_rounded, color: colors.textPrimary, size: 16.sp),
         ],
       ),
     );
@@ -323,8 +389,11 @@ class _ScheduleBuilderScreenState
         padding: EdgeInsets.symmetric(horizontal: 16.w),
         child: Row(
           children: [
-            Icon(Icons.calendar_today_rounded,
-                color: colors.accent, size: 20.sp),
+            Icon(
+              Icons.calendar_today_rounded,
+              color: colors.accent,
+              size: 20.sp,
+            ),
             SizedBox(width: 12.w),
             Expanded(
               child: Text(
@@ -342,8 +411,11 @@ class _ScheduleBuilderScreenState
               height: 40.h,
               opacity: 0.15,
               radius: 20.r,
-              child: Icon(Icons.add_rounded,
-                  color: colors.textPrimary, size: 22.sp),
+              child: Icon(
+                Icons.add_rounded,
+                color: colors.textPrimary,
+                size: 22.sp,
+              ),
             ),
           ],
         ),
@@ -357,137 +429,173 @@ class _ScheduleBuilderScreenState
     final day = _days[i];
     final isExpanded = i == _expandedDay;
     final dayLabel = day.label.isNotEmpty ? day.label : l10n.dayNumber(i + 1);
+    final publicDayKeyId = day.sourceLocalId?.toString() ?? day.uiKey;
 
-    return AnimatedContainer(
-      duration: const Duration(milliseconds: 250),
-      curve: Curves.easeInOut,
-      decoration: BoxDecoration(
-        color: colors.cardElevated,
-        borderRadius: BorderRadius.circular(25.r),
-      ),
-      padding: EdgeInsets.all(16.w),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // ── Day header row ──
-          GestureDetector(
-            onTap: () => setState(() {
-              _expandedDay = _expandedDay == i ? -1 : i;
-            }),
-            behavior: HitTestBehavior.opaque,
-            child: Row(
-              children: [
-                Icon(Icons.calendar_today_rounded,
-                    color: colors.accent, size: 20.sp),
-                SizedBox(width: 10.w),
-                Expanded(
-                  child: Text(
-                    dayLabel,
-                    style: TextStyle(
-                      color: colors.textPrimary,
-                      fontSize: 18.sp,
-                      fontWeight: FontWeight.w700,
-                    ),
-                  ),
-                ),
-                if (isExpanded) ...[
-                  GestureDetector(
-                    onTap: () {
-                      setState(() {
-                        _days.removeAt(i);
-                        if (_expandedDay >= _days.length) {
-                          _expandedDay = _days.length - 1;
-                        }
-                      });
-                    },
-                    child: Icon(Icons.delete_outline_rounded,
-                        color: colors.textPrimary, size: 20.sp),
-                  ),
-                  SizedBox(width: 12.w),
-                ],
-                Icon(
-                  isExpanded
-                      ? Icons.keyboard_arrow_up_rounded
-                      : Icons.keyboard_arrow_down_rounded,
-                  color: colors.textPrimary,
-                  size: 28.sp,
-                ),
-              ],
-            ),
-          ),
-
-          // ── Expanded content ──
-          if (isExpanded) ...[
-            SizedBox(height: 10.h),
-
-            // ── Tag pills (day of week + label) ──
-            _buildTagPills(i),
-            SizedBox(height: 16.h),
-
-            // ── Exercises (drag-to-reorder) ──
-            // shrinkWrap + NeverScrollableScrollPhysics prevent scroll
-            // conflicts with the outer ListView.
-            ReorderableListView(
-              shrinkWrap: true,
-              physics: const NeverScrollableScrollPhysics(),
-              buildDefaultDragHandles: false,
-              onReorder: (oldIndex, newIndex) {
-                setState(() {
-                  // Standard Flutter reorder correction.
-                  if (newIndex > oldIndex) newIndex -= 1;
-                  final moved = _days[i].exercises.removeAt(oldIndex);
-                  _days[i].exercises.insert(newIndex, moved);
-                });
-              },
-              children: [
-                for (var exIdx = 0; exIdx < day.exercises.length; exIdx++)
-                  _buildExerciseRow(
-                    i, exIdx, day.exercises[exIdx], l10n,
-                    // exerciseId is guaranteed unique within a day.
-                    key: ValueKey(day.exercises[exIdx].exerciseId),
-                  ),
-              ],
-            ),
-
-            // Divider before Add Exercise
-            if (day.exercises.isNotEmpty) ...[
-              Container(
-                height: 1,
-                color: colors.divider,
-                margin: EdgeInsets.symmetric(vertical: 8.h),
-              ),
-            ],
-
-            // ── Add Exercise button ──
+    return KeyedSubtree(
+      key: Key('schedule_builder_day_$publicDayKeyId'),
+      child: AnimatedContainer(
+        key: ValueKey<String>(day.uiKey),
+        duration: const Duration(milliseconds: 250),
+        curve: Curves.easeInOut,
+        decoration: BoxDecoration(
+          color: colors.cardElevated,
+          borderRadius: BorderRadius.circular(25.r),
+        ),
+        padding: EdgeInsets.all(16.w),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // ── Day header row ──
             GestureDetector(
-              onTap: () => _pickExercise(i),
-              child: Padding(
-                padding: EdgeInsets.symmetric(vertical: 8.h),
-                child: Row(
-                  children: [
-                    LiquidGlassButton(
-                      width: 36.w,
-                      height: 36.h,
-                      opacity: 0.15,
-                      radius: 18.r,
-                      child: Icon(Icons.add_rounded,
-                          color: colors.textPrimary, size: 20.sp),
-                    ),
-                    SizedBox(width: 10.w),
-                    Text(
-                      l10n.addExercise,
+              onTap: () => setState(() {
+                _expandedDay = _expandedDay == i ? -1 : i;
+              }),
+              behavior: HitTestBehavior.opaque,
+              child: Row(
+                children: [
+                  Icon(
+                    Icons.calendar_today_rounded,
+                    color: colors.accent,
+                    size: 20.sp,
+                  ),
+                  SizedBox(width: 10.w),
+                  Expanded(
+                    child: Text(
+                      dayLabel,
                       style: TextStyle(
                         color: colors.textPrimary,
-                        fontSize: 14.sp,
+                        fontSize: 18.sp,
                         fontWeight: FontWeight.w700,
                       ),
                     ),
+                  ),
+                  if (isExpanded) ...[
+                    GestureDetector(
+                      onTap: () {
+                        setState(() {
+                          _days.removeAt(i);
+                          if (_expandedDay >= _days.length) {
+                            _expandedDay = _days.length - 1;
+                          }
+                        });
+                      },
+                      child: Icon(
+                        Icons.delete_outline_rounded,
+                        color: colors.textPrimary,
+                        size: 20.sp,
+                      ),
+                    ),
+                    SizedBox(width: 12.w),
                   ],
-                ),
+                  Icon(
+                    isExpanded
+                        ? Icons.keyboard_arrow_up_rounded
+                        : Icons.keyboard_arrow_down_rounded,
+                    color: colors.textPrimary,
+                    size: 28.sp,
+                  ),
+                ],
               ),
             ),
+
+            // ── Expanded content ──
+            if (isExpanded)
+              SizedBox(
+                key: day.scrollKey,
+                child: SizedBox(
+                  key: Key('schedule_builder_day_content_$publicDayKeyId'),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      SizedBox(height: 10.h),
+
+                      // ── Tag pills (day of week + label) ──
+                      _buildTagPills(i),
+                      if (!day.isRestDay) ...[
+                        SizedBox(height: 16.h),
+
+                        // ── Exercises (drag-to-reorder) ──
+                        // shrinkWrap + NeverScrollableScrollPhysics prevent scroll
+                        // conflicts with the outer ListView.
+                        ReorderableListView(
+                          shrinkWrap: true,
+                          physics: const NeverScrollableScrollPhysics(),
+                          buildDefaultDragHandles: false,
+                          onReorderItem: (oldIndex, newIndex) {
+                            setState(() {
+                              final moved = _days[i].exercises.removeAt(
+                                oldIndex,
+                              );
+                              _days[i].exercises.insert(newIndex, moved);
+                            });
+                          },
+                          children: [
+                            for (
+                              var exIdx = 0;
+                              exIdx < day.exercises.length;
+                              exIdx++
+                            )
+                              _buildExerciseRow(
+                                i,
+                                exIdx,
+                                day.exercises[exIdx],
+                                l10n,
+                                // exerciseId is guaranteed unique within a day.
+                                key: ValueKey(day.exercises[exIdx].exerciseId),
+                              ),
+                          ],
+                        ),
+
+                        // Divider before Add Exercise
+                        if (day.exercises.isNotEmpty) ...[
+                          Container(
+                            height: 1,
+                            color: colors.divider,
+                            margin: EdgeInsets.symmetric(vertical: 8.h),
+                          ),
+                        ],
+
+                        // ── Add Exercise button ──
+                        GestureDetector(
+                          key: Key(
+                            'schedule_builder_add_exercise_$publicDayKeyId',
+                          ),
+                          onTap: () => _pickExercise(i),
+                          child: Padding(
+                            padding: EdgeInsets.symmetric(vertical: 8.h),
+                            child: Row(
+                              children: [
+                                LiquidGlassButton(
+                                  width: 36.w,
+                                  height: 36.h,
+                                  opacity: 0.15,
+                                  radius: 18.r,
+                                  child: Icon(
+                                    Icons.add_rounded,
+                                    color: colors.textPrimary,
+                                    size: 20.sp,
+                                  ),
+                                ),
+                                SizedBox(width: 10.w),
+                                Text(
+                                  l10n.addExercise,
+                                  style: TextStyle(
+                                    color: colors.textPrimary,
+                                    fontSize: 14.sp,
+                                    fontWeight: FontWeight.w700,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ],
+                    ],
+                  ),
+                ),
+              ),
           ],
-        ],
+        ),
       ),
     );
   }
@@ -550,8 +658,12 @@ class _ScheduleBuilderScreenState
   // ── Exercise Row with action buttons and sets ──
   // [key] is required by ReorderableListView — callers pass ValueKey(ex.exerciseId).
   Widget _buildExerciseRow(
-      int dayIdx, int exIdx, _ExerciseModel ex, AppLocalizations l10n,
-      {Key? key}) {
+    int dayIdx,
+    int exIdx,
+    _ExerciseModel ex,
+    AppLocalizations l10n, {
+    Key? key,
+  }) {
     final colors = AppColors.of(context);
     return Padding(
       key: key,
@@ -668,8 +780,10 @@ class _ScheduleBuilderScreenState
     );
   }
 
-  Widget _miniActionButton(
-      {required IconData icon, required VoidCallback onTap}) {
+  Widget _miniActionButton({
+    required IconData icon,
+    required VoidCallback onTap,
+  }) {
     final colors = AppColors.of(context);
     return GestureDetector(
       onTap: onTap,
@@ -687,7 +801,11 @@ class _ScheduleBuilderScreenState
 
   // ── Sets Table ──
   Widget _buildSetsTable(
-      int dayIdx, int exIdx, _ExerciseModel ex, AppLocalizations l10n) {
+    int dayIdx,
+    int exIdx,
+    _ExerciseModel ex,
+    AppLocalizations l10n,
+  ) {
     final colors = AppColors.of(context);
     return Column(
       children: [
@@ -698,32 +816,38 @@ class _ScheduleBuilderScreenState
             children: [
               SizedBox(
                 width: 50.w,
-                child: Text(l10n.sets,
+                child: Text(
+                  l10n.sets,
+                  style: TextStyle(
+                    color: colors.textSecondary,
+                    fontSize: 13.sp,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              ),
+              Expanded(
+                child: Center(
+                  child: Text(
+                    l10n.weightsKg,
                     style: TextStyle(
                       color: colors.textSecondary,
                       fontSize: 13.sp,
                       fontWeight: FontWeight.w700,
-                    )),
-              ),
-              Expanded(
-                child: Center(
-                  child: Text(l10n.weightsKg,
-                      style: TextStyle(
-                        color: colors.textSecondary,
-                        fontSize: 13.sp,
-                        fontWeight: FontWeight.w700,
-                      )),
+                    ),
+                  ),
                 ),
               ),
               SizedBox(
                 width: 50.w,
-                child: Text(l10n.reps,
-                    textAlign: TextAlign.end,
-                    style: TextStyle(
-                      color: colors.textSecondary,
-                      fontSize: 13.sp,
-                      fontWeight: FontWeight.w700,
-                    )),
+                child: Text(
+                  l10n.reps,
+                  textAlign: TextAlign.end,
+                  style: TextStyle(
+                    color: colors.textSecondary,
+                    fontSize: 13.sp,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
               ),
             ],
           ),
@@ -756,8 +880,11 @@ class _ScheduleBuilderScreenState
                       child: Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          Icon(Icons.unfold_more,
-                              color: colors.textSecondary, size: 14.sp),
+                          Icon(
+                            Icons.unfold_more,
+                            color: colors.textSecondary,
+                            size: 14.sp,
+                          ),
                           Text(
                             '${setModel.weight.toInt()}',
                             style: TextStyle(
@@ -778,8 +905,11 @@ class _ScheduleBuilderScreenState
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.end,
                       children: [
-                        Icon(Icons.unfold_more,
-                            color: colors.textSecondary, size: 14.sp),
+                        Icon(
+                          Icons.unfold_more,
+                          color: colors.textSecondary,
+                          size: 14.sp,
+                        ),
                         Text(
                           '${setModel.reps}',
                           style: TextStyle(
@@ -832,22 +962,34 @@ class _ScheduleBuilderScreenState
   Widget _exercisePlaceholder() {
     final colors = AppColors.of(context);
     return Container(
-        width: 50.w,
-        height: 50.h,
-        decoration: BoxDecoration(
-          color: colors.separator,
-          borderRadius: BorderRadius.circular(12.r),
-        ),
-        child: Icon(Icons.fitness_center_rounded,
-            color: colors.textSecondary, size: 22.sp),
-      );
+      width: 50.w,
+      height: 50.h,
+      decoration: BoxDecoration(
+        color: colors.separator,
+        borderRadius: BorderRadius.circular(12.r),
+      ),
+      child: Icon(
+        Icons.fitness_center_rounded,
+        color: colors.textSecondary,
+        size: 22.sp,
+      ),
+    );
   }
 
   // ── Actions ──
 
   void _addDay() {
     setState(() {
-      _days.add(_DayModel(label: ''));
+      _days.add(
+        _DayModel(
+          label: '',
+          dayOfWeek: '',
+          scrollKey: GlobalKey(
+            debugLabel: 'schedule-builder-new-$_nextNewDayId',
+          ),
+          uiKey: 'new-${_nextNewDayId++}',
+        ),
+      );
       _expandedDay = _days.length - 1;
     });
   }
@@ -877,16 +1019,21 @@ class _ScheduleBuilderScreenState
                 children: [
                   CupertinoButton(
                     padding: EdgeInsets.zero,
-                    child: Text(l10n.cancel,
-                        style: TextStyle(
-                            color: colors.textSecondary, fontSize: 14.sp)),
+                    child: Text(
+                      l10n.cancel,
+                      style: TextStyle(
+                        color: colors.textSecondary,
+                        fontSize: 14.sp,
+                      ),
+                    ),
                     onPressed: () => Navigator.pop(context),
                   ),
                   CupertinoButton(
                     padding: EdgeInsets.zero,
-                    child: Text(l10n.done,
-                        style: TextStyle(
-                            color: colors.accent, fontSize: 14.sp)),
+                    child: Text(
+                      l10n.done,
+                      style: TextStyle(color: colors.accent, fontSize: 14.sp),
+                    ),
                     onPressed: () => Navigator.pop(context),
                   ),
                 ],
@@ -902,12 +1049,17 @@ class _ScheduleBuilderScreenState
                   });
                 },
                 children: weekdays
-                    .map((d) => Center(
-                          child: Text(d,
-                              style: TextStyle(
-                                  color: colors.textPrimary,
-                                  fontSize: 16.sp)),
-                        ))
+                    .map(
+                      (d) => Center(
+                        child: Text(
+                          d,
+                          style: TextStyle(
+                            color: colors.textPrimary,
+                            fontSize: 16.sp,
+                          ),
+                        ),
+                      ),
+                    )
                     .toList(),
               ),
             ),
@@ -926,32 +1078,38 @@ class _ScheduleBuilderScreenState
       builder: (ctx) => AlertDialog(
         backgroundColor: colors.panelBackground,
         shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(16.r)),
-        title: Text(l10n.dayLabel,
-            style: TextStyle(
-                color: colors.textPrimary,
-                fontSize: 18.sp,
-                fontWeight: FontWeight.w700)),
+          borderRadius: BorderRadius.circular(16.r),
+        ),
+        title: Text(
+          l10n.dayLabel,
+          style: TextStyle(
+            color: colors.textPrimary,
+            fontSize: 18.sp,
+            fontWeight: FontWeight.w700,
+          ),
+        ),
         content: TextField(
           controller: controller,
           autofocus: true,
           style: TextStyle(color: colors.textPrimary, fontSize: 16.sp),
           decoration: InputDecoration(
             hintText: l10n.dayLabelHint,
-            hintStyle:
-                TextStyle(color: colors.textSecondary, fontSize: 16.sp),
+            hintStyle: TextStyle(color: colors.textSecondary, fontSize: 16.sp),
             enabledBorder: UnderlineInputBorder(
-                borderSide: BorderSide(color: colors.accent)),
+              borderSide: BorderSide(color: colors.accent),
+            ),
             focusedBorder: UnderlineInputBorder(
-                borderSide: BorderSide(color: colors.accent)),
+              borderSide: BorderSide(color: colors.accent),
+            ),
           ),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
-            child: Text(l10n.cancel,
-                style: TextStyle(
-                    color: colors.textSecondary, fontSize: 14.sp)),
+            child: Text(
+              l10n.cancel,
+              style: TextStyle(color: colors.textSecondary, fontSize: 14.sp),
+            ),
           ),
           TextButton(
             onPressed: () {
@@ -960,9 +1118,10 @@ class _ScheduleBuilderScreenState
               });
               Navigator.pop(ctx);
             },
-            child: Text(l10n.save,
-                style:
-                    TextStyle(color: colors.accent, fontSize: 14.sp)),
+            child: Text(
+              l10n.save,
+              style: TextStyle(color: colors.accent, fontSize: 14.sp),
+            ),
           ),
         ],
       ),
@@ -1022,21 +1181,29 @@ class _ScheduleBuilderScreenState
                 children: [
                   CupertinoButton(
                     padding: EdgeInsets.zero,
-                    child: Text(l10n.cancel,
-                        style: TextStyle(
-                            color: colors.textSecondary, fontSize: 14.sp)),
+                    child: Text(
+                      l10n.cancel,
+                      style: TextStyle(
+                        color: colors.textSecondary,
+                        fontSize: 14.sp,
+                      ),
+                    ),
                     onPressed: () => Navigator.pop(context),
                   ),
-                  Text(title,
-                      style: TextStyle(
-                          color: colors.textPrimary,
-                          fontSize: 16.sp,
-                          fontWeight: FontWeight.w600)),
+                  Text(
+                    title,
+                    style: TextStyle(
+                      color: colors.textPrimary,
+                      fontSize: 16.sp,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
                   CupertinoButton(
                     padding: EdgeInsets.zero,
-                    child: Text(l10n.done,
-                        style: TextStyle(
-                            color: colors.accent, fontSize: 14.sp)),
+                    child: Text(
+                      l10n.done,
+                      style: TextStyle(color: colors.accent, fontSize: 14.sp),
+                    ),
                     onPressed: () {
                       onDone(selected);
                       Navigator.pop(context);
@@ -1049,8 +1216,9 @@ class _ScheduleBuilderScreenState
               child: CupertinoPicker(
                 backgroundColor: colors.panelBackground,
                 itemExtent: 36.h,
-                scrollController:
-                    FixedExtentScrollController(initialItem: initial - min),
+                scrollController: FixedExtentScrollController(
+                  initialItem: initial - min,
+                ),
                 onSelectedItemChanged: (idx) => selected = min + idx,
                 children: List.generate(
                   max - min + 1,
@@ -1058,7 +1226,9 @@ class _ScheduleBuilderScreenState
                     child: Text(
                       '${min + i}',
                       style: TextStyle(
-                          color: colors.textPrimary, fontSize: 18.sp),
+                        color: colors.textPrimary,
+                        fontSize: 18.sp,
+                      ),
                     ),
                   ),
                 ),
@@ -1081,9 +1251,9 @@ class _ScheduleBuilderScreenState
             setState(() {
               for (final exercise in exercises) {
                 // Avoid duplicate exercises in the same day
-                final alreadyAdded = _days[dayIndex]
-                    .exercises
-                    .any((e) => e.exerciseId == exercise.exerciseId);
+                final alreadyAdded = _days[dayIndex].exercises.any(
+                  (e) => e.exerciseId == exercise.exerciseId,
+                );
                 if (!alreadyAdded) {
                   _days[dayIndex].exercises.add(
                     _ExerciseModel(
@@ -1105,11 +1275,13 @@ class _ScheduleBuilderScreenState
     final exerciseDao = ExerciseDao(ref.read(databaseProvider));
     final exercises = await exerciseDao.findByExerciseIds([ex.exerciseId]);
     if (exercises.isNotEmpty && mounted) {
-      unawaited(Navigator.of(context).push(
-        MaterialPageRoute<void>(
-          builder: (_) => ExerciseDetailScreen(exercise: exercises.first),
+      unawaited(
+        Navigator.of(context).push(
+          MaterialPageRoute<void>(
+            builder: (_) => ExerciseDetailScreen(exercise: exercises.first),
+          ),
         ),
-      ));
+      );
     }
   }
 
@@ -1117,16 +1289,19 @@ class _ScheduleBuilderScreenState
     final name = _nameController.text.trim();
     if (name.isEmpty || _days.isEmpty) return;
 
-    setState(() => _saving = true);
+    final scheduleIdToEdit = widget.scheduleId;
+    final database = ref.read(databaseProvider);
+    final exerciseRepository = ref.read(exerciseRepositoryProvider);
     final l10n = AppLocalizations.of(context);
+    setState(() => _saving = true);
 
     try {
-      final scheduleDao = ScheduleDao(ref.read(databaseProvider));
+      final scheduleDao = ScheduleDao(database);
 
       int scheduleId;
 
-      if (_isEditMode) {
-        scheduleId = widget.scheduleId!;
+      if (scheduleIdToEdit != null) {
+        scheduleId = scheduleIdToEdit;
         await scheduleDao.updateSchedule(
           scheduleId,
           SchedulesCompanion(
@@ -1152,33 +1327,34 @@ class _ScheduleBuilderScreenState
         final label = day.label.isNotEmpty
             ? day.label
             : (day.dayOfWeek.isNotEmpty
-                ? day.dayOfWeek
-                : l10n.dayNumber(d + 1));
+                  ? day.dayOfWeek
+                  : l10n.dayNumber(d + 1));
         final dayId = await scheduleDao.addDay(
           ScheduleDaysCompanion(
             scheduleId: Value(scheduleId),
             dayIndex: Value(dayIndex),
             label: Value(label),
-            isRestDay: const Value(false),
+            isRestDay: Value(day.isRestDay),
             createdAt: Value(DateTime.now()),
           ),
         );
         dayIndex++;
 
-        for (var e = 0; e < day.exercises.length; e++) {
-          final ex = day.exercises[e];
-          await scheduleDao.addExercise(
-            ScheduledExercisesCompanion(
-              scheduleDayId: Value(dayId),
-              exerciseId: Value(ex.exerciseId),
-              orderIndex: Value(e),
-              targetSets: Value(ex.sets.length),
-              targetReps: Value(ex.sets.isNotEmpty ? ex.sets.first.reps : 10),
-              createdAt: Value(DateTime.now()),
-            ),
-          );
+        if (!day.isRestDay) {
+          for (var e = 0; e < day.exercises.length; e++) {
+            final ex = day.exercises[e];
+            await scheduleDao.addExercise(
+              ScheduledExercisesCompanion(
+                scheduleDayId: Value(dayId),
+                exerciseId: Value(ex.exerciseId),
+                orderIndex: Value(e),
+                targetSets: Value(ex.sets.length),
+                targetReps: Value(ex.sets.isNotEmpty ? ex.sets.first.reps : 10),
+                createdAt: Value(DateTime.now()),
+              ),
+            );
+          }
         }
-
       }
 
       // Cache-on-save: make sure every exercise referenced by this schedule is
@@ -1189,16 +1365,19 @@ class _ScheduleBuilderScreenState
         for (final day in _days)
           for (final ex in day.exercises) ex.exerciseId,
       ];
-      await ref.read(exerciseRepositoryProvider).ensureCached(savedIds);
+      await exerciseRepository.ensureCached(savedIds);
 
-      if (mounted) Navigator.of(context).pop();
+      if (!mounted) return;
+      Navigator.of(context).pop();
     } on Exception catch (_) {
-      setState(() => _saving = false);
+      if (mounted) setState(() => _saving = false);
     }
   }
 
   Future<void> _deleteSchedule() async {
-    if (!_isEditMode) return;
+    final scheduleId = widget.scheduleId;
+    if (scheduleId == null || _saving) return;
+    final dao = ref.read(scheduleDaoProvider);
     final l10n = AppLocalizations.of(context);
 
     final confirm = await showConfirmSheet(
@@ -1211,8 +1390,8 @@ class _ScheduleBuilderScreenState
 
     if (!confirm || !mounted) return;
 
-    final dao = ref.read(scheduleDaoProvider);
-    await dao.deleteSchedule(widget.scheduleId!);
-    if (mounted) Navigator.of(context).pop();
+    await dao.deleteSchedule(scheduleId);
+    if (!mounted) return;
+    Navigator.of(context).pop();
   }
 }

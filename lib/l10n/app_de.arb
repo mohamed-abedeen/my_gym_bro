@@ -169,6 +169,7 @@
   "edit": "Bearbeiten",
   "done": "Fertig",
   "back": "Zurück",
+  "openCurrentSplit": "Aktuellen Trainingsplan öffnen",
   "share": "Teilen",
   "schedule": "Trainingsplan",
   "noScheduleYet": "Noch kein Plan",
@@ -655,5 +656,46 @@
   "allTime": "Gesamt",
   "noHistoryYet": "Noch kein Verlauf",
   "primaryLabel": "Primär",
-  "secondaryLabel": "Sekundär"
+  "secondaryLabel": "Sekundär",
+  "currentPlanEyebrow": "AKTUELLER PLAN",
+  "currentSplitDescription": "Eine ausgewogene Wochenroutine für stetige Fortschritte.",
+  "trainingDaysCount": "{count, plural, =1{1 Trainingstag} other{{count} Trainingstage}}",
+  "@trainingDaysCount": {
+    "placeholders": {
+      "count": { "type": "int" }
+    }
+  },
+  "currentSplitTrainingDays": "Trainingstage",
+  "currentSplitPlannedSets": "Geplante Sätze",
+  "currentSplitRestDays": "Ruhetage",
+  "currentSplitProgress": "Fortschritt",
+  "currentSplitNutrition": "Ernährung",
+  "currentSplitStatistics": "Statistiken",
+  "currentSplitWeeklyPlan": "Dein Wochenplan",
+  "currentSplitDiscoverPlans": "Weitere Trainingspläne entdecken",
+  "currentSplitLoading": "Dein aktueller Trainingsplan wird geladen",
+  "@currentSplitLoading": {
+    "description": "Status message shown while the current split data loads."
+  },
+  "currentSplitNoPlanMessage": "Du hast noch keinen Trainingsplan.",
+  "@currentSplitNoPlanMessage": {
+    "description": "Explanation shown when no requested or active plan exists."
+  },
+  "currentSplitEmptyPlanMessage": "Dein Trainingsplan hat noch keine Tage.",
+  "@currentSplitEmptyPlanMessage": {
+    "description": "Explanation shown when a plan exists but has no scheduled days."
+  },
+  "currentSplitCreatePlan": "Trainingsplan erstellen",
+  "currentSplitBuildPlan": "Trainingsplan erstellen",
+  "currentSplitLoadError": "Dein Trainingsplan konnte nicht geladen werden.",
+  "currentSplitEditPlan": "Trainingsplan bearbeiten",
+  "currentSplitOpenPlanDay": "Trainingstag öffnen",
+  "currentSplitUnavailable": "Nicht verfügbar",
+  "currentSplitExercisesCount": "{count, plural, =1{1 Übung} other{{count} Übungen}}",
+  "@currentSplitExercisesCount": {
+    "description": "Number of exercises in a plan or plan day.",
+    "placeholders": {
+      "count": { "type": "int" }
+    }
+  }
 }

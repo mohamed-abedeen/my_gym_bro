@@ -13,6 +13,7 @@ import 'package:my_gym_bro/features/leaderboard/rank.dart';
 import 'package:my_gym_bro/features/leaderboard/rank_up_overlay.dart';
 import 'package:my_gym_bro/features/workout/achievement_planner.dart';
 import 'package:my_gym_bro/features/workout/active_session/active_session_notifier.dart';
+import 'package:my_gym_bro/features/workout/current_split/current_split_providers.dart';
 import 'package:my_gym_bro/features/workout/workout_providers.dart';
 import 'package:my_gym_bro/features/workout/workout_screen.dart';
 import 'package:my_gym_bro/l10n/app_localizations.dart';
@@ -20,6 +21,21 @@ import 'package:my_gym_bro/shared/constants.dart';
 import 'package:my_gym_bro/shared/responsive.dart';
 import 'package:my_gym_bro/shared/widgets/bottom_nav_pill.dart';
 import 'package:my_gym_bro/shared/widgets/ios_native_nav.dart';
+
+enum RootBackAction { deferToRouter, closeCurrentSplit, goHome, handleHomeExit }
+
+RootBackAction decideRootBackAction({
+  required bool routerCanPop,
+  required int navIndex,
+  required int? currentSplitScheduleId,
+}) {
+  if (routerCanPop) return RootBackAction.deferToRouter;
+  if (navIndex == 1 && currentSplitScheduleId != null) {
+    return RootBackAction.closeCurrentSplit;
+  }
+  if (navIndex != 0) return RootBackAction.goHome;
+  return RootBackAction.handleHomeExit;
+}
 
 /// Main app scaffold — animated tab switching with floating nav pill.
 ///
@@ -48,9 +64,7 @@ class _MyGymBroScaffoldState extends ConsumerState<MyGymBroScaffold>
     // resync/tear down the ongoing notification accordingly.
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
-      unawaited(
-        ref.read(activeSessionProvider.notifier).restoreOrResync(),
-      );
+      unawaited(ref.read(activeSessionProvider.notifier).restoreOrResync());
       // Schedule the ambient achievement notifications (streak-at-risk,
       // weekly recap, scheduled-day, muscle-recovered) for today's data.
       unawaited(ref.read(achievementPlannerProvider).refresh());
@@ -73,15 +87,16 @@ class _MyGymBroScaffoldState extends ConsumerState<MyGymBroScaffold>
       // authoritative (clock-rollback-proof) verdict. Best-effort — no-ops
       // when RevenueCat/Supabase aren't configured or the device is offline.
       final profileDao = ref.read(userProfileDaoProvider);
-      unawaited(SubscriptionSyncService.syncNow(profileDao)
-          .then((_) => SubscriptionSyncService.verifyServer(profileDao)));
+      unawaited(
+        SubscriptionSyncService.syncNow(
+          profileDao,
+        ).then((_) => SubscriptionSyncService.verifyServer(profileDao)),
+      );
       // Option A — rebuild any stale active-workout notification whose
       // buttons would otherwise point at a dead isolate (see
       // `docs/notification-recovery.md`) — and, if this process has no
       // live session, restore one the OS killed mid-workout from Drift.
-      unawaited(
-        ref.read(activeSessionProvider.notifier).restoreOrResync(),
-      );
+      unawaited(ref.read(activeSessionProvider.notifier).restoreOrResync());
     }
   }
 
@@ -145,15 +160,17 @@ class _MyGymBroScaffoldState extends ConsumerState<MyGymBroScaffold>
         final isIncoming = child.key == ValueKey(idx);
         final slideOffset = isIncoming
             ? (goingForward
-                ? const Offset(0.15, 0) // new page enters from right
-                : const Offset(-0.15, 0)) // new page enters from left
+                  ? const Offset(0.15, 0) // new page enters from right
+                  : const Offset(-0.15, 0)) // new page enters from left
             : (goingForward
-                ? const Offset(-0.08, 0) // old page exits to left
-                : const Offset(0.08, 0)); // old page exits to right
+                  ? const Offset(-0.08, 0) // old page exits to left
+                  : const Offset(0.08, 0)); // old page exits to right
 
         return SlideTransition(
-          position: Tween<Offset>(begin: slideOffset, end: Offset.zero)
-              .animate(animation),
+          position: Tween<Offset>(
+            begin: slideOffset,
+            end: Offset.zero,
+          ).animate(animation),
           child: FadeTransition(opacity: animation, child: child),
         );
       },
@@ -171,12 +188,7 @@ class _MyGymBroScaffoldState extends ConsumerState<MyGymBroScaffold>
           )
         : Scaffold(
             backgroundColor: colors.background,
-            body: Stack(
-              children: [
-                pageBody,
-                const BottomNavPill(),
-              ],
-            ),
+            body: Stack(children: [pageBody, const BottomNavPill()]),
           );
 
     // Root back guard: back from a non-home tab returns to Home; on Home
@@ -205,15 +217,28 @@ class _MyGymBroScaffoldState extends ConsumerState<MyGymBroScaffold>
     );
   }
 
-  /// Root back handling: pop whatever is genuinely open first; otherwise a
-  /// non-home tab goes Home, and on Home a double-back within 2s exits.
+  /// Root back handling: pop whatever is genuinely open first; close the
+  /// Workout tab's current split before returning a non-home tab to Home;
+  /// on Home a double-back within 2s exits.
   /// Returns true when the event was consumed.
   Future<bool> _handleRootBack() async {
-    if (GoRouter.of(context).canPop()) return false; // let the router pop
-    if (ref.read(navIndexProvider) != 0) {
-      ref.read(navIndexProvider.notifier).state = 0;
-      _lastBackAt = null; // exit window starts fresh on Home
-      return true;
+    final action = decideRootBackAction(
+      routerCanPop: GoRouter.of(context).canPop(),
+      navIndex: ref.read(navIndexProvider),
+      currentSplitScheduleId: ref.read(currentSplitScheduleIdProvider),
+    );
+    switch (action) {
+      case RootBackAction.deferToRouter:
+        return false;
+      case RootBackAction.closeCurrentSplit:
+        ref.read(currentSplitScheduleIdProvider.notifier).state = null;
+        return true;
+      case RootBackAction.goHome:
+        ref.read(navIndexProvider.notifier).state = 0;
+        _lastBackAt = null; // exit window starts fresh on Home
+        return true;
+      case RootBackAction.handleHomeExit:
+        break;
     }
     final now = DateTime.now();
     if (_lastBackAt != null &&

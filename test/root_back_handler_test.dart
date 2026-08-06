@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
+import 'package:my_gym_bro/features/scaffold/my_gym_bro_scaffold.dart';
 
 /// Regression tests for the root back handling pattern used by
 /// MyGymBroScaffold (BackButtonListener + PopScope).
@@ -13,9 +14,7 @@ import 'package:go_router/go_router.dart';
 /// with a BackButtonListener (priority on the back dispatcher) and defers
 /// to the router only when something is genuinely poppable.
 void main() {
-  Widget rootScreen({
-    required Future<bool> Function(BuildContext) onBack,
-  }) {
+  Widget rootScreen({required Future<bool> Function(BuildContext) onBack}) {
     return Builder(
       builder: (context) => BackButtonListener(
         onBackButtonPressed: () => onBack(context),
@@ -27,42 +26,49 @@ void main() {
     );
   }
 
-  testWidgets(
-      'system back at the root reaches the BackButtonListener '
+  testWidgets('system back at the root reaches the BackButtonListener '
       '(go_router 13 would otherwise exit the app)', (tester) async {
     var handled = 0;
     final router = GoRouter(
       routes: [
         GoRoute(
           path: '/',
-          builder: (_, __) => rootScreen(onBack: (context) async {
-            if (GoRouter.of(context).canPop()) return false;
-            handled++;
-            return true; // consumed — app stays alive
-          }),
+          builder: (_, __) => rootScreen(
+            onBack: (context) async {
+              if (GoRouter.of(context).canPop()) return false;
+              handled++;
+              return true; // consumed — app stays alive
+            },
+          ),
         ),
       ],
     );
     await tester.pumpWidget(MaterialApp.router(routerConfig: router));
 
     // Simulates the OS back event through the root back dispatcher.
-    expect(await tester.binding.handlePopRoute(), isTrue,
-        reason: 'the event must be consumed, not bubble to app-exit');
+    expect(
+      await tester.binding.handlePopRoute(),
+      isTrue,
+      reason: 'the event must be consumed, not bubble to app-exit',
+    );
     expect(handled, 1);
   });
 
-  testWidgets('with a pushed route, back pops it and the handler defers',
-      (tester) async {
+  testWidgets('with a pushed route, back pops it and the handler defers', (
+    tester,
+  ) async {
     var handled = 0;
     final router = GoRouter(
       routes: [
         GoRoute(
           path: '/',
-          builder: (_, __) => rootScreen(onBack: (context) async {
-            if (GoRouter.of(context).canPop()) return false;
-            handled++;
-            return true;
-          }),
+          builder: (_, __) => rootScreen(
+            onBack: (context) async {
+              if (GoRouter.of(context).canPop()) return false;
+              handled++;
+              return true;
+            },
+          ),
           routes: [
             GoRoute(
               path: 'pushed',
@@ -80,10 +86,35 @@ void main() {
     expect(await tester.binding.handlePopRoute(), isTrue);
     await tester.pumpAndSettle();
 
-    expect(find.text('pushed'), findsNothing,
-        reason: 'back must pop the pushed route');
+    expect(
+      find.text('pushed'),
+      findsNothing,
+      reason: 'back must pop the pushed route',
+    );
     expect(find.text('root'), findsOneWidget);
-    expect(handled, 0,
-        reason: 'the root handler must defer while a route is poppable');
+    expect(
+      handled,
+      0,
+      reason: 'the root handler must defer while a route is poppable',
+    );
+  });
+
+  test('current split closes before Workout returns Home', () {
+    expect(
+      decideRootBackAction(
+        routerCanPop: false,
+        navIndex: 1,
+        currentSplitScheduleId: 42,
+      ),
+      RootBackAction.closeCurrentSplit,
+    );
+    expect(
+      decideRootBackAction(
+        routerCanPop: false,
+        navIndex: 1,
+        currentSplitScheduleId: null,
+      ),
+      RootBackAction.goHome,
+    );
   });
 }

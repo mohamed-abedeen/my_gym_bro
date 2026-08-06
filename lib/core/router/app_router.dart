@@ -71,6 +71,18 @@ class AppRoutes {
   static const profile = '/profile';
 }
 
+/// Converts current and legacy schedule-editor navigation extras.
+ScheduleBuilderArgs scheduleBuilderArgsFromExtra(Object? extra) {
+  if (extra == null) return const ScheduleBuilderArgs();
+  if (extra is int) return ScheduleBuilderArgs(scheduleId: extra);
+  if (extra is ScheduleBuilderArgs) return extra;
+  throw ArgumentError.value(
+    extra,
+    'extra',
+    'Expected an int or ScheduleBuilderArgs.',
+  );
+}
+
 // ═══════════════════════════════════════════════════════════════════════════
 // PAGE HELPERS
 // ═══════════════════════════════════════════════════════════════════════════
@@ -296,9 +308,12 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: AppRoutes.scheduleBuilder,
         pageBuilder: (context, state) {
-          final scheduleId = state.extra as int?;
+          final args = scheduleBuilderArgsFromExtra(state.extra);
           return _platformPage(
-            child: ScheduleBuilderScreen(scheduleId: scheduleId),
+            child: ScheduleBuilderScreen(
+              scheduleId: args.scheduleId,
+              initialDayLocalId: args.initialDayLocalId,
+            ),
             state: state,
           );
         },

@@ -1014,6 +1014,12 @@ abstract class AppLocalizations {
   /// **'Back'**
   String get back;
 
+  /// No description provided for @openCurrentSplit.
+  ///
+  /// In en, this message translates to:
+  /// **'Open current split'**
+  String get openCurrentSplit;
+
   /// No description provided for @share.
   ///
   /// In en, this message translates to:
@@ -3443,6 +3449,132 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'{count, plural, =1{1 set} other{{count} sets}}'**
   String setsCount(int count);
+
+  /// No description provided for @currentPlanEyebrow.
+  ///
+  /// In en, this message translates to:
+  /// **'CURRENT PLAN'**
+  String get currentPlanEyebrow;
+
+  /// No description provided for @currentSplitDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'A balanced weekly routine built for steady progress.'**
+  String get currentSplitDescription;
+
+  /// No description provided for @trainingDaysCount.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 training day} other{{count} training days}}'**
+  String trainingDaysCount(int count);
+
+  /// No description provided for @currentSplitTrainingDays.
+  ///
+  /// In en, this message translates to:
+  /// **'Training days'**
+  String get currentSplitTrainingDays;
+
+  /// No description provided for @currentSplitPlannedSets.
+  ///
+  /// In en, this message translates to:
+  /// **'Planned sets'**
+  String get currentSplitPlannedSets;
+
+  /// No description provided for @currentSplitRestDays.
+  ///
+  /// In en, this message translates to:
+  /// **'Rest days'**
+  String get currentSplitRestDays;
+
+  /// No description provided for @currentSplitProgress.
+  ///
+  /// In en, this message translates to:
+  /// **'Progress'**
+  String get currentSplitProgress;
+
+  /// No description provided for @currentSplitNutrition.
+  ///
+  /// In en, this message translates to:
+  /// **'Nutrition'**
+  String get currentSplitNutrition;
+
+  /// No description provided for @currentSplitStatistics.
+  ///
+  /// In en, this message translates to:
+  /// **'Statistics'**
+  String get currentSplitStatistics;
+
+  /// No description provided for @currentSplitWeeklyPlan.
+  ///
+  /// In en, this message translates to:
+  /// **'Your Weekly Plan'**
+  String get currentSplitWeeklyPlan;
+
+  /// No description provided for @currentSplitDiscoverPlans.
+  ///
+  /// In en, this message translates to:
+  /// **'Discover other training plans'**
+  String get currentSplitDiscoverPlans;
+
+  /// Status message shown while the current split data loads.
+  ///
+  /// In en, this message translates to:
+  /// **'Your current training plan is loading'**
+  String get currentSplitLoading;
+
+  /// Explanation shown when no requested or active plan exists.
+  ///
+  /// In en, this message translates to:
+  /// **'You do not have a training plan yet.'**
+  String get currentSplitNoPlanMessage;
+
+  /// Explanation shown when a plan exists but has no scheduled days.
+  ///
+  /// In en, this message translates to:
+  /// **'Your plan does not have any days yet.'**
+  String get currentSplitEmptyPlanMessage;
+
+  /// No description provided for @currentSplitCreatePlan.
+  ///
+  /// In en, this message translates to:
+  /// **'Create training plan'**
+  String get currentSplitCreatePlan;
+
+  /// No description provided for @currentSplitBuildPlan.
+  ///
+  /// In en, this message translates to:
+  /// **'Build your plan'**
+  String get currentSplitBuildPlan;
+
+  /// No description provided for @currentSplitLoadError.
+  ///
+  /// In en, this message translates to:
+  /// **'Your training plan could not be loaded.'**
+  String get currentSplitLoadError;
+
+  /// No description provided for @currentSplitEditPlan.
+  ///
+  /// In en, this message translates to:
+  /// **'Edit training plan'**
+  String get currentSplitEditPlan;
+
+  /// No description provided for @currentSplitOpenPlanDay.
+  ///
+  /// In en, this message translates to:
+  /// **'Open training day'**
+  String get currentSplitOpenPlanDay;
+
+  /// No description provided for @currentSplitUnavailable.
+  ///
+  /// In en, this message translates to:
+  /// **'Unavailable'**
+  String get currentSplitUnavailable;
+
+  /// Number of exercises in a plan or plan day.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 exercise} other{{count} exercises}}'**
+  String currentSplitExercisesCount(int count);
 }
 
 class _AppLocalizationsDelegate

@@ -26,6 +26,12 @@ class ScheduleDao extends DatabaseAccessor<AppDatabase>
       (select(schedules)..where((t) => t.isActive.equals(true)))
           .watchSingleOrNull();
 
+  /// Stream one schedule by local ID.
+  Stream<Schedule?> watchById(int localId) =>
+      (select(schedules)..where((t) => t.localId.equals(localId)))
+          .watchSingleOrNull()
+          .distinct();
+
   /// Create a new schedule.
   Future<int> createSchedule(SchedulesCompanion companion) =>
       into(schedules).insert(companion);
@@ -68,6 +74,34 @@ class ScheduleDao extends DatabaseAccessor<AppDatabase>
             ..orderBy([(t) => OrderingTerm.asc(t.orderIndex)]))
           .get();
 
+  /// Stream all exercises belonging to a schedule, ordered by day and
+  /// exercise position so callers can aggregate them deterministically.
+  Stream<List<ScheduledExercise>> watchExercisesForSchedule(int scheduleId) {
+    final query =
+        select(scheduledExercises).join([
+            innerJoin(
+              scheduleDays,
+              scheduleDays.localId.equalsExp(scheduledExercises.scheduleDayId),
+            ),
+          ])
+          ..where(scheduleDays.scheduleId.equals(scheduleId))
+          ..orderBy([
+            OrderingTerm.asc(scheduleDays.dayIndex),
+            OrderingTerm.asc(scheduleDays.localId),
+            OrderingTerm.asc(scheduledExercises.orderIndex),
+            OrderingTerm.asc(scheduledExercises.localId),
+          ]);
+
+    return query
+        .watch()
+        .map(
+          (rows) => rows
+              .map((row) => row.readTable(scheduledExercises))
+              .toList(growable: false),
+        )
+        .distinct(_sameScheduledExercises);
+  }
+
   /// Add an exercise to a schedule day.
   Future<int> addExercise(ScheduledExercisesCompanion companion) =>
       into(scheduledExercises).insert(companion);
@@ -103,4 +137,15 @@ class ScheduleDao extends DatabaseAccessor<AppDatabase>
           ..where((t) => t.scheduleId.equals(scheduleId)))
         .go();
   }
+}
+
+bool _sameScheduledExercises(
+  List<ScheduledExercise> previous,
+  List<ScheduledExercise> next,
+) {
+  if (previous.length != next.length) return false;
+  for (var index = 0; index < previous.length; index++) {
+    if (previous[index] != next[index]) return false;
+  }
+  return true;
 }
