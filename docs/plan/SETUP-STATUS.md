@@ -44,9 +44,11 @@ IPA on GitHub's Mac runners and uploads to TestFlight — no local Mac needed.
 - GitHub secrets currently set: `APP_STORE_CONNECT_ISSUER_ID` / `_KEY_IDENTIFIER` /
   `_PRIVATE_KEY`, `CERTIFICATE_PRIVATE_KEY` (backup of the Apple distribution cert key —
   losing it orphans the cert), `SUPABASE_URL`, `SUPABASE_ANON_KEY`.
-- External tester group "my gym bro testers1" with a public TestFlight link exists; after a
-  build uploads, it must be **assigned to the group AND submitted for beta review** via the
-  ASC API (assignment alone does not auto-submit; post-first-review approvals are instant).
+- External tester group "my gym bro testers1" with a public TestFlight link exists. Since
+  2026-08-10 the lane handles distribution itself: `app-store-connect publish` runs with
+  `--testflight --beta-group "my gym bro testers1"`, which waits for Apple processing, submits
+  for beta review, and assigns the group (assignment alone would not auto-submit;
+  post-first-review approvals are instant). No manual ASC step remains for beta builds.
 - Gotcha: `purchases_flutter` on iOS **fatalErrors (uncatchable)** if any `Purchases.*` call
   runs before `configure()` — every new call site needs an `await Purchases.isConfigured`
   guard (Android throws catchably, so you won't see it in dev).
