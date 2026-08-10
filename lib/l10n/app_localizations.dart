@@ -1920,47 +1920,35 @@ abstract class AppLocalizations {
   /// **'{days}-day streak'**
   String widgetStreakDays(int days);
 
-  /// No description provided for @takeRestDay.
+  /// No description provided for @streakSkips.
   ///
   /// In en, this message translates to:
-  /// **'Take a Rest Day'**
-  String get takeRestDay;
+  /// **'Streak Skips'**
+  String get streakSkips;
 
-  /// No description provided for @restDayExplainer.
+  /// No description provided for @streakSkipsExplainer.
   ///
   /// In en, this message translates to:
-  /// **'Not training today? Spend a rest day and your streak stays safe. You get {count} per week.'**
-  String restDayExplainer(int count);
+  /// **'Missed a training day? Your streak survives automatically. You get {count} skips per month — never two in the same week.'**
+  String streakSkipsExplainer(int count);
 
-  /// No description provided for @restDaysLeftThisWeek.
+  /// No description provided for @streakSkipsLeftThisMonth.
   ///
   /// In en, this message translates to:
-  /// **'{count} of {total} left this week'**
-  String restDaysLeftThisWeek(int count, int total);
+  /// **'{count} of {total} left this month'**
+  String streakSkipsLeftThisMonth(int count, int total);
 
-  /// No description provided for @restDayCountLeft.
+  /// No description provided for @streakSkipsCountLeft.
   ///
   /// In en, this message translates to:
   /// **'{count} left'**
-  String restDayCountLeft(int count);
+  String streakSkipsCountLeft(int count);
 
-  /// No description provided for @restDayActiveToday.
+  /// No description provided for @streakSkipsNoneLeft.
   ///
   /// In en, this message translates to:
-  /// **'Active today'**
-  String get restDayActiveToday;
-
-  /// No description provided for @restDayNoneLeftThisWeek.
-  ///
-  /// In en, this message translates to:
-  /// **'No rest days left this week'**
-  String get restDayNoneLeftThisWeek;
-
-  /// No description provided for @restDayClaimedToast.
-  ///
-  /// In en, this message translates to:
-  /// **'Rest day used — your streak is safe today.'**
-  String get restDayClaimedToast;
+  /// **'No skips left this month'**
+  String get streakSkipsNoneLeft;
 
   /// No description provided for @posts.
   ///
@@ -2579,6 +2567,30 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Let\'s go!'**
   String get rankUpCta;
+
+  /// No description provided for @liftRankCardTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Strength Rank'**
+  String get liftRankCardTitle;
+
+  /// No description provided for @liftRankUpSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'{lift} reached {rank}'**
+  String liftRankUpSubtitle(String lift, String rank);
+
+  /// No description provided for @shareRanksChip.
+  ///
+  /// In en, this message translates to:
+  /// **'Ranks'**
+  String get shareRanksChip;
+
+  /// No description provided for @shareRanksTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Today\'s Ranks'**
+  String get shareRanksTitle;
 
   /// No description provided for @newPrTitle.
   ///
@@ -3443,6 +3455,240 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'{count, plural, =1{1 set} other{{count} sets}}'**
   String setsCount(int count);
+
+  /// No description provided for @splitCurrentPlan.
+  ///
+  /// In en, this message translates to:
+  /// **'Current plan'**
+  String get splitCurrentPlan;
+
+  /// No description provided for @splitTrainingDaysPerWeek.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 training day per week} other{{count} training days per week}}'**
+  String splitTrainingDaysPerWeek(int count);
+
+  /// No description provided for @splitDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Focus on strength, muscle building and symmetrical development.'**
+  String get splitDescription;
+
+  /// No description provided for @splitStatDuration.
+  ///
+  /// In en, this message translates to:
+  /// **'Duration'**
+  String get splitStatDuration;
+
+  /// No description provided for @splitStatSinceStart.
+  ///
+  /// In en, this message translates to:
+  /// **'since start'**
+  String get splitStatSinceStart;
+
+  /// No description provided for @splitStatDays.
+  ///
+  /// In en, this message translates to:
+  /// **'Days'**
+  String get splitStatDays;
+
+  /// No description provided for @splitStatTrainingDays.
+  ///
+  /// In en, this message translates to:
+  /// **'Training days'**
+  String get splitStatTrainingDays;
+
+  /// No description provided for @splitStatSession.
+  ///
+  /// In en, this message translates to:
+  /// **'Session'**
+  String get splitStatSession;
+
+  /// No description provided for @splitStatAvgDuration.
+  ///
+  /// In en, this message translates to:
+  /// **'avg. duration'**
+  String get splitStatAvgDuration;
+
+  /// No description provided for @splitStatProgress.
+  ///
+  /// In en, this message translates to:
+  /// **'Progress'**
+  String get splitStatProgress;
+
+  /// No description provided for @splitMinutesRange.
+  ///
+  /// In en, this message translates to:
+  /// **'{min}–{max} min.'**
+  String splitMinutesRange(int min, int max);
+
+  /// No description provided for @splitWeeklyPlan.
+  ///
+  /// In en, this message translates to:
+  /// **'Your Weekly Plan'**
+  String get splitWeeklyPlan;
+
+  /// No description provided for @splitDay.
+  ///
+  /// In en, this message translates to:
+  /// **'Day'**
+  String get splitDay;
+
+  /// No description provided for @splitRestSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Regeneration & recovery'**
+  String get splitRestSubtitle;
+
+  /// No description provided for @splitQuickProgress.
+  ///
+  /// In en, this message translates to:
+  /// **'Progress'**
+  String get splitQuickProgress;
+
+  /// No description provided for @splitQuickProgressSub.
+  ///
+  /// In en, this message translates to:
+  /// **'Your development'**
+  String get splitQuickProgressSub;
+
+  /// No description provided for @splitQuickEditPlan.
+  ///
+  /// In en, this message translates to:
+  /// **'Edit Plan'**
+  String get splitQuickEditPlan;
+
+  /// No description provided for @splitQuickEditPlanSub.
+  ///
+  /// In en, this message translates to:
+  /// **'Days & exercises'**
+  String get splitQuickEditPlanSub;
+
+  /// No description provided for @splitQuickSettings.
+  ///
+  /// In en, this message translates to:
+  /// **'Settings'**
+  String get splitQuickSettings;
+
+  /// No description provided for @splitQuickSettingsSub.
+  ///
+  /// In en, this message translates to:
+  /// **'App preferences'**
+  String get splitQuickSettingsSub;
+
+  /// No description provided for @splitQuickDiscover.
+  ///
+  /// In en, this message translates to:
+  /// **'Discover'**
+  String get splitQuickDiscover;
+
+  /// No description provided for @splitQuickDiscoverSub.
+  ///
+  /// In en, this message translates to:
+  /// **'Other training plans'**
+  String get splitQuickDiscoverSub;
+
+  /// No description provided for @dayDetailCurrentPlan.
+  ///
+  /// In en, this message translates to:
+  /// **'Current Plan'**
+  String get dayDetailCurrentPlan;
+
+  /// No description provided for @dayDetailDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Focus on {muscles}. Ideal for strength and muscle building.'**
+  String dayDetailDescription(String muscles);
+
+  /// No description provided for @dayDetailStatCalories.
+  ///
+  /// In en, this message translates to:
+  /// **'Calories'**
+  String get dayDetailStatCalories;
+
+  /// No description provided for @dayDetailKcalApprox.
+  ///
+  /// In en, this message translates to:
+  /// **'kcal (approx.)'**
+  String get dayDetailKcalApprox;
+
+  /// No description provided for @dayDetailWorkoutHeader.
+  ///
+  /// In en, this message translates to:
+  /// **'Your Workout'**
+  String get dayDetailWorkoutHeader;
+
+  /// No description provided for @dayDetailRepsCount.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 rep} other{{count} reps}}'**
+  String dayDetailRepsCount(int count);
+
+  /// No description provided for @discoverTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Discover'**
+  String get discoverTitle;
+
+  /// No description provided for @discoverProgramsTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Programs'**
+  String get discoverProgramsTitle;
+
+  /// No description provided for @discoverFilter.
+  ///
+  /// In en, this message translates to:
+  /// **'Filter'**
+  String get discoverFilter;
+
+  /// No description provided for @discoverLevel.
+  ///
+  /// In en, this message translates to:
+  /// **'Level'**
+  String get discoverLevel;
+
+  /// No description provided for @discoverGoal.
+  ///
+  /// In en, this message translates to:
+  /// **'Goal'**
+  String get discoverGoal;
+
+  /// No description provided for @discoverEquipment.
+  ///
+  /// In en, this message translates to:
+  /// **'Equipment'**
+  String get discoverEquipment;
+
+  /// No description provided for @discoverRoutinesCount.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 routine} other{{count} routines}}'**
+  String discoverRoutinesCount(int count);
+
+  /// No description provided for @discoverShowAll.
+  ///
+  /// In en, this message translates to:
+  /// **'Show all {count} programs'**
+  String discoverShowAll(int count);
+
+  /// No description provided for @discoverCoachTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Your Personal Coach'**
+  String get discoverCoachTitle;
+
+  /// No description provided for @discoverCoachSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Programs based on your needs and goals.'**
+  String get discoverCoachSubtitle;
+
+  /// No description provided for @discoverOtherPlansCta.
+  ///
+  /// In en, this message translates to:
+  /// **'Discover Other Training Plans'**
+  String get discoverOtherPlansCta;
 }
 
 class _AppLocalizationsDelegate

@@ -1003,32 +1003,25 @@ class AppLocalizationsFr extends AppLocalizations {
   }
 
   @override
-  String get takeRestDay => 'Prendre un jour de repos';
+  String get streakSkips => 'Jokers de série';
 
   @override
-  String restDayExplainer(int count) {
-    return 'Pas d\'entraînement aujourd\'hui ? Utilise un jour de repos et ta série reste intacte. Tu en as $count par semaine.';
+  String streakSkipsExplainer(int count) {
+    return 'Un jour d\'entraînement manqué ? Ta série survit automatiquement. Tu as $count jokers par mois — jamais deux dans la même semaine.';
   }
 
   @override
-  String restDaysLeftThisWeek(int count, int total) {
-    return '$count sur $total restants cette semaine';
+  String streakSkipsLeftThisMonth(int count, int total) {
+    return '$count sur $total restants ce mois-ci';
   }
 
   @override
-  String restDayCountLeft(int count) {
+  String streakSkipsCountLeft(int count) {
     return '$count restants';
   }
 
   @override
-  String get restDayActiveToday => 'Actif aujourd\'hui';
-
-  @override
-  String get restDayNoneLeftThisWeek => 'Plus de jours de repos cette semaine';
-
-  @override
-  String get restDayClaimedToast =>
-      'Jour de repos utilisé — ta série est en sécurité aujourd\'hui.';
+  String get streakSkipsNoneLeft => 'Plus de jokers ce mois-ci';
 
   @override
   String get posts => 'Publications';
@@ -1355,6 +1348,20 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String get rankUpCta => 'C\'est parti !';
+
+  @override
+  String get liftRankCardTitle => 'Rang de force';
+
+  @override
+  String liftRankUpSubtitle(String lift, String rank) {
+    return '$lift a atteint $rank';
+  }
+
+  @override
+  String get shareRanksChip => 'Rangs';
+
+  @override
+  String get shareRanksTitle => 'Rangs du jour';
 
   @override
   String get newPrTitle => 'NOUVEAU RECORD !';
@@ -1845,4 +1852,154 @@ class AppLocalizationsFr extends AppLocalizations {
     );
     return '$_temp0';
   }
+
+  @override
+  String get splitCurrentPlan => 'Plan actuel';
+
+  @override
+  String splitTrainingDaysPerWeek(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count jours d\'entraînement par semaine',
+      one: '1 jour d\'entraînement par semaine',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get splitDescription =>
+      'Priorité à la force, à la prise de muscle et au développement symétrique.';
+
+  @override
+  String get splitStatDuration => 'Durée';
+
+  @override
+  String get splitStatSinceStart => 'depuis le début';
+
+  @override
+  String get splitStatDays => 'Jours';
+
+  @override
+  String get splitStatTrainingDays => 'Jours d\'entraînement';
+
+  @override
+  String get splitStatSession => 'Séance';
+
+  @override
+  String get splitStatAvgDuration => 'durée moyenne';
+
+  @override
+  String get splitStatProgress => 'Progression';
+
+  @override
+  String splitMinutesRange(int min, int max) {
+    return '$min–$max min';
+  }
+
+  @override
+  String get splitWeeklyPlan => 'Ton plan hebdomadaire';
+
+  @override
+  String get splitDay => 'Jour';
+
+  @override
+  String get splitRestSubtitle => 'Régénération et récupération';
+
+  @override
+  String get splitQuickProgress => 'Progression';
+
+  @override
+  String get splitQuickProgressSub => 'Ton évolution';
+
+  @override
+  String get splitQuickEditPlan => 'Modifier le plan';
+
+  @override
+  String get splitQuickEditPlanSub => 'Jours et exercices';
+
+  @override
+  String get splitQuickSettings => 'Réglages';
+
+  @override
+  String get splitQuickSettingsSub => 'Préférences de l\'app';
+
+  @override
+  String get splitQuickDiscover => 'Découvrir';
+
+  @override
+  String get splitQuickDiscoverSub => 'Autres programmes d\'entraînement';
+
+  @override
+  String get dayDetailCurrentPlan => 'Plan actuel';
+
+  @override
+  String dayDetailDescription(String muscles) {
+    return 'Priorité à $muscles. Idéal pour la force et la prise de muscle.';
+  }
+
+  @override
+  String get dayDetailStatCalories => 'Calories';
+
+  @override
+  String get dayDetailKcalApprox => 'kcal (env.)';
+
+  @override
+  String get dayDetailWorkoutHeader => 'Ton entraînement';
+
+  @override
+  String dayDetailRepsCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count réps',
+      one: '1 rép',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get discoverTitle => 'Découvrir';
+
+  @override
+  String get discoverProgramsTitle => 'Programmes';
+
+  @override
+  String get discoverFilter => 'Filtre';
+
+  @override
+  String get discoverLevel => 'Niveau';
+
+  @override
+  String get discoverGoal => 'Objectif';
+
+  @override
+  String get discoverEquipment => 'Équipement';
+
+  @override
+  String discoverRoutinesCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count routines',
+      one: '1 routine',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String discoverShowAll(int count) {
+    return 'Voir les $count programmes';
+  }
+
+  @override
+  String get discoverCoachTitle => 'Ton coach personnel';
+
+  @override
+  String get discoverCoachSubtitle =>
+      'Des programmes adaptés à tes besoins et objectifs.';
+
+  @override
+  String get discoverOtherPlansCta =>
+      'Découvrir d\'autres programmes d\'entraînement';
 }

@@ -22,7 +22,6 @@ import 'package:my_gym_bro/features/settings/skins_modal.dart';
 import 'package:my_gym_bro/features/settings/widgets/settings_rows.dart';
 import 'package:my_gym_bro/features/settings/widgets/settings_sheets.dart';
 import 'package:my_gym_bro/features/settings/workout_export.dart';
-import 'package:my_gym_bro/features/workout/rest_day_provider.dart';
 import 'package:my_gym_bro/features/workout/workout_providers.dart';
 import 'package:my_gym_bro/l10n/app_localizations.dart';
 import 'package:my_gym_bro/shared/constants.dart';
@@ -224,9 +223,9 @@ class SettingsScreen extends ConsumerWidget {
                   SettingsNavRow(
                     icon: Icons.bedtime_rounded,
                     iconColor: SettingsBadgeColors.indigo,
-                    label: l10n.restDay,
-                    value: _restDayLabel(ref, l10n),
-                    onTap: () => RestDaySheet.show(context),
+                    label: l10n.streakSkips,
+                    value: _streakSkipsLabel(ref, l10n),
+                    onTap: () => StreakSkipsSheet.show(context),
                   ),
                   SettingsSwitchRow(
                     icon: Icons.volume_up_rounded,
@@ -487,12 +486,10 @@ class SettingsScreen extends ConsumerWidget {
         : '${pct.toStringAsFixed(1)}%';
   }
 
-  static String _restDayLabel(WidgetRef ref, AppLocalizations l10n) {
-    // Watch the state so the row updates when a pass is claimed.
-    ref.watch(restDayPassesProvider);
-    final passes = ref.read(restDayPassesProvider.notifier);
-    if (passes.claimedToday) return l10n.restDayActiveToday;
-    return l10n.restDayCountLeft(passes.remainingThisWeek());
+  static String _streakSkipsLabel(WidgetRef ref, AppLocalizations l10n) {
+    final left = ref.watch(streakSkipsLeftProvider).valueOrNull;
+    if (left == null) return '';
+    return l10n.streakSkipsCountLeft(left);
   }
 
   static String _restLabel(int seconds) {

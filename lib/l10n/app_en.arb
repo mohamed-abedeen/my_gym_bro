@@ -436,29 +436,27 @@
       "days": {"type": "int"}
     }
   },
-  "takeRestDay": "Take a Rest Day",
-  "restDayExplainer": "Not training today? Spend a rest day and your streak stays safe. You get {count} per week.",
-  "@restDayExplainer": {
+  "streakSkips": "Streak Skips",
+  "streakSkipsExplainer": "Missed a training day? Your streak survives automatically. You get {count} skips per month — never two in the same week.",
+  "@streakSkipsExplainer": {
     "placeholders": {
       "count": {"type": "int"}
     }
   },
-  "restDaysLeftThisWeek": "{count} of {total} left this week",
-  "@restDaysLeftThisWeek": {
+  "streakSkipsLeftThisMonth": "{count} of {total} left this month",
+  "@streakSkipsLeftThisMonth": {
     "placeholders": {
       "count": {"type": "int"},
       "total": {"type": "int"}
     }
   },
-  "restDayCountLeft": "{count} left",
-  "@restDayCountLeft": {
+  "streakSkipsCountLeft": "{count} left",
+  "@streakSkipsCountLeft": {
     "placeholders": {
       "count": {"type": "int"}
     }
   },
-  "restDayActiveToday": "Active today",
-  "restDayNoneLeftThisWeek": "No rest days left this week",
-  "restDayClaimedToast": "Rest day used — your streak is safe today.",
+  "streakSkipsNoneLeft": "No skips left this month",
   "posts": "Posts",
   "lastSession": "Last Session",
   "noSessionsYet": "No sessions yet",
@@ -592,6 +590,16 @@
   "rankUnranked": "Unranked",
   "rankUpTitle": "RANK UP!",
   "rankUpCta": "Let's go!",
+  "liftRankCardTitle": "Strength Rank",
+  "liftRankUpSubtitle": "{lift} reached {rank}",
+  "@liftRankUpSubtitle": {
+    "placeholders": {
+      "lift": { "type": "String" },
+      "rank": { "type": "String" }
+    }
+  },
+  "shareRanksChip": "Ranks",
+  "shareRanksTitle": "Today's Ranks",
   "newPrTitle": "NEW PR!",
   "rankNext": "Next: {rank}",
   "@rankNext": {
@@ -814,5 +822,75 @@
     "placeholders": {
       "count": { "type": "int" }
     }
-  }
+  },
+  "splitCurrentPlan": "Current plan",
+  "splitTrainingDaysPerWeek": "{count, plural, =1{1 training day per week} other{{count} training days per week}}",
+  "@splitTrainingDaysPerWeek": {
+    "placeholders": {
+      "count": { "type": "int" }
+    }
+  },
+  "splitDescription": "Focus on strength, muscle building and symmetrical development.",
+  "splitStatDuration": "Duration",
+  "splitStatSinceStart": "since start",
+  "splitStatDays": "Days",
+  "splitStatTrainingDays": "Training days",
+  "splitStatSession": "Session",
+  "splitStatAvgDuration": "avg. duration",
+  "splitStatProgress": "Progress",
+  "splitMinutesRange": "{min}–{max} min.",
+  "@splitMinutesRange": {
+    "placeholders": {
+      "min": { "type": "int" },
+      "max": { "type": "int" }
+    }
+  },
+  "splitWeeklyPlan": "Your Weekly Plan",
+  "splitDay": "Day",
+  "splitRestSubtitle": "Regeneration & recovery",
+  "splitQuickProgress": "Progress",
+  "splitQuickProgressSub": "Your development",
+  "splitQuickEditPlan": "Edit Plan",
+  "splitQuickEditPlanSub": "Days & exercises",
+  "splitQuickSettings": "Settings",
+  "splitQuickSettingsSub": "App preferences",
+  "splitQuickDiscover": "Discover",
+  "splitQuickDiscoverSub": "Other training plans",
+  "dayDetailCurrentPlan": "Current Plan",
+  "dayDetailDescription": "Focus on {muscles}. Ideal for strength and muscle building.",
+  "@dayDetailDescription": {
+    "placeholders": {
+      "muscles": { "type": "String" }
+    }
+  },
+  "dayDetailStatCalories": "Calories",
+  "dayDetailKcalApprox": "kcal (approx.)",
+  "dayDetailWorkoutHeader": "Your Workout",
+  "dayDetailRepsCount": "{count, plural, =1{1 rep} other{{count} reps}}",
+  "@dayDetailRepsCount": {
+    "placeholders": {
+      "count": { "type": "int" }
+    }
+  },
+  "discoverTitle": "Discover",
+  "discoverProgramsTitle": "Programs",
+  "discoverFilter": "Filter",
+  "discoverLevel": "Level",
+  "discoverGoal": "Goal",
+  "discoverEquipment": "Equipment",
+  "discoverRoutinesCount": "{count, plural, =1{1 routine} other{{count} routines}}",
+  "@discoverRoutinesCount": {
+    "placeholders": {
+      "count": { "type": "int" }
+    }
+  },
+  "discoverShowAll": "Show all {count} programs",
+  "@discoverShowAll": {
+    "placeholders": {
+      "count": { "type": "int" }
+    }
+  },
+  "discoverCoachTitle": "Your Personal Coach",
+  "discoverCoachSubtitle": "Programs based on your needs and goals.",
+  "discoverOtherPlansCta": "Discover Other Training Plans"
 }

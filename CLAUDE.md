@@ -62,6 +62,7 @@ Real Apple Liquid Glass via `cupertino_native_better` (`CNTabBar`), **iOS only**
 - **Auth is Google + Apple sign-in only** (native Sign in with Apple on iOS). There is no email/password flow; don't add one.
 - **RevenueCat product IDs**: `mgb_premium_monthly` / `mgb_premium_annual`.
 - **Big numbers always get thousands separators** — "10,000 kg", never "10000 kg" — on every screen.
+- **Streak mechanic (locked 2026-08-10)**: schedule-aware rest allowance (longest recorded rest run, or `7 − cycle length` inferred when the schedule stores training days only, clamped 1–3) **plus 2 automatic "streak skips" per calendar month, never two in the same Monday-week** — computed deterministically in `computeStreak` (`workout_providers.dart`), no stored state. The old manual claim-a-rest-day flow (2/week, `rest_day_provider.dart`) was **removed**; Settings only displays skips remaining.
 - **Status sheet**: converting it from weekly to all-time (weekly stats move to reports) was attempted once and **rejected/reverted**. Don't retry without designing it with the user first.
 - Don't bulk-restyle or bulk-replace buttons (e.g. swapping to `OcGlassBtn` en masse) — each restyle needs per-change approval.
 - Every change must stay compliant with Apple App Store and Google Play policies (see `docs/plan/CLAUDE.md`).

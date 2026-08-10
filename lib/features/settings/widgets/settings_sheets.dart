@@ -9,7 +9,6 @@ import 'package:my_gym_bro/core/providers/providers.dart';
 import 'package:my_gym_bro/core/security/safe_logger.dart';
 import 'package:my_gym_bro/core/services/notification_tone.dart';
 import 'package:my_gym_bro/features/settings/app_settings_provider.dart';
-import 'package:my_gym_bro/features/workout/rest_day_provider.dart';
 import 'package:my_gym_bro/features/workout/workout_providers.dart';
 import 'package:my_gym_bro/l10n/app_localizations.dart';
 import 'package:my_gym_bro/shared/constants.dart';
@@ -603,108 +602,56 @@ class _NumberSheetState extends ConsumerState<_NumberSheet> {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Rest day — spend a weekly pass to protect the streak
+// Streak skips — automatic monthly forgiveness for missed training days
 // ─────────────────────────────────────────────────────────────────────────────
 
-class RestDaySheet extends ConsumerWidget {
-  const RestDaySheet({super.key});
+class StreakSkipsSheet extends ConsumerWidget {
+  const StreakSkipsSheet({super.key});
 
   static void show(BuildContext context) {
-    _showGlassSheet(context, (_) => const RestDaySheet());
+    _showGlassSheet(context, (_) => const StreakSkipsSheet());
   }
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final colors = AppColors.of(context);
     final l10n = AppLocalizations.of(context);
-    // Watch the state so the sheet rebuilds right after a claim.
-    ref.watch(restDayPassesProvider);
-    final passes = ref.read(restDayPassesProvider.notifier);
-    final claimedToday = passes.claimedToday;
-    final left = passes.remainingThisWeek();
-    final canClaim = !claimedToday && left > 0;
+    final left =
+        ref.watch(streakSkipsLeftProvider).valueOrNull ?? kStreakSkipsPerMonth;
 
-    final status = claimedToday
-        ? l10n.restDayActiveToday
-        : (left == 0
-            ? l10n.restDayNoneLeftThisWeek
-            : l10n.restDaysLeftThisWeek(left, kRestDaysPerWeek));
+    final status = left == 0
+        ? l10n.streakSkipsNoneLeft
+        : l10n.streakSkipsLeftThisMonth(left, kStreakSkipsPerMonth);
 
     return _SheetShell(
-      title: l10n.takeRestDay,
-      subtitle: l10n.restDayExplainer(kRestDaysPerWeek),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          Container(
-            padding: EdgeInsets.symmetric(horizontal: 14.w, vertical: 12.h),
-            decoration: BoxDecoration(
-              color: colors.textSecondary.withValues(alpha: 0.08),
-              borderRadius: BorderRadius.circular(14.r),
+      title: l10n.streakSkips,
+      subtitle: l10n.streakSkipsExplainer(kStreakSkipsPerMonth),
+      child: Container(
+        padding: EdgeInsets.symmetric(horizontal: 14.w, vertical: 12.h),
+        decoration: BoxDecoration(
+          color: colors.textSecondary.withValues(alpha: 0.08),
+          borderRadius: BorderRadius.circular(14.r),
+        ),
+        child: Row(
+          children: [
+            Icon(
+              left == 0 ? Icons.bedtime_off_rounded : Icons.bedtime_rounded,
+              color: left == 0 ? colors.textSecondary : colors.accent,
+              size: 18.sp,
             ),
-            child: Row(
-              children: [
-                Icon(
-                  claimedToday
-                      ? Icons.check_circle_rounded
-                      : Icons.bedtime_rounded,
-                  color: claimedToday ? colors.accent : colors.textSecondary,
-                  size: 18.sp,
-                ),
-                SizedBox(width: 10.w),
-                Expanded(
-                  child: Text(
-                    status,
-                    style: TextStyle(
-                      color: colors.textPrimary,
-                      fontSize: 14.sp,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-          SizedBox(height: 14.h),
-          GestureDetector(
-            onTap: canClaim
-                ? () async {
-                    unawaited(HapticFeedback.selectionClick().catchError(
-                        (Object e) => SafeLogger.log('Haptic failed: $e')));
-                    final messenger = ScaffoldMessenger.maybeOf(context);
-                    final toast = l10n.restDayClaimedToast;
-                    final ok = await passes.claimToday();
-                    if (context.mounted) Navigator.of(context).pop();
-                    if (ok) {
-                      messenger?.showSnackBar(
-                        SnackBar(content: Text(toast)),
-                      );
-                    }
-                  }
-                : null,
-            child: Container(
-              padding: EdgeInsets.symmetric(vertical: 13.h),
-              decoration: BoxDecoration(
-                color: canClaim
-                    ? colors.accent
-                    : colors.textSecondary.withValues(alpha: 0.15),
-                borderRadius: BorderRadius.circular(14.r),
-              ),
-              alignment: Alignment.center,
+            SizedBox(width: 10.w),
+            Expanded(
               child: Text(
-                l10n.takeRestDay,
+                status,
                 style: TextStyle(
-                  color: canClaim
-                      ? colors.todayPillText
-                      : colors.textSecondary,
+                  color: colors.textPrimary,
                   fontSize: 14.sp,
-                  fontWeight: FontWeight.w700,
+                  fontWeight: FontWeight.w600,
                 ),
               ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }

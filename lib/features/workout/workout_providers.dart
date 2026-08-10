@@ -15,7 +15,6 @@ import 'package:my_gym_bro/core/providers/providers.dart';
 import 'package:my_gym_bro/core/services/widget_sync_service.dart';
 import 'package:my_gym_bro/features/workout/calorie_service.dart';
 import 'package:my_gym_bro/features/workout/muscle_recovery_service.dart';
-import 'package:my_gym_bro/features/workout/rest_day_provider.dart';
 import 'package:my_gym_bro/features/workout/workout_log_repository.dart';
 
 // ── DAOs ──────────────────────────────────────
@@ -1132,6 +1131,11 @@ const int _kDefaultStreakGapDays = 1;
 /// streak effectively unbreakable.
 const int _kMaxStreakGapDays = 3;
 
+/// Monthly budget of automatic streak skips: missed training days the walk
+/// forgives on top of the schedule's rest allowance — at most one per
+/// Monday-anchored week, this many per calendar month.
+const int kStreakSkipsPerMonth = 2;
+
 /// How many consecutive workout-free calendar days the streak tolerates.
 ///
 /// Schedule-aware: with an active schedule the allowance is the longest run
@@ -1140,10 +1144,12 @@ const int _kMaxStreakGapDays = 3;
 /// — or with a degenerate all-rest schedule — falls back to
 /// [_kDefaultStreakGapDays].
 ///
-/// A schedule with *no* rest-day entries also gets the default: the schedule
-/// builder only saves training days (`isRestDay` is always false), so "no
-/// rest days" means unrecorded rest, not daily training — an allowance of 0
-/// would reset the streak on every legitimate rest day.
+/// A schedule with *no* rest-day entries infers its rest budget from the
+/// cycle length instead: the schedule builder and the premade programs save
+/// training days only (`isRestDay` is always false), so "no rest days" means
+/// unrecorded rest, not daily training. Assuming the cycle is run over a
+/// 7-day week, a 5-day split (e.g. push/pull/legs/upper/lower) leaves 2 rest
+/// days — and they may fall back-to-back, so the allowance must cover them.
 int _streakGapAllowance(List<ScheduleDay>? scheduleDays) {
   final days = scheduleDays;
   if (days == null || days.isEmpty) return _kDefaultStreakGapDays;
@@ -1161,22 +1167,131 @@ int _streakGapAllowance(List<ScheduleDay>? scheduleDays) {
       run = 0;
     }
   }
+  if (maxRun == 0) {
+    // Rest is unrecorded — infer the weekly budget from the cycle length
+    // and assume the worst case: all of it consecutive.
+    return (7 - days.length).clamp(_kDefaultStreakGapDays, _kMaxStreakGapDays);
+  }
   return maxRun.clamp(_kDefaultStreakGapDays, _kMaxStreakGapDays);
 }
 
-/// Number of workout days in the current unbroken training chain.
+/// A computed streak: the count plus the calendar days the walk had to
+/// cover with an automatic monthly skip to keep the chain alive.
+class StreakComputation {
+  const StreakComputation({required this.streak, this.skippedDays = const []});
+
+  final int streak;
+
+  /// Local calendar days (at midnight) covered by an automatic skip. Empty
+  /// when the schedule allowance covered every gap.
+  final List<DateTime> skippedDays;
+}
+
+/// Monday-anchored week key, the same week window as every other weekly
+/// metric in the app — "no two skips in the same week" uses it.
+String _skipWeekKey(DateTime d) {
+  final monday = DateTime(d.year, d.month, d.day - (d.weekday - 1));
+  return '${monday.year}-${monday.month}-${monday.day}';
+}
+
+String _skipMonthKey(DateTime d) => '${d.year}-${d.month}';
+
+/// Core streak walk over [sessionDays] (distinct local calendar days,
+/// newest first).
 ///
 /// Unlike a naive consecutive-calendar-day streak, scheduled rest days do
 /// not break the chain: a gap between two workout days (or between the last
-/// workout and today) is tolerated up to the schedule-derived allowance from
-/// [_streakGapAllowance]. The streak counts *training days*, so a Mon/Wed/Fri
-/// lifter who never misses a session builds one workout per training day —
-/// not a streak that resets to 1 every Tuesday.
+/// workout and [today]) is tolerated up to [allowedGap], the
+/// schedule-derived allowance from [_streakGapAllowance]. The streak counts
+/// *training days*, so a Mon/Wed/Fri lifter who never misses a session
+/// builds one workout per training day — not a streak that resets to 1
+/// every Tuesday.
 ///
-/// User-claimed rest days ([restDayPassesProvider]) are excluded from the
-/// workout-free runs before they're compared against the allowance — they
-/// freeze the streak without inflating it.
-final streakProvider = FutureProvider<int>((ref) async {
+/// Gap days beyond the allowance — missed training days — are covered by
+/// automatic skips: at most one per Monday-anchored week and
+/// [kStreakSkipsPerMonth] per calendar month (the month of the skipped
+/// day). A gap the skips can't cover kills the chain. Today itself never
+/// counts against the user — they may simply not have trained *yet*.
+///
+/// Deterministic over its inputs, so no skip state needs persisting: the
+/// walk re-derives the same skip assignments on every recompute. Gaps are
+/// walked newest first, which lets the current gap claim a skip ahead of
+/// older gaps — keeping the streak alive beats keeping it long.
+StreakComputation computeStreak({
+  required List<DateTime> sessionDays,
+  required DateTime today,
+  required int allowedGap,
+}) {
+  if (sessionDays.isEmpty) return const StreakComputation(streak: 0);
+
+  // Calendar-day difference at local midnight; round hours/24 so a DST
+  // transition (23h/25h day) still counts as one calendar day.
+  int dayDiff(DateTime a, DateTime b) =>
+      (DateTime(
+                a.year,
+                a.month,
+                a.day,
+              ).difference(DateTime(b.year, b.month, b.day)).inHours /
+              24)
+          .round();
+
+  final usedWeeks = <String>{};
+  final usedPerMonth = <String, int>{};
+  final skipped = <DateTime>[];
+
+  // Whether the workout-free days strictly between [newer] and [older] fit
+  // the allowance, spending skips on the excess. Skips are only committed
+  // when the whole gap can be covered.
+  bool coverGap(DateTime newer, DateTime older) {
+    final gap = dayDiff(newer, older) - 1;
+    final need = gap - allowedGap;
+    if (need <= 0) return true;
+
+    final candidates = <DateTime>[];
+    for (var i = 1; i <= gap && candidates.length < need; i++) {
+      final d = DateTime(older.year, older.month, older.day + i);
+      final week = _skipWeekKey(d);
+      if (usedWeeks.contains(week) ||
+          candidates.any((c) => _skipWeekKey(c) == week)) {
+        continue;
+      }
+      final month = _skipMonthKey(d);
+      final monthUsed = (usedPerMonth[month] ?? 0) +
+          candidates.where((c) => _skipMonthKey(c) == month).length;
+      if (monthUsed >= kStreakSkipsPerMonth) continue;
+      candidates.add(d);
+    }
+    if (candidates.length < need) return false;
+
+    for (final d in candidates) {
+      usedWeeks.add(_skipWeekKey(d));
+      usedPerMonth.update(_skipMonthKey(d), (n) => n + 1, ifAbsent: () => 1);
+      skipped.add(d);
+    }
+    return true;
+  }
+
+  // Streak is dead when the workout-free run since the last session can't
+  // be covered. (Today is excluded by the strictly-between gap.)
+  if (!coverGap(today, sessionDays.first)) {
+    return const StreakComputation(streak: 0);
+  }
+
+  var streak = 1;
+  for (var i = 1; i < sessionDays.length; i++) {
+    if (dayDiff(sessionDays[i - 1], sessionDays[i]) <= 0) continue; // dupe
+    if (coverGap(sessionDays[i - 1], sessionDays[i])) {
+      streak++;
+    } else {
+      break;
+    }
+  }
+  return StreakComputation(streak: streak, skippedDays: skipped);
+}
+
+/// The current streak with its skip usage. Most consumers want just the
+/// count — watch [streakProvider] for that.
+final streakDataProvider = FutureProvider<StreakComputation>((ref) async {
   // Auto-invalidate at next local midnight so the streak rolls over even
   // when the app stays foregrounded across the day boundary. Re-runs of
   // this provider reschedule the timer.
@@ -1190,7 +1305,7 @@ final streakProvider = FutureProvider<int>((ref) async {
   // least one completed session. Walking the result list in Dart is
   // O(streak length).
   final days = await sessionDao.getDistinctSessionDatesDescending();
-  if (days.isEmpty) return 0;
+  if (days.isEmpty) return const StreakComputation(streak: 0);
 
   // Gap allowance from the active schedule (reactive: streak recomputes
   // when the schedule or its days change).
@@ -1198,95 +1313,57 @@ final streakProvider = FutureProvider<int>((ref) async {
   final scheduleDays = active == null
       ? null
       : await ref.watch(scheduleDaysProvider(active.localId).future);
-  final allowedGap = _streakGapAllowance(scheduleDays);
 
-  // User-claimed rest days ("streak freezes"). Await the storage load so a
-  // cold start can't compute a broken streak before the claims arrive;
-  // watching the state keeps the streak reactive to a claim made just now.
-  await ref.watch(restDayPassesProvider.notifier).ready;
-  final restPasses = ref.watch(restDayPassesProvider);
+  return computeStreak(
+    sessionDays: days,
+    today: DateTime(now.year, now.month, now.day),
+    allowedGap: _streakGapAllowance(scheduleDays),
+  );
+});
 
-  // Calendar-day difference at local midnight; round hours/24 so a DST
-  // transition (23h/25h day) still counts as one calendar day.
-  int dayDiff(DateTime a, DateTime b) =>
-      (DateTime(
-                a.year,
-                a.month,
-                a.day,
-              ).difference(DateTime(b.year, b.month, b.day)).inHours /
-              24)
-          .round();
+/// Number of workout days in the current unbroken training chain.
+final streakProvider = FutureProvider<int>(
+  (ref) async => (await ref.watch(streakDataProvider.future)).streak,
+);
 
-  // Claimed rest days strictly between two workout days don't count toward
-  // the workout-free run. Gaps are at most a handful of days, so walking
-  // them is cheap.
-  int uncoveredGap(DateTime newer, DateTime older) {
-    final gap = dayDiff(newer, older) - 1;
-    if (gap <= 0) return gap;
-    var covered = 0;
-    for (var i = 1; i <= gap; i++) {
-      final d = DateTime(older.year, older.month, older.day + i);
-      if (restPasses.contains(restDayKey(d))) covered++;
-    }
-    return gap - covered;
-  }
-
-  // Streak is dead when the workout-free run since the last session already
-  // exceeds the allowance. (Today itself never counts against the user —
-  // they may simply not have trained *yet*.)
-  final today = DateTime(now.year, now.month, now.day);
-  final restRunSinceLast = uncoveredGap(today, days.first);
-  if (restRunSinceLast > allowedGap) return 0;
-
-  var streak = 1;
-  for (var i = 1; i < days.length; i++) {
-    if (dayDiff(days[i - 1], days[i]) <= 0) continue; // duplicate day
-    if (uncoveredGap(days[i - 1], days[i]) <= allowedGap) {
-      streak++;
-    } else {
-      break;
-    }
-  }
-  return streak;
+/// Automatic streak skips still available in the current calendar month.
+final streakSkipsLeftProvider = FutureProvider<int>((ref) async {
+  final data = await ref.watch(streakDataProvider.future);
+  final now = DateTime.now();
+  final used = data.skippedDays
+      .where((d) => d.year == now.year && d.month == now.month)
+      .length;
+  return (kStreakSkipsPerMonth - used).clamp(0, kStreakSkipsPerMonth);
 });
 
 /// What the streak-at-risk notification planner needs to decide whether
 /// tonight is do-or-die for the streak.
 class StreakRisk {
-  const StreakRisk({
-    required this.streak,
-    required this.restRun,
-    required this.allowedGap,
-    this.todayClaimed = false,
-  });
+  const StreakRisk({required this.streak, required this.atRiskToday});
 
   final int streak;
 
-  /// Workout-free days since the last session, *excluding* today and any
-  /// user-claimed rest days (-1 when the user already trained today).
-  final int restRun;
-
-  final int allowedGap;
-
-  /// The user already spent a rest-day pass on today, so tonight's midnight
-  /// rollover can't kill the streak.
-  final bool todayClaimed;
-
-  /// Today is the last allowed rest day — no session today and the streak
-  /// dies at midnight. Single days don't warrant a warning, and a claimed
-  /// rest day means there's nothing to warn about.
-  bool get atRiskToday => streak >= 2 && restRun == allowedGap && !todayClaimed;
+  /// No session today and the streak dies at midnight — neither the
+  /// schedule's rest allowance nor an automatic monthly skip can cover
+  /// another workout-free day.
+  final bool atRiskToday;
 }
 
-/// Streak-at-risk inputs for the achievement planner. Mirrors the maths in
-/// [streakProvider] (same DST-safe day difference and gap allowance).
+/// Streak-at-risk inputs for the achievement planner. Re-runs the same walk
+/// as [streakDataProvider], pretending today ended without a session.
 final streakRiskProvider = FutureProvider<StreakRisk>((ref) async {
-  final streak = await ref.watch(streakProvider.future);
+  final streak = (await ref.watch(streakDataProvider.future)).streak;
+  // Single days don't warrant a warning.
+  if (streak < 2) return StreakRisk(streak: streak, atRiskToday: false);
+
   final days = await ref
       .watch(sessionDaoProvider)
       .getDistinctSessionDatesDescending();
-  if (streak == 0 || days.isEmpty) {
-    return const StreakRisk(streak: 0, restRun: 0, allowedGap: 0);
+  final now = DateTime.now();
+  final today = DateTime(now.year, now.month, now.day);
+  if (days.isNotEmpty && !days.first.isBefore(today)) {
+    // Already trained today — tonight's rollover can't kill the streak.
+    return StreakRisk(streak: streak, atRiskToday: false);
   }
 
   final active = await ref.watch(activeScheduleProvider.future);
@@ -1294,32 +1371,15 @@ final streakRiskProvider = FutureProvider<StreakRisk>((ref) async {
       ? null
       : await ref.watch(scheduleDaysProvider(active.localId).future);
 
-  await ref.watch(restDayPassesProvider.notifier).ready;
-  final restPasses = ref.watch(restDayPassesProvider);
-
-  final now = DateTime.now();
-  final last = days.first;
-  final rawRun = (DateTime(now.year, now.month, now.day)
-                  .difference(DateTime(last.year, last.month, last.day))
-                  .inHours /
-              24)
-          .round() -
-      1;
-  // Claimed rest days between the last session and yesterday don't count
-  // toward the run (same coverage rule as streakProvider).
-  var restRun = rawRun;
-  for (var i = 1; i <= rawRun; i++) {
-    final d = DateTime(last.year, last.month, last.day + i);
-    if (restPasses.contains(restDayKey(d))) restRun--;
-  }
-  return StreakRisk(
-    streak: streak,
-    restRun: restRun,
+  // With tomorrow as the reference day, today joins the workout-free run —
+  // exactly the state the streak wakes up to if no session lands today.
+  final survivesTomorrow = computeStreak(
+    sessionDays: days,
+    today: DateTime(today.year, today.month, today.day + 1),
     allowedGap: _streakGapAllowance(scheduleDays),
-    todayClaimed: restPasses.contains(
-      restDayKey(DateTime(now.year, now.month, now.day)),
-    ),
-  );
+  ).streak >
+      0;
+  return StreakRisk(streak: streak, atRiskToday: !survivesTomorrow);
 });
 
 // ── Weekly streak ────────────────────────────

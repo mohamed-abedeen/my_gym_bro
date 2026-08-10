@@ -43,32 +43,9 @@ void main() {
     expect(isSessionMilestone(1000), isTrue);
   });
 
-  test('streak risk arms only on the last allowed rest day', () {
-    // Trained today (restRun -1) → never at risk.
-    expect(
-      const StreakRisk(streak: 5, restRun: -1, allowedGap: 0).atRiskToday,
-      isFalse,
-    );
-    // Daily streak: first day without a session is the last chance.
-    expect(
-      const StreakRisk(streak: 5, restRun: 0, allowedGap: 0).atRiskToday,
-      isTrue,
-    );
-    // Schedule allows one rest day: warning waits for the second one.
-    expect(
-      const StreakRisk(streak: 5, restRun: 0, allowedGap: 1).atRiskToday,
-      isFalse,
-    );
-    expect(
-      const StreakRisk(streak: 5, restRun: 1, allowedGap: 1).atRiskToday,
-      isTrue,
-    );
-    // Single-day "streaks" aren't worth a warning.
-    expect(
-      const StreakRisk(streak: 1, restRun: 0, allowedGap: 0).atRiskToday,
-      isFalse,
-    );
-  });
+  // Streak-at-risk arming is now a re-run of the streak walk with tomorrow
+  // as the reference day — covered by the computeStreak tests in
+  // workout_providers_test.dart.
 
   test('weekly recap renders the delta only when last week exists', () {
     expect(

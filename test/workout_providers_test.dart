@@ -5,7 +5,6 @@ import 'package:my_gym_bro/core/database/app_database.dart';
 import 'package:my_gym_bro/core/database/daos/exercise_dao.dart';
 import 'package:my_gym_bro/core/database/daos/session_dao.dart';
 import 'package:my_gym_bro/features/workout/calorie_service.dart';
-import 'package:my_gym_bro/features/workout/rest_day_provider.dart';
 import 'package:my_gym_bro/features/workout/workout_providers.dart';
 
 class MockSessionDao extends Mock implements SessionDao {}
@@ -128,16 +127,12 @@ void main() {
   ProviderContainer makeContainer({
     UserProfile? profile,
     List<bool>? scheduleRestPattern,
-    Set<String> restPasses = const {},
   }) {
     final schedule = scheduleRestPattern != null ? _schedule() : null;
     final container = ProviderContainer(
       overrides: [
         sessionDaoProvider.overrideWithValue(sessionDao),
         exerciseDaoProvider.overrideWithValue(exerciseDao),
-        restDayPassesProvider.overrideWith(
-          (ref) => RestDayPassesNotifier.seeded(restPasses),
-        ),
         activeScheduleProvider.overrideWith((ref) => Stream.value(schedule)),
         if (scheduleRestPattern != null)
           scheduleDaysProvider(schedule!.localId).overrideWith(
@@ -186,28 +181,31 @@ void main() {
       expect(await container.read(streakProvider.future), 3);
     });
 
-    test('breaks past the default one-day gap allowance', () async {
+    test('breaks when a gap outruns the allowance and the monthly skips',
+        () async {
       when(() => sessionDao.getDistinctSessionDatesDescending(
             limit: any(named: 'limit'),
           )).thenAnswer((_) async => [
             today,
-            // Two full days missing → gap of 2 > default allowance of 1.
-            DateTime(today.year, today.month, today.day - 3),
-            DateTime(today.year, today.month, today.day - 4),
+            // Four full days missing → allowance of 1 + at most 2 skips
+            // (four consecutive days span at most two Monday-weeks) can
+            // never cover it.
+            DateTime(today.year, today.month, today.day - 5),
+            DateTime(today.year, today.month, today.day - 6),
           ]);
 
       final container = makeContainer();
       expect(await container.read(streakProvider.future), 1);
     });
 
-    test('is dead when the current gap already exceeds the allowance',
+    test('is dead when the current gap already outruns allowance and skips',
         () async {
       when(() => sessionDao.getDistinctSessionDatesDescending(
             limit: any(named: 'limit'),
           )).thenAnswer((_) async => [
-            // Last workout 3 days ago → 2 workout-free days behind us.
-            DateTime(today.year, today.month, today.day - 3),
-            DateTime(today.year, today.month, today.day - 4),
+            // Last workout 5 days ago → 4 workout-free days behind us.
+            DateTime(today.year, today.month, today.day - 5),
+            DateTime(today.year, today.month, today.day - 6),
           ]);
 
       final container = makeContainer();
@@ -232,16 +230,60 @@ void main() {
       expect(await container.read(streakProvider.future), 3);
     });
 
-    test('schedule without rest-day entries keeps the default allowance',
+    test('schedule without rest-day entries infers rest from cycle length',
         () async {
-      // The schedule builder never saves rest days (isRestDay is always
-      // false), so a no-rest schedule means unrecorded rest — a one-day gap
-      // must not reset the streak.
+      // The schedule builder and premade programs save training days only
+      // (isRestDay is always false), so rest is unrecorded. A 5-day split
+      // (push/pull/legs/upper/lower) run over a 7-day week leaves 2 rest
+      // days — two back-to-back rest days must not reset the streak.
       when(() => sessionDao.getDistinctSessionDatesDescending(
             limit: any(named: 'limit'),
           )).thenAnswer((_) async => [
             today,
-            DateTime(today.year, today.month, today.day - 2),
+            // Two full days missing — the weekend of a 5-day split.
+            DateTime(today.year, today.month, today.day - 3),
+            DateTime(today.year, today.month, today.day - 4),
+          ]);
+
+      final container = makeContainer(
+        scheduleRestPattern: [false, false, false, false, false],
+      );
+      final data = await container.read(streakDataProvider.future);
+      expect(data.streak, 3);
+      // The allowance absorbed the whole gap — no skip was spent.
+      expect(data.skippedDays, isEmpty);
+    });
+
+    test('a 6-day no-rest schedule covers the same gap by spending a skip',
+        () async {
+      // 7 - 6 training days → inferred rest budget of 1: the second gap day
+      // is a missed training day, auto-covered by a monthly skip.
+      when(() => sessionDao.getDistinctSessionDatesDescending(
+            limit: any(named: 'limit'),
+          )).thenAnswer((_) async => [
+            today,
+            DateTime(today.year, today.month, today.day - 3),
+            DateTime(today.year, today.month, today.day - 4),
+          ]);
+
+      final container = makeContainer(
+        scheduleRestPattern: [false, false, false, false, false, false],
+      );
+      final data = await container.read(streakDataProvider.future);
+      expect(data.streak, 3);
+      expect(data.skippedDays.length, 1);
+    });
+
+    test('inferred allowance is capped for short cycles', () async {
+      // A 3-day no-rest cycle infers 7 - 3 = 4 rest days, clamped to the
+      // 3-day maximum so the streak stays breakable: a 7-day gap is beyond
+      // the allowance plus anything the monthly skips could cover.
+      when(() => sessionDao.getDistinctSessionDatesDescending(
+            limit: any(named: 'limit'),
+          )).thenAnswer((_) async => [
+            today,
+            DateTime(today.year, today.month, today.day - 4), // 3-day gap: ok
+            DateTime(today.year, today.month, today.day - 12), // 7-day gap
           ]);
 
       final container = makeContainer(
@@ -284,115 +326,150 @@ void main() {
       expect(await container.read(streakProvider.future), 0);
     });
 
-    test('claimed rest day covers a gap that would otherwise break it',
-        () async {
+    test('a missed training day is auto-covered by a monthly skip', () async {
       when(() => sessionDao.getDistinctSessionDatesDescending(
             limit: any(named: 'limit'),
           )).thenAnswer((_) async => [
             today,
-            // Two full days missing → gap of 2 > default allowance of 1,
-            // but one of them is a claimed rest day.
+            // Two full days missing → gap of 2 > default allowance of 1;
+            // the excess day is forgiven by an automatic skip.
             DateTime(today.year, today.month, today.day - 3),
             DateTime(today.year, today.month, today.day - 4),
           ]);
 
-      final container = makeContainer(
-        restPasses: {
-          restDayKey(DateTime(today.year, today.month, today.day - 2)),
-        },
-      );
-      expect(await container.read(streakProvider.future), 3);
+      final container = makeContainer();
+      final data = await container.read(streakDataProvider.future);
+      expect(data.streak, 3);
+      expect(data.skippedDays.length, 1);
     });
 
-    test('claimed rest days keep the streak alive since the last session',
+    test('an auto skip keeps the streak alive since the last session',
         () async {
       when(() => sessionDao.getDistinctSessionDatesDescending(
             limit: any(named: 'limit'),
           )).thenAnswer((_) async => [
-            // Last workout 3 days ago → 2 workout-free days behind us,
-            // both claimed as rest days.
+            // Last workout 3 days ago → 2 workout-free days behind us; one
+            // is allowance, the other costs a skip.
             DateTime(today.year, today.month, today.day - 3),
             DateTime(today.year, today.month, today.day - 4),
           ]);
 
-      final container = makeContainer(
-        restPasses: {
-          restDayKey(DateTime(today.year, today.month, today.day - 1)),
-          restDayKey(DateTime(today.year, today.month, today.day - 2)),
-        },
-      );
+      final container = makeContainer();
       expect(await container.read(streakProvider.future), 2);
     });
   });
 
-  // ── streakRiskProvider + rest-day passes ────────────────────────────────
+  // ── computeStreak skip rules (fixed dates — week/month constraints) ─────
 
-  group('rest-day passes', () {
-    test('claiming today defuses the streak-at-risk warning', () async {
+  group('computeStreak skip rules', () {
+    // 2026-01-01 is a Thursday, so 2026-01-12 / 19 / 26 are Mondays.
+    DateTime jan(int day) => DateTime(2026, 1, day);
+
+    test('two skips can never land in the same Monday-week', () {
+      // Fri 16th; last workout Mon 12th → gap Tue 13 – Thu 15 (3 days).
+      // Allowance 1 leaves 2 to skip, but all gap days share the week of
+      // the 12th → the chain dies.
+      final result = computeStreak(
+        sessionDays: [jan(12), jan(11)],
+        today: jan(16),
+        allowedGap: 1,
+      );
+      expect(result.streak, 0);
+    });
+
+    test('two skips in distinct weeks cover a gap that spans the boundary',
+        () {
+      // Tue 20th; last workout Fri 16th → gap Sat 17 – Mon 19. Allowance 1
+      // leaves 2 to skip: the 17th (week of the 12th) and the 19th (week of
+      // the 19th) are in different weeks, so both skips fit.
+      final result = computeStreak(
+        sessionDays: [jan(16), jan(15)],
+        today: jan(20),
+        allowedGap: 1,
+      );
+      expect(result.streak, 2);
+      expect(result.skippedDays.length, 2);
+    });
+
+    test('the monthly budget of $kStreakSkipsPerMonth is a hard ceiling', () {
+      // Wed 28th. Head gap Sun 25 – Tue 27 spends both January skips
+      // (25th in the week of the 19th, 26th in the week of the 26th). The
+      // older gap (21st–22nd) then needs a third skip → chain breaks there.
+      final result = computeStreak(
+        sessionDays: [jan(24), jan(23), jan(20)],
+        today: jan(28),
+        allowedGap: 1,
+      );
+      expect(result.streak, 2);
+      expect(result.skippedDays.length, 2);
+    });
+
+    test('tomorrow-simulation marks the do-or-die day', () {
+      // Sat 17th; last workout Thu 15th → gap Fri 16 = allowance, alive
+      // without skips. Simulated Sun 18th: one skip saves it. Simulated
+      // Mon 19th: the 3-day gap needs two skips inside one week → dead.
+      final days = [jan(15), jan(14)];
+      expect(
+        computeStreak(sessionDays: days, today: jan(17), allowedGap: 1).streak,
+        2,
+      );
+      expect(
+        computeStreak(sessionDays: days, today: jan(18), allowedGap: 1).streak,
+        2,
+      );
+      expect(
+        computeStreak(sessionDays: days, today: jan(19), allowedGap: 1).streak,
+        0,
+      );
+    });
+  });
+
+  // ── streakRiskProvider ──────────────────────────────────────────────────
+
+  group('streakRiskProvider', () {
+    test('an available skip defuses the last allowed rest day', () async {
       when(() => sessionDao.getDistinctSessionDatesDescending(
             limit: any(named: 'limit'),
           )).thenAnswer((_) async => [
-            // Last workout 2 days ago → today is the last allowed rest day.
+            // Last workout 2 days ago → without skips tonight would be
+            // do-or-die; a monthly skip can still cover tomorrow.
             DateTime(today.year, today.month, today.day - 2),
             DateTime(today.year, today.month, today.day - 3),
           ]);
 
-      final without = makeContainer();
-      expect((await without.read(streakRiskProvider.future)).atRiskToday,
-          isTrue);
-
-      final withPass = makeContainer(restPasses: {restDayKey(today)});
-      final risk = await withPass.read(streakRiskProvider.future);
-      expect(risk.todayClaimed, isTrue);
+      final container = makeContainer();
+      final risk = await container.read(streakRiskProvider.future);
+      expect(risk.streak, 2);
       expect(risk.atRiskToday, isFalse);
     });
 
-    test('claimToday enforces the weekly limit of $kRestDaysPerWeek', () async {
-      final monday = DateTime(
-        today.year,
-        today.month,
-        today.day - (today.weekday - 1),
+    test('training today clears the risk', () async {
+      when(() => sessionDao.getDistinctSessionDatesDescending(
+            limit: any(named: 'limit'),
+          )).thenAnswer((_) async => [
+            today,
+            DateTime(today.year, today.month, today.day - 1),
+          ]);
+
+      final container = makeContainer();
+      expect(
+        (await container.read(streakRiskProvider.future)).atRiskToday,
+        isFalse,
       );
-      // Two claims this week on days other than today, so claimToday can't
-      // short-circuit on "already claimed".
-      final thisWeek = [
-        for (var i = 0; i < 7; i++)
-          DateTime(monday.year, monday.month, monday.day + i),
-      ].where((d) => d != today).take(kRestDaysPerWeek);
-
-      final notifier =
-          RestDayPassesNotifier.seeded(thisWeek.map(restDayKey).toSet());
-      addTearDown(notifier.dispose);
-
-      expect(notifier.usedThisWeek(), kRestDaysPerWeek);
-      expect(notifier.remainingThisWeek(), 0);
-      expect(await notifier.claimToday(), isFalse);
-      expect(notifier.claimedToday, isFalse);
     });
 
-    test("last week's claims do not count against this week", () {
-      final monday = DateTime(
-        today.year,
-        today.month,
-        today.day - (today.weekday - 1),
+    test('single-day streaks never warn', () async {
+      when(() => sessionDao.getDistinctSessionDatesDescending(
+            limit: any(named: 'limit'),
+          )).thenAnswer((_) async => [
+            DateTime(today.year, today.month, today.day - 1),
+          ]);
+
+      final container = makeContainer();
+      expect(
+        (await container.read(streakRiskProvider.future)).atRiskToday,
+        isFalse,
       );
-      final notifier = RestDayPassesNotifier.seeded({
-        restDayKey(DateTime(monday.year, monday.month, monday.day - 1)),
-        restDayKey(DateTime(monday.year, monday.month, monday.day - 3)),
-      });
-      addTearDown(notifier.dispose);
-
-      expect(notifier.usedThisWeek(), 0);
-      expect(notifier.remainingThisWeek(), kRestDaysPerWeek);
-    });
-
-    test('claiming an already-claimed day is a no-op success', () async {
-      final notifier = RestDayPassesNotifier.seeded({restDayKey(today)});
-      addTearDown(notifier.dispose);
-
-      expect(notifier.claimedToday, isTrue);
-      expect(await notifier.claimToday(), isTrue);
-      expect(notifier.usedThisWeek(), 1);
     });
   });
 
