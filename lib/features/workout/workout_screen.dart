@@ -801,8 +801,6 @@ class _ScheduleCardState extends ConsumerState<_ScheduleCard> {
                 l10n: widget.l10n,
                 schedule: selected,
                 day: trainingDays[i],
-                allSchedules: schedules,
-                onProgramChanged: _onProgramChanged,
               );
             },
           ),
@@ -949,9 +947,14 @@ class _AddDayCard extends StatelessWidget {
                 ),
               ),
               SizedBox(height: 8.h),
-              // White search button
+              // Split overview button (grid); no plan yet → Discover
               GestureDetector(
-                onTap: () => context.push(AppRoutes.exerciseBrowser),
+                onTap: () => schedule != null
+                    ? context.push(
+                        AppRoutes.splitOverview,
+                        extra: schedule!.localId,
+                      )
+                    : context.push(AppRoutes.discoverPrograms),
                 child: Container(
                   width: 69.w,
                   height: 64.h,
@@ -962,9 +965,9 @@ class _AddDayCard extends StatelessWidget {
                     ),
                   ),
                   child: Icon(
-                    Icons.search,
+                    Icons.grid_view_rounded,
                     color: colors.todayPillText,
-                    size: 33.sp,
+                    size: 30.sp,
                   ),
                 ),
               ),
@@ -982,14 +985,10 @@ class _DayCard extends ConsumerWidget {
     required this.l10n,
     required this.schedule,
     required this.day,
-    required this.allSchedules,
-    required this.onProgramChanged,
   });
   final AppLocalizations l10n;
   final Schedule schedule;
   final ScheduleDay day;
-  final List<Schedule> allSchedules;
-  final ValueChanged<int> onProgramChanged;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -1026,61 +1025,25 @@ class _DayCard extends ConsumerWidget {
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 // Day name as big title + next session subtitle
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      dayLabel,
-                      style: TextStyle(
-                        color: colors.textPrimary,
-                        fontSize: 36.sp,
-                        fontWeight: FontWeight.w700,
-                      ),
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                    SizedBox(height: 4.h),
-                    Text(
-                      timerText,
-                      style: TextStyle(
-                        color: colors.textPrimary,
-                        fontSize: 14.sp,
-                        fontWeight: FontWeight.w700,
-                      ),
-                    ),
-                  ],
-                ),
-                // Program name selector at bottom
-                GestureDetector(
-                  onTap: () => _showProgramPicker(
-                    context,
-                    schedule,
-                    allSchedules,
-                    onProgramChanged,
+                Text(
+                  dayLabel,
+                  style: TextStyle(
+                    color: colors.textPrimary,
+                    fontSize: 36.sp,
+                    fontWeight: FontWeight.w700,
                   ),
-                  child: Padding(
-                    padding: EdgeInsets.only(top: 8.h),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Text(
-                          schedule.name,
-                          style: TextStyle(
-                            color: colors.textPrimary,
-                            fontSize: 14.sp,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                        SizedBox(width: 3.w),
-                        Icon(
-                          Icons.unfold_more_rounded,
-                          color: colors.textPrimary,
-                          size: 18.sp,
-                        ),
-                      ],
-                    ),
+                  overflow: TextOverflow.ellipsis,
+                ),
+                SizedBox(height: 4.h),
+                Text(
+                  timerText,
+                  style: TextStyle(
+                    color: colors.textPrimary,
+                    fontSize: 14.sp,
+                    fontWeight: FontWeight.w700,
                   ),
                 ),
               ],
@@ -1110,10 +1073,10 @@ class _DayCard extends ConsumerWidget {
                 ),
               ),
               SizedBox(height: 8.h),
-              // Edit button
+              // Split overview button (grid) — view/switch the training plan
               GestureDetector(
                 onTap: () => context.push(
-                  AppRoutes.scheduleBuilder,
+                  AppRoutes.splitOverview,
                   extra: schedule.localId,
                 ),
                 child: Container(
@@ -1126,9 +1089,9 @@ class _DayCard extends ConsumerWidget {
                     ),
                   ),
                   child: Icon(
-                    Icons.edit_rounded,
+                    Icons.grid_view_rounded,
                     color: AppColors.of(context).black,
-                    size: 33.sp,
+                    size: 30.sp,
                   ),
                 ),
               ),

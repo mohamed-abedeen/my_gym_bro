@@ -125,41 +125,57 @@ class _PremadeProgramsScreenState extends ConsumerState<PremadeProgramsScreen> {
   }
 
   void _showProgramDetail(BuildContext context, PremadeProgram program) {
-    final colors = AppColors.of(context);
-    showModalBottomSheet<void>(
-      context: context,
-      backgroundColor: colors.cardElevated,
-      isScrollControlled: true,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(25.r)),
-      ),
-      builder: (_) => DraggableScrollableSheet(
-        initialChildSize: 0.75,
-        minChildSize: 0.5,
-        maxChildSize: 0.9,
-        expand: false,
-        builder: (sheetContext, scrollController) => _ProgramDetailSheet(
-          program: program,
-          scrollController: scrollController,
-          onInstalled: _onInstalled,
-        ),
-      ),
-    );
+    showPremadeProgramSheet(context, program: program, onInstalled: _onInstalled);
   }
 
   /// Selects the freshly installed schedule on the Workout tab (same as the
   /// program picker) and confirms with a snackbar on this screen.
   void _onInstalled(int scheduleId) {
-    ref.read(workoutCardStateProvider.notifier).state = WorkoutCardState(
-      selectedScheduleId: scheduleId,
-    );
-    SecureStorage().write('last_selected_schedule_id', scheduleId.toString());
+    selectInstalledSchedule(ref, scheduleId);
     if (!mounted) return;
     final l10n = AppLocalizations.of(context);
     ScaffoldMessenger.of(
       context,
     ).showSnackBar(SnackBar(content: Text(l10n.premadeAdded)));
   }
+}
+
+/// Opens the program detail/install sheet for [program]. Shared by this
+/// library screen and the Discover screen.
+void showPremadeProgramSheet(
+  BuildContext context, {
+  required PremadeProgram program,
+  required ValueChanged<int> onInstalled,
+}) {
+  final colors = AppColors.of(context);
+  showModalBottomSheet<void>(
+    context: context,
+    backgroundColor: colors.cardElevated,
+    isScrollControlled: true,
+    shape: RoundedRectangleBorder(
+      borderRadius: BorderRadius.vertical(top: Radius.circular(25.r)),
+    ),
+    builder: (_) => DraggableScrollableSheet(
+      initialChildSize: 0.75,
+      minChildSize: 0.5,
+      maxChildSize: 0.9,
+      expand: false,
+      builder: (sheetContext, scrollController) => _ProgramDetailSheet(
+        program: program,
+        scrollController: scrollController,
+        onInstalled: onInstalled,
+      ),
+    ),
+  );
+}
+
+/// Selects a freshly installed schedule on the Workout tab, mirroring the
+/// program picker (state + persisted last-selected id).
+void selectInstalledSchedule(WidgetRef ref, int scheduleId) {
+  ref.read(workoutCardStateProvider.notifier).state = WorkoutCardState(
+    selectedScheduleId: scheduleId,
+  );
+  SecureStorage().write('last_selected_schedule_id', scheduleId.toString());
 }
 
 class _CategoryChip extends StatelessWidget {

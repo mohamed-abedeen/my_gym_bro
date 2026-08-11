@@ -20,8 +20,11 @@ import 'package:my_gym_bro/features/onboarding/screens/welcome_screen.dart';
 import 'package:my_gym_bro/features/paywall/paywall_screen.dart';
 import 'package:my_gym_bro/features/profile/profile_screen.dart';
 import 'package:my_gym_bro/features/scaffold/my_gym_bro_scaffold.dart';
+import 'package:my_gym_bro/features/schedule/day_detail_screen.dart';
+import 'package:my_gym_bro/features/schedule/discover_programs_screen.dart';
 import 'package:my_gym_bro/features/schedule/premade_programs_screen.dart';
 import 'package:my_gym_bro/features/schedule/schedule_builder_screen.dart';
+import 'package:my_gym_bro/features/schedule/split_overview_screen.dart';
 import 'package:my_gym_bro/features/settings/settings_screen.dart';
 import 'package:my_gym_bro/features/workout/active_session/active_session_screen.dart';
 import 'package:my_gym_bro/features/workout/share/share_card_data.dart';
@@ -64,7 +67,10 @@ class AppRoutes {
   static const activeSession = '/session';
   static const shareCard = '/session/share';
   static const scheduleBuilder = '/schedule/build';
+  static const splitOverview = '/schedule/overview';
+  static const dayDetail = '/schedule/day';
   static const premadePrograms = '/programs';
+  static const discoverPrograms = '/programs/discover';
   static const paywall = '/paywall';
 
   // Profile
@@ -304,9 +310,30 @@ final routerProvider = Provider<GoRouter>((ref) {
         },
       ),
       GoRoute(
+        path: AppRoutes.splitOverview,
+        pageBuilder: (context, state) => _platformPage(
+          child: SplitOverviewScreen(scheduleId: state.extra as int?),
+          state: state,
+        ),
+      ),
+      GoRoute(
+        path: AppRoutes.dayDetail,
+        redirect: (context, state) =>
+            state.extra is int ? null : AppRoutes.home,
+        pageBuilder: (context, state) => _platformPage(
+          child: DayDetailScreen(scheduleDayId: state.extra! as int),
+          state: state,
+        ),
+      ),
+      GoRoute(
         path: AppRoutes.premadePrograms,
         pageBuilder: (context, state) =>
             _platformPage(child: const PremadeProgramsScreen(), state: state),
+      ),
+      GoRoute(
+        path: AppRoutes.discoverPrograms,
+        pageBuilder: (context, state) =>
+            _platformPage(child: const DiscoverProgramsScreen(), state: state),
       ),
       GoRoute(
         path: AppRoutes.paywall,
