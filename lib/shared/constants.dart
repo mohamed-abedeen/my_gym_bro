@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:my_gym_bro/shared/responsive.dart';
 
 /// App-wide color flavor. [classic] is the lime/orange brand look; [pink]
 /// swaps both light and dark palettes for soft-rose variants (muted pink
@@ -379,6 +380,29 @@ class AppSizes {
   static const navPillTop = 877.0;
   static const navActiveW = 94.0;
   static const navActiveH = 65.0;
+
+  /// Gap between the floating nav pill and the bottom safe-area edge
+  /// (non-iOS only — iOS uses the native tab bar).
+  static const navPillBottomOffset = 7.0;
+
+  /// Vertical space tab content must leave at its bottom edge to stay clear
+  /// of the bottom nav.
+  ///
+  /// Safe-area insets and the nav bar are physical sizes, so `.h`-scaled
+  /// layouts built for the 440×956 design frame drift into the nav on any
+  /// device with a larger inset-to-height ratio. Tab screens must end with
+  /// this clearance (and flex their tallest section) instead of assuming the
+  /// design frame's leftover space.
+  ///
+  /// iOS: the native tab bar sits in the Scaffold's bottomNavigationBar slot,
+  /// so the body already ends above it — a breathing gap is enough. Elsewhere
+  /// the frosted pill floats OVER the body in a Stack, so content must clear
+  /// safe-area inset + pill offset + pill height + gap.
+  static double navClearanceOf(BuildContext context) {
+    if (Theme.of(context).platform == TargetPlatform.iOS) return 8.h;
+    return MediaQuery.paddingOf(context).bottom +
+        (navPillBottomOffset + navPillHeight + 8).h;
+  }
 
   // Anatomy card
   static const anatomyW = 400.0;

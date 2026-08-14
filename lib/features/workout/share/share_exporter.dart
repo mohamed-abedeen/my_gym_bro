@@ -92,13 +92,21 @@ abstract final class ShareCardExporter {
     BuildContext context, {
     required String basePngPath,
     Rank? rank,
+    List<Rank> liftRanks = const [],
   }) async {
     await precacheImage(AssetImage(basePngPath), context);
     if (!context.mounted) return;
     await precacheImage(const AssetImage('assets/images/mgb_icon.png'), context);
-    if (rank != null && context.mounted) {
+    // Dedupe the badge assets: the account rank and several lift ranks can
+    // share a tier/level.
+    final badgePaths = {
+      if (rank != null) rank.assetPath,
+      for (final r in liftRanks) r.assetPath,
+    };
+    for (final path in badgePaths) {
+      if (!context.mounted) return;
       try {
-        await precacheImage(AssetImage(rank.assetPath), context);
+        await precacheImage(AssetImage(path), context);
       } on Exception {
         // Badge art not shipped for this tier yet — RankBadge renders its
         // vector fallback, which needs no precache.

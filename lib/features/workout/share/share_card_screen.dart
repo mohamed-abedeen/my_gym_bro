@@ -6,12 +6,14 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:gal/gal.dart';
 
 import 'package:my_gym_bro/features/leaderboard/leaderboard_providers.dart';
+import 'package:my_gym_bro/features/leaderboard/rank.dart';
 import 'package:my_gym_bro/features/settings/skin_provider.dart';
 import 'package:my_gym_bro/features/workout/share/share_card_data.dart';
 import 'package:my_gym_bro/features/workout/share/share_exporter.dart';
 import 'package:my_gym_bro/features/workout/share/widgets/anatomy_card.dart';
 import 'package:my_gym_bro/features/workout/share/widgets/editorial_card.dart';
 import 'package:my_gym_bro/features/workout/share/widgets/hype_card.dart';
+import 'package:my_gym_bro/features/workout/share/widgets/lift_rank_share_card.dart';
 import 'package:my_gym_bro/features/workout/share/widgets/share_card_widgets.dart';
 import 'package:my_gym_bro/l10n/app_localizations.dart';
 
@@ -60,6 +62,8 @@ class _ShareCardScreenState extends ConsumerState<ShareCardScreen> {
       EditorialShareCard(data: data),
       AnatomyShareCard(data: data),
       HypeShareCard(data: data),
+      // The Ranks template only exists when a classic lift was trained.
+      if (data.liftRanks.isNotEmpty) LiftRankShareCard(data: data),
     ];
     _boundaryKeys = [for (var i = 0; i < _cards.length; i++) GlobalKey()];
 
@@ -72,6 +76,9 @@ class _ShareCardScreenState extends ConsumerState<ShareCardScreen> {
         context,
         basePngPath: ref.read(activeSkinPathProvider),
         rank: ref.read(myRankProvider),
+        liftRanks: [
+          for (final r in data.liftRanks) Rank.fromBand(r.band),
+        ],
       );
       unawaited(_precache);
     });
@@ -176,6 +183,7 @@ class _ShareCardScreenState extends ConsumerState<ShareCardScreen> {
       l10n.shareTemplateEditorial,
       l10n.shareTemplateAnatomy,
       l10n.shareTemplateHype,
+      if (data.liftRanks.isNotEmpty) l10n.shareRanksChip,
     ];
     final subtitle = [
       data.workoutName.toUpperCase(),

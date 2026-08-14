@@ -232,11 +232,13 @@ class ExerciseMapping {
   // ── JSON helpers ───────────────────────────────────────────────────────
 
   /// Decodes a JSON-encoded string array column back to a `List<String>`.
-  /// Returns an empty list on null/empty/malformed input.
+  /// Returns an empty list on null/empty/malformed input. Materialised
+  /// eagerly (no lazy `cast`) so a non-string element can't throw later,
+  /// outside this try, when the caller iterates.
   static List<String> decodeJsonList(String? raw) {
     if (raw == null || raw.isEmpty) return [];
     try {
-      return (jsonDecode(raw) as List).cast<String>();
+      return [for (final e in jsonDecode(raw) as List) e.toString()];
     } on Object {
       return [];
     }

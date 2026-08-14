@@ -89,7 +89,8 @@ class _BottomNavPillState extends ConsumerState<BottomNavPill>
         : Colors.black.withValues(alpha: 0.15); // #000000 @ 15%
 
     return Positioned(
-      bottom: MediaQuery.of(context).padding.bottom + 7.h,
+      bottom: MediaQuery.of(context).padding.bottom +
+          AppSizes.navPillBottomOffset.h,
       left: 0,
       right: 0,
       child: Center(

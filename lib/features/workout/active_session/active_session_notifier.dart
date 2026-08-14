@@ -13,6 +13,8 @@ import 'package:my_gym_bro/core/services/notification_service.dart';
 import 'package:my_gym_bro/core/services/notification_tone.dart';
 import 'package:my_gym_bro/core/services/units.dart' show groupDigits;
 import 'package:my_gym_bro/core/services/widget_sync_service.dart';
+import 'package:my_gym_bro/features/exercises/lift_rank/strength_standards.dart';
+import 'package:my_gym_bro/features/leaderboard/rank.dart';
 import 'package:my_gym_bro/features/settings/app_settings_provider.dart';
 import 'package:my_gym_bro/features/workout/active_session/rest_timer_service.dart';
 import 'package:my_gym_bro/features/workout/workout_log_repository.dart';
@@ -158,6 +160,19 @@ PrKind? evaluatePr({
   return null;
 }
 
+/// A per-lift rank-up scored by [ActiveSessionNotifier.completeSet]: the
+/// lift's estimated 1RM crossed into a higher Bronze→Elite band (see
+/// `strength_standards.dart`). The screen listens for instance changes and
+/// shows the full-screen rank-up overlay instead of the PR banner.
+class LiftRankUpEvent {
+  const LiftRankUpEvent({required this.exerciseName, required this.band});
+
+  final String exerciseName;
+
+  /// New position on the 15-band ladder — feed to [Rank.fromBand].
+  final int band;
+}
+
 class ActiveSessionState {
 
   const ActiveSessionState({
@@ -170,6 +185,7 @@ class ActiveSessionState {
     this.pausedAt,
     this.accumulatedPausedSeconds = 0,
     this.prEvent,
+    this.rankUpEvent,
   });
   final int? sessionId;
   final List<ActiveExercise> exercises;
@@ -181,6 +197,10 @@ class ActiveSessionState {
   /// Latest PR scored this session; listeners compare instances, so it never
   /// needs clearing.
   final PrEvent? prEvent;
+
+  /// Latest per-lift rank-up this session; same instance-compare contract
+  /// as [prEvent].
+  final LiftRankUpEvent? rankUpEvent;
 
   /// Wall-clock time the user pressed pause. `null` when the session is
   /// active. The elapsed clock and Live Activity reads this to freeze.
@@ -205,6 +225,7 @@ class ActiveSessionState {
     int? accumulatedPausedSeconds,
     bool clearPausedAt = false,
     PrEvent? prEvent,
+    LiftRankUpEvent? rankUpEvent,
   }) =>
       ActiveSessionState(
         sessionId: sessionId ?? this.sessionId,
@@ -218,6 +239,7 @@ class ActiveSessionState {
         accumulatedPausedSeconds:
             accumulatedPausedSeconds ?? this.accumulatedPausedSeconds,
         prEvent: prEvent ?? this.prEvent,
+        rankUpEvent: rankUpEvent ?? this.rankUpEvent,
       );
 
   ActiveExercise? get currentExercise =>
@@ -275,7 +297,11 @@ class ActiveSessionNotifier extends StateNotifier<ActiveSessionState> {
     Future<int> Function()? getStreak,
     NotificationTone tone = NotificationTone.balanced,
     String? userName,
-  })  : _repository = repository,
+    double? bodyWeightKg,
+    String? gender,
+  })  : _bodyWeightKg = bodyWeightKg,
+        _gender = gender,
+        _repository = repository,
         _exerciseRepo = exerciseRepository,
         _defaultRestSeconds = defaultRestSeconds,
         _weightUnit = weightUnit,
@@ -301,6 +327,10 @@ class ActiveSessionNotifier extends StateNotifier<ActiveSessionState> {
   /// [updateSettings] like the other profile-backed settings.
   NotificationTone _tone;
   String? _userName;
+
+  /// Profile facts for lift-rank scoring, kept fresh via [updateSettings].
+  double? _bodyWeightKg;
+  String? _gender;
   final RestTimerService restTimerService = RestTimerService();
 
   /// Subscription to the rest-timer tick stream for updating the
@@ -1110,6 +1140,9 @@ class ActiveSessionNotifier extends StateNotifier<ActiveSessionState> {
   /// Best already-celebrated set per exercise this session, so one workout
   /// can't fire twice for the same record. Keyed by exerciseId.
   final _celebrated = <String, ({double weight, double oneRm})>{};
+
+  /// Exercises whose rank-up overlay already fired this session.
+  final _rankCelebrated = <String>{};
   int? _celebratedSessionId;
 
   /// PRs scored this session — appended to the post-workout kudos.
@@ -1147,15 +1180,17 @@ class ActiveSessionNotifier extends StateNotifier<ActiveSessionState> {
 
     if (_celebratedSessionId != sessionId) {
       _celebrated.clear();
+      _rankCelebrated.clear();
       _sessionPrCount = 0;
       _celebratedSessionId = sessionId;
     }
     final done = _celebrated[ex.exerciseId];
+    final baselineOneRm = math.max(prev.best1rm ?? 0, done?.oneRm ?? 0);
     final kind = evaluatePr(
       weight: weight,
       reps: reps,
       baselineWeight: math.max(prev.maxWeight!, done?.weight ?? 0),
-      baselineOneRm: math.max(prev.best1rm ?? 0, done?.oneRm ?? 0),
+      baselineOneRm: baselineOneRm,
     );
     if (kind == null) return;
 
@@ -1166,6 +1201,17 @@ class ActiveSessionNotifier extends StateNotifier<ActiveSessionState> {
     );
     _sessionPrCount++;
     unawaited(HapticFeedback.heavyImpact());
+
+    // A lift rank-up outranks the PR banner: when the new e1RM crosses into
+    // a higher strength-standard band, fire the full-screen overlay instead
+    // (at most once per exercise per session).
+    final band = _rankUpBand(ex.exerciseId, baselineOneRm, oneRm);
+    if (band != null && _rankCelebrated.add(ex.exerciseId)) {
+      state = state.copyWith(
+        rankUpEvent: LiftRankUpEvent(exerciseName: ex.name, band: band),
+      );
+      return;
+    }
     state = state.copyWith(
       prEvent: PrEvent(
         exerciseName: ex.name,
@@ -1174,6 +1220,30 @@ class ActiveSessionNotifier extends StateNotifier<ActiveSessionState> {
         kind: kind,
       ),
     );
+  }
+
+  /// New 15-band ladder position when [newOneRm] lands in a higher band than
+  /// [baselineOneRm] for a rankable lift; null otherwise (not a classic lift,
+  /// no usable baseline, or same band).
+  int? _rankUpBand(String exerciseId, double baselineOneRm, double newOneRm) {
+    if (!isRankableLift(exerciseId)) return null;
+    // Same fallback the calorie math and liftRankProvider use.
+    final bw = _bodyWeightKg ?? 70;
+    final oldScore = liftScore(
+      exerciseId: exerciseId,
+      e1RmKg: baselineOneRm,
+      bodyWeightKg: bw,
+      gender: _gender,
+    );
+    final newScore = liftScore(
+      exerciseId: exerciseId,
+      e1RmKg: newOneRm,
+      bodyWeightKg: bw,
+      gender: _gender,
+    );
+    if (oldScore == null || newScore == null) return null;
+    final newBand = Rank.fromComposite(newScore).band;
+    return newBand > Rank.fromComposite(oldScore).band ? newBand : null;
   }
 
   /// Un-mark a completed set (mis-tap recovery). Does not touch the rest
@@ -1443,6 +1513,8 @@ class ActiveSessionNotifier extends StateNotifier<ActiveSessionState> {
     bool? restVibrationEnabled,
     String? notificationTone,
     String? userName,
+    double? bodyWeightKg,
+    String? gender,
   }) {
     if (restSeconds != null) _defaultRestSeconds = restSeconds;
     if (weightUnit != null) _weightUnit = weightUnit;
@@ -1454,6 +1526,8 @@ class ActiveSessionNotifier extends StateNotifier<ActiveSessionState> {
       _tone = notificationToneFromString(notificationTone);
     }
     if (userName != null) _userName = userName;
+    if (bodyWeightKg != null) _bodyWeightKg = bodyWeightKg;
+    if (gender != null) _gender = gender;
   }
 
   String get weightUnit => _weightUnit;
@@ -1608,6 +1682,8 @@ final activeSessionProvider =
     },
     tone: notificationToneFromString(profile?.notificationTone),
     userName: profile?.displayName,
+    bodyWeightKg: profile?.bodyWeightKg,
+    gender: profile?.gender,
   );
 
   // Keep rest-time / weight-unit in sync without recreating the notifier.
@@ -1619,6 +1695,8 @@ final activeSessionProvider =
         weightUnit: p.weightUnit,
         notificationTone: p.notificationTone,
         userName: p.displayName,
+        bodyWeightKg: p.bodyWeightKg,
+        gender: p.gender,
       );
     }
   });

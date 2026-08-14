@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:my_gym_bro/core/providers/providers.dart';
@@ -67,10 +69,18 @@ class HomeScreen extends ConsumerWidget {
         ),
         SizedBox(height: 16.h),
 
-        // Status section
-        Padding(
-          padding: EdgeInsets.symmetric(horizontal: AppSizes.contentPaddingH.w),
-          child: _StatusSection(l10n: l10n),
+        // Status section — fills whatever height remains and ends clear of
+        // the bottom nav. Fixed Figma heights overflowed into the nav on
+        // devices with a larger inset-to-height ratio than the design frame.
+        Expanded(
+          child: Padding(
+            padding: EdgeInsets.only(
+              left: AppSizes.contentPaddingH.w,
+              right: AppSizes.contentPaddingH.w,
+              bottom: AppSizes.navClearanceOf(context),
+            ),
+            child: _StatusSection(l10n: l10n),
+          ),
         ),
       ],
     );
@@ -495,54 +505,53 @@ class _StatusSection extends ConsumerWidget {
     final colors = AppColors.of(context);
     final unit = ref.watch(weightUnitProvider);
 
-    // Fixed height from Figma: 368px
-    return SizedBox(
-      height: 368.h,
-      child: Row(
-        children: [
-          // Left: Healing card — 193x368
-          Expanded(child: _HealingCard(l10n: l10n)),
-          SizedBox(width: 11.w),
-          // Right column — 193px wide
-          Expanded(
-            child: Column(
-              children: [
-                // Cal Burned — 193x64
-                _SmallInfoCard(
-                  icon: Icons.local_fire_department_rounded,
-                  iconColor: colors.amber,
-                  iconSize: 35.sp,
-                  label: l10n.calBurnedThisWeek,
-                  value: ref
-                      .watch(weeklyCaloriesProvider)
-                      .when(
-                        data: (cal) => '$cal cal',
-                        loading: () => '-- cal',
-                        error: (_, __) => '0 cal',
-                      ),
+    // Height comes from the parent (Expanded in HomeScreen) — 368px on the
+    // design frame, shrinking/growing with the space the device actually has.
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        // Left: Healing card — 193 wide
+        Expanded(child: _HealingCard(l10n: l10n)),
+        SizedBox(width: 11.w),
+        // Right column — 193px wide
+        Expanded(
+          child: Column(
+            children: [
+              // Cal Burned — 193x64
+              _SmallInfoCard(
+                icon: Icons.local_fire_department_rounded,
+                iconColor: colors.amber,
+                iconSize: 35.sp,
+                label: l10n.calBurnedThisWeek,
+                value: ref
+                    .watch(weeklyCaloriesProvider)
+                    .when(
+                      data: (cal) => '$cal cal',
+                      loading: () => '-- cal',
+                      error: (_, __) => '0 cal',
+                    ),
+              ),
+              SizedBox(height: 8.h),
+              // Next Session
+              _SmallInfoCard(
+                icon: Icons.fitness_center_rounded,
+                iconColor: colors.textPrimary,
+                iconSize: 38.sp,
+                label: l10n.nextSession,
+                value: l10n.tomorrow,
+              ),
+              SizedBox(height: 8.h),
+              // Weekly Progress — fills remaining space
+              Expanded(
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(24.r),
+                  child: _WeeklyProgressCard(l10n: l10n, unit: unit),
                 ),
-                SizedBox(height: 8.h),
-                // Next Session
-                _SmallInfoCard(
-                  icon: Icons.fitness_center_rounded,
-                  iconColor: colors.textPrimary,
-                  iconSize: 38.sp,
-                  label: l10n.nextSession,
-                  value: l10n.tomorrow,
-                ),
-                SizedBox(height: 8.h),
-                // Weekly Progress — fills remaining space
-                Expanded(
-                  child: ClipRRect(
-                    borderRadius: BorderRadius.circular(24.r),
-                    child: _WeeklyProgressCard(l10n: l10n, unit: unit),
-                  ),
-                ),
-              ],
-            ),
+              ),
+            ],
           ),
-        ],
-      ),
+        ),
+      ],
     );
   }
 }
@@ -575,27 +584,34 @@ class _HealingCard extends ConsumerWidget {
               left: 14.w,
               right: 14.w,
               bottom: 12.h,
-              child: Opacity(
-                opacity: 0.7,
-                child: muscleStates.when(
-                  data: (states) => AnatomyBody(
-                    muscleStates: states,
-                    height: 280.h,
-                    gender: ref.watch(anatomyGenderProvider),
-                    basePngPath: ref.watch(activeSkinPathProvider),
-                  ),
-                  loading: () => ShimmerBox(
-                    width: double.infinity,
-                    height: 280.h,
-                    borderRadius: BorderRadius.circular(12.r),
-                  ),
-                  error: (_, __) => AnatomyBody(
-                    muscleStates: const [],
-                    height: 280.h,
-                    gender: ref.watch(anatomyGenderProvider),
-                    basePngPath: ref.watch(activeSkinPathProvider),
-                  ),
-                ),
+              child: LayoutBuilder(
+                builder: (context, box) {
+                  // The card flexes with screen height — render at the Figma
+                  // size (280) when it fits, shrink with the card when not.
+                  final bodyH = math.min(box.maxHeight, 280.h);
+                  return Opacity(
+                    opacity: 0.7,
+                    child: muscleStates.when(
+                      data: (states) => AnatomyBody(
+                        muscleStates: states,
+                        height: bodyH,
+                        gender: ref.watch(anatomyGenderProvider),
+                        basePngPath: ref.watch(activeSkinPathProvider),
+                      ),
+                      loading: () => ShimmerBox(
+                        width: double.infinity,
+                        height: bodyH,
+                        borderRadius: BorderRadius.circular(12.r),
+                      ),
+                      error: (_, __) => AnatomyBody(
+                        muscleStates: const [],
+                        height: bodyH,
+                        gender: ref.watch(anatomyGenderProvider),
+                        basePngPath: ref.watch(activeSkinPathProvider),
+                      ),
+                    ),
+                  );
+                },
               ),
             ),
             // Text overlay — centered, 32px title per Figma

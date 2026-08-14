@@ -1,13 +1,12 @@
 import 'dart:async';
-import 'dart:convert';
 
 import 'package:cached_network_image/cached_network_image.dart';
-import 'package:flutter/foundation.dart' show Category;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:my_gym_bro/core/database/app_database.dart';
 import 'package:my_gym_bro/core/providers/providers.dart';
 import 'package:my_gym_bro/core/services/exercise_gif_cache.dart';
+import 'package:my_gym_bro/core/services/exercise_mapping.dart';
 import 'package:my_gym_bro/core/services/exercise_repository.dart';
 import 'package:my_gym_bro/features/exercises/exercise_detail_screen.dart';
 import 'package:my_gym_bro/l10n/app_localizations.dart';
@@ -77,9 +76,18 @@ class _CatalogueNotifier extends StateNotifier<_CatalogueState> {
   /// When the API rate-limits us mid-pagination, back off briefly before
   /// retrying so repeated scrolling can't hammer the quota.
   DateTime? _retryAfter;
+  Timer? _retryTimer;
+
+  @override
+  void dispose() {
+    _retryTimer?.cancel();
+    super.dispose();
+  }
 
   /// Re-run the current query from the first page.
   Future<void> refresh() {
+    _retryTimer?.cancel();
+    _retryTimer = null;
     _retryAfter = null;
     return _load(reset: true);
   }
@@ -88,7 +96,17 @@ class _CatalogueNotifier extends StateNotifier<_CatalogueState> {
   Future<void> loadMore() async {
     if (state.isLoading || state.isLoadingMore || !state.hasMore) return;
     final retryAfter = _retryAfter;
-    if (retryAfter != null && DateTime.now().isBefore(retryAfter)) return;
+    if (retryAfter != null && DateTime.now().isBefore(retryAfter)) {
+      // Blocked by the backoff — and a blocked call changes no state, so
+      // rebuild-driven auto-pagination would never fire again (offline with a
+      // filter matching nothing cached = skeletons forever). Self-schedule
+      // the retry instead.
+      _retryTimer ??= Timer(retryAfter.difference(DateTime.now()), () {
+        _retryTimer = null;
+        if (mounted) loadMore();
+      });
+      return;
+    }
     await _load(reset: false);
   }
 
@@ -115,7 +133,6 @@ class _CatalogueNotifier extends StateNotifier<_CatalogueState> {
           : await _repo.searchByName(_query);
       if (seq != _loadSeq || !mounted) return; // superseded by a newer load
 
-      final prevLen = state.items.length;
       final merged =
           reset ? page.items : _dedupAppend(state.items, page.items);
 
@@ -125,8 +142,7 @@ class _CatalogueNotifier extends StateNotifier<_CatalogueState> {
       //    offline / quota) — the cache can't report the true remaining count,
       //    so DON'T conclude we've hit the end; preserve hasMore so a later
       //    scroll retries, and back off briefly to spare the quota;
-      //  • online with a grand total → page until we reach it;
-      //  • online without a total (bare array) → page until a page adds nothing.
+      //  • online → page until we reach the reported total.
       final bool hasMore;
       if (_query.isNotEmpty) {
         hasMore = false;
@@ -135,8 +151,6 @@ class _CatalogueNotifier extends StateNotifier<_CatalogueState> {
         if (!reset) _retryAfter = DateTime.now().add(const Duration(seconds: 5));
       } else if (page.items.isEmpty) {
         hasMore = false;
-      } else if (page.total < 0) {
-        hasMore = reset || merged.length > prevLen;
       } else {
         _retryAfter = null;
         hasMore = merged.length < page.total;
@@ -169,23 +183,31 @@ class _CatalogueNotifier extends StateNotifier<_CatalogueState> {
   }
 }
 
+// All browser state is autoDispose — scoped to one visit of the screen.
+// Without this, the notifier's server-side search query outlives the screen:
+// reopening rendered an empty search field over a list still constrained to
+// the previous search (with pagination off), and clearing filters couldn't
+// recover it. Re-loading on the next visit is cheap — rows serve from the
+// local DB once the warm-up sync has run.
 final _catalogueProvider =
-    StateNotifierProvider<_CatalogueNotifier, _CatalogueState>((ref) {
+    StateNotifierProvider.autoDispose<_CatalogueNotifier, _CatalogueState>(
+        (ref) {
   return _CatalogueNotifier(ref.watch(exerciseRepositoryProvider));
 });
 
-final _searchQueryProvider = StateProvider<String>((ref) => '');
-final _muscleFilterProvider = StateProvider<String?>((ref) => null);
+final _searchQueryProvider = StateProvider.autoDispose<String>((ref) => '');
+final _muscleFilterProvider = StateProvider.autoDispose<String?>((ref) => null);
 final _equipmentFilterProvider =
-    StateProvider<_EquipmentFilterValue?>((ref) => null);
-final _difficultyFilterProvider = StateProvider<String?>((ref) => null);
+    StateProvider.autoDispose<_EquipmentFilterValue?>((ref) => null);
+final _difficultyFilterProvider =
+    StateProvider.autoDispose<String?>((ref) => null);
 
 /// Applies all active filters then splits the result into two sorted sections:
 /// up to 25 recents (frequency DESC) and the A-Z remainder. Maps the catalogue
 /// notifier's state into an [AsyncValue] so the screen's `.when` rendering
 /// (loading skeleton / error+retry / data) keeps working unchanged.
 final _filteredExercisesProvider =
-    Provider<AsyncValue<_ExerciseSections>>((ref) {
+    Provider.autoDispose<AsyncValue<_ExerciseSections>>((ref) {
   final cat = ref.watch(_catalogueProvider);
   if (cat.isLoading && cat.items.isEmpty) {
     return const AsyncValue.loading();
@@ -203,13 +225,16 @@ final _filteredExercisesProvider =
 
   // 1. Muscle group filter — 'Shoulders' is the umbrella value that
   // matches every deltoid sub-group as well as unclassified shoulder work.
+  // Both paths compare trimmed + lowercased so umbrella and leaf agree.
   if (muscleFilter != null) {
     if (muscleFilter == 'Shoulders') {
       const shoulderGroups = {
-        'Shoulders', 'Front Delt', 'Side Delt', 'Rear Delt',
+        'shoulders', 'front delt', 'side delt', 'rear delt',
       };
-      list =
-          list.where((e) => shoulderGroups.contains(e.muscleGroup)).toList();
+      list = list
+          .where((e) =>
+              shoulderGroups.contains(e.muscleGroup?.trim().toLowerCase()))
+          .toList();
     } else {
       final mf = muscleFilter.trim().toLowerCase();
       list = list
@@ -224,15 +249,8 @@ final _filteredExercisesProvider =
     final rawSet =
         equipmentFilter.rawValues.map((v) => v.toLowerCase()).toSet();
     list = list.where((e) {
-      if (e.equipments == null) return false;
-      try {
-        final equips = (jsonDecode(e.equipments!) as List).cast<String>();
-        return equips.any((eq) => rawSet.contains(eq.toLowerCase()));
-      } on FormatException catch (fe) {
-        debugPrint(
-            'exercise_browser: bad equipments JSON for "${e.name}": $fe');
-        return false;
-      }
+      final equips = ExerciseMapping.decodeJsonList(e.equipments);
+      return equips.any((eq) => rawSet.contains(eq.toLowerCase()));
     }).toList();
   }
 
@@ -264,7 +282,7 @@ final _filteredExercisesProvider =
 });
 
 /// Unique difficulty levels extracted from the loaded catalogue.
-final _difficultyLevelsProvider = FutureProvider<List<String>>((ref) async {
+final _difficultyLevelsProvider = Provider.autoDispose<List<String>>((ref) {
   final all = ref.watch(_catalogueProvider).items;
   final levels = <String>{};
   for (final e in all) {
@@ -1034,10 +1052,9 @@ class _FilterButtonsRow extends ConsumerWidget {
                   : l10n.filterDifficulty,
               isActive: diffFilter != null,
               onTap: () {
-                final levels = diffLevels.valueOrNull ?? [];
                 _showFilterMenu(
                   context: context,
-                  items: levels,
+                  items: diffLevels,
                   currentValue: diffFilter,
                   allLabel: l10n.allDifficulties,
                   displayTransform: (v) => _difficultyLabel(v, l10n),
@@ -1716,7 +1733,7 @@ class _EquipmentFilterSheetState extends State<_EquipmentFilterSheet>
   }
 
   /// True when the current filter exactly matches this whole category
-  /// (i.e. "All [Category]" is selected).
+  /// (i.e. the category's "All …" row is selected).
   bool _isCategorySelected(_EquipmentCategory cat) {
     if (widget.currentValue == null) return false;
     final currentSet =

@@ -7,6 +7,7 @@ import 'package:my_gym_bro/core/database/app_database.dart';
 import 'package:my_gym_bro/core/database/daos/exercise_dao.dart';
 import 'package:my_gym_bro/core/database/daos/schedule_dao.dart';
 import 'package:my_gym_bro/core/services/api_exercise.dart';
+import 'package:my_gym_bro/core/services/exercise_mapping.dart';
 import 'package:my_gym_bro/core/services/exercise_repository.dart';
 
 /// Seeds the database with 3 ready-to-use training programs:
@@ -106,6 +107,14 @@ class ProgramSeeder {
         exerciseId: Value(customId),
         name: Value(name),
         muscleGroup: Value(muscleGroup),
+        // Equipment is unknowable offline, but difficulty can be derived
+        // from the name — without it these rows vanish under any
+        // difficulty filter in the browser.
+        difficulty: Value(ExerciseMapping.resolveDifficulty(
+          equipments: const [],
+          secondaryMuscles: const [],
+          name: name,
+        )),
         isCustom: const Value(true),
       ),
     );

@@ -73,9 +73,10 @@ class ExerciseRepository {
 
   /// Search by name against the local catalogue (syncing it first when
   /// possible, so results are complete once the sync has finished).
-  Future<ExercisePage> searchByName(String query, {int limit = 50}) async {
+  /// Unpaginated — the full match set is returned.
+  Future<ExercisePage> searchByName(String query) async {
     final q = query.trim();
-    if (q.isEmpty) return browse(limit: limit);
+    if (q.isEmpty) return browse();
     await _syncUpTo(1 << 30);
     final rows = await _dao.searchByName(q);
     return ExercisePage(

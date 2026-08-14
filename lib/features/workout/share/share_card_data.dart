@@ -1,3 +1,5 @@
+import 'package:my_gym_bro/features/exercises/lift_rank/strength_standards.dart';
+import 'package:my_gym_bro/features/leaderboard/rank.dart';
 import 'package:my_gym_bro/features/workout/active_session/active_session_notifier.dart';
 import 'package:my_gym_bro/features/workout/workout_providers.dart'
     show EnrichedSession, epleyOneRepMax;
@@ -9,6 +11,25 @@ class ShareExercise {
 
   final String name;
   final int sets;
+}
+
+/// A classic lift's rank as performed THIS session — the session-best e1RM
+/// run through the strength standards, not the all-time rank (the card is a
+/// per-session snapshot).
+class ShareLiftRank {
+  const ShareLiftRank({
+    required this.name,
+    required this.band,
+    required this.e1RmKg,
+  });
+
+  final String name;
+
+  /// 15-band ladder position — feed to [Rank.fromBand].
+  final int band;
+
+  /// Session-best estimated 1RM (kg) behind the rank.
+  final double e1RmKg;
 }
 
 /// Immutable snapshot of a finished workout, shaped for rendering a share
@@ -27,6 +48,7 @@ class ShareCardData {
     required this.exercises,
     required this.workedMuscleGroups,
     required this.hasPr,
+    this.liftRanks = const [],
     this.date,
   });
 
@@ -40,9 +62,12 @@ class ShareCardData {
     ActiveSessionState state, {
     required String workoutName,
     required int workoutNumber,
+    double? bodyWeightKg,
+    String? gender,
   }) {
     final exercises = <ShareExercise>[];
     final workedMuscleGroups = <String>{};
+    final liftRanks = <ShareLiftRank>[];
     var e1rmSum = 0.0;
     var e1rmCount = 0;
     for (final ex in state.exercises) {
@@ -65,8 +90,11 @@ class ShareCardData {
       if (best > 0) {
         e1rmSum += best;
         e1rmCount++;
+        _addLiftRank(liftRanks, ex.exerciseId, ex.name, best,
+            bodyWeightKg: bodyWeightKg, gender: gender);
       }
     }
+    _sortLiftRanks(liftRanks);
     return ShareCardData(
       workoutName: workoutName,
       totalVolumeKg: state.totalVolume,
@@ -77,6 +105,7 @@ class ShareCardData {
       exercises: exercises,
       workedMuscleGroups: workedMuscleGroups,
       hasPr: state.prEvent != null,
+      liftRanks: liftRanks,
       date: state.startedAt ?? DateTime.now(),
     );
   }
@@ -88,9 +117,12 @@ class ShareCardData {
   factory ShareCardData.fromEnrichedSession(
     EnrichedSession enriched, {
     bool hasPr = false,
+    double? bodyWeightKg,
+    String? gender,
   }) {
     final exercises = <ShareExercise>[];
     final workedMuscleGroups = <String>{};
+    final liftRanks = <ShareLiftRank>[];
     var e1rmSum = 0.0;
     var e1rmCount = 0;
     var totalSets = 0;
@@ -115,8 +147,11 @@ class ShareCardData {
       if (best > 0) {
         e1rmSum += best;
         e1rmCount++;
+        _addLiftRank(liftRanks, ex.exerciseId, ex.name, best,
+            bodyWeightKg: bodyWeightKg, gender: gender);
       }
     }
+    _sortLiftRanks(liftRanks);
     return ShareCardData(
       workoutName: enriched.workoutName,
       totalVolumeKg: enriched.session.totalVolume ?? 0,
@@ -127,8 +162,43 @@ class ShareCardData {
       exercises: exercises,
       workedMuscleGroups: workedMuscleGroups,
       hasPr: hasPr,
+      liftRanks: liftRanks,
       date: enriched.session.startedAt,
     );
+  }
+
+  /// Appends the lift's session rank when it's a rankable classic and the
+  /// caller supplied a bodyweight (no bodyweight → no ratio → no rank row).
+  static void _addLiftRank(
+    List<ShareLiftRank> ranks,
+    String exerciseId,
+    String name,
+    double e1RmKg, {
+    double? bodyWeightKg,
+    String? gender,
+  }) {
+    if (bodyWeightKg == null) return;
+    final score = liftScore(
+      exerciseId: exerciseId,
+      e1RmKg: e1RmKg,
+      bodyWeightKg: bodyWeightKg,
+      gender: gender,
+    );
+    if (score == null) return;
+    ranks.add(ShareLiftRank(
+      name: name,
+      band: Rank.fromComposite(score).band,
+      e1RmKg: e1RmKg,
+    ));
+  }
+
+  /// Highest band first (ties: heavier e1RM first) — the card's hero is
+  /// simply `liftRanks.first`.
+  static void _sortLiftRanks(List<ShareLiftRank> ranks) {
+    ranks.sort((a, b) {
+      final byBand = b.band.compareTo(a.band);
+      return byBand != 0 ? byBand : b.e1RmKg.compareTo(a.e1RmKg);
+    });
   }
 
   /// Derived title, e.g. "Chest Day" (see `deriveWorkoutName`).
@@ -159,6 +229,11 @@ class ShareCardData {
   final Set<String> workedMuscleGroups;
 
   final bool hasPr;
+
+  /// Session ranks for the classic lifts performed (highest band first).
+  /// Empty when none were trained or no bodyweight was available — the
+  /// "Ranks" share template is only offered when this is non-empty.
+  final List<ShareLiftRank> liftRanks;
 
   /// When the workout happened — the date line on the cards. Null only in
   /// hand-built test data; cards fall back to "now".

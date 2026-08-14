@@ -17,6 +17,8 @@ import 'package:my_gym_bro/core/services/exercise_gif_cache.dart';
 import 'package:my_gym_bro/core/services/notification_tone.dart';
 import 'package:my_gym_bro/core/services/units.dart';
 import 'package:my_gym_bro/features/exercises/exercise_detail_screen.dart';
+import 'package:my_gym_bro/features/leaderboard/rank.dart';
+import 'package:my_gym_bro/features/leaderboard/rank_up_overlay.dart';
 import 'package:my_gym_bro/features/settings/skin_provider.dart';
 import 'package:my_gym_bro/features/workout/active_session/active_session_notifier.dart';
 import 'package:my_gym_bro/features/workout/active_session/pr_banner.dart';
@@ -165,6 +167,21 @@ class _ActiveSessionScreenState extends ConsumerState<ActiveSessionScreen> {
         body:
             '${next.exerciseName} · $wText '
             '${isLbs ? 'lbs' : 'kg'} × ${next.reps}',
+      );
+    });
+
+    // Lift rank-up — the full-screen overlay; completeSet fires this instead
+    // of the PR banner when the lift crossed a strength-standard band.
+    ref.listen(activeSessionProvider.select((s) => s.rankUpEvent), (
+      prev,
+      next,
+    ) {
+      if (next == null || identical(next, prev)) return;
+      final rank = Rank.fromBand(next.band);
+      showRankUp(
+        context,
+        rank,
+        subtitle: l10n.liftRankUpSubtitle(next.exerciseName, rank.label(l10n)),
       );
     });
 
@@ -558,10 +575,13 @@ class _ActiveSessionScreenState extends ConsumerState<ActiveSessionScreen> {
       final workoutName = deriveWorkoutName(
         snapshot.exercises.map((e) => e.muscleGroup),
       );
+      final profile = ref.read(userProfileProvider).valueOrNull;
       data = ShareCardData.fromActiveSession(
         snapshot,
         workoutName: workoutName,
         workoutNumber: n,
+        bodyWeightKg: profile?.bodyWeightKg,
+        gender: profile?.gender,
       );
     } on Object {
       data = null;

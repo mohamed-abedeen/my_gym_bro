@@ -958,13 +958,19 @@ class _SessionCardState extends ConsumerState<_SessionCard> {
                       height: 48.h,
                       opacity: 0.15,
                       radius: 24.r,
-                      onTap: () => context.push(
-                        AppRoutes.shareCard,
-                        extra: ShareCardData.fromEnrichedSession(
-                          widget.enriched,
-                          hasPr: widget.isPr,
-                        ),
-                      ),
+                      onTap: () {
+                        final profile =
+                            ref.read(userProfileProvider).valueOrNull;
+                        context.push(
+                          AppRoutes.shareCard,
+                          extra: ShareCardData.fromEnrichedSession(
+                            widget.enriched,
+                            hasPr: widget.isPr,
+                            bodyWeightKg: profile?.bodyWeightKg,
+                            gender: profile?.gender,
+                          ),
+                        );
+                      },
                       child: Icon(Icons.ios_share_rounded,
                           color: colors.textPrimary, size: 20.sp),
                     ),

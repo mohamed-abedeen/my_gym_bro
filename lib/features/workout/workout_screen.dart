@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -55,15 +56,18 @@ class WorkoutScreen extends ConsumerWidget {
           ),
         ),
 
-        // ── Scrollable content ──
+        // ── Content — anatomy flexes so the cards below always fit ──
         Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             _Header(l10n: l10n),
             SizedBox(height: 16.h),
 
-            // Anatomy — gender-aware front + back body views
-            _AnatomySection(l10n: l10n),
+            // Anatomy — gender-aware front + back body views. Takes whatever
+            // height the cards below leave over; fixed heights overflowed
+            // into the bottom nav on devices with a larger inset-to-height
+            // ratio than the 440×956 design frame.
+            Expanded(child: _AnatomySection(l10n: l10n)),
 
             SizedBox(height: 1.h),
 
@@ -80,7 +84,8 @@ class WorkoutScreen extends ConsumerWidget {
             // Schedule card (swipeable) + page dots
             _ScheduleCard(l10n: l10n),
 
-            SizedBox(height: 16.h),
+            // Keeps the schedule card + dots clear of the bottom nav.
+            SizedBox(height: AppSizes.navClearanceOf(context)),
           ],
         ),
 
@@ -337,34 +342,40 @@ class _AnatomySection extends ConsumerWidget {
 
     return GestureDetector(
       onTap: () => showMuscleDetailSheet(context),
-      child: SizedBox(
-        width: double.infinity,
-        height: 350.h,
-        child: Center(
-          child: muscleStates.when(
-            data: (states) => AnatomyBody(
-              muscleStates: states,
-              height: 350.h,
-              gender: ref.watch(anatomyGenderProvider),
-              basePngPath: ref.watch(activeSkinPathProvider),
-            ),
-            loading: () => SizedBox(
-              height: 350.h,
-              child: Center(
-                child: CircularProgressIndicator(
-                  color: colors.accent,
-                  strokeWidth: 2.w,
+      child: LayoutBuilder(
+        builder: (context, box) {
+          // Section height comes from the parent (Expanded) — render the
+          // bodies at the Figma size (350) when it fits, shrink otherwise.
+          final bodyH = math.min(box.maxHeight, 350.h);
+          return SizedBox(
+            width: double.infinity,
+            child: Center(
+              child: muscleStates.when(
+                data: (states) => AnatomyBody(
+                  muscleStates: states,
+                  height: bodyH,
+                  gender: ref.watch(anatomyGenderProvider),
+                  basePngPath: ref.watch(activeSkinPathProvider),
+                ),
+                loading: () => SizedBox(
+                  height: bodyH,
+                  child: Center(
+                    child: CircularProgressIndicator(
+                      color: colors.accent,
+                      strokeWidth: 2.w,
+                    ),
+                  ),
+                ),
+                error: (_, __) => AnatomyBody(
+                  muscleStates: const [],
+                  height: bodyH,
+                  gender: ref.watch(anatomyGenderProvider),
+                  basePngPath: ref.watch(activeSkinPathProvider),
                 ),
               ),
             ),
-            error: (_, __) => AnatomyBody(
-              muscleStates: const [],
-              height: 350.h,
-              gender: ref.watch(anatomyGenderProvider),
-              basePngPath: ref.watch(activeSkinPathProvider),
-            ),
-          ),
-        ),
+          );
+        },
       ),
     );
   }

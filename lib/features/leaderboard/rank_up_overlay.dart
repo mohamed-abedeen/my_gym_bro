@@ -9,7 +9,10 @@ import 'package:my_gym_bro/shared/widgets/liquid_glass_button.dart';
 
 /// Full-screen rank-up celebration: dark barrier, badge popping in with an
 /// elastic scale + tier-colored glow, the new rank name, and a dismiss CTA.
-Future<void> showRankUp(BuildContext context, Rank rank) {
+///
+/// [subtitle] replaces the rank label line — used by per-lift rank-ups to
+/// show e.g. "Bench Press reached Gold II" instead of the bare rank name.
+Future<void> showRankUp(BuildContext context, Rank rank, {String? subtitle}) {
   HapticFeedback.heavyImpact();
   return showGeneralDialog<void>(
     context: context,
@@ -24,14 +27,15 @@ Future<void> showRankUp(BuildContext context, Rank rank) {
         child: child,
       ),
     ),
-    pageBuilder: (context, _, __) => _RankUpPage(rank: rank),
+    pageBuilder: (context, _, __) => _RankUpPage(rank: rank, subtitle: subtitle),
   );
 }
 
 class _RankUpPage extends StatelessWidget {
-  const _RankUpPage({required this.rank});
+  const _RankUpPage({required this.rank, this.subtitle});
 
   final Rank rank;
+  final String? subtitle;
 
   @override
   Widget build(BuildContext context) {
@@ -70,7 +74,8 @@ class _RankUpPage extends StatelessWidget {
             ),
             SizedBox(height: 6.h),
             Text(
-              rank.label(l10n),
+              subtitle ?? rank.label(l10n),
+              textAlign: TextAlign.center,
               style: TextStyle(
                 color: Colors.white,
                 fontSize: 20.sp,

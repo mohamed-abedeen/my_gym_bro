@@ -8,10 +8,13 @@ import 'package:my_gym_bro/core/database/app_database.dart';
 import 'package:my_gym_bro/core/database/daos/session_dao.dart';
 import 'package:my_gym_bro/core/services/exercise_gif_cache.dart';
 import 'package:my_gym_bro/core/services/units.dart' show groupDigits;
+import 'package:my_gym_bro/features/exercises/lift_rank/lift_rank_providers.dart';
+import 'package:my_gym_bro/features/leaderboard/rank.dart';
 import 'package:my_gym_bro/features/workout/workout_providers.dart';
 import 'package:my_gym_bro/l10n/app_localizations.dart';
 import 'package:my_gym_bro/shared/constants.dart';
 import 'package:my_gym_bro/shared/responsive.dart';
+import 'package:my_gym_bro/shared/widgets/glass_surface.dart';
 import 'package:my_gym_bro/shared/widgets/liquid_glass_button.dart';
 
 enum _TimePeriod { last3Months, last6Months, allTime }
@@ -81,6 +84,7 @@ class _ExerciseDetailScreenState extends ConsumerState<ExerciseDetailScreen>
         ref.watch(exercisePersonalRecordsProvider(exercise.exerciseId));
     final historyAsync =
         ref.watch(exerciseSessionHistoryProvider(exercise.exerciseId));
+    final liftRankAsync = ref.watch(liftRankProvider(exercise.exerciseId));
 
     return Scaffold(
       backgroundColor: colors.background,
@@ -103,6 +107,7 @@ class _ExerciseDetailScreenState extends ConsumerState<ExerciseDetailScreen>
                     setRecordsExpanded: _setRecordsExpanded,
                     volumeAsync: volumeAsync,
                     recordsAsync: recordsAsync,
+                    liftRankAsync: liftRankAsync,
                     onTimePeriodChanged: (p) =>
                         setState(() => _timePeriod = p),
                     onRecordFilterChanged: (f) =>
@@ -210,6 +215,7 @@ class _SummaryTab extends StatelessWidget {
     required this.setRecordsExpanded,
     required this.volumeAsync,
     required this.recordsAsync,
+    required this.liftRankAsync,
     required this.onTimePeriodChanged,
     required this.onRecordFilterChanged,
     required this.onSetRecordsToggled,
@@ -223,6 +229,7 @@ class _SummaryTab extends StatelessWidget {
   final bool setRecordsExpanded;
   final AsyncValue<List<({DateTime date, double volume})>> volumeAsync;
   final AsyncValue<ExercisePersonalRecords> recordsAsync;
+  final AsyncValue<LiftRank?> liftRankAsync;
   final ValueChanged<_TimePeriod> onTimePeriodChanged;
   final ValueChanged<_RecordFilter> onRecordFilterChanged;
   final VoidCallback onSetRecordsToggled;
@@ -284,6 +291,9 @@ class _SummaryTab extends StatelessWidget {
           // Filter chips
           _buildFilterChips(context),
           SizedBox(height: 20.h),
+
+          // Lift rank (classic barbell lifts only — hidden otherwise)
+          _buildLiftRank(context),
 
           // Personal Records
           _buildPersonalRecords(context),
@@ -439,6 +449,15 @@ class _SummaryTab extends StatelessWidget {
           );
         }).toList(),
       ),
+    );
+  }
+
+  Widget _buildLiftRank(BuildContext context) {
+    final liftRank = liftRankAsync.valueOrNull;
+    if (liftRank == null) return const SizedBox.shrink();
+    return Padding(
+      padding: EdgeInsets.only(bottom: 20.h),
+      child: _LiftRankCard(liftRank: liftRank, colors: colors, l10n: l10n),
     );
   }
 
@@ -1607,4 +1626,108 @@ class ExerciseStatusScreen extends StatelessWidget {
         child: Icon(Icons.fitness_center_rounded,
             color: colors.textSecondary, size: size * 0.4),
       );
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// Lift rank card — Bronze→Elite standing for the classic barbell lifts
+// ═══════════════════════════════════════════════════════════════════
+
+class _LiftRankCard extends StatelessWidget {
+  const _LiftRankCard({
+    required this.liftRank,
+    required this.colors,
+    required this.l10n,
+  });
+
+  final LiftRank liftRank;
+  final AppColorsTheme colors;
+  final AppLocalizations l10n;
+
+  @override
+  Widget build(BuildContext context) {
+    final rank = liftRank.rank;
+    final next = rank.next;
+    final tint = rankColors(rank.tier);
+    return GlassSurface(
+      padding: EdgeInsets.all(16.w),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              RankBadge(rank, size: 64.w),
+              SizedBox(width: 14.w),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      l10n.liftRankCardTitle,
+                      style: TextStyle(
+                        color: colors.textSecondary,
+                        fontSize: 12.sp,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    SizedBox(height: 2.h),
+                    Text(
+                      rank.label(l10n),
+                      style: TextStyle(
+                        color: colors.textPrimary,
+                        fontSize: 20.sp,
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
+                    SizedBox(height: 2.h),
+                    Text(
+                      '${groupDigits(liftRank.e1RmKg.toStringAsFixed(1))} kg '
+                      '${l10n.oneRepMax}',
+                      style: TextStyle(
+                        color: colors.textSecondary,
+                        fontSize: 12.sp,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          SizedBox(height: 14.h),
+          ClipRRect(
+            borderRadius: BorderRadius.circular(4.r),
+            child: SizedBox(
+              height: 6.h,
+              child: Stack(
+                children: [
+                  Container(color: colors.separator),
+                  FractionallySizedBox(
+                    widthFactor:
+                        next == null ? 1 : liftRank.progressToNext.clamp(0, 1),
+                    child: DecoratedBox(
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(colors: tint.gradient),
+                      ),
+                      child: const SizedBox.expand(),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+          if (next != null) ...[
+            SizedBox(height: 6.h),
+            Text(
+              l10n.rankNext(next.label(l10n)),
+              style: TextStyle(
+                color: colors.textSecondary,
+                fontSize: 11.sp,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
 }
