@@ -112,6 +112,71 @@ class ExerciseMapping {
     return 'Shoulders';
   }
 
+  /// Resolves a raw `secondaryMuscles` entry to a canonical muscle group.
+  ///
+  /// The dataset's `secondaryMuscles` field uses a different (anatomical)
+  /// vocabulary than `targetMuscles` — "latissimus dorsi" instead of "lats",
+  /// "quadriceps" instead of "quads", plus terms like "rhomboids" that never
+  /// appear as targets. Resolve through [_secondaryToMuscleGroup] first, then
+  /// fall back to [_targetToMuscleGroup] for the overlapping terms.
+  /// Returns 'Other' for terms that don't map to a tracked muscle.
+  static String resolveSecondaryMuscleGroup(
+    String raw, {
+    String exerciseName = '',
+  }) {
+    final t = raw.toLowerCase().trim();
+    // Generic shoulder terms refine into a deltoid head via the exercise
+    // name, same as primary 'delts' targets do.
+    if (t == 'shoulders' || t == 'deltoids' || t == 'delts') {
+      return _resolveShoulderSubGroup(exerciseName);
+    }
+    return _secondaryToMuscleGroup[t] ?? _targetToMuscleGroup[t] ?? 'Other';
+  }
+
+  /// secondaryMuscles value (lowercased) → canonical muscle group name.
+  /// NOTE: 'shoulders'/'deltoids' are intentionally absent — handled by
+  /// [_resolveShoulderSubGroup] inside [resolveSecondaryMuscleGroup].
+  static const _secondaryToMuscleGroup = <String, String>{
+    // Chest
+    'chest': 'Chest',
+    'upper chest': 'Chest',
+    'lower chest': 'Chest',
+
+    // Back
+    'latissimus dorsi': 'Lats',
+    'rhomboids': 'Upper Back',
+    'trapezius': 'Traps',
+    'lower back': 'Lower Back',
+    'erector spinae': 'Lower Back',
+
+    // Shoulders (specific heads; generic terms handled above)
+    'rear deltoids': 'Rear Delt',
+    'front deltoids': 'Front Delt',
+    'rotator cuff': 'Shoulders',
+
+    // Arms
+    'brachialis': 'Biceps',
+    'brachioradialis': 'Forearms',
+    'wrist flexors': 'Forearms',
+    'wrist extensors': 'Forearms',
+    'grip muscles': 'Forearms',
+
+    // Legs
+    'quadriceps': 'Quads',
+    'hip flexors': 'Quads',
+    'soleus': 'Calves',
+    'gastrocnemius': 'Calves',
+    'ankle stabilizers': 'Calves',
+
+    // Core
+    'core': 'Core',
+    'obliques': 'Core',
+    'abdominals': 'Core',
+
+    // Neck
+    'sternocleidomastoid': 'Neck',
+  };
+
   /// targetMuscles value (lowercased) → canonical muscle group name.
   /// NOTE: 'delts' is intentionally absent — handled by
   /// [_resolveShoulderSubGroup] inside [resolveGymMuscleGroup].

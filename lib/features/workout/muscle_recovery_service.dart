@@ -126,12 +126,21 @@ class MuscleStateInfo {
 /// hard it hit the muscle (in weighted working sets).
 @visibleForTesting
 class MuscleDoseEvent {
-  const MuscleDoseEvent({required this.trainedAt, required this.dose});
+  const MuscleDoseEvent({
+    required this.trainedAt,
+    required this.dose,
+    this.hasPrimary = true,
+  });
   final DateTime trainedAt;
 
   /// Weighted working-set count: primary-muscle sets count 1.0 each,
   /// secondary-muscle sets count [MuscleRecoveryService.secondaryMuscleCredit].
   final double dose;
+
+  /// Whether any exercise in this bout hit the muscle as its *primary*
+  /// mover. Secondary-only bouts (e.g. upper back after an overhead press)
+  /// get a much shorter recovery window — assist work isn't a back day.
+  final bool hasPrimary;
 }
 
 /// The dose-adjusted recovery outcome for a muscle's latest bout.
@@ -243,9 +252,10 @@ class MuscleRecoveryService {
   /// keeps back-to-back sessions from compounding into a week of "sore".
   static const double maxStackedFactor = 2;
 
-  /// Steepness of the exponential recovery curve. Higher = faster early
-  /// recovery with a longer tail.
-  static const double _curveSteepness = 3;
+  /// Window multiplier for bouts where the muscle was only hit as a
+  /// synergist (no primary work that session). Overhead press touching the
+  /// upper back must not book the same 60 h window as an actual back day.
+  static const double secondaryOnlyWindowScale = 0.5;
 
   // ── Public API ──────────────────────────────────────────────────────────
 
@@ -254,16 +264,16 @@ class MuscleRecoveryService {
       (_muscleSizeMap[muscleGroup] ?? MuscleSize.medium).baseRecoveryHours;
 
   /// Normalised recovery curve: maps elapsed/total time `t ∈ [0, 1]` to a
-  /// recovery fraction in [0, 1]. Exponential — fast early repair, slow
-  /// tail — normalised so it reaches exactly 1.0 at the deadline.
-  /// Physiologically closer to observed DOMS resolution than a straight
-  /// line (Damas et al., 2015).
+  /// recovery fraction in [0, 1] — linear, so the percent ring, the
+  /// red→green colour and the "Xh rest needed" text all sit on the same
+  /// wall-clock scale. (An earlier exponential curve made muscles read
+  /// ~80% recovered at half the window while the rest-needed text still
+  /// showed more than a day — the two contradicted each other.)
   @visibleForTesting
   static double recoveryCurve(double t) {
     if (t <= 0) return 0;
     if (t >= 1) return 1;
-    return (1 - math.exp(-_curveSteepness * t)) /
-        (1 - math.exp(-_curveSteepness));
+    return t;
   }
 
   /// Session dose relative to the user's typical dose for that muscle,
@@ -308,6 +318,10 @@ class MuscleRecoveryService {
 
       var hours = base * doseFactor(event.dose, reference);
 
+      // Synergist-only bouts get a fraction of the window on top of their
+      // already-halved dose credit — assist work is not a full training day.
+      if (!event.hasPrimary) hours *= secondaryOnlyWindowScale;
+
       if (fatigueEndsAt != null && fatigueEndsAt.isAfter(event.trainedAt)) {
         final remaining =
             fatigueEndsAt.difference(event.trainedAt).inMinutes / 60.0;
@@ -320,7 +334,10 @@ class MuscleRecoveryService {
       windowHours = hours;
       fatigueEndsAt =
           event.trainedAt.add(Duration(minutes: (hours * 60).round()));
-      previousDoses.add(event.dose);
+      // Only primary bouts feed the rolling reference — small synergist
+      // doses would otherwise dilute the mean and make every real training
+      // day look like an "unusually big" session (inflated windows).
+      if (event.hasPrimary) previousDoses.add(event.dose);
     }
 
     return MuscleRecoveryWindow(
@@ -349,7 +366,7 @@ class MuscleRecoveryService {
   }
 
   /// Returns a recovery percentage from 0.0 (just trained) to 1.0 (fully
-  /// recovered), following the exponential [recoveryCurve]. Stays at 1.0
+  /// recovered), following the linear [recoveryCurve]. Stays at 1.0
   /// during the retention window. Returns null when the muscle has never
   /// been trained or has faded past the retention window.
   double? getRecoveryPercent(
@@ -413,8 +430,9 @@ class MuscleRecoveryService {
           (workingSetsBySeId[set.sessionExerciseId] ?? 0) + 1;
     }
 
-    // Dose per (sessionId, muscleGroup).
+    // Dose per (sessionId, muscleGroup), plus which muscles got primary work.
     final dosePerSessionMuscle = <int, Map<String, double>>{};
+    final primaryPerSession = <int, Set<String>>{};
     for (final se in allSessionExercises) {
       final exercise = exerciseMap[se.exerciseId];
       if (exercise == null) continue;
@@ -427,14 +445,16 @@ class MuscleRecoveryService {
       final doses =
           dosePerSessionMuscle.putIfAbsent(se.sessionId, () => {});
       doses[primary] = (doses[primary] ?? 0) + sets.toDouble();
+      primaryPerSession.putIfAbsent(se.sessionId, () => {}).add(primary);
 
-      // Secondary muscles get partial credit. Raw names ("triceps",
-      // "delts") resolve through the same mapping as primaries.
+      // Secondary muscles get partial credit. Their raw names use the
+      // dataset's anatomical vocabulary ("latissimus dorsi", "rhomboids"),
+      // which needs its own mapping — the targetMuscles table drops most
+      // of them as 'Other'.
       for (final raw
           in ExerciseMapping.decodeJsonList(exercise.secondaryMuscles)) {
-        final group = ExerciseMapping.resolveGymMuscleGroup(
-          target: raw,
-          bodyPart: null,
+        final group = ExerciseMapping.resolveSecondaryMuscleGroup(
+          raw,
           exerciseName: exercise.name,
         );
         if (group == primary || group == 'Other') continue;
@@ -449,7 +469,12 @@ class MuscleRecoveryService {
       if (trainedAt == null) return;
       doses.forEach((group, dose) {
         history.putIfAbsent(group, () => []).add(
-              MuscleDoseEvent(trainedAt: trainedAt, dose: dose),
+              MuscleDoseEvent(
+                trainedAt: trainedAt,
+                dose: dose,
+                hasPrimary:
+                    primaryPerSession[sessionId]?.contains(group) ?? false,
+              ),
             );
       });
     });

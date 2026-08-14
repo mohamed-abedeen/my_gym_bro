@@ -17,7 +17,10 @@ const _muscleGroupToSvgs = <String, List<String>>{
 
   // ── Back ──
   'Lats': ['lats', 'teres_major'],
-  'Upper Back': ['lats', 'teres_major'],
+  // No dedicated rhomboid/mid-trap SVG exists; traps + teres major is the
+  // closest region. Must NOT reuse the lats overlay — an overhead press
+  // crediting 'upper back' would paint the entire lats red on a push day.
+  'Upper Back': ['traps', 'teres_major'],
   'Lower Back': ['lowerback'],
   'Traps': ['traps'],
 

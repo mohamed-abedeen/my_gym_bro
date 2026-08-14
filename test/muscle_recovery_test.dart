@@ -91,17 +91,13 @@ void main() {
       expect(service.getRecoveryPercent('Chest', trained), 1.0);
     });
 
-    test('follows the exponential curve at halfway through the window', () {
-      // Biceps: 30h recovery; trained 15h ago → recoveryCurve(0.5), which
-      // is well past 50% (fast early repair, slow tail).
+    test('reads 50% at halfway through the window (linear)', () {
+      // Biceps: 30h recovery; trained 15h ago → half the window elapsed →
+      // 50%, matching the wall-clock "rest needed" text on the same card.
       final trained = DateTime.now().subtract(const Duration(hours: 15));
       final percent = service.getRecoveryPercent('Biceps', trained);
       expect(percent, isNotNull);
-      expect(
-        percent,
-        closeTo(MuscleRecoveryService.recoveryCurve(0.5), 0.02),
-      );
-      expect(percent, greaterThan(0.5));
+      expect(percent, closeTo(0.5, 0.02));
     });
 
     test('honours a dose-adjusted recovery window when provided', () {
@@ -144,14 +140,12 @@ void main() {
       expect(MuscleRecoveryService.recoveryCurve(-0.5), 0);
     });
 
-    test('recovers fast early and slow late', () {
-      final early = MuscleRecoveryService.recoveryCurve(0.25);
-      final late = MuscleRecoveryService.recoveryCurve(0.75);
-      // First quarter of the window repairs more than the third quarter.
-      expect(early, greaterThan(0.25));
-      expect(1 - late, lessThan(0.25));
-      // Monotonic.
-      expect(late, greaterThan(early));
+    test('is linear — percent matches elapsed wall-clock fraction', () {
+      // Linear keeps the ring %, the colour and the "Xh rest needed" text
+      // consistent; the old exponential curve read ~80% at half-time.
+      expect(MuscleRecoveryService.recoveryCurve(0.25), closeTo(0.25, 0.001));
+      expect(MuscleRecoveryService.recoveryCurve(0.5), closeTo(0.5, 0.001));
+      expect(MuscleRecoveryService.recoveryCurve(0.75), closeTo(0.75, 0.001));
     });
   });
 
@@ -249,6 +243,45 @@ void main() {
         MuscleDoseEvent(trainedAt: first, dose: 12),
         MuscleDoseEvent(trainedAt: second, dose: 12),
       ]);
+      expect(window!.recoveryHours, closeTo(60, 0.01));
+    });
+
+    test('secondary-only bout gets a halved window', () {
+      // Upper back touched only as a synergist (e.g. overhead press on a
+      // push day): 60h base × secondaryOnlyWindowScale → 30h, not a full
+      // back-day window.
+      final window =
+          MuscleRecoveryService.resolveRecoveryWindow('Upper Back', [
+        MuscleDoseEvent(
+          trainedAt: DateTime(2026, 6, 1, 18),
+          dose: 1.5,
+          hasPrimary: false,
+        ),
+      ]);
+      expect(
+        window!.recoveryHours,
+        closeTo(60 * MuscleRecoveryService.secondaryOnlyWindowScale, 0.01),
+      );
+    });
+
+    test('secondary-only doses do not feed the reference dose', () {
+      // Two synergist-only bouts (dose 1.5) must not drag the reference
+      // down and make a later real back day (dose 12) look like a blowout.
+      final window =
+          MuscleRecoveryService.resolveRecoveryWindow('Upper Back', [
+        MuscleDoseEvent(
+          trainedAt: DateTime(2026, 6),
+          dose: 1.5,
+          hasPrimary: false,
+        ),
+        MuscleDoseEvent(
+          trainedAt: DateTime(2026, 6, 8),
+          dose: 1.5,
+          hasPrimary: false,
+        ),
+        MuscleDoseEvent(trainedAt: DateTime(2026, 6, 15), dose: 12),
+      ]);
+      // First primary bout → reference is still empty → factor 1 → base 60h.
       expect(window!.recoveryHours, closeTo(60, 0.01));
     });
   });

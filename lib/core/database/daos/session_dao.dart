@@ -337,28 +337,36 @@ class SessionDao extends DatabaseAccessor<AppDatabase>
     );
   }
 
-  /// Sets from the most recent **completed** session for a given exercise.
+  /// Completed sets from the most recent **completed** session in which the
+  /// exercise was actually performed (≥ 1 completed set).
   ///
   /// Returns an empty list when the exercise has never been logged before.
-  /// Used to auto-fill weights/reps at the start of a new session.
+  /// Used to auto-fill sets at the start of a new session — placeholder
+  /// rows the user never ticked off are excluded, so the next session's
+  /// prefilled set count matches what was really done, not the template.
   Future<List<WorkoutSet>> getLastLoggedSets(String exerciseId) async {
-    // 1. Find the most recent session_exercise row for this exercise
-    //    that belongs to a finished session.
+    // 1. Find the most recent session_exercise row for this exercise that
+    //    belongs to a finished session and has at least one completed set
+    //    (a session where the exercise was skipped entirely shouldn't
+    //    blank out the prefill history).
     final seRow = await customSelect(
       'SELECT se.local_id '
       'FROM session_exercises se '
       'JOIN sessions s ON s.local_id = se.session_id '
       'WHERE se.exercise_id = ? AND s.finished_at IS NOT NULL '
+      'AND EXISTS (SELECT 1 FROM workout_sets ws '
+      'WHERE ws.session_exercise_id = se.local_id AND ws.is_completed = 1) '
       'ORDER BY s.started_at DESC '
       'LIMIT 1',
       variables: [Variable<String>(exerciseId)],
-      readsFrom: {sessionExercises, sessions},
+      readsFrom: {sessionExercises, sessions, workoutSets},
     ).getSingleOrNull();
 
     if (seRow == null) return [];
 
     final seId = seRow.read<int>('local_id');
-    return getSets(seId);
+    final sets = await getSets(seId);
+    return sets.where((s) => s.isCompleted).toList();
   }
 
   /// Completed sessions containing this exercise with their sets, newest first.

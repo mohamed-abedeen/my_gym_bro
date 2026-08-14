@@ -679,10 +679,13 @@ class ActiveSessionNotifier extends StateNotifier<ActiveSessionState> {
       // Fetch the user's last logged sets for this exercise (auto-fill).
       final history = await _getLastLoggedSets(scheduled.exerciseId);
 
-      // Create sets based on the scheduled target sets and reps,
-      // but auto-fill weight & cardio fields from history when available.
+      // The last completed session drives how many sets to create — if the
+      // user did 2 sets last time, they get 2 sets again, even when the
+      // template says 3. targetSets/targetReps only seed the first run.
+      final setCount =
+          history.isNotEmpty ? history.length : scheduled.targetSets;
       final sets = <ActiveSet>[];
-      for (var s = 0; s < scheduled.targetSets; s++) {
+      for (var s = 0; s < setCount; s++) {
         final histSet = s < history.length ? history[s] : null;
         final setId = await _repository.addSet(AddSetParams(
           sessionExerciseId: seId,
