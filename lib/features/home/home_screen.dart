@@ -2,6 +2,7 @@ import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:intl/intl.dart';
 import 'package:my_gym_bro/core/providers/providers.dart';
 import 'package:my_gym_bro/core/services/units.dart';
 import 'package:my_gym_bro/features/leaderboard/leaderboard_providers.dart';
@@ -10,6 +11,7 @@ import 'package:my_gym_bro/features/leaderboard/rank.dart';
 import 'package:my_gym_bro/features/settings/settings_screen.dart';
 import 'package:my_gym_bro/features/settings/skin_provider.dart';
 import 'package:my_gym_bro/features/workout/muscle_detail_sheet.dart';
+import 'package:my_gym_bro/features/workout/reports_screen.dart';
 import 'package:my_gym_bro/features/workout/workout_providers.dart';
 import 'package:my_gym_bro/l10n/app_localizations.dart';
 import 'package:my_gym_bro/shared/constants.dart';
@@ -500,6 +502,35 @@ class _StatusSection extends ConsumerWidget {
   const _StatusSection({required this.l10n});
   final AppLocalizations l10n;
 
+  /// "Today" / "Tomorrow" / weekday name for the next scheduled session,
+  /// from the active schedule's cycle. "--" without a schedule or while
+  /// loading; a session that's due (or a schedule never trained) is Today.
+  String _nextSessionLabel(
+    BuildContext context,
+    WidgetRef ref,
+    AppLocalizations l10n,
+  ) {
+    final schedule = ref.watch(activeScheduleProvider).valueOrNull;
+    if (schedule == null) return '--';
+    return ref.watch(nextSessionHoursProvider(schedule.localId)).when(
+          loading: () => '--',
+          error: (_, __) => '--',
+          data: (hours) {
+            if (hours == null || hours <= 0) return l10n.today;
+            final now = DateTime.now();
+            final due = now.add(Duration(hours: hours));
+            final calendarDays = DateTime(due.year, due.month, due.day)
+                .difference(DateTime(now.year, now.month, now.day))
+                .inDays;
+            if (calendarDays <= 0) return l10n.today;
+            if (calendarDays == 1) return l10n.tomorrow;
+            return DateFormat.EEEE(
+              Localizations.localeOf(context).toString(),
+            ).format(due);
+          },
+        );
+  }
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final colors = AppColors.of(context);
@@ -532,20 +563,28 @@ class _StatusSection extends ConsumerWidget {
                     ),
               ),
               SizedBox(height: 8.h),
-              // Next Session
+              // Next Session — derived from the active schedule's cycle
               _SmallInfoCard(
                 icon: Icons.fitness_center_rounded,
                 iconColor: colors.textPrimary,
                 iconSize: 38.sp,
                 label: l10n.nextSession,
-                value: l10n.tomorrow,
+                value: _nextSessionLabel(context, ref, l10n),
               ),
               SizedBox(height: 8.h),
-              // Weekly Progress — fills remaining space
+              // Weekly Progress — fills remaining space; taps open Reports
               Expanded(
-                child: ClipRRect(
-                  borderRadius: BorderRadius.circular(24.r),
-                  child: _WeeklyProgressCard(l10n: l10n, unit: unit),
+                child: GestureDetector(
+                  behavior: HitTestBehavior.opaque,
+                  onTap: () => Navigator.of(context).push(
+                    MaterialPageRoute<void>(
+                      builder: (_) => const ReportsScreen(),
+                    ),
+                  ),
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(24.r),
+                    child: _WeeklyProgressCard(l10n: l10n, unit: unit),
+                  ),
                 ),
               ),
             ],
