@@ -7,7 +7,7 @@ import 'package:intl/intl.dart';
 import 'package:my_gym_bro/core/database/app_database.dart';
 import 'package:my_gym_bro/core/database/daos/session_dao.dart';
 import 'package:my_gym_bro/core/services/exercise_gif_cache.dart';
-import 'package:my_gym_bro/core/services/units.dart' show groupDigits;
+import 'package:my_gym_bro/core/services/units.dart';
 import 'package:my_gym_bro/features/exercises/lift_rank/lift_rank_providers.dart';
 import 'package:my_gym_bro/features/leaderboard/rank.dart';
 import 'package:my_gym_bro/features/workout/workout_providers.dart';
@@ -85,6 +85,7 @@ class _ExerciseDetailScreenState extends ConsumerState<ExerciseDetailScreen>
     final historyAsync =
         ref.watch(exerciseSessionHistoryProvider(exercise.exerciseId));
     final liftRankAsync = ref.watch(liftRankProvider(exercise.exerciseId));
+    final unit = ref.watch(weightUnitProvider);
 
     return Scaffold(
       backgroundColor: colors.background,
@@ -102,6 +103,7 @@ class _ExerciseDetailScreenState extends ConsumerState<ExerciseDetailScreen>
                     exercise: exercise,
                     colors: colors,
                     l10n: l10n,
+                    unit: unit,
                     timePeriod: _timePeriod,
                     recordFilter: _recordFilter,
                     setRecordsExpanded: _setRecordsExpanded,
@@ -118,6 +120,7 @@ class _ExerciseDetailScreenState extends ConsumerState<ExerciseDetailScreen>
                   _HistoryTab(
                     colors: colors,
                     l10n: l10n,
+                    unit: unit,
                     historyAsync: historyAsync,
                   ),
                   _HowToTab(
@@ -210,6 +213,7 @@ class _SummaryTab extends StatelessWidget {
     required this.exercise,
     required this.colors,
     required this.l10n,
+    required this.unit,
     required this.timePeriod,
     required this.recordFilter,
     required this.setRecordsExpanded,
@@ -224,6 +228,7 @@ class _SummaryTab extends StatelessWidget {
   final Exercise exercise;
   final AppColorsTheme colors;
   final AppLocalizations l10n;
+  final WeightUnit unit;
   final _TimePeriod timePeriod;
   final _RecordFilter recordFilter;
   final bool setRecordsExpanded;
@@ -402,7 +407,7 @@ class _SummaryTab extends StatelessWidget {
             ),
           );
         }
-        return _VolumeBarChart(data: data, colors: colors);
+        return _VolumeBarChart(data: data, colors: colors, unit: unit);
       },
     );
   }
@@ -457,7 +462,12 @@ class _SummaryTab extends StatelessWidget {
     if (liftRank == null) return const SizedBox.shrink();
     return Padding(
       padding: EdgeInsets.only(bottom: 20.h),
-      child: _LiftRankCard(liftRank: liftRank, colors: colors, l10n: l10n),
+      child: _LiftRankCard(
+        liftRank: liftRank,
+        colors: colors,
+        l10n: l10n,
+        unit: unit,
+      ),
     );
   }
 
@@ -488,7 +498,8 @@ class _SummaryTab extends StatelessWidget {
                     child: _RecordCard(
                       label: l10n.heaviestWeight,
                       value: records.maxWeight != null
-                          ? '${records.maxWeight!.toStringAsFixed(1)} kg'
+                          ? formatWeight(records.maxWeight, unit,
+                              withUnit: true)
                           : '—',
                       isHighlighted: recordFilter == _RecordFilter.heaviest,
                       colors: colors,
@@ -499,7 +510,8 @@ class _SummaryTab extends StatelessWidget {
                     child: _RecordCard(
                       label: l10n.oneRepMax,
                       value: records.best1rm != null
-                          ? '${records.best1rm!.toStringAsFixed(1)} kg'
+                          ? formatWeight(records.best1rm, unit,
+                              withUnit: true)
                           : '—',
                       isHighlighted:
                           recordFilter == _RecordFilter.oneRepMax,
@@ -515,7 +527,8 @@ class _SummaryTab extends StatelessWidget {
                     child: _RecordCard(
                       label: l10n.bestSetVolumeLabel,
                       value: records.bestSetVolume != null
-                          ? '${groupDigits(records.bestSetVolume!.toStringAsFixed(0))} kg'
+                          ? formatWeight(records.bestSetVolume, unit,
+                              decimals: 0, withUnit: true)
                           : '—',
                       isHighlighted:
                           recordFilter == _RecordFilter.bestSetVolume,
@@ -527,7 +540,8 @@ class _SummaryTab extends StatelessWidget {
                     child: _RecordCard(
                       label: l10n.bestSessionVolumeLabel,
                       value: records.bestSessionVolume != null
-                          ? '${groupDigits(records.bestSessionVolume!.toStringAsFixed(0))} kg'
+                          ? formatWeight(records.bestSessionVolume, unit,
+                              decimals: 0, withUnit: true)
                           : '—',
                       isHighlighted: false,
                       colors: colors,
@@ -595,21 +609,24 @@ class _SummaryTab extends StatelessWidget {
                     _SetRecordRow(
                       label: l10n.heaviestWeight,
                       value: records.maxWeight != null
-                          ? '${records.maxWeight!.toStringAsFixed(1)} kg'
+                          ? formatWeight(records.maxWeight, unit,
+                              withUnit: true)
                           : '—',
                       colors: colors,
                     ),
                     _SetRecordRow(
                       label: l10n.oneRepMax,
                       value: records.best1rm != null
-                          ? '${records.best1rm!.toStringAsFixed(1)} kg'
+                          ? formatWeight(records.best1rm, unit,
+                              withUnit: true)
                           : '—',
                       colors: colors,
                     ),
                     _SetRecordRow(
                       label: l10n.bestSetVolumeLabel,
                       value: records.bestSetVolume != null
-                          ? '${groupDigits(records.bestSetVolume!.toStringAsFixed(0))} kg'
+                          ? formatWeight(records.bestSetVolume, unit,
+                              decimals: 0, withUnit: true)
                           : '—',
                       colors: colors,
                       isLast: true,
@@ -642,11 +659,13 @@ class _HistoryTab extends StatelessWidget {
   const _HistoryTab({
     required this.colors,
     required this.l10n,
+    required this.unit,
     required this.historyAsync,
   });
 
   final AppColorsTheme colors;
   final AppLocalizations l10n;
+  final WeightUnit unit;
   final AsyncValue<List<ExerciseHistoryEntry>> historyAsync;
 
   @override
@@ -679,8 +698,8 @@ class _HistoryTab extends StatelessWidget {
           padding: EdgeInsets.symmetric(
               horizontal: AppSizes.contentPaddingH.w, vertical: 16.h),
           itemCount: entries.length,
-          itemBuilder: (ctx, i) =>
-              _SessionHistoryCard(entry: entries[i], colors: colors, l10n: l10n),
+          itemBuilder: (ctx, i) => _SessionHistoryCard(
+              entry: entries[i], colors: colors, l10n: l10n, unit: unit),
         );
       },
     );
@@ -692,11 +711,13 @@ class _SessionHistoryCard extends StatelessWidget {
     required this.entry,
     required this.colors,
     required this.l10n,
+    required this.unit,
   });
 
   final ExerciseHistoryEntry entry;
   final AppColorsTheme colors;
   final AppLocalizations l10n;
+  final WeightUnit unit;
 
   @override
   Widget build(BuildContext context) {
@@ -770,7 +791,8 @@ class _SessionHistoryCard extends StatelessWidget {
           SizedBox(height: 6.h),
 
           // Set rows
-          ...entry.sets.map((s) => _SetRow(set: s, colors: colors)),
+          ...entry.sets.map(
+              (s) => _SetRow(set: s, colors: colors, unit: unit)),
           SizedBox(height: 12.h),
         ],
       ),
@@ -779,10 +801,11 @@ class _SessionHistoryCard extends StatelessWidget {
 }
 
 class _SetRow extends StatelessWidget {
-  const _SetRow({required this.set, required this.colors});
+  const _SetRow({required this.set, required this.colors, required this.unit});
 
   final WorkoutSet set;
   final AppColorsTheme colors;
+  final WeightUnit unit;
 
   @override
   Widget build(BuildContext context) {
@@ -809,7 +832,7 @@ class _SetRow extends StatelessWidget {
     }
 
     final weightStr = set.weight != null
-        ? '${set.weight!.toStringAsFixed(set.weight! % 1 == 0 ? 0 : 1)} kg'
+        ? formatWeight(set.weight, unit, withUnit: true)
         : '—';
     final repsStr = set.reps != null ? '× ${set.reps}' : '—';
 
@@ -1105,10 +1128,15 @@ class _SetRecordRow extends StatelessWidget {
 ///   │  Jan 1 ·  ·  ·  ·  ·  ·  ·  ·  Mar 4   │
 ///   └──────────────────────────────────────────┘
 class _VolumeBarChart extends StatelessWidget {
-  const _VolumeBarChart({required this.data, required this.colors});
+  const _VolumeBarChart({
+    required this.data,
+    required this.colors,
+    required this.unit,
+  });
 
   final List<({DateTime date, double volume})> data;
   final AppColorsTheme colors;
+  final WeightUnit unit;
 
   @override
   Widget build(BuildContext context) {
@@ -1116,12 +1144,15 @@ class _VolumeBarChart extends StatelessWidget {
     final fmt =
         DateFormat('MMM d', Localizations.localeOf(context).toString());
 
-    // Format the peak volume label neatly
+    // Format the peak volume label neatly, in the user's display unit
+    final maxVolDisplay = convertFromKg(maxVol, unit);
     String peakLabel;
-    if (maxVol >= 1000) {
-      peakLabel = '${(maxVol / 1000).toStringAsFixed(1)}k kg';
+    if (maxVolDisplay >= 1000) {
+      peakLabel =
+          '${(maxVolDisplay / 1000).toStringAsFixed(1)}k ${weightUnitLabel(unit)}';
     } else {
-      peakLabel = '${maxVol.toStringAsFixed(0)} kg';
+      peakLabel =
+          '${maxVolDisplay.toStringAsFixed(0)} ${weightUnitLabel(unit)}';
     }
 
     return Container(
@@ -1637,11 +1668,13 @@ class _LiftRankCard extends StatelessWidget {
     required this.liftRank,
     required this.colors,
     required this.l10n,
+    required this.unit,
   });
 
   final LiftRank liftRank;
   final AppColorsTheme colors;
   final AppLocalizations l10n;
+  final WeightUnit unit;
 
   @override
   Widget build(BuildContext context) {
@@ -1680,7 +1713,7 @@ class _LiftRankCard extends StatelessWidget {
                     ),
                     SizedBox(height: 2.h),
                     Text(
-                      '${groupDigits(liftRank.e1RmKg.toStringAsFixed(1))} kg '
+                      '${formatWeight(liftRank.e1RmKg, unit, withUnit: true)} '
                       '${l10n.oneRepMax}',
                       style: TextStyle(
                         color: colors.textSecondary,
