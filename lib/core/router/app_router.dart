@@ -26,6 +26,7 @@ import 'package:my_gym_bro/features/schedule/premade_programs_screen.dart';
 import 'package:my_gym_bro/features/schedule/schedule_builder_screen.dart';
 import 'package:my_gym_bro/features/schedule/split_overview_screen.dart';
 import 'package:my_gym_bro/features/settings/settings_screen.dart';
+import 'package:my_gym_bro/features/social/add_bro_screen.dart';
 import 'package:my_gym_bro/features/workout/active_session/active_session_screen.dart';
 import 'package:my_gym_bro/features/workout/share/exercise_share_data.dart';
 import 'package:my_gym_bro/features/workout/share/exercise_share_screen.dart';
@@ -78,6 +79,9 @@ class AppRoutes {
 
   // Profile
   static const profile = '/profile';
+
+  // Bros — invite deep-link target (the invite link/QR encodes the username).
+  static const addBro = '/bro/:username';
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -363,6 +367,22 @@ final routerProvider = Provider<GoRouter>((ref) {
         path: AppRoutes.profile,
         pageBuilder: (context, state) =>
             _platformPage(child: const ProfileScreen(), state: state),
+      ),
+
+      // ────────────────────────────────────────────────────────────────────
+      // BROS — invite deep link. TODO(deploy): needs the universal-link
+      // domain (AASA / assetlinks) configured before external links open the
+      // app — see SETUP-STATUS.md. In-app pushes work today.
+      GoRoute(
+        path: AppRoutes.addBro,
+        redirect: (context, state) =>
+            (state.pathParameters['username']?.isEmpty ?? true)
+                ? AppRoutes.home
+                : null,
+        pageBuilder: (context, state) => _platformPage(
+          child: AddBroScreen(username: state.pathParameters['username']!),
+          state: state,
+        ),
       ),
     ],
     // ──────────────────────────────────────────────────────────────────────

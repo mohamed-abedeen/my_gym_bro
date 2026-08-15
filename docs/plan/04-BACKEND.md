@@ -146,6 +146,19 @@ The feed is cut. No `SupabaseCommunityRepository` will be built. Dormant `posts`
 
 ## 5. Friends / "Bros" (client contracts) *(REDESIGNED 2026-08-15 — was one-way followers; PRD §5.6)*
 
+> ✅ **Client side built 2026-08-15** (Bros Phase B): `FriendRepository` +
+> `friend_providers.dart` (features/social), `FriendshipDao`, Drift v17 cache,
+> outbox-synced ops, pull via `refreshFromServer()` (drains outbox, then snapshots
+> rows where I'm a side). Server migration `012_friendships.sql` authored, **not
+> deployed** (SETUP-STATUS). Implementation notes on top of the contract below:
+> the @username **claim is deliberately online-only** (global uniqueness — a queued
+> offline claim could silently lose the race; lookup/search are online too);
+> decline/cancel/unfriend/unblock are hard DELETEs of the edge (per this contract)
+> while all other writes are offline-first; a block with no existing row INSERTs a
+> born-'blocked' row; "blocked by them" is reported to the UI as `none` (discreet
+> blocking). No realtime — a new incoming request appears on the next graph refresh
+> (Bros sheet open / pull).
+
 - **Request:** insert `friendships(requester_id=me, addressee_id=target, status='pending')` (outbox-synced).
 - **Accept / decline:** addressee updates status to `accepted` / deletes the row.
 - **Block:** either side sets `status='blocked'` (blocker recorded); blocked pairs are invisible both ways and can't re-request. **Report** goes to a `user_reports` table for review.

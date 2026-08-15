@@ -961,16 +961,7 @@ class AppLocalizationsEs extends AppLocalizations {
   String get account => 'Cuenta';
 
   @override
-  String get following => 'Siguiendo';
-
-  @override
-  String get followers => 'Seguidores';
-
-  @override
-  String get follow => 'Seguir';
-
-  @override
-  String get friends => 'Amigos';
+  String get statBros => 'Bros';
 
   @override
   String get streak => 'Racha';
@@ -1999,4 +1990,154 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get discoverOtherPlansCta => 'Descubre otros planes de entrenamiento';
+
+  @override
+  String get addBros => 'Añadir bros';
+
+  @override
+  String get myUsernameTitle => 'Mi alias';
+
+  @override
+  String get claimUsernameTitle => 'Reclama tu alias';
+
+  @override
+  String get claimUsernameExplainer =>
+      'Tus bros te encuentran por tu @alias. 3–20 caracteres: minúsculas, números, guion bajo.';
+
+  @override
+  String get claimUsernameHint => 'alias';
+
+  @override
+  String get claimAction => 'Reclamar';
+
+  @override
+  String get usernameTaken => 'Ese alias ya está en uso.';
+
+  @override
+  String get usernameInvalid =>
+      '3–20 caracteres: minúsculas, números, guion bajo.';
+
+  @override
+  String get usernameNeedsOnline =>
+      'Para reclamar un alias necesitas conexión.';
+
+  @override
+  String get searchByUsername => 'Añadir por @alias';
+
+  @override
+  String get searchByUsernameHint => '@alias';
+
+  @override
+  String get searchNoMatch => 'Nadie tiene ese alias.';
+
+  @override
+  String get searchNeedsOnline => 'La búsqueda necesita conexión.';
+
+  @override
+  String get requestsTitle => 'Solicitudes';
+
+  @override
+  String get acceptAction => 'Aceptar';
+
+  @override
+  String get declineAction => 'Rechazar';
+
+  @override
+  String get sentRequestsTitle => 'Enviadas';
+
+  @override
+  String get cancelRequestAction => 'Cancelar';
+
+  @override
+  String get myBrosTitle => 'Mis bros';
+
+  @override
+  String get noBrosYet =>
+      'Aún no tienes bros. Invita a tu crew o añádelos por @alias.';
+
+  @override
+  String get inviteAction => 'Invitar';
+
+  @override
+  String get inviteSheetTitle => 'Invitar a un bro';
+
+  @override
+  String get inviteQrHint => 'Que tu bro escanee esto con su cámara';
+
+  @override
+  String get inviteShareAction => 'Compartir enlace de invitación';
+
+  @override
+  String inviteMessage(String username, String link) {
+    return 'Añádeme en MyGymBro — soy @$username. $link';
+  }
+
+  @override
+  String get inviteNeedsUsername =>
+      'Primero reclama un alias — tu invitación lo lleva.';
+
+  @override
+  String get removeBroAction => 'Quitar bro';
+
+  @override
+  String get removeBroConfirmTitle => '¿Quitar a este bro?';
+
+  @override
+  String get removeBroConfirmBody =>
+      'Siempre puedes enviar una nueva solicitud más tarde.';
+
+  @override
+  String get blockAction => 'Bloquear';
+
+  @override
+  String get blockConfirmTitle => '¿Bloquear a este usuario?';
+
+  @override
+  String get blockConfirmBody =>
+      'Desapareceréis por completo el uno para el otro. Solo tú puedes deshacerlo.';
+
+  @override
+  String get unblockAction => 'Desbloquear';
+
+  @override
+  String get blockedTitle => 'Bloqueados';
+
+  @override
+  String get reportAction => 'Denunciar';
+
+  @override
+  String get reportSheetTitle => 'Denunciar a este usuario';
+
+  @override
+  String get reportReasonSpam => 'Spam o cuenta falsa';
+
+  @override
+  String get reportReasonHarassment => 'Acoso o bullying';
+
+  @override
+  String get reportReasonImpersonation => 'Suplantación de identidad';
+
+  @override
+  String get reportReasonOther => 'Otra cosa';
+
+  @override
+  String get reportSentToast => 'Denuncia enviada. La revisaremos.';
+
+  @override
+  String get requestSentToast => 'Solicitud enviada.';
+
+  @override
+  String get nowBrosToast => '¡Ya sois bros!';
+
+  @override
+  String get requestFailedToast => 'No se pudo enviar la solicitud.';
+
+  @override
+  String get addBroAction => 'Añadir bro';
+
+  @override
+  String get pendingLabel => 'Pendiente';
+
+  @override
+  String get signInToAddBros => 'Inicia sesión para añadir bros.';
 }

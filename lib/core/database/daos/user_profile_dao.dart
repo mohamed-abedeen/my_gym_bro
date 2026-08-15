@@ -68,6 +68,11 @@ class UserProfileDao extends DatabaseAccessor<AppDatabase>
       (update(userProfiles)..where((t) => t.localId.equals(localId)))
           .write(UserProfilesCompanion(bannerUrl: Value(url)));
 
+  /// Record the claimed @username (already validated + claimed server-side).
+  Future<void> updateUsername(int localId, String username) =>
+      (update(userProfiles)..where((t) => t.localId.equals(localId)))
+          .write(UserProfilesCompanion(username: Value(username)));
+
   /// Delete every profile row on this device. Used by the account-deletion
   /// flow so the next sign-up on the same device starts with a clean slate.
   Future<int> clearAll() => delete(userProfiles).go();

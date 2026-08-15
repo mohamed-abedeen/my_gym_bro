@@ -12,7 +12,7 @@ import 'package:my_gym_bro/core/services/exercise_gif_cache.dart';
 import 'package:my_gym_bro/core/services/units.dart';
 import 'package:my_gym_bro/features/profile/profile_providers.dart';
 import 'package:my_gym_bro/features/settings/skin_provider.dart';
-import 'package:my_gym_bro/features/social/follow_providers.dart';
+import 'package:my_gym_bro/features/social/friend_providers.dart';
 import 'package:my_gym_bro/features/workout/exercise_detail_sheet.dart';
 import 'package:my_gym_bro/features/workout/share/share_card_data.dart';
 import 'package:my_gym_bro/features/workout/workout_providers.dart';
@@ -468,24 +468,13 @@ class _StatsRow extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final colors = AppColors.of(context);
 
-    // "Following" comes from the local cache so it's instant and offline-safe;
-    // "Followers" is authoritative from the server (who follows me), falling
-    // back to 0 when offline / pre-fetch.
-    final followingCount =
-        ref.watch(followingIdsProvider).valueOrNull?.length ?? 0;
-    final myProfile = ref.watch(myPublicProfileProvider).valueOrNull;
-    final followersCount = myProfile?.followerCount ?? 0;
+    // Bros count from the local graph cache — instant and offline-safe.
+    final brosCount = ref.watch(friendIdsProvider).length;
 
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceEvenly,
       children: [
-        _StatColumn(value: '$followingCount', label: l10n.following),
-        Container(
-          width: 1,
-          height: 22.h,
-          color: const Color(0xFF282828),
-        ),
-        _StatColumn(value: '$followersCount', label: l10n.followers),
+        _StatColumn(value: '$brosCount', label: l10n.statBros),
         Container(
           width: 1,
           height: 22.h,

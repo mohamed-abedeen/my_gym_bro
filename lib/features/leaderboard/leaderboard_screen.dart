@@ -3,9 +3,12 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import 'package:my_gym_bro/features/leaderboard/leaderboard_providers.dart';
 import 'package:my_gym_bro/features/leaderboard/rank.dart';
+import 'package:my_gym_bro/features/social/bros_sheet.dart';
+import 'package:my_gym_bro/features/social/friend_providers.dart';
 import 'package:my_gym_bro/l10n/app_localizations.dart';
 import 'package:my_gym_bro/shared/constants.dart';
 import 'package:my_gym_bro/shared/responsive.dart';
+import 'package:my_gym_bro/shared/widgets/liquid_glass_button.dart';
 import 'package:my_gym_bro/shared/widgets/user_avatar.dart';
 
 /// Leaderboard + Challenges screen.
@@ -140,7 +143,7 @@ class _LeaderboardScreenState extends ConsumerState<LeaderboardScreen> {
 // this is a root tab, not a pushed screen)
 // ─────────────────────────────────────────────
 
-class _TopBar extends StatelessWidget {
+class _TopBar extends ConsumerWidget {
   const _TopBar({
     required this.tab,
     required this.onChange,
@@ -152,24 +155,78 @@ class _TopBar extends StatelessWidget {
   final AppLocalizations l10n;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final colors = AppColors.of(context);
+    final pendingCount = ref.watch(pendingRequestCountProvider);
+
     return Padding(
       padding: EdgeInsets.symmetric(horizontal: 10.w),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.center,
+      child: Stack(
+        alignment: Alignment.center,
         children: [
-          // Leaderboard pill
-          _TopPill(
-            label: l10n.leaderboardTab,
-            active: tab == _Tab.leaderboard,
-            onTap: () => onChange(_Tab.leaderboard),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              // Leaderboard pill
+              _TopPill(
+                label: l10n.leaderboardTab,
+                active: tab == _Tab.leaderboard,
+                onTap: () => onChange(_Tab.leaderboard),
+              ),
+              SizedBox(width: 4.w),
+              // Challenges pill
+              _TopPill(
+                label: l10n.challengesTab,
+                active: tab == _Tab.challenges,
+                onTap: () => onChange(_Tab.challenges),
+              ),
+            ],
           ),
-          SizedBox(width: 4.w),
-          // Challenges pill
-          _TopPill(
-            label: l10n.challengesTab,
-            active: tab == _Tab.challenges,
-            onTap: () => onChange(_Tab.challenges),
+
+          // Add-bros entry (Phase B) — 48pt header spec, frosted per the
+          // glass rules; the badge is the incoming-requests inbox count.
+          Positioned(
+            right: 2.w,
+            child: Stack(
+              clipBehavior: Clip.none,
+              children: [
+                LiquidGlassButton(
+                  width: AppSizes.headerActionBtn.w,
+                  height: AppSizes.headerActionBtn.w,
+                  opacity: 0.15,
+                  radius: (AppSizes.headerActionBtn / 2).r,
+                  onTap: () => showBrosSheet(context),
+                  child: Icon(
+                    Icons.person_add_alt_1_rounded,
+                    color: colors.textPrimary,
+                    size: AppSizes.headerActionIcon.sp,
+                  ),
+                ),
+                if (pendingCount > 0)
+                  Positioned(
+                    right: -2.w,
+                    top: -2.h,
+                    child: Container(
+                      padding: EdgeInsets.symmetric(
+                          horizontal: 5.w, vertical: 2.h),
+                      decoration: BoxDecoration(
+                        color: colors.accent,
+                        borderRadius: BorderRadius.circular(10.r),
+                      ),
+                      constraints: BoxConstraints(minWidth: 16.w),
+                      child: Text(
+                        '$pendingCount',
+                        textAlign: TextAlign.center,
+                        style: TextStyle(
+                          color: colors.todayPillText,
+                          fontSize: 10.sp,
+                          fontWeight: FontWeight.w800,
+                        ),
+                      ),
+                    ),
+                  ),
+              ],
+            ),
           ),
         ],
       ),

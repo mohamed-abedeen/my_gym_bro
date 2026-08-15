@@ -9,11 +9,12 @@ Two stores kept in sync:
 
 ---
 
-## 1. Drift (Local) — Current Tables (v12)
+## 1. Drift (Local) — Current Tables (v17)
 
 | Table | Key columns | Notes |
 |-------|-------------|-------|
-| **UserProfiles** | localId, remoteId, displayName, goal, experience, gender, bodyWeightKg, heightCm, fcmToken, **subscriptionStatus**, subscriptionExpiresAt, **notificationTone**, syncStatus | One row; the user. |
+| **UserProfiles** | localId, remoteId, displayName, **username** (v17), goal, experience, gender, bodyWeightKg, heightCm, fcmToken, **subscriptionStatus**, subscriptionExpiresAt, **notificationTone**, syncStatus | One row; the user. |
+| **Friendships** (v17) | localId, remoteId, requesterId, addresseeId, status ('pending'\|'accepted'\|'blocked'), blockedBy, respondedAt, syncStatus | Cache of every edge the user is a side of; mirrors Supabase `friendships`. |
 | **Exercises** | localId, exerciseId (unique), name, bodyParts, targetMuscles, difficulty, isCustom, isFavorite, usageCount | Seeded from `assets/exercises.json`. |
 | **Schedules** | localId, name, isActive, syncStatus | One active at a time. |
 | **ScheduleDays** | localId, scheduleId (FK), dayIndex, label, isRestDay | |
@@ -24,14 +25,16 @@ Two stores kept in sync:
 | **SyncQueue** | localId, syncTableName, rowId, operation, payload(JSON), isSynced | Offline outbox. |
 | **DmMessages** | id(UUID), conversationId, senderId, type, body, imageUrl, createdAt, isOptimistic | ⚠️ **REMOVE** (DMs dropped). |
 
-**Migration history of note:** v7 cardio, v9 favorites, v11 completion tracking, v12 biometrics.
+**Migration history of note:** v7 cardio, v9 favorites, v11 completion tracking, v12
+biometrics, v13 DM drop, v15 follows cache, **v17 friendships + username (drops the
+follows cache — the one-way follow model was superseded, PRD §5.6)**.
 
 ### 1.1 Drift — New Tables to Add (v13+)
 > Bump `schemaVersion` and add a migration step per change. Regenerate `.g.dart`.
 
 | Table | Key columns | For |
 |-------|-------------|-----|
-| **Follows** | localId, remoteId, followerId, followeeId, syncStatus | Followers (one-way). Cache of who *I* follow. |
+| ~~**Follows**~~ | — | ~~Followers (one-way)~~ **Superseded + dropped in v17** — replaced by `Friendships` (see §1). |
 | **SkinOwnership** | localId, remoteId, skinId, source ('earned'/'purchased'), acquiredAt | Owned skins; drives gallery. |
 | **ActiveSkin** | (store on UserProfiles instead) `activeSkinId` column | Currently selected skin. |
 | **ChallengeParticipation** | localId, remoteId, challengeId, joinedAt, progress, completedAt, pointsAwarded | Local mirror of joined challenges. |
@@ -68,6 +71,15 @@ From `001_initial_schema.sql` (+ 002/003/004). **RLS enabled on all user-scoped 
 > Each via a new numbered migration with RLS. Add indexes on FKs and query columns.
 
 ### 3.1 Social: friendships *(REDESIGNED 2026-08-15 — replaces the `follows` design; PRD §5.6)*
+
+> ✅ **Authored as `supabase/migrations/012_friendships.sql` (2026-08-15) — not yet
+> deployed** (see SETUP-STATUS). 012 hardens this sketch; its header lists the
+> deviations: symmetric pair-unique index (blocks A→B/B→A duplicates), blocked rows
+> touchable only by their blocker, constrained update transitions + a pair-lock
+> trigger, INSERT of a born-'blocked' row (pre-emptive stranger block), and a
+> `sessions_select_friends` policy (groundwork for the bros activity strip).
+> `public_profiles` now exposes `username` + `friend_count` and dropped the
+> follower/following counts.
 ```
 friendships (
   id uuid pk default gen_random_uuid(),

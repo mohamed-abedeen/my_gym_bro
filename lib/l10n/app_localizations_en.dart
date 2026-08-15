@@ -958,16 +958,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get account => 'Account';
 
   @override
-  String get following => 'Following';
-
-  @override
-  String get followers => 'Followers';
-
-  @override
-  String get follow => 'Follow';
-
-  @override
-  String get friends => 'Friends';
+  String get statBros => 'Bros';
 
   @override
   String get streak => 'Streak';
@@ -1990,4 +1981,152 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get discoverOtherPlansCta => 'Discover Other Training Plans';
+
+  @override
+  String get addBros => 'Add bros';
+
+  @override
+  String get myUsernameTitle => 'My handle';
+
+  @override
+  String get claimUsernameTitle => 'Claim your handle';
+
+  @override
+  String get claimUsernameExplainer =>
+      'Bros find you by your @handle. 3–20 characters: lowercase letters, numbers, underscore.';
+
+  @override
+  String get claimUsernameHint => 'handle';
+
+  @override
+  String get claimAction => 'Claim';
+
+  @override
+  String get usernameTaken => 'That handle is already taken.';
+
+  @override
+  String get usernameInvalid =>
+      '3–20 characters: lowercase letters, numbers, underscore.';
+
+  @override
+  String get usernameNeedsOnline => 'Claiming a handle needs a connection.';
+
+  @override
+  String get searchByUsername => 'Add by @handle';
+
+  @override
+  String get searchByUsernameHint => '@handle';
+
+  @override
+  String get searchNoMatch => 'Nobody has that handle.';
+
+  @override
+  String get searchNeedsOnline => 'Search needs a connection.';
+
+  @override
+  String get requestsTitle => 'Requests';
+
+  @override
+  String get acceptAction => 'Accept';
+
+  @override
+  String get declineAction => 'Decline';
+
+  @override
+  String get sentRequestsTitle => 'Sent';
+
+  @override
+  String get cancelRequestAction => 'Cancel';
+
+  @override
+  String get myBrosTitle => 'My bros';
+
+  @override
+  String get noBrosYet =>
+      'No bros yet. Invite your crew or add them by @handle.';
+
+  @override
+  String get inviteAction => 'Invite';
+
+  @override
+  String get inviteSheetTitle => 'Invite a bro';
+
+  @override
+  String get inviteQrHint => 'Have your bro scan this with their camera';
+
+  @override
+  String get inviteShareAction => 'Share invite link';
+
+  @override
+  String inviteMessage(String username, String link) {
+    return 'Add me on MyGymBro — I\'m @$username. $link';
+  }
+
+  @override
+  String get inviteNeedsUsername =>
+      'Claim a handle first — your invite carries it.';
+
+  @override
+  String get removeBroAction => 'Remove bro';
+
+  @override
+  String get removeBroConfirmTitle => 'Remove this bro?';
+
+  @override
+  String get removeBroConfirmBody => 'You can always send a new request later.';
+
+  @override
+  String get blockAction => 'Block';
+
+  @override
+  String get blockConfirmTitle => 'Block this user?';
+
+  @override
+  String get blockConfirmBody =>
+      'You\'ll disappear from each other completely. Only you can undo this.';
+
+  @override
+  String get unblockAction => 'Unblock';
+
+  @override
+  String get blockedTitle => 'Blocked';
+
+  @override
+  String get reportAction => 'Report';
+
+  @override
+  String get reportSheetTitle => 'Report this user';
+
+  @override
+  String get reportReasonSpam => 'Spam or fake account';
+
+  @override
+  String get reportReasonHarassment => 'Harassment or bullying';
+
+  @override
+  String get reportReasonImpersonation => 'Impersonation';
+
+  @override
+  String get reportReasonOther => 'Something else';
+
+  @override
+  String get reportSentToast => 'Report sent. We\'ll review it.';
+
+  @override
+  String get requestSentToast => 'Request sent.';
+
+  @override
+  String get nowBrosToast => 'You\'re bros now!';
+
+  @override
+  String get requestFailedToast => 'Couldn\'t send the request.';
+
+  @override
+  String get addBroAction => 'Add bro';
+
+  @override
+  String get pendingLabel => 'Pending';
+
+  @override
+  String get signInToAddBros => 'Sign in to add bros.';
 }

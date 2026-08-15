@@ -86,9 +86,16 @@ The cloud project serves auth + data for beta builds, but repo state has NOT bee
 pushed. As of the last check the following were pending — **verify with
 `supabase migration list` before relying on cloud state**:
 
-- `supabase db push` — repo migrations go up to `011_perf_indexes_and_search_path.sql`;
-  cloud is known to be several behind (at minimum 007–011, incl. `009_security_hardening.sql`
-  which closes a real paywall-bypass hole).
+- `supabase db push` — repo migrations go up to `012_friendships.sql` (Bros Phase B,
+  authored 2026-08-15, **never run against cloud**); cloud is known to be several behind
+  (at minimum 007–012, incl. `009_security_hardening.sql` which closes a real
+  paywall-bypass hole). After pushing 012, run the RLS matrix in its header comment
+  (request/accept/decline/block both sides, username-claim race, `leaderboard_friends`
+  still returns rows, delete-account cascades the friendship graph).
+- **Bros invite deep link** — `https://mygymbro.app/bro/<username>` is generated/QR-encoded
+  by the client and the in-app `/bro/:username` route exists, but the universal-link
+  platform config (Apple AASA, Android assetlinks, and the web fallback page with the App
+  Store link) is NOT set up; external links won't open the app until it is.
 - `supabase functions deploy` — 7 functions in `supabase/functions/`; deployed versions are
   stale. Mind `verify_jwt`: `revenuecat-webhook` and cron-invoked functions must be deployed
   with JWT verification off (config or `--no-verify-jwt`) or they're dead behind the gate.

@@ -967,16 +967,7 @@ class AppLocalizationsDe extends AppLocalizations {
   String get account => 'Konto';
 
   @override
-  String get following => 'Folge ich';
-
-  @override
-  String get followers => 'Follower';
-
-  @override
-  String get follow => 'Folgen';
-
-  @override
-  String get friends => 'Freunde';
+  String get statBros => 'Bros';
 
   @override
   String get streak => 'Serie';
@@ -2008,4 +1999,154 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get discoverOtherPlansCta => 'Weitere Trainingspläne entdecken';
+
+  @override
+  String get addBros => 'Bros hinzufügen';
+
+  @override
+  String get myUsernameTitle => 'Mein Handle';
+
+  @override
+  String get claimUsernameTitle => 'Sichere dir dein Handle';
+
+  @override
+  String get claimUsernameExplainer =>
+      'Bros finden dich über dein @Handle. 3–20 Zeichen: Kleinbuchstaben, Zahlen, Unterstrich.';
+
+  @override
+  String get claimUsernameHint => 'handle';
+
+  @override
+  String get claimAction => 'Sichern';
+
+  @override
+  String get usernameTaken => 'Dieses Handle ist schon vergeben.';
+
+  @override
+  String get usernameInvalid =>
+      '3–20 Zeichen: Kleinbuchstaben, Zahlen, Unterstrich.';
+
+  @override
+  String get usernameNeedsOnline =>
+      'Zum Sichern eines Handles brauchst du eine Verbindung.';
+
+  @override
+  String get searchByUsername => 'Per @Handle hinzufügen';
+
+  @override
+  String get searchByUsernameHint => '@handle';
+
+  @override
+  String get searchNoMatch => 'Niemand hat dieses Handle.';
+
+  @override
+  String get searchNeedsOnline => 'Die Suche braucht eine Verbindung.';
+
+  @override
+  String get requestsTitle => 'Anfragen';
+
+  @override
+  String get acceptAction => 'Annehmen';
+
+  @override
+  String get declineAction => 'Ablehnen';
+
+  @override
+  String get sentRequestsTitle => 'Gesendet';
+
+  @override
+  String get cancelRequestAction => 'Abbrechen';
+
+  @override
+  String get myBrosTitle => 'Meine Bros';
+
+  @override
+  String get noBrosYet =>
+      'Noch keine Bros. Lade deine Crew ein oder füge sie per @Handle hinzu.';
+
+  @override
+  String get inviteAction => 'Einladen';
+
+  @override
+  String get inviteSheetTitle => 'Einen Bro einladen';
+
+  @override
+  String get inviteQrHint => 'Lass deinen Bro das mit der Kamera scannen';
+
+  @override
+  String get inviteShareAction => 'Einladungslink teilen';
+
+  @override
+  String inviteMessage(String username, String link) {
+    return 'Füg mich auf MyGymBro hinzu — ich bin @$username. $link';
+  }
+
+  @override
+  String get inviteNeedsUsername =>
+      'Sichere dir zuerst ein Handle — deine Einladung enthält es.';
+
+  @override
+  String get removeBroAction => 'Bro entfernen';
+
+  @override
+  String get removeBroConfirmTitle => 'Diesen Bro entfernen?';
+
+  @override
+  String get removeBroConfirmBody =>
+      'Du kannst später jederzeit eine neue Anfrage senden.';
+
+  @override
+  String get blockAction => 'Blockieren';
+
+  @override
+  String get blockConfirmTitle => 'Diese Person blockieren?';
+
+  @override
+  String get blockConfirmBody =>
+      'Ihr verschwindet komplett voneinander. Nur du kannst das rückgängig machen.';
+
+  @override
+  String get unblockAction => 'Blockierung aufheben';
+
+  @override
+  String get blockedTitle => 'Blockiert';
+
+  @override
+  String get reportAction => 'Melden';
+
+  @override
+  String get reportSheetTitle => 'Diese Person melden';
+
+  @override
+  String get reportReasonSpam => 'Spam oder Fake-Konto';
+
+  @override
+  String get reportReasonHarassment => 'Belästigung oder Mobbing';
+
+  @override
+  String get reportReasonImpersonation => 'Identitätsdiebstahl';
+
+  @override
+  String get reportReasonOther => 'Etwas anderes';
+
+  @override
+  String get reportSentToast => 'Meldung gesendet. Wir prüfen sie.';
+
+  @override
+  String get requestSentToast => 'Anfrage gesendet.';
+
+  @override
+  String get nowBrosToast => 'Ihr seid jetzt Bros!';
+
+  @override
+  String get requestFailedToast => 'Anfrage konnte nicht gesendet werden.';
+
+  @override
+  String get addBroAction => 'Bro hinzufügen';
+
+  @override
+  String get pendingLabel => 'Ausstehend';
+
+  @override
+  String get signInToAddBros => 'Melde dich an, um Bros hinzuzufügen.';
 }

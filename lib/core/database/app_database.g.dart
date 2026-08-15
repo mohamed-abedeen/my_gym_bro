@@ -91,6 +91,17 @@ class $UserProfilesTable extends UserProfiles
     type: DriftSqlType.string,
     requiredDuringInsert: false,
   );
+  static const VerificationMeta _usernameMeta = const VerificationMeta(
+    'username',
+  );
+  @override
+  late final GeneratedColumn<String> username = GeneratedColumn<String>(
+    'username',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
   static const VerificationMeta _avatarUrlMeta = const VerificationMeta(
     'avatarUrl',
   );
@@ -267,6 +278,7 @@ class $UserProfilesTable extends UserProfiles
     updatedAt,
     deletedAt,
     displayName,
+    username,
     avatarUrl,
     bannerUrl,
     goal,
@@ -338,6 +350,12 @@ class $UserProfilesTable extends UserProfiles
           data['display_name']!,
           _displayNameMeta,
         ),
+      );
+    }
+    if (data.containsKey('username')) {
+      context.handle(
+        _usernameMeta,
+        username.isAcceptableOrUnknown(data['username']!, _usernameMeta),
       );
     }
     if (data.containsKey('avatar_url')) {
@@ -460,20 +478,18 @@ class $UserProfilesTable extends UserProfiles
   UserProfile map(Map<String, dynamic> data, {String? tablePrefix}) {
     final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
     return UserProfile(
-      localId:
-          attachedDatabase.typeMapping.read(
-            DriftSqlType.int,
-            data['${effectivePrefix}local_id'],
-          )!,
+      localId: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}local_id'],
+      )!,
       remoteId: attachedDatabase.typeMapping.read(
         DriftSqlType.string,
         data['${effectivePrefix}remote_id'],
       ),
-      syncStatus:
-          attachedDatabase.typeMapping.read(
-            DriftSqlType.string,
-            data['${effectivePrefix}sync_status'],
-          )!,
+      syncStatus: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}sync_status'],
+      )!,
       createdAt: attachedDatabase.typeMapping.read(
         DriftSqlType.dateTime,
         data['${effectivePrefix}created_at'],
@@ -489,6 +505,10 @@ class $UserProfilesTable extends UserProfiles
       displayName: attachedDatabase.typeMapping.read(
         DriftSqlType.string,
         data['${effectivePrefix}display_name'],
+      ),
+      username: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}username'],
       ),
       avatarUrl: attachedDatabase.typeMapping.read(
         DriftSqlType.string,
@@ -518,43 +538,38 @@ class $UserProfilesTable extends UserProfiles
         DriftSqlType.double,
         data['${effectivePrefix}height_cm'],
       ),
-      weightUnit:
-          attachedDatabase.typeMapping.read(
-            DriftSqlType.string,
-            data['${effectivePrefix}weight_unit'],
-          )!,
-      preferredLanguage:
-          attachedDatabase.typeMapping.read(
-            DriftSqlType.string,
-            data['${effectivePrefix}preferred_language'],
-          )!,
+      weightUnit: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}weight_unit'],
+      )!,
+      preferredLanguage: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}preferred_language'],
+      )!,
       trialStartedAt: attachedDatabase.typeMapping.read(
         DriftSqlType.dateTime,
         data['${effectivePrefix}trial_started_at'],
       ),
-      subscriptionStatus:
-          attachedDatabase.typeMapping.read(
-            DriftSqlType.string,
-            data['${effectivePrefix}subscription_status'],
-          )!,
+      subscriptionStatus: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}subscription_status'],
+      )!,
       subscriptionExpiresAt: attachedDatabase.typeMapping.read(
         DriftSqlType.dateTime,
         data['${effectivePrefix}subscription_expires_at'],
       ),
-      defaultRestSeconds:
-          attachedDatabase.typeMapping.read(
-            DriftSqlType.int,
-            data['${effectivePrefix}default_rest_seconds'],
-          )!,
+      defaultRestSeconds: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}default_rest_seconds'],
+      )!,
       fcmToken: attachedDatabase.typeMapping.read(
         DriftSqlType.string,
         data['${effectivePrefix}fcm_token'],
       ),
-      notificationTone:
-          attachedDatabase.typeMapping.read(
-            DriftSqlType.string,
-            data['${effectivePrefix}notification_tone'],
-          )!,
+      notificationTone: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}notification_tone'],
+      )!,
     );
   }
 
@@ -572,6 +587,10 @@ class UserProfile extends DataClass implements Insertable<UserProfile> {
   final DateTime? updatedAt;
   final DateTime? deletedAt;
   final String? displayName;
+
+  /// Unique @handle, the only social lookup key (lowercase a-z/0-9/_, 3–20).
+  /// Null until claimed; uniqueness is enforced server-side on sync.
+  final String? username;
   final String? avatarUrl;
   final String? bannerUrl;
   final String? goal;
@@ -603,6 +622,7 @@ class UserProfile extends DataClass implements Insertable<UserProfile> {
     this.updatedAt,
     this.deletedAt,
     this.displayName,
+    this.username,
     this.avatarUrl,
     this.bannerUrl,
     this.goal,
@@ -638,6 +658,9 @@ class UserProfile extends DataClass implements Insertable<UserProfile> {
     }
     if (!nullToAbsent || displayName != null) {
       map['display_name'] = Variable<String>(displayName);
+    }
+    if (!nullToAbsent || username != null) {
+      map['username'] = Variable<String>(username);
     }
     if (!nullToAbsent || avatarUrl != null) {
       map['avatar_url'] = Variable<String>(avatarUrl);
@@ -682,66 +705,57 @@ class UserProfile extends DataClass implements Insertable<UserProfile> {
   UserProfilesCompanion toCompanion(bool nullToAbsent) {
     return UserProfilesCompanion(
       localId: Value(localId),
-      remoteId:
-          remoteId == null && nullToAbsent
-              ? const Value.absent()
-              : Value(remoteId),
+      remoteId: remoteId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(remoteId),
       syncStatus: Value(syncStatus),
-      createdAt:
-          createdAt == null && nullToAbsent
-              ? const Value.absent()
-              : Value(createdAt),
-      updatedAt:
-          updatedAt == null && nullToAbsent
-              ? const Value.absent()
-              : Value(updatedAt),
-      deletedAt:
-          deletedAt == null && nullToAbsent
-              ? const Value.absent()
-              : Value(deletedAt),
-      displayName:
-          displayName == null && nullToAbsent
-              ? const Value.absent()
-              : Value(displayName),
-      avatarUrl:
-          avatarUrl == null && nullToAbsent
-              ? const Value.absent()
-              : Value(avatarUrl),
-      bannerUrl:
-          bannerUrl == null && nullToAbsent
-              ? const Value.absent()
-              : Value(bannerUrl),
+      createdAt: createdAt == null && nullToAbsent
+          ? const Value.absent()
+          : Value(createdAt),
+      updatedAt: updatedAt == null && nullToAbsent
+          ? const Value.absent()
+          : Value(updatedAt),
+      deletedAt: deletedAt == null && nullToAbsent
+          ? const Value.absent()
+          : Value(deletedAt),
+      displayName: displayName == null && nullToAbsent
+          ? const Value.absent()
+          : Value(displayName),
+      username: username == null && nullToAbsent
+          ? const Value.absent()
+          : Value(username),
+      avatarUrl: avatarUrl == null && nullToAbsent
+          ? const Value.absent()
+          : Value(avatarUrl),
+      bannerUrl: bannerUrl == null && nullToAbsent
+          ? const Value.absent()
+          : Value(bannerUrl),
       goal: goal == null && nullToAbsent ? const Value.absent() : Value(goal),
-      experience:
-          experience == null && nullToAbsent
-              ? const Value.absent()
-              : Value(experience),
-      gender:
-          gender == null && nullToAbsent ? const Value.absent() : Value(gender),
-      bodyWeightKg:
-          bodyWeightKg == null && nullToAbsent
-              ? const Value.absent()
-              : Value(bodyWeightKg),
-      heightCm:
-          heightCm == null && nullToAbsent
-              ? const Value.absent()
-              : Value(heightCm),
+      experience: experience == null && nullToAbsent
+          ? const Value.absent()
+          : Value(experience),
+      gender: gender == null && nullToAbsent
+          ? const Value.absent()
+          : Value(gender),
+      bodyWeightKg: bodyWeightKg == null && nullToAbsent
+          ? const Value.absent()
+          : Value(bodyWeightKg),
+      heightCm: heightCm == null && nullToAbsent
+          ? const Value.absent()
+          : Value(heightCm),
       weightUnit: Value(weightUnit),
       preferredLanguage: Value(preferredLanguage),
-      trialStartedAt:
-          trialStartedAt == null && nullToAbsent
-              ? const Value.absent()
-              : Value(trialStartedAt),
+      trialStartedAt: trialStartedAt == null && nullToAbsent
+          ? const Value.absent()
+          : Value(trialStartedAt),
       subscriptionStatus: Value(subscriptionStatus),
-      subscriptionExpiresAt:
-          subscriptionExpiresAt == null && nullToAbsent
-              ? const Value.absent()
-              : Value(subscriptionExpiresAt),
+      subscriptionExpiresAt: subscriptionExpiresAt == null && nullToAbsent
+          ? const Value.absent()
+          : Value(subscriptionExpiresAt),
       defaultRestSeconds: Value(defaultRestSeconds),
-      fcmToken:
-          fcmToken == null && nullToAbsent
-              ? const Value.absent()
-              : Value(fcmToken),
+      fcmToken: fcmToken == null && nullToAbsent
+          ? const Value.absent()
+          : Value(fcmToken),
       notificationTone: Value(notificationTone),
     );
   }
@@ -759,6 +773,7 @@ class UserProfile extends DataClass implements Insertable<UserProfile> {
       updatedAt: serializer.fromJson<DateTime?>(json['updatedAt']),
       deletedAt: serializer.fromJson<DateTime?>(json['deletedAt']),
       displayName: serializer.fromJson<String?>(json['displayName']),
+      username: serializer.fromJson<String?>(json['username']),
       avatarUrl: serializer.fromJson<String?>(json['avatarUrl']),
       bannerUrl: serializer.fromJson<String?>(json['bannerUrl']),
       goal: serializer.fromJson<String?>(json['goal']),
@@ -791,6 +806,7 @@ class UserProfile extends DataClass implements Insertable<UserProfile> {
       'updatedAt': serializer.toJson<DateTime?>(updatedAt),
       'deletedAt': serializer.toJson<DateTime?>(deletedAt),
       'displayName': serializer.toJson<String?>(displayName),
+      'username': serializer.toJson<String?>(username),
       'avatarUrl': serializer.toJson<String?>(avatarUrl),
       'bannerUrl': serializer.toJson<String?>(bannerUrl),
       'goal': serializer.toJson<String?>(goal),
@@ -819,6 +835,7 @@ class UserProfile extends DataClass implements Insertable<UserProfile> {
     Value<DateTime?> updatedAt = const Value.absent(),
     Value<DateTime?> deletedAt = const Value.absent(),
     Value<String?> displayName = const Value.absent(),
+    Value<String?> username = const Value.absent(),
     Value<String?> avatarUrl = const Value.absent(),
     Value<String?> bannerUrl = const Value.absent(),
     Value<String?> goal = const Value.absent(),
@@ -842,6 +859,7 @@ class UserProfile extends DataClass implements Insertable<UserProfile> {
     updatedAt: updatedAt.present ? updatedAt.value : this.updatedAt,
     deletedAt: deletedAt.present ? deletedAt.value : this.deletedAt,
     displayName: displayName.present ? displayName.value : this.displayName,
+    username: username.present ? username.value : this.username,
     avatarUrl: avatarUrl.present ? avatarUrl.value : this.avatarUrl,
     bannerUrl: bannerUrl.present ? bannerUrl.value : this.bannerUrl,
     goal: goal.present ? goal.value : this.goal,
@@ -851,13 +869,13 @@ class UserProfile extends DataClass implements Insertable<UserProfile> {
     heightCm: heightCm.present ? heightCm.value : this.heightCm,
     weightUnit: weightUnit ?? this.weightUnit,
     preferredLanguage: preferredLanguage ?? this.preferredLanguage,
-    trialStartedAt:
-        trialStartedAt.present ? trialStartedAt.value : this.trialStartedAt,
+    trialStartedAt: trialStartedAt.present
+        ? trialStartedAt.value
+        : this.trialStartedAt,
     subscriptionStatus: subscriptionStatus ?? this.subscriptionStatus,
-    subscriptionExpiresAt:
-        subscriptionExpiresAt.present
-            ? subscriptionExpiresAt.value
-            : this.subscriptionExpiresAt,
+    subscriptionExpiresAt: subscriptionExpiresAt.present
+        ? subscriptionExpiresAt.value
+        : this.subscriptionExpiresAt,
     defaultRestSeconds: defaultRestSeconds ?? this.defaultRestSeconds,
     fcmToken: fcmToken.present ? fcmToken.value : this.fcmToken,
     notificationTone: notificationTone ?? this.notificationTone,
@@ -866,51 +884,49 @@ class UserProfile extends DataClass implements Insertable<UserProfile> {
     return UserProfile(
       localId: data.localId.present ? data.localId.value : this.localId,
       remoteId: data.remoteId.present ? data.remoteId.value : this.remoteId,
-      syncStatus:
-          data.syncStatus.present ? data.syncStatus.value : this.syncStatus,
+      syncStatus: data.syncStatus.present
+          ? data.syncStatus.value
+          : this.syncStatus,
       createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
       updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
       deletedAt: data.deletedAt.present ? data.deletedAt.value : this.deletedAt,
-      displayName:
-          data.displayName.present ? data.displayName.value : this.displayName,
+      displayName: data.displayName.present
+          ? data.displayName.value
+          : this.displayName,
+      username: data.username.present ? data.username.value : this.username,
       avatarUrl: data.avatarUrl.present ? data.avatarUrl.value : this.avatarUrl,
       bannerUrl: data.bannerUrl.present ? data.bannerUrl.value : this.bannerUrl,
       goal: data.goal.present ? data.goal.value : this.goal,
-      experience:
-          data.experience.present ? data.experience.value : this.experience,
+      experience: data.experience.present
+          ? data.experience.value
+          : this.experience,
       gender: data.gender.present ? data.gender.value : this.gender,
-      bodyWeightKg:
-          data.bodyWeightKg.present
-              ? data.bodyWeightKg.value
-              : this.bodyWeightKg,
+      bodyWeightKg: data.bodyWeightKg.present
+          ? data.bodyWeightKg.value
+          : this.bodyWeightKg,
       heightCm: data.heightCm.present ? data.heightCm.value : this.heightCm,
-      weightUnit:
-          data.weightUnit.present ? data.weightUnit.value : this.weightUnit,
-      preferredLanguage:
-          data.preferredLanguage.present
-              ? data.preferredLanguage.value
-              : this.preferredLanguage,
-      trialStartedAt:
-          data.trialStartedAt.present
-              ? data.trialStartedAt.value
-              : this.trialStartedAt,
-      subscriptionStatus:
-          data.subscriptionStatus.present
-              ? data.subscriptionStatus.value
-              : this.subscriptionStatus,
-      subscriptionExpiresAt:
-          data.subscriptionExpiresAt.present
-              ? data.subscriptionExpiresAt.value
-              : this.subscriptionExpiresAt,
-      defaultRestSeconds:
-          data.defaultRestSeconds.present
-              ? data.defaultRestSeconds.value
-              : this.defaultRestSeconds,
+      weightUnit: data.weightUnit.present
+          ? data.weightUnit.value
+          : this.weightUnit,
+      preferredLanguage: data.preferredLanguage.present
+          ? data.preferredLanguage.value
+          : this.preferredLanguage,
+      trialStartedAt: data.trialStartedAt.present
+          ? data.trialStartedAt.value
+          : this.trialStartedAt,
+      subscriptionStatus: data.subscriptionStatus.present
+          ? data.subscriptionStatus.value
+          : this.subscriptionStatus,
+      subscriptionExpiresAt: data.subscriptionExpiresAt.present
+          ? data.subscriptionExpiresAt.value
+          : this.subscriptionExpiresAt,
+      defaultRestSeconds: data.defaultRestSeconds.present
+          ? data.defaultRestSeconds.value
+          : this.defaultRestSeconds,
       fcmToken: data.fcmToken.present ? data.fcmToken.value : this.fcmToken,
-      notificationTone:
-          data.notificationTone.present
-              ? data.notificationTone.value
-              : this.notificationTone,
+      notificationTone: data.notificationTone.present
+          ? data.notificationTone.value
+          : this.notificationTone,
     );
   }
 
@@ -924,6 +940,7 @@ class UserProfile extends DataClass implements Insertable<UserProfile> {
           ..write('updatedAt: $updatedAt, ')
           ..write('deletedAt: $deletedAt, ')
           ..write('displayName: $displayName, ')
+          ..write('username: $username, ')
           ..write('avatarUrl: $avatarUrl, ')
           ..write('bannerUrl: $bannerUrl, ')
           ..write('goal: $goal, ')
@@ -952,6 +969,7 @@ class UserProfile extends DataClass implements Insertable<UserProfile> {
     updatedAt,
     deletedAt,
     displayName,
+    username,
     avatarUrl,
     bannerUrl,
     goal,
@@ -979,6 +997,7 @@ class UserProfile extends DataClass implements Insertable<UserProfile> {
           other.updatedAt == this.updatedAt &&
           other.deletedAt == this.deletedAt &&
           other.displayName == this.displayName &&
+          other.username == this.username &&
           other.avatarUrl == this.avatarUrl &&
           other.bannerUrl == this.bannerUrl &&
           other.goal == this.goal &&
@@ -1004,6 +1023,7 @@ class UserProfilesCompanion extends UpdateCompanion<UserProfile> {
   final Value<DateTime?> updatedAt;
   final Value<DateTime?> deletedAt;
   final Value<String?> displayName;
+  final Value<String?> username;
   final Value<String?> avatarUrl;
   final Value<String?> bannerUrl;
   final Value<String?> goal;
@@ -1027,6 +1047,7 @@ class UserProfilesCompanion extends UpdateCompanion<UserProfile> {
     this.updatedAt = const Value.absent(),
     this.deletedAt = const Value.absent(),
     this.displayName = const Value.absent(),
+    this.username = const Value.absent(),
     this.avatarUrl = const Value.absent(),
     this.bannerUrl = const Value.absent(),
     this.goal = const Value.absent(),
@@ -1051,6 +1072,7 @@ class UserProfilesCompanion extends UpdateCompanion<UserProfile> {
     this.updatedAt = const Value.absent(),
     this.deletedAt = const Value.absent(),
     this.displayName = const Value.absent(),
+    this.username = const Value.absent(),
     this.avatarUrl = const Value.absent(),
     this.bannerUrl = const Value.absent(),
     this.goal = const Value.absent(),
@@ -1075,6 +1097,7 @@ class UserProfilesCompanion extends UpdateCompanion<UserProfile> {
     Expression<DateTime>? updatedAt,
     Expression<DateTime>? deletedAt,
     Expression<String>? displayName,
+    Expression<String>? username,
     Expression<String>? avatarUrl,
     Expression<String>? bannerUrl,
     Expression<String>? goal,
@@ -1099,6 +1122,7 @@ class UserProfilesCompanion extends UpdateCompanion<UserProfile> {
       if (updatedAt != null) 'updated_at': updatedAt,
       if (deletedAt != null) 'deleted_at': deletedAt,
       if (displayName != null) 'display_name': displayName,
+      if (username != null) 'username': username,
       if (avatarUrl != null) 'avatar_url': avatarUrl,
       if (bannerUrl != null) 'banner_url': bannerUrl,
       if (goal != null) 'goal': goal,
@@ -1127,6 +1151,7 @@ class UserProfilesCompanion extends UpdateCompanion<UserProfile> {
     Value<DateTime?>? updatedAt,
     Value<DateTime?>? deletedAt,
     Value<String?>? displayName,
+    Value<String?>? username,
     Value<String?>? avatarUrl,
     Value<String?>? bannerUrl,
     Value<String?>? goal,
@@ -1151,6 +1176,7 @@ class UserProfilesCompanion extends UpdateCompanion<UserProfile> {
       updatedAt: updatedAt ?? this.updatedAt,
       deletedAt: deletedAt ?? this.deletedAt,
       displayName: displayName ?? this.displayName,
+      username: username ?? this.username,
       avatarUrl: avatarUrl ?? this.avatarUrl,
       bannerUrl: bannerUrl ?? this.bannerUrl,
       goal: goal ?? this.goal,
@@ -1193,6 +1219,9 @@ class UserProfilesCompanion extends UpdateCompanion<UserProfile> {
     }
     if (displayName.present) {
       map['display_name'] = Variable<String>(displayName.value);
+    }
+    if (username.present) {
+      map['username'] = Variable<String>(username.value);
     }
     if (avatarUrl.present) {
       map['avatar_url'] = Variable<String>(avatarUrl.value);
@@ -1254,6 +1283,7 @@ class UserProfilesCompanion extends UpdateCompanion<UserProfile> {
           ..write('updatedAt: $updatedAt, ')
           ..write('deletedAt: $deletedAt, ')
           ..write('displayName: $displayName, ')
+          ..write('username: $username, ')
           ..write('avatarUrl: $avatarUrl, ')
           ..write('bannerUrl: $bannerUrl, ')
           ..write('goal: $goal, ')
@@ -1694,20 +1724,18 @@ class $ExercisesTable extends Exercises
   Exercise map(Map<String, dynamic> data, {String? tablePrefix}) {
     final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
     return Exercise(
-      localId:
-          attachedDatabase.typeMapping.read(
-            DriftSqlType.int,
-            data['${effectivePrefix}local_id'],
-          )!,
+      localId: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}local_id'],
+      )!,
       remoteId: attachedDatabase.typeMapping.read(
         DriftSqlType.string,
         data['${effectivePrefix}remote_id'],
       ),
-      syncStatus:
-          attachedDatabase.typeMapping.read(
-            DriftSqlType.string,
-            data['${effectivePrefix}sync_status'],
-          )!,
+      syncStatus: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}sync_status'],
+      )!,
       createdAt: attachedDatabase.typeMapping.read(
         DriftSqlType.dateTime,
         data['${effectivePrefix}created_at'],
@@ -1720,16 +1748,14 @@ class $ExercisesTable extends Exercises
         DriftSqlType.dateTime,
         data['${effectivePrefix}deleted_at'],
       ),
-      exerciseId:
-          attachedDatabase.typeMapping.read(
-            DriftSqlType.string,
-            data['${effectivePrefix}exercise_id'],
-          )!,
-      name:
-          attachedDatabase.typeMapping.read(
-            DriftSqlType.string,
-            data['${effectivePrefix}name'],
-          )!,
+      exerciseId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}exercise_id'],
+      )!,
+      name: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}name'],
+      )!,
       bodyParts: attachedDatabase.typeMapping.read(
         DriftSqlType.string,
         data['${effectivePrefix}body_parts'],
@@ -1766,21 +1792,18 @@ class $ExercisesTable extends Exercises
         DriftSqlType.string,
         data['${effectivePrefix}difficulty'],
       ),
-      isCustom:
-          attachedDatabase.typeMapping.read(
-            DriftSqlType.bool,
-            data['${effectivePrefix}is_custom'],
-          )!,
-      usageCount:
-          attachedDatabase.typeMapping.read(
-            DriftSqlType.int,
-            data['${effectivePrefix}usage_count'],
-          )!,
-      isFavorite:
-          attachedDatabase.typeMapping.read(
-            DriftSqlType.bool,
-            data['${effectivePrefix}is_favorite'],
-          )!,
+      isCustom: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}is_custom'],
+      )!,
+      usageCount: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}usage_count'],
+      )!,
+      isFavorite: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}is_favorite'],
+      )!,
     );
   }
 
@@ -1890,59 +1913,48 @@ class Exercise extends DataClass implements Insertable<Exercise> {
   ExercisesCompanion toCompanion(bool nullToAbsent) {
     return ExercisesCompanion(
       localId: Value(localId),
-      remoteId:
-          remoteId == null && nullToAbsent
-              ? const Value.absent()
-              : Value(remoteId),
+      remoteId: remoteId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(remoteId),
       syncStatus: Value(syncStatus),
-      createdAt:
-          createdAt == null && nullToAbsent
-              ? const Value.absent()
-              : Value(createdAt),
-      updatedAt:
-          updatedAt == null && nullToAbsent
-              ? const Value.absent()
-              : Value(updatedAt),
-      deletedAt:
-          deletedAt == null && nullToAbsent
-              ? const Value.absent()
-              : Value(deletedAt),
+      createdAt: createdAt == null && nullToAbsent
+          ? const Value.absent()
+          : Value(createdAt),
+      updatedAt: updatedAt == null && nullToAbsent
+          ? const Value.absent()
+          : Value(updatedAt),
+      deletedAt: deletedAt == null && nullToAbsent
+          ? const Value.absent()
+          : Value(deletedAt),
       exerciseId: Value(exerciseId),
       name: Value(name),
-      bodyParts:
-          bodyParts == null && nullToAbsent
-              ? const Value.absent()
-              : Value(bodyParts),
-      targetMuscles:
-          targetMuscles == null && nullToAbsent
-              ? const Value.absent()
-              : Value(targetMuscles),
-      secondaryMuscles:
-          secondaryMuscles == null && nullToAbsent
-              ? const Value.absent()
-              : Value(secondaryMuscles),
-      equipments:
-          equipments == null && nullToAbsent
-              ? const Value.absent()
-              : Value(equipments),
-      gifUrl:
-          gifUrl == null && nullToAbsent ? const Value.absent() : Value(gifUrl),
-      instructions:
-          instructions == null && nullToAbsent
-              ? const Value.absent()
-              : Value(instructions),
-      muscleGroup:
-          muscleGroup == null && nullToAbsent
-              ? const Value.absent()
-              : Value(muscleGroup),
-      muscleGroupKey:
-          muscleGroupKey == null && nullToAbsent
-              ? const Value.absent()
-              : Value(muscleGroupKey),
-      difficulty:
-          difficulty == null && nullToAbsent
-              ? const Value.absent()
-              : Value(difficulty),
+      bodyParts: bodyParts == null && nullToAbsent
+          ? const Value.absent()
+          : Value(bodyParts),
+      targetMuscles: targetMuscles == null && nullToAbsent
+          ? const Value.absent()
+          : Value(targetMuscles),
+      secondaryMuscles: secondaryMuscles == null && nullToAbsent
+          ? const Value.absent()
+          : Value(secondaryMuscles),
+      equipments: equipments == null && nullToAbsent
+          ? const Value.absent()
+          : Value(equipments),
+      gifUrl: gifUrl == null && nullToAbsent
+          ? const Value.absent()
+          : Value(gifUrl),
+      instructions: instructions == null && nullToAbsent
+          ? const Value.absent()
+          : Value(instructions),
+      muscleGroup: muscleGroup == null && nullToAbsent
+          ? const Value.absent()
+          : Value(muscleGroup),
+      muscleGroupKey: muscleGroupKey == null && nullToAbsent
+          ? const Value.absent()
+          : Value(muscleGroupKey),
+      difficulty: difficulty == null && nullToAbsent
+          ? const Value.absent()
+          : Value(difficulty),
       isCustom: Value(isCustom),
       usageCount: Value(usageCount),
       isFavorite: Value(isFavorite),
@@ -2035,18 +2047,19 @@ class Exercise extends DataClass implements Insertable<Exercise> {
     exerciseId: exerciseId ?? this.exerciseId,
     name: name ?? this.name,
     bodyParts: bodyParts.present ? bodyParts.value : this.bodyParts,
-    targetMuscles:
-        targetMuscles.present ? targetMuscles.value : this.targetMuscles,
-    secondaryMuscles:
-        secondaryMuscles.present
-            ? secondaryMuscles.value
-            : this.secondaryMuscles,
+    targetMuscles: targetMuscles.present
+        ? targetMuscles.value
+        : this.targetMuscles,
+    secondaryMuscles: secondaryMuscles.present
+        ? secondaryMuscles.value
+        : this.secondaryMuscles,
     equipments: equipments.present ? equipments.value : this.equipments,
     gifUrl: gifUrl.present ? gifUrl.value : this.gifUrl,
     instructions: instructions.present ? instructions.value : this.instructions,
     muscleGroup: muscleGroup.present ? muscleGroup.value : this.muscleGroup,
-    muscleGroupKey:
-        muscleGroupKey.present ? muscleGroupKey.value : this.muscleGroupKey,
+    muscleGroupKey: muscleGroupKey.present
+        ? muscleGroupKey.value
+        : this.muscleGroupKey,
     difficulty: difficulty.present ? difficulty.value : this.difficulty,
     isCustom: isCustom ?? this.isCustom,
     usageCount: usageCount ?? this.usageCount,
@@ -2056,43 +2069,46 @@ class Exercise extends DataClass implements Insertable<Exercise> {
     return Exercise(
       localId: data.localId.present ? data.localId.value : this.localId,
       remoteId: data.remoteId.present ? data.remoteId.value : this.remoteId,
-      syncStatus:
-          data.syncStatus.present ? data.syncStatus.value : this.syncStatus,
+      syncStatus: data.syncStatus.present
+          ? data.syncStatus.value
+          : this.syncStatus,
       createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
       updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
       deletedAt: data.deletedAt.present ? data.deletedAt.value : this.deletedAt,
-      exerciseId:
-          data.exerciseId.present ? data.exerciseId.value : this.exerciseId,
+      exerciseId: data.exerciseId.present
+          ? data.exerciseId.value
+          : this.exerciseId,
       name: data.name.present ? data.name.value : this.name,
       bodyParts: data.bodyParts.present ? data.bodyParts.value : this.bodyParts,
-      targetMuscles:
-          data.targetMuscles.present
-              ? data.targetMuscles.value
-              : this.targetMuscles,
-      secondaryMuscles:
-          data.secondaryMuscles.present
-              ? data.secondaryMuscles.value
-              : this.secondaryMuscles,
-      equipments:
-          data.equipments.present ? data.equipments.value : this.equipments,
+      targetMuscles: data.targetMuscles.present
+          ? data.targetMuscles.value
+          : this.targetMuscles,
+      secondaryMuscles: data.secondaryMuscles.present
+          ? data.secondaryMuscles.value
+          : this.secondaryMuscles,
+      equipments: data.equipments.present
+          ? data.equipments.value
+          : this.equipments,
       gifUrl: data.gifUrl.present ? data.gifUrl.value : this.gifUrl,
-      instructions:
-          data.instructions.present
-              ? data.instructions.value
-              : this.instructions,
-      muscleGroup:
-          data.muscleGroup.present ? data.muscleGroup.value : this.muscleGroup,
-      muscleGroupKey:
-          data.muscleGroupKey.present
-              ? data.muscleGroupKey.value
-              : this.muscleGroupKey,
-      difficulty:
-          data.difficulty.present ? data.difficulty.value : this.difficulty,
+      instructions: data.instructions.present
+          ? data.instructions.value
+          : this.instructions,
+      muscleGroup: data.muscleGroup.present
+          ? data.muscleGroup.value
+          : this.muscleGroup,
+      muscleGroupKey: data.muscleGroupKey.present
+          ? data.muscleGroupKey.value
+          : this.muscleGroupKey,
+      difficulty: data.difficulty.present
+          ? data.difficulty.value
+          : this.difficulty,
       isCustom: data.isCustom.present ? data.isCustom.value : this.isCustom,
-      usageCount:
-          data.usageCount.present ? data.usageCount.value : this.usageCount,
-      isFavorite:
-          data.isFavorite.present ? data.isFavorite.value : this.isFavorite,
+      usageCount: data.usageCount.present
+          ? data.usageCount.value
+          : this.usageCount,
+      isFavorite: data.isFavorite.present
+          ? data.isFavorite.value
+          : this.isFavorite,
     );
   }
 
@@ -2607,20 +2623,18 @@ class $SchedulesTable extends Schedules
   Schedule map(Map<String, dynamic> data, {String? tablePrefix}) {
     final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
     return Schedule(
-      localId:
-          attachedDatabase.typeMapping.read(
-            DriftSqlType.int,
-            data['${effectivePrefix}local_id'],
-          )!,
+      localId: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}local_id'],
+      )!,
       remoteId: attachedDatabase.typeMapping.read(
         DriftSqlType.string,
         data['${effectivePrefix}remote_id'],
       ),
-      syncStatus:
-          attachedDatabase.typeMapping.read(
-            DriftSqlType.string,
-            data['${effectivePrefix}sync_status'],
-          )!,
+      syncStatus: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}sync_status'],
+      )!,
       createdAt: attachedDatabase.typeMapping.read(
         DriftSqlType.dateTime,
         data['${effectivePrefix}created_at'],
@@ -2633,16 +2647,14 @@ class $SchedulesTable extends Schedules
         DriftSqlType.dateTime,
         data['${effectivePrefix}deleted_at'],
       ),
-      name:
-          attachedDatabase.typeMapping.read(
-            DriftSqlType.string,
-            data['${effectivePrefix}name'],
-          )!,
-      isActive:
-          attachedDatabase.typeMapping.read(
-            DriftSqlType.bool,
-            data['${effectivePrefix}is_active'],
-          )!,
+      name: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}name'],
+      )!,
+      isActive: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}is_active'],
+      )!,
     );
   }
 
@@ -2696,23 +2708,19 @@ class Schedule extends DataClass implements Insertable<Schedule> {
   SchedulesCompanion toCompanion(bool nullToAbsent) {
     return SchedulesCompanion(
       localId: Value(localId),
-      remoteId:
-          remoteId == null && nullToAbsent
-              ? const Value.absent()
-              : Value(remoteId),
+      remoteId: remoteId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(remoteId),
       syncStatus: Value(syncStatus),
-      createdAt:
-          createdAt == null && nullToAbsent
-              ? const Value.absent()
-              : Value(createdAt),
-      updatedAt:
-          updatedAt == null && nullToAbsent
-              ? const Value.absent()
-              : Value(updatedAt),
-      deletedAt:
-          deletedAt == null && nullToAbsent
-              ? const Value.absent()
-              : Value(deletedAt),
+      createdAt: createdAt == null && nullToAbsent
+          ? const Value.absent()
+          : Value(createdAt),
+      updatedAt: updatedAt == null && nullToAbsent
+          ? const Value.absent()
+          : Value(updatedAt),
+      deletedAt: deletedAt == null && nullToAbsent
+          ? const Value.absent()
+          : Value(deletedAt),
       name: Value(name),
       isActive: Value(isActive),
     );
@@ -2772,8 +2780,9 @@ class Schedule extends DataClass implements Insertable<Schedule> {
     return Schedule(
       localId: data.localId.present ? data.localId.value : this.localId,
       remoteId: data.remoteId.present ? data.remoteId.value : this.remoteId,
-      syncStatus:
-          data.syncStatus.present ? data.syncStatus.value : this.syncStatus,
+      syncStatus: data.syncStatus.present
+          ? data.syncStatus.value
+          : this.syncStatus,
       createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
       updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
       deletedAt: data.deletedAt.present ? data.deletedAt.value : this.deletedAt,
@@ -3165,20 +3174,18 @@ class $ScheduleDaysTable extends ScheduleDays
   ScheduleDay map(Map<String, dynamic> data, {String? tablePrefix}) {
     final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
     return ScheduleDay(
-      localId:
-          attachedDatabase.typeMapping.read(
-            DriftSqlType.int,
-            data['${effectivePrefix}local_id'],
-          )!,
+      localId: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}local_id'],
+      )!,
       remoteId: attachedDatabase.typeMapping.read(
         DriftSqlType.string,
         data['${effectivePrefix}remote_id'],
       ),
-      syncStatus:
-          attachedDatabase.typeMapping.read(
-            DriftSqlType.string,
-            data['${effectivePrefix}sync_status'],
-          )!,
+      syncStatus: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}sync_status'],
+      )!,
       createdAt: attachedDatabase.typeMapping.read(
         DriftSqlType.dateTime,
         data['${effectivePrefix}created_at'],
@@ -3191,25 +3198,22 @@ class $ScheduleDaysTable extends ScheduleDays
         DriftSqlType.dateTime,
         data['${effectivePrefix}deleted_at'],
       ),
-      scheduleId:
-          attachedDatabase.typeMapping.read(
-            DriftSqlType.int,
-            data['${effectivePrefix}schedule_id'],
-          )!,
-      dayIndex:
-          attachedDatabase.typeMapping.read(
-            DriftSqlType.int,
-            data['${effectivePrefix}day_index'],
-          )!,
+      scheduleId: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}schedule_id'],
+      )!,
+      dayIndex: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}day_index'],
+      )!,
       label: attachedDatabase.typeMapping.read(
         DriftSqlType.string,
         data['${effectivePrefix}label'],
       ),
-      isRestDay:
-          attachedDatabase.typeMapping.read(
-            DriftSqlType.bool,
-            data['${effectivePrefix}is_rest_day'],
-          )!,
+      isRestDay: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}is_rest_day'],
+      )!,
     );
   }
 
@@ -3271,27 +3275,24 @@ class ScheduleDay extends DataClass implements Insertable<ScheduleDay> {
   ScheduleDaysCompanion toCompanion(bool nullToAbsent) {
     return ScheduleDaysCompanion(
       localId: Value(localId),
-      remoteId:
-          remoteId == null && nullToAbsent
-              ? const Value.absent()
-              : Value(remoteId),
+      remoteId: remoteId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(remoteId),
       syncStatus: Value(syncStatus),
-      createdAt:
-          createdAt == null && nullToAbsent
-              ? const Value.absent()
-              : Value(createdAt),
-      updatedAt:
-          updatedAt == null && nullToAbsent
-              ? const Value.absent()
-              : Value(updatedAt),
-      deletedAt:
-          deletedAt == null && nullToAbsent
-              ? const Value.absent()
-              : Value(deletedAt),
+      createdAt: createdAt == null && nullToAbsent
+          ? const Value.absent()
+          : Value(createdAt),
+      updatedAt: updatedAt == null && nullToAbsent
+          ? const Value.absent()
+          : Value(updatedAt),
+      deletedAt: deletedAt == null && nullToAbsent
+          ? const Value.absent()
+          : Value(deletedAt),
       scheduleId: Value(scheduleId),
       dayIndex: Value(dayIndex),
-      label:
-          label == null && nullToAbsent ? const Value.absent() : Value(label),
+      label: label == null && nullToAbsent
+          ? const Value.absent()
+          : Value(label),
       isRestDay: Value(isRestDay),
     );
   }
@@ -3358,13 +3359,15 @@ class ScheduleDay extends DataClass implements Insertable<ScheduleDay> {
     return ScheduleDay(
       localId: data.localId.present ? data.localId.value : this.localId,
       remoteId: data.remoteId.present ? data.remoteId.value : this.remoteId,
-      syncStatus:
-          data.syncStatus.present ? data.syncStatus.value : this.syncStatus,
+      syncStatus: data.syncStatus.present
+          ? data.syncStatus.value
+          : this.syncStatus,
       createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
       updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
       deletedAt: data.deletedAt.present ? data.deletedAt.value : this.deletedAt,
-      scheduleId:
-          data.scheduleId.present ? data.scheduleId.value : this.scheduleId,
+      scheduleId: data.scheduleId.present
+          ? data.scheduleId.value
+          : this.scheduleId,
       dayIndex: data.dayIndex.present ? data.dayIndex.value : this.dayIndex,
       label: data.label.present ? data.label.value : this.label,
       isRestDay: data.isRestDay.present ? data.isRestDay.value : this.isRestDay,
@@ -3847,20 +3850,18 @@ class $ScheduledExercisesTable extends ScheduledExercises
   ScheduledExercise map(Map<String, dynamic> data, {String? tablePrefix}) {
     final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
     return ScheduledExercise(
-      localId:
-          attachedDatabase.typeMapping.read(
-            DriftSqlType.int,
-            data['${effectivePrefix}local_id'],
-          )!,
+      localId: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}local_id'],
+      )!,
       remoteId: attachedDatabase.typeMapping.read(
         DriftSqlType.string,
         data['${effectivePrefix}remote_id'],
       ),
-      syncStatus:
-          attachedDatabase.typeMapping.read(
-            DriftSqlType.string,
-            data['${effectivePrefix}sync_status'],
-          )!,
+      syncStatus: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}sync_status'],
+      )!,
       createdAt: attachedDatabase.typeMapping.read(
         DriftSqlType.dateTime,
         data['${effectivePrefix}created_at'],
@@ -3873,31 +3874,26 @@ class $ScheduledExercisesTable extends ScheduledExercises
         DriftSqlType.dateTime,
         data['${effectivePrefix}deleted_at'],
       ),
-      scheduleDayId:
-          attachedDatabase.typeMapping.read(
-            DriftSqlType.int,
-            data['${effectivePrefix}schedule_day_id'],
-          )!,
-      exerciseId:
-          attachedDatabase.typeMapping.read(
-            DriftSqlType.string,
-            data['${effectivePrefix}exercise_id'],
-          )!,
-      orderIndex:
-          attachedDatabase.typeMapping.read(
-            DriftSqlType.int,
-            data['${effectivePrefix}order_index'],
-          )!,
-      targetSets:
-          attachedDatabase.typeMapping.read(
-            DriftSqlType.int,
-            data['${effectivePrefix}target_sets'],
-          )!,
-      targetReps:
-          attachedDatabase.typeMapping.read(
-            DriftSqlType.int,
-            data['${effectivePrefix}target_reps'],
-          )!,
+      scheduleDayId: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}schedule_day_id'],
+      )!,
+      exerciseId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}exercise_id'],
+      )!,
+      orderIndex: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}order_index'],
+      )!,
+      targetSets: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}target_sets'],
+      )!,
+      targetReps: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}target_reps'],
+      )!,
       targetDurationSeconds: attachedDatabase.typeMapping.read(
         DriftSqlType.int,
         data['${effectivePrefix}target_duration_seconds'],
@@ -3979,36 +3975,30 @@ class ScheduledExercise extends DataClass
   ScheduledExercisesCompanion toCompanion(bool nullToAbsent) {
     return ScheduledExercisesCompanion(
       localId: Value(localId),
-      remoteId:
-          remoteId == null && nullToAbsent
-              ? const Value.absent()
-              : Value(remoteId),
+      remoteId: remoteId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(remoteId),
       syncStatus: Value(syncStatus),
-      createdAt:
-          createdAt == null && nullToAbsent
-              ? const Value.absent()
-              : Value(createdAt),
-      updatedAt:
-          updatedAt == null && nullToAbsent
-              ? const Value.absent()
-              : Value(updatedAt),
-      deletedAt:
-          deletedAt == null && nullToAbsent
-              ? const Value.absent()
-              : Value(deletedAt),
+      createdAt: createdAt == null && nullToAbsent
+          ? const Value.absent()
+          : Value(createdAt),
+      updatedAt: updatedAt == null && nullToAbsent
+          ? const Value.absent()
+          : Value(updatedAt),
+      deletedAt: deletedAt == null && nullToAbsent
+          ? const Value.absent()
+          : Value(deletedAt),
       scheduleDayId: Value(scheduleDayId),
       exerciseId: Value(exerciseId),
       orderIndex: Value(orderIndex),
       targetSets: Value(targetSets),
       targetReps: Value(targetReps),
-      targetDurationSeconds:
-          targetDurationSeconds == null && nullToAbsent
-              ? const Value.absent()
-              : Value(targetDurationSeconds),
-      targetDistance:
-          targetDistance == null && nullToAbsent
-              ? const Value.absent()
-              : Value(targetDistance),
+      targetDurationSeconds: targetDurationSeconds == null && nullToAbsent
+          ? const Value.absent()
+          : Value(targetDurationSeconds),
+      targetDistance: targetDistance == null && nullToAbsent
+          ? const Value.absent()
+          : Value(targetDistance),
     );
   }
 
@@ -4081,42 +4071,44 @@ class ScheduledExercise extends DataClass
     orderIndex: orderIndex ?? this.orderIndex,
     targetSets: targetSets ?? this.targetSets,
     targetReps: targetReps ?? this.targetReps,
-    targetDurationSeconds:
-        targetDurationSeconds.present
-            ? targetDurationSeconds.value
-            : this.targetDurationSeconds,
-    targetDistance:
-        targetDistance.present ? targetDistance.value : this.targetDistance,
+    targetDurationSeconds: targetDurationSeconds.present
+        ? targetDurationSeconds.value
+        : this.targetDurationSeconds,
+    targetDistance: targetDistance.present
+        ? targetDistance.value
+        : this.targetDistance,
   );
   ScheduledExercise copyWithCompanion(ScheduledExercisesCompanion data) {
     return ScheduledExercise(
       localId: data.localId.present ? data.localId.value : this.localId,
       remoteId: data.remoteId.present ? data.remoteId.value : this.remoteId,
-      syncStatus:
-          data.syncStatus.present ? data.syncStatus.value : this.syncStatus,
+      syncStatus: data.syncStatus.present
+          ? data.syncStatus.value
+          : this.syncStatus,
       createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
       updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
       deletedAt: data.deletedAt.present ? data.deletedAt.value : this.deletedAt,
-      scheduleDayId:
-          data.scheduleDayId.present
-              ? data.scheduleDayId.value
-              : this.scheduleDayId,
-      exerciseId:
-          data.exerciseId.present ? data.exerciseId.value : this.exerciseId,
-      orderIndex:
-          data.orderIndex.present ? data.orderIndex.value : this.orderIndex,
-      targetSets:
-          data.targetSets.present ? data.targetSets.value : this.targetSets,
-      targetReps:
-          data.targetReps.present ? data.targetReps.value : this.targetReps,
-      targetDurationSeconds:
-          data.targetDurationSeconds.present
-              ? data.targetDurationSeconds.value
-              : this.targetDurationSeconds,
-      targetDistance:
-          data.targetDistance.present
-              ? data.targetDistance.value
-              : this.targetDistance,
+      scheduleDayId: data.scheduleDayId.present
+          ? data.scheduleDayId.value
+          : this.scheduleDayId,
+      exerciseId: data.exerciseId.present
+          ? data.exerciseId.value
+          : this.exerciseId,
+      orderIndex: data.orderIndex.present
+          ? data.orderIndex.value
+          : this.orderIndex,
+      targetSets: data.targetSets.present
+          ? data.targetSets.value
+          : this.targetSets,
+      targetReps: data.targetReps.present
+          ? data.targetReps.value
+          : this.targetReps,
+      targetDurationSeconds: data.targetDurationSeconds.present
+          ? data.targetDurationSeconds.value
+          : this.targetDurationSeconds,
+      targetDistance: data.targetDistance.present
+          ? data.targetDistance.value
+          : this.targetDistance,
     );
   }
 
@@ -4614,20 +4606,18 @@ class $SessionsTable extends Sessions with TableInfo<$SessionsTable, Session> {
   Session map(Map<String, dynamic> data, {String? tablePrefix}) {
     final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
     return Session(
-      localId:
-          attachedDatabase.typeMapping.read(
-            DriftSqlType.int,
-            data['${effectivePrefix}local_id'],
-          )!,
+      localId: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}local_id'],
+      )!,
       remoteId: attachedDatabase.typeMapping.read(
         DriftSqlType.string,
         data['${effectivePrefix}remote_id'],
       ),
-      syncStatus:
-          attachedDatabase.typeMapping.read(
-            DriftSqlType.string,
-            data['${effectivePrefix}sync_status'],
-          )!,
+      syncStatus: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}sync_status'],
+      )!,
       createdAt: attachedDatabase.typeMapping.read(
         DriftSqlType.dateTime,
         data['${effectivePrefix}created_at'],
@@ -4644,11 +4634,10 @@ class $SessionsTable extends Sessions with TableInfo<$SessionsTable, Session> {
         DriftSqlType.int,
         data['${effectivePrefix}schedule_id'],
       ),
-      startedAt:
-          attachedDatabase.typeMapping.read(
-            DriftSqlType.dateTime,
-            data['${effectivePrefix}started_at'],
-          )!,
+      startedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}started_at'],
+      )!,
       finishedAt: attachedDatabase.typeMapping.read(
         DriftSqlType.dateTime,
         data['${effectivePrefix}finished_at'],
@@ -4740,42 +4729,35 @@ class Session extends DataClass implements Insertable<Session> {
   SessionsCompanion toCompanion(bool nullToAbsent) {
     return SessionsCompanion(
       localId: Value(localId),
-      remoteId:
-          remoteId == null && nullToAbsent
-              ? const Value.absent()
-              : Value(remoteId),
+      remoteId: remoteId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(remoteId),
       syncStatus: Value(syncStatus),
-      createdAt:
-          createdAt == null && nullToAbsent
-              ? const Value.absent()
-              : Value(createdAt),
-      updatedAt:
-          updatedAt == null && nullToAbsent
-              ? const Value.absent()
-              : Value(updatedAt),
-      deletedAt:
-          deletedAt == null && nullToAbsent
-              ? const Value.absent()
-              : Value(deletedAt),
-      scheduleId:
-          scheduleId == null && nullToAbsent
-              ? const Value.absent()
-              : Value(scheduleId),
+      createdAt: createdAt == null && nullToAbsent
+          ? const Value.absent()
+          : Value(createdAt),
+      updatedAt: updatedAt == null && nullToAbsent
+          ? const Value.absent()
+          : Value(updatedAt),
+      deletedAt: deletedAt == null && nullToAbsent
+          ? const Value.absent()
+          : Value(deletedAt),
+      scheduleId: scheduleId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(scheduleId),
       startedAt: Value(startedAt),
-      finishedAt:
-          finishedAt == null && nullToAbsent
-              ? const Value.absent()
-              : Value(finishedAt),
-      durationSeconds:
-          durationSeconds == null && nullToAbsent
-              ? const Value.absent()
-              : Value(durationSeconds),
-      totalVolume:
-          totalVolume == null && nullToAbsent
-              ? const Value.absent()
-              : Value(totalVolume),
-      notes:
-          notes == null && nullToAbsent ? const Value.absent() : Value(notes),
+      finishedAt: finishedAt == null && nullToAbsent
+          ? const Value.absent()
+          : Value(finishedAt),
+      durationSeconds: durationSeconds == null && nullToAbsent
+          ? const Value.absent()
+          : Value(durationSeconds),
+      totalVolume: totalVolume == null && nullToAbsent
+          ? const Value.absent()
+          : Value(totalVolume),
+      notes: notes == null && nullToAbsent
+          ? const Value.absent()
+          : Value(notes),
     );
   }
 
@@ -4841,8 +4823,9 @@ class Session extends DataClass implements Insertable<Session> {
     scheduleId: scheduleId.present ? scheduleId.value : this.scheduleId,
     startedAt: startedAt ?? this.startedAt,
     finishedAt: finishedAt.present ? finishedAt.value : this.finishedAt,
-    durationSeconds:
-        durationSeconds.present ? durationSeconds.value : this.durationSeconds,
+    durationSeconds: durationSeconds.present
+        ? durationSeconds.value
+        : this.durationSeconds,
     totalVolume: totalVolume.present ? totalVolume.value : this.totalVolume,
     notes: notes.present ? notes.value : this.notes,
   );
@@ -4850,22 +4833,25 @@ class Session extends DataClass implements Insertable<Session> {
     return Session(
       localId: data.localId.present ? data.localId.value : this.localId,
       remoteId: data.remoteId.present ? data.remoteId.value : this.remoteId,
-      syncStatus:
-          data.syncStatus.present ? data.syncStatus.value : this.syncStatus,
+      syncStatus: data.syncStatus.present
+          ? data.syncStatus.value
+          : this.syncStatus,
       createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
       updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
       deletedAt: data.deletedAt.present ? data.deletedAt.value : this.deletedAt,
-      scheduleId:
-          data.scheduleId.present ? data.scheduleId.value : this.scheduleId,
+      scheduleId: data.scheduleId.present
+          ? data.scheduleId.value
+          : this.scheduleId,
       startedAt: data.startedAt.present ? data.startedAt.value : this.startedAt,
-      finishedAt:
-          data.finishedAt.present ? data.finishedAt.value : this.finishedAt,
-      durationSeconds:
-          data.durationSeconds.present
-              ? data.durationSeconds.value
-              : this.durationSeconds,
-      totalVolume:
-          data.totalVolume.present ? data.totalVolume.value : this.totalVolume,
+      finishedAt: data.finishedAt.present
+          ? data.finishedAt.value
+          : this.finishedAt,
+      durationSeconds: data.durationSeconds.present
+          ? data.durationSeconds.value
+          : this.durationSeconds,
+      totalVolume: data.totalVolume.present
+          ? data.totalVolume.value
+          : this.totalVolume,
       notes: data.notes.present ? data.notes.value : this.notes,
     );
   }
@@ -5291,20 +5277,18 @@ class $SessionExercisesTable extends SessionExercises
   SessionExercise map(Map<String, dynamic> data, {String? tablePrefix}) {
     final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
     return SessionExercise(
-      localId:
-          attachedDatabase.typeMapping.read(
-            DriftSqlType.int,
-            data['${effectivePrefix}local_id'],
-          )!,
+      localId: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}local_id'],
+      )!,
       remoteId: attachedDatabase.typeMapping.read(
         DriftSqlType.string,
         data['${effectivePrefix}remote_id'],
       ),
-      syncStatus:
-          attachedDatabase.typeMapping.read(
-            DriftSqlType.string,
-            data['${effectivePrefix}sync_status'],
-          )!,
+      syncStatus: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}sync_status'],
+      )!,
       createdAt: attachedDatabase.typeMapping.read(
         DriftSqlType.dateTime,
         data['${effectivePrefix}created_at'],
@@ -5317,21 +5301,18 @@ class $SessionExercisesTable extends SessionExercises
         DriftSqlType.dateTime,
         data['${effectivePrefix}deleted_at'],
       ),
-      sessionId:
-          attachedDatabase.typeMapping.read(
-            DriftSqlType.int,
-            data['${effectivePrefix}session_id'],
-          )!,
-      exerciseId:
-          attachedDatabase.typeMapping.read(
-            DriftSqlType.string,
-            data['${effectivePrefix}exercise_id'],
-          )!,
-      orderIndex:
-          attachedDatabase.typeMapping.read(
-            DriftSqlType.int,
-            data['${effectivePrefix}order_index'],
-          )!,
+      sessionId: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}session_id'],
+      )!,
+      exerciseId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}exercise_id'],
+      )!,
+      orderIndex: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}order_index'],
+      )!,
     );
   }
 
@@ -5388,23 +5369,19 @@ class SessionExercise extends DataClass implements Insertable<SessionExercise> {
   SessionExercisesCompanion toCompanion(bool nullToAbsent) {
     return SessionExercisesCompanion(
       localId: Value(localId),
-      remoteId:
-          remoteId == null && nullToAbsent
-              ? const Value.absent()
-              : Value(remoteId),
+      remoteId: remoteId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(remoteId),
       syncStatus: Value(syncStatus),
-      createdAt:
-          createdAt == null && nullToAbsent
-              ? const Value.absent()
-              : Value(createdAt),
-      updatedAt:
-          updatedAt == null && nullToAbsent
-              ? const Value.absent()
-              : Value(updatedAt),
-      deletedAt:
-          deletedAt == null && nullToAbsent
-              ? const Value.absent()
-              : Value(deletedAt),
+      createdAt: createdAt == null && nullToAbsent
+          ? const Value.absent()
+          : Value(createdAt),
+      updatedAt: updatedAt == null && nullToAbsent
+          ? const Value.absent()
+          : Value(updatedAt),
+      deletedAt: deletedAt == null && nullToAbsent
+          ? const Value.absent()
+          : Value(deletedAt),
       sessionId: Value(sessionId),
       exerciseId: Value(exerciseId),
       orderIndex: Value(orderIndex),
@@ -5469,16 +5446,19 @@ class SessionExercise extends DataClass implements Insertable<SessionExercise> {
     return SessionExercise(
       localId: data.localId.present ? data.localId.value : this.localId,
       remoteId: data.remoteId.present ? data.remoteId.value : this.remoteId,
-      syncStatus:
-          data.syncStatus.present ? data.syncStatus.value : this.syncStatus,
+      syncStatus: data.syncStatus.present
+          ? data.syncStatus.value
+          : this.syncStatus,
       createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
       updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
       deletedAt: data.deletedAt.present ? data.deletedAt.value : this.deletedAt,
       sessionId: data.sessionId.present ? data.sessionId.value : this.sessionId,
-      exerciseId:
-          data.exerciseId.present ? data.exerciseId.value : this.exerciseId,
-      orderIndex:
-          data.orderIndex.present ? data.orderIndex.value : this.orderIndex,
+      exerciseId: data.exerciseId.present
+          ? data.exerciseId.value
+          : this.exerciseId,
+      orderIndex: data.orderIndex.present
+          ? data.orderIndex.value
+          : this.orderIndex,
     );
   }
 
@@ -6058,20 +6038,18 @@ class $WorkoutSetsTable extends WorkoutSets
   WorkoutSet map(Map<String, dynamic> data, {String? tablePrefix}) {
     final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
     return WorkoutSet(
-      localId:
-          attachedDatabase.typeMapping.read(
-            DriftSqlType.int,
-            data['${effectivePrefix}local_id'],
-          )!,
+      localId: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}local_id'],
+      )!,
       remoteId: attachedDatabase.typeMapping.read(
         DriftSqlType.string,
         data['${effectivePrefix}remote_id'],
       ),
-      syncStatus:
-          attachedDatabase.typeMapping.read(
-            DriftSqlType.string,
-            data['${effectivePrefix}sync_status'],
-          )!,
+      syncStatus: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}sync_status'],
+      )!,
       createdAt: attachedDatabase.typeMapping.read(
         DriftSqlType.dateTime,
         data['${effectivePrefix}created_at'],
@@ -6084,16 +6062,14 @@ class $WorkoutSetsTable extends WorkoutSets
         DriftSqlType.dateTime,
         data['${effectivePrefix}deleted_at'],
       ),
-      sessionExerciseId:
-          attachedDatabase.typeMapping.read(
-            DriftSqlType.int,
-            data['${effectivePrefix}session_exercise_id'],
-          )!,
-      setIndex:
-          attachedDatabase.typeMapping.read(
-            DriftSqlType.int,
-            data['${effectivePrefix}set_index'],
-          )!,
+      sessionExerciseId: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}session_exercise_id'],
+      )!,
+      setIndex: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}set_index'],
+      )!,
       weight: attachedDatabase.typeMapping.read(
         DriftSqlType.double,
         data['${effectivePrefix}weight'],
@@ -6102,26 +6078,22 @@ class $WorkoutSetsTable extends WorkoutSets
         DriftSqlType.int,
         data['${effectivePrefix}reps'],
       ),
-      isWarmup:
-          attachedDatabase.typeMapping.read(
-            DriftSqlType.bool,
-            data['${effectivePrefix}is_warmup'],
-          )!,
-      isDropset:
-          attachedDatabase.typeMapping.read(
-            DriftSqlType.bool,
-            data['${effectivePrefix}is_dropset'],
-          )!,
-      isFailure:
-          attachedDatabase.typeMapping.read(
-            DriftSqlType.bool,
-            data['${effectivePrefix}is_failure'],
-          )!,
-      isCompleted:
-          attachedDatabase.typeMapping.read(
-            DriftSqlType.bool,
-            data['${effectivePrefix}is_completed'],
-          )!,
+      isWarmup: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}is_warmup'],
+      )!,
+      isDropset: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}is_dropset'],
+      )!,
+      isFailure: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}is_failure'],
+      )!,
+      isCompleted: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}is_completed'],
+      )!,
       rpe: attachedDatabase.typeMapping.read(
         DriftSqlType.int,
         data['${effectivePrefix}rpe'],
@@ -6242,47 +6214,42 @@ class WorkoutSet extends DataClass implements Insertable<WorkoutSet> {
   WorkoutSetsCompanion toCompanion(bool nullToAbsent) {
     return WorkoutSetsCompanion(
       localId: Value(localId),
-      remoteId:
-          remoteId == null && nullToAbsent
-              ? const Value.absent()
-              : Value(remoteId),
+      remoteId: remoteId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(remoteId),
       syncStatus: Value(syncStatus),
-      createdAt:
-          createdAt == null && nullToAbsent
-              ? const Value.absent()
-              : Value(createdAt),
-      updatedAt:
-          updatedAt == null && nullToAbsent
-              ? const Value.absent()
-              : Value(updatedAt),
-      deletedAt:
-          deletedAt == null && nullToAbsent
-              ? const Value.absent()
-              : Value(deletedAt),
+      createdAt: createdAt == null && nullToAbsent
+          ? const Value.absent()
+          : Value(createdAt),
+      updatedAt: updatedAt == null && nullToAbsent
+          ? const Value.absent()
+          : Value(updatedAt),
+      deletedAt: deletedAt == null && nullToAbsent
+          ? const Value.absent()
+          : Value(deletedAt),
       sessionExerciseId: Value(sessionExerciseId),
       setIndex: Value(setIndex),
-      weight:
-          weight == null && nullToAbsent ? const Value.absent() : Value(weight),
+      weight: weight == null && nullToAbsent
+          ? const Value.absent()
+          : Value(weight),
       reps: reps == null && nullToAbsent ? const Value.absent() : Value(reps),
       isWarmup: Value(isWarmup),
       isDropset: Value(isDropset),
       isFailure: Value(isFailure),
       isCompleted: Value(isCompleted),
       rpe: rpe == null && nullToAbsent ? const Value.absent() : Value(rpe),
-      durationSeconds:
-          durationSeconds == null && nullToAbsent
-              ? const Value.absent()
-              : Value(durationSeconds),
-      distance:
-          distance == null && nullToAbsent
-              ? const Value.absent()
-              : Value(distance),
-      speed:
-          speed == null && nullToAbsent ? const Value.absent() : Value(speed),
-      incline:
-          incline == null && nullToAbsent
-              ? const Value.absent()
-              : Value(incline),
+      durationSeconds: durationSeconds == null && nullToAbsent
+          ? const Value.absent()
+          : Value(durationSeconds),
+      distance: distance == null && nullToAbsent
+          ? const Value.absent()
+          : Value(distance),
+      speed: speed == null && nullToAbsent
+          ? const Value.absent()
+          : Value(speed),
+      incline: incline == null && nullToAbsent
+          ? const Value.absent()
+          : Value(incline),
     );
   }
 
@@ -6375,8 +6342,9 @@ class WorkoutSet extends DataClass implements Insertable<WorkoutSet> {
     isFailure: isFailure ?? this.isFailure,
     isCompleted: isCompleted ?? this.isCompleted,
     rpe: rpe.present ? rpe.value : this.rpe,
-    durationSeconds:
-        durationSeconds.present ? durationSeconds.value : this.durationSeconds,
+    durationSeconds: durationSeconds.present
+        ? durationSeconds.value
+        : this.durationSeconds,
     distance: distance.present ? distance.value : this.distance,
     speed: speed.present ? speed.value : this.speed,
     incline: incline.present ? incline.value : this.incline,
@@ -6385,28 +6353,28 @@ class WorkoutSet extends DataClass implements Insertable<WorkoutSet> {
     return WorkoutSet(
       localId: data.localId.present ? data.localId.value : this.localId,
       remoteId: data.remoteId.present ? data.remoteId.value : this.remoteId,
-      syncStatus:
-          data.syncStatus.present ? data.syncStatus.value : this.syncStatus,
+      syncStatus: data.syncStatus.present
+          ? data.syncStatus.value
+          : this.syncStatus,
       createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
       updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
       deletedAt: data.deletedAt.present ? data.deletedAt.value : this.deletedAt,
-      sessionExerciseId:
-          data.sessionExerciseId.present
-              ? data.sessionExerciseId.value
-              : this.sessionExerciseId,
+      sessionExerciseId: data.sessionExerciseId.present
+          ? data.sessionExerciseId.value
+          : this.sessionExerciseId,
       setIndex: data.setIndex.present ? data.setIndex.value : this.setIndex,
       weight: data.weight.present ? data.weight.value : this.weight,
       reps: data.reps.present ? data.reps.value : this.reps,
       isWarmup: data.isWarmup.present ? data.isWarmup.value : this.isWarmup,
       isDropset: data.isDropset.present ? data.isDropset.value : this.isDropset,
       isFailure: data.isFailure.present ? data.isFailure.value : this.isFailure,
-      isCompleted:
-          data.isCompleted.present ? data.isCompleted.value : this.isCompleted,
+      isCompleted: data.isCompleted.present
+          ? data.isCompleted.value
+          : this.isCompleted,
       rpe: data.rpe.present ? data.rpe.value : this.rpe,
-      durationSeconds:
-          data.durationSeconds.present
-              ? data.durationSeconds.value
-              : this.durationSeconds,
+      durationSeconds: data.durationSeconds.present
+          ? data.durationSeconds.value
+          : this.durationSeconds,
       distance: data.distance.present ? data.distance.value : this.distance,
       speed: data.speed.present ? data.speed.value : this.speed,
       incline: data.incline.present ? data.incline.value : this.incline,
@@ -6902,41 +6870,34 @@ class $SyncQueueTable extends SyncQueue
   SyncQueueData map(Map<String, dynamic> data, {String? tablePrefix}) {
     final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
     return SyncQueueData(
-      localId:
-          attachedDatabase.typeMapping.read(
-            DriftSqlType.int,
-            data['${effectivePrefix}local_id'],
-          )!,
-      syncTableName:
-          attachedDatabase.typeMapping.read(
-            DriftSqlType.string,
-            data['${effectivePrefix}sync_table_name'],
-          )!,
-      rowId:
-          attachedDatabase.typeMapping.read(
-            DriftSqlType.int,
-            data['${effectivePrefix}row_id'],
-          )!,
-      operation:
-          attachedDatabase.typeMapping.read(
-            DriftSqlType.string,
-            data['${effectivePrefix}operation'],
-          )!,
-      payload:
-          attachedDatabase.typeMapping.read(
-            DriftSqlType.string,
-            data['${effectivePrefix}payload'],
-          )!,
-      createdAt:
-          attachedDatabase.typeMapping.read(
-            DriftSqlType.dateTime,
-            data['${effectivePrefix}created_at'],
-          )!,
-      isSynced:
-          attachedDatabase.typeMapping.read(
-            DriftSqlType.bool,
-            data['${effectivePrefix}is_synced'],
-          )!,
+      localId: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}local_id'],
+      )!,
+      syncTableName: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}sync_table_name'],
+      )!,
+      rowId: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}row_id'],
+      )!,
+      operation: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}operation'],
+      )!,
+      payload: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}payload'],
+      )!,
+      createdAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}created_at'],
+      )!,
+      isSynced: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}is_synced'],
+      )!,
     );
   }
 
@@ -7037,10 +6998,9 @@ class SyncQueueData extends DataClass implements Insertable<SyncQueueData> {
   SyncQueueData copyWithCompanion(SyncQueueCompanion data) {
     return SyncQueueData(
       localId: data.localId.present ? data.localId.value : this.localId,
-      syncTableName:
-          data.syncTableName.present
-              ? data.syncTableName.value
-              : this.syncTableName,
+      syncTableName: data.syncTableName.present
+          ? data.syncTableName.value
+          : this.syncTableName,
       rowId: data.rowId.present ? data.rowId.value : this.rowId,
       operation: data.operation.present ? data.operation.value : this.operation,
       payload: data.payload.present ? data.payload.value : this.payload,
@@ -7198,11 +7158,12 @@ class SyncQueueCompanion extends UpdateCompanion<SyncQueueData> {
   }
 }
 
-class $FollowsTable extends Follows with TableInfo<$FollowsTable, Follow> {
+class $FriendshipsTable extends Friendships
+    with TableInfo<$FriendshipsTable, Friendship> {
   @override
   final GeneratedDatabase attachedDatabase;
   final String? _alias;
-  $FollowsTable(this.attachedDatabase, [this._alias]);
+  $FriendshipsTable(this.attachedDatabase, [this._alias]);
   static const VerificationMeta _localIdMeta = const VerificationMeta(
     'localId',
   );
@@ -7274,27 +7235,59 @@ class $FollowsTable extends Follows with TableInfo<$FollowsTable, Follow> {
     type: DriftSqlType.dateTime,
     requiredDuringInsert: false,
   );
-  static const VerificationMeta _followerIdMeta = const VerificationMeta(
-    'followerId',
+  static const VerificationMeta _requesterIdMeta = const VerificationMeta(
+    'requesterId',
   );
   @override
-  late final GeneratedColumn<String> followerId = GeneratedColumn<String>(
-    'follower_id',
+  late final GeneratedColumn<String> requesterId = GeneratedColumn<String>(
+    'requester_id',
     aliasedName,
     false,
     type: DriftSqlType.string,
     requiredDuringInsert: true,
   );
-  static const VerificationMeta _followeeIdMeta = const VerificationMeta(
-    'followeeId',
+  static const VerificationMeta _addresseeIdMeta = const VerificationMeta(
+    'addresseeId',
   );
   @override
-  late final GeneratedColumn<String> followeeId = GeneratedColumn<String>(
-    'followee_id',
+  late final GeneratedColumn<String> addresseeId = GeneratedColumn<String>(
+    'addressee_id',
     aliasedName,
     false,
     type: DriftSqlType.string,
     requiredDuringInsert: true,
+  );
+  static const VerificationMeta _statusMeta = const VerificationMeta('status');
+  @override
+  late final GeneratedColumn<String> status = GeneratedColumn<String>(
+    'status',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant('pending'),
+  );
+  static const VerificationMeta _blockedByMeta = const VerificationMeta(
+    'blockedBy',
+  );
+  @override
+  late final GeneratedColumn<String> blockedBy = GeneratedColumn<String>(
+    'blocked_by',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _respondedAtMeta = const VerificationMeta(
+    'respondedAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> respondedAt = GeneratedColumn<DateTime>(
+    'responded_at',
+    aliasedName,
+    true,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: false,
   );
   @override
   List<GeneratedColumn> get $columns => [
@@ -7304,17 +7297,20 @@ class $FollowsTable extends Follows with TableInfo<$FollowsTable, Follow> {
     createdAt,
     updatedAt,
     deletedAt,
-    followerId,
-    followeeId,
+    requesterId,
+    addresseeId,
+    status,
+    blockedBy,
+    respondedAt,
   ];
   @override
   String get aliasedName => _alias ?? actualTableName;
   @override
   String get actualTableName => $name;
-  static const String $name = 'follows';
+  static const String $name = 'friendships';
   @override
   VerificationContext validateIntegrity(
-    Insertable<Follow> instance, {
+    Insertable<Friendship> instance, {
     bool isInserting = false,
   }) {
     final context = VerificationContext();
@@ -7355,21 +7351,48 @@ class $FollowsTable extends Follows with TableInfo<$FollowsTable, Follow> {
         deletedAt.isAcceptableOrUnknown(data['deleted_at']!, _deletedAtMeta),
       );
     }
-    if (data.containsKey('follower_id')) {
+    if (data.containsKey('requester_id')) {
       context.handle(
-        _followerIdMeta,
-        followerId.isAcceptableOrUnknown(data['follower_id']!, _followerIdMeta),
+        _requesterIdMeta,
+        requesterId.isAcceptableOrUnknown(
+          data['requester_id']!,
+          _requesterIdMeta,
+        ),
       );
     } else if (isInserting) {
-      context.missing(_followerIdMeta);
+      context.missing(_requesterIdMeta);
     }
-    if (data.containsKey('followee_id')) {
+    if (data.containsKey('addressee_id')) {
       context.handle(
-        _followeeIdMeta,
-        followeeId.isAcceptableOrUnknown(data['followee_id']!, _followeeIdMeta),
+        _addresseeIdMeta,
+        addresseeId.isAcceptableOrUnknown(
+          data['addressee_id']!,
+          _addresseeIdMeta,
+        ),
       );
     } else if (isInserting) {
-      context.missing(_followeeIdMeta);
+      context.missing(_addresseeIdMeta);
+    }
+    if (data.containsKey('status')) {
+      context.handle(
+        _statusMeta,
+        status.isAcceptableOrUnknown(data['status']!, _statusMeta),
+      );
+    }
+    if (data.containsKey('blocked_by')) {
+      context.handle(
+        _blockedByMeta,
+        blockedBy.isAcceptableOrUnknown(data['blocked_by']!, _blockedByMeta),
+      );
+    }
+    if (data.containsKey('responded_at')) {
+      context.handle(
+        _respondedAtMeta,
+        respondedAt.isAcceptableOrUnknown(
+          data['responded_at']!,
+          _respondedAtMeta,
+        ),
+      );
     }
     return context;
   }
@@ -7378,26 +7401,24 @@ class $FollowsTable extends Follows with TableInfo<$FollowsTable, Follow> {
   Set<GeneratedColumn> get $primaryKey => {localId};
   @override
   List<Set<GeneratedColumn>> get uniqueKeys => [
-    {followerId, followeeId},
+    {requesterId, addresseeId},
   ];
   @override
-  Follow map(Map<String, dynamic> data, {String? tablePrefix}) {
+  Friendship map(Map<String, dynamic> data, {String? tablePrefix}) {
     final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
-    return Follow(
-      localId:
-          attachedDatabase.typeMapping.read(
-            DriftSqlType.int,
-            data['${effectivePrefix}local_id'],
-          )!,
+    return Friendship(
+      localId: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}local_id'],
+      )!,
       remoteId: attachedDatabase.typeMapping.read(
         DriftSqlType.string,
         data['${effectivePrefix}remote_id'],
       ),
-      syncStatus:
-          attachedDatabase.typeMapping.read(
-            DriftSqlType.string,
-            data['${effectivePrefix}sync_status'],
-          )!,
+      syncStatus: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}sync_status'],
+      )!,
       createdAt: attachedDatabase.typeMapping.read(
         DriftSqlType.dateTime,
         data['${effectivePrefix}created_at'],
@@ -7410,26 +7431,36 @@ class $FollowsTable extends Follows with TableInfo<$FollowsTable, Follow> {
         DriftSqlType.dateTime,
         data['${effectivePrefix}deleted_at'],
       ),
-      followerId:
-          attachedDatabase.typeMapping.read(
-            DriftSqlType.string,
-            data['${effectivePrefix}follower_id'],
-          )!,
-      followeeId:
-          attachedDatabase.typeMapping.read(
-            DriftSqlType.string,
-            data['${effectivePrefix}followee_id'],
-          )!,
+      requesterId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}requester_id'],
+      )!,
+      addresseeId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}addressee_id'],
+      )!,
+      status: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}status'],
+      )!,
+      blockedBy: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}blocked_by'],
+      ),
+      respondedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}responded_at'],
+      ),
     );
   }
 
   @override
-  $FollowsTable createAlias(String alias) {
-    return $FollowsTable(attachedDatabase, alias);
+  $FriendshipsTable createAlias(String alias) {
+    return $FriendshipsTable(attachedDatabase, alias);
   }
 }
 
-class Follow extends DataClass implements Insertable<Follow> {
+class Friendship extends DataClass implements Insertable<Friendship> {
   final int localId;
   final String? remoteId;
   final String syncStatus;
@@ -7437,20 +7468,32 @@ class Follow extends DataClass implements Insertable<Follow> {
   final DateTime? updatedAt;
   final DateTime? deletedAt;
 
-  /// The current user's auth id (the follower).
-  final String followerId;
+  /// Auth id of the user who sent the request.
+  final String requesterId;
 
-  /// The followed user's auth id.
-  final String followeeId;
-  const Follow({
+  /// Auth id of the user who received it.
+  final String addresseeId;
+
+  /// 'pending' | 'accepted' | 'blocked'
+  final String status;
+
+  /// Auth id of whichever side blocked — set exactly when status is 'blocked'.
+  final String? blockedBy;
+
+  /// When the addressee accepted (declines delete the row instead).
+  final DateTime? respondedAt;
+  const Friendship({
     required this.localId,
     this.remoteId,
     required this.syncStatus,
     this.createdAt,
     this.updatedAt,
     this.deletedAt,
-    required this.followerId,
-    required this.followeeId,
+    required this.requesterId,
+    required this.addresseeId,
+    required this.status,
+    this.blockedBy,
+    this.respondedAt,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -7469,50 +7512,63 @@ class Follow extends DataClass implements Insertable<Follow> {
     if (!nullToAbsent || deletedAt != null) {
       map['deleted_at'] = Variable<DateTime>(deletedAt);
     }
-    map['follower_id'] = Variable<String>(followerId);
-    map['followee_id'] = Variable<String>(followeeId);
+    map['requester_id'] = Variable<String>(requesterId);
+    map['addressee_id'] = Variable<String>(addresseeId);
+    map['status'] = Variable<String>(status);
+    if (!nullToAbsent || blockedBy != null) {
+      map['blocked_by'] = Variable<String>(blockedBy);
+    }
+    if (!nullToAbsent || respondedAt != null) {
+      map['responded_at'] = Variable<DateTime>(respondedAt);
+    }
     return map;
   }
 
-  FollowsCompanion toCompanion(bool nullToAbsent) {
-    return FollowsCompanion(
+  FriendshipsCompanion toCompanion(bool nullToAbsent) {
+    return FriendshipsCompanion(
       localId: Value(localId),
-      remoteId:
-          remoteId == null && nullToAbsent
-              ? const Value.absent()
-              : Value(remoteId),
+      remoteId: remoteId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(remoteId),
       syncStatus: Value(syncStatus),
-      createdAt:
-          createdAt == null && nullToAbsent
-              ? const Value.absent()
-              : Value(createdAt),
-      updatedAt:
-          updatedAt == null && nullToAbsent
-              ? const Value.absent()
-              : Value(updatedAt),
-      deletedAt:
-          deletedAt == null && nullToAbsent
-              ? const Value.absent()
-              : Value(deletedAt),
-      followerId: Value(followerId),
-      followeeId: Value(followeeId),
+      createdAt: createdAt == null && nullToAbsent
+          ? const Value.absent()
+          : Value(createdAt),
+      updatedAt: updatedAt == null && nullToAbsent
+          ? const Value.absent()
+          : Value(updatedAt),
+      deletedAt: deletedAt == null && nullToAbsent
+          ? const Value.absent()
+          : Value(deletedAt),
+      requesterId: Value(requesterId),
+      addresseeId: Value(addresseeId),
+      status: Value(status),
+      blockedBy: blockedBy == null && nullToAbsent
+          ? const Value.absent()
+          : Value(blockedBy),
+      respondedAt: respondedAt == null && nullToAbsent
+          ? const Value.absent()
+          : Value(respondedAt),
     );
   }
 
-  factory Follow.fromJson(
+  factory Friendship.fromJson(
     Map<String, dynamic> json, {
     ValueSerializer? serializer,
   }) {
     serializer ??= driftRuntimeOptions.defaultSerializer;
-    return Follow(
+    return Friendship(
       localId: serializer.fromJson<int>(json['localId']),
       remoteId: serializer.fromJson<String?>(json['remoteId']),
       syncStatus: serializer.fromJson<String>(json['syncStatus']),
       createdAt: serializer.fromJson<DateTime?>(json['createdAt']),
       updatedAt: serializer.fromJson<DateTime?>(json['updatedAt']),
       deletedAt: serializer.fromJson<DateTime?>(json['deletedAt']),
-      followerId: serializer.fromJson<String>(json['followerId']),
-      followeeId: serializer.fromJson<String>(json['followeeId']),
+      requesterId: serializer.fromJson<String>(json['requesterId']),
+      addresseeId: serializer.fromJson<String>(json['addresseeId']),
+      status: serializer.fromJson<String>(json['status']),
+      blockedBy: serializer.fromJson<String?>(json['blockedBy']),
+      respondedAt: serializer.fromJson<DateTime?>(json['respondedAt']),
     );
   }
   @override
@@ -7525,57 +7581,77 @@ class Follow extends DataClass implements Insertable<Follow> {
       'createdAt': serializer.toJson<DateTime?>(createdAt),
       'updatedAt': serializer.toJson<DateTime?>(updatedAt),
       'deletedAt': serializer.toJson<DateTime?>(deletedAt),
-      'followerId': serializer.toJson<String>(followerId),
-      'followeeId': serializer.toJson<String>(followeeId),
+      'requesterId': serializer.toJson<String>(requesterId),
+      'addresseeId': serializer.toJson<String>(addresseeId),
+      'status': serializer.toJson<String>(status),
+      'blockedBy': serializer.toJson<String?>(blockedBy),
+      'respondedAt': serializer.toJson<DateTime?>(respondedAt),
     };
   }
 
-  Follow copyWith({
+  Friendship copyWith({
     int? localId,
     Value<String?> remoteId = const Value.absent(),
     String? syncStatus,
     Value<DateTime?> createdAt = const Value.absent(),
     Value<DateTime?> updatedAt = const Value.absent(),
     Value<DateTime?> deletedAt = const Value.absent(),
-    String? followerId,
-    String? followeeId,
-  }) => Follow(
+    String? requesterId,
+    String? addresseeId,
+    String? status,
+    Value<String?> blockedBy = const Value.absent(),
+    Value<DateTime?> respondedAt = const Value.absent(),
+  }) => Friendship(
     localId: localId ?? this.localId,
     remoteId: remoteId.present ? remoteId.value : this.remoteId,
     syncStatus: syncStatus ?? this.syncStatus,
     createdAt: createdAt.present ? createdAt.value : this.createdAt,
     updatedAt: updatedAt.present ? updatedAt.value : this.updatedAt,
     deletedAt: deletedAt.present ? deletedAt.value : this.deletedAt,
-    followerId: followerId ?? this.followerId,
-    followeeId: followeeId ?? this.followeeId,
+    requesterId: requesterId ?? this.requesterId,
+    addresseeId: addresseeId ?? this.addresseeId,
+    status: status ?? this.status,
+    blockedBy: blockedBy.present ? blockedBy.value : this.blockedBy,
+    respondedAt: respondedAt.present ? respondedAt.value : this.respondedAt,
   );
-  Follow copyWithCompanion(FollowsCompanion data) {
-    return Follow(
+  Friendship copyWithCompanion(FriendshipsCompanion data) {
+    return Friendship(
       localId: data.localId.present ? data.localId.value : this.localId,
       remoteId: data.remoteId.present ? data.remoteId.value : this.remoteId,
-      syncStatus:
-          data.syncStatus.present ? data.syncStatus.value : this.syncStatus,
+      syncStatus: data.syncStatus.present
+          ? data.syncStatus.value
+          : this.syncStatus,
       createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
       updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
       deletedAt: data.deletedAt.present ? data.deletedAt.value : this.deletedAt,
-      followerId:
-          data.followerId.present ? data.followerId.value : this.followerId,
-      followeeId:
-          data.followeeId.present ? data.followeeId.value : this.followeeId,
+      requesterId: data.requesterId.present
+          ? data.requesterId.value
+          : this.requesterId,
+      addresseeId: data.addresseeId.present
+          ? data.addresseeId.value
+          : this.addresseeId,
+      status: data.status.present ? data.status.value : this.status,
+      blockedBy: data.blockedBy.present ? data.blockedBy.value : this.blockedBy,
+      respondedAt: data.respondedAt.present
+          ? data.respondedAt.value
+          : this.respondedAt,
     );
   }
 
   @override
   String toString() {
-    return (StringBuffer('Follow(')
+    return (StringBuffer('Friendship(')
           ..write('localId: $localId, ')
           ..write('remoteId: $remoteId, ')
           ..write('syncStatus: $syncStatus, ')
           ..write('createdAt: $createdAt, ')
           ..write('updatedAt: $updatedAt, ')
           ..write('deletedAt: $deletedAt, ')
-          ..write('followerId: $followerId, ')
-          ..write('followeeId: $followeeId')
+          ..write('requesterId: $requesterId, ')
+          ..write('addresseeId: $addresseeId, ')
+          ..write('status: $status, ')
+          ..write('blockedBy: $blockedBy, ')
+          ..write('respondedAt: $respondedAt')
           ..write(')'))
         .toString();
   }
@@ -7588,62 +7664,80 @@ class Follow extends DataClass implements Insertable<Follow> {
     createdAt,
     updatedAt,
     deletedAt,
-    followerId,
-    followeeId,
+    requesterId,
+    addresseeId,
+    status,
+    blockedBy,
+    respondedAt,
   );
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
-      (other is Follow &&
+      (other is Friendship &&
           other.localId == this.localId &&
           other.remoteId == this.remoteId &&
           other.syncStatus == this.syncStatus &&
           other.createdAt == this.createdAt &&
           other.updatedAt == this.updatedAt &&
           other.deletedAt == this.deletedAt &&
-          other.followerId == this.followerId &&
-          other.followeeId == this.followeeId);
+          other.requesterId == this.requesterId &&
+          other.addresseeId == this.addresseeId &&
+          other.status == this.status &&
+          other.blockedBy == this.blockedBy &&
+          other.respondedAt == this.respondedAt);
 }
 
-class FollowsCompanion extends UpdateCompanion<Follow> {
+class FriendshipsCompanion extends UpdateCompanion<Friendship> {
   final Value<int> localId;
   final Value<String?> remoteId;
   final Value<String> syncStatus;
   final Value<DateTime?> createdAt;
   final Value<DateTime?> updatedAt;
   final Value<DateTime?> deletedAt;
-  final Value<String> followerId;
-  final Value<String> followeeId;
-  const FollowsCompanion({
+  final Value<String> requesterId;
+  final Value<String> addresseeId;
+  final Value<String> status;
+  final Value<String?> blockedBy;
+  final Value<DateTime?> respondedAt;
+  const FriendshipsCompanion({
     this.localId = const Value.absent(),
     this.remoteId = const Value.absent(),
     this.syncStatus = const Value.absent(),
     this.createdAt = const Value.absent(),
     this.updatedAt = const Value.absent(),
     this.deletedAt = const Value.absent(),
-    this.followerId = const Value.absent(),
-    this.followeeId = const Value.absent(),
+    this.requesterId = const Value.absent(),
+    this.addresseeId = const Value.absent(),
+    this.status = const Value.absent(),
+    this.blockedBy = const Value.absent(),
+    this.respondedAt = const Value.absent(),
   });
-  FollowsCompanion.insert({
+  FriendshipsCompanion.insert({
     this.localId = const Value.absent(),
     this.remoteId = const Value.absent(),
     this.syncStatus = const Value.absent(),
     this.createdAt = const Value.absent(),
     this.updatedAt = const Value.absent(),
     this.deletedAt = const Value.absent(),
-    required String followerId,
-    required String followeeId,
-  }) : followerId = Value(followerId),
-       followeeId = Value(followeeId);
-  static Insertable<Follow> custom({
+    required String requesterId,
+    required String addresseeId,
+    this.status = const Value.absent(),
+    this.blockedBy = const Value.absent(),
+    this.respondedAt = const Value.absent(),
+  }) : requesterId = Value(requesterId),
+       addresseeId = Value(addresseeId);
+  static Insertable<Friendship> custom({
     Expression<int>? localId,
     Expression<String>? remoteId,
     Expression<String>? syncStatus,
     Expression<DateTime>? createdAt,
     Expression<DateTime>? updatedAt,
     Expression<DateTime>? deletedAt,
-    Expression<String>? followerId,
-    Expression<String>? followeeId,
+    Expression<String>? requesterId,
+    Expression<String>? addresseeId,
+    Expression<String>? status,
+    Expression<String>? blockedBy,
+    Expression<DateTime>? respondedAt,
   }) {
     return RawValuesInsertable({
       if (localId != null) 'local_id': localId,
@@ -7652,30 +7746,39 @@ class FollowsCompanion extends UpdateCompanion<Follow> {
       if (createdAt != null) 'created_at': createdAt,
       if (updatedAt != null) 'updated_at': updatedAt,
       if (deletedAt != null) 'deleted_at': deletedAt,
-      if (followerId != null) 'follower_id': followerId,
-      if (followeeId != null) 'followee_id': followeeId,
+      if (requesterId != null) 'requester_id': requesterId,
+      if (addresseeId != null) 'addressee_id': addresseeId,
+      if (status != null) 'status': status,
+      if (blockedBy != null) 'blocked_by': blockedBy,
+      if (respondedAt != null) 'responded_at': respondedAt,
     });
   }
 
-  FollowsCompanion copyWith({
+  FriendshipsCompanion copyWith({
     Value<int>? localId,
     Value<String?>? remoteId,
     Value<String>? syncStatus,
     Value<DateTime?>? createdAt,
     Value<DateTime?>? updatedAt,
     Value<DateTime?>? deletedAt,
-    Value<String>? followerId,
-    Value<String>? followeeId,
+    Value<String>? requesterId,
+    Value<String>? addresseeId,
+    Value<String>? status,
+    Value<String?>? blockedBy,
+    Value<DateTime?>? respondedAt,
   }) {
-    return FollowsCompanion(
+    return FriendshipsCompanion(
       localId: localId ?? this.localId,
       remoteId: remoteId ?? this.remoteId,
       syncStatus: syncStatus ?? this.syncStatus,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
       deletedAt: deletedAt ?? this.deletedAt,
-      followerId: followerId ?? this.followerId,
-      followeeId: followeeId ?? this.followeeId,
+      requesterId: requesterId ?? this.requesterId,
+      addresseeId: addresseeId ?? this.addresseeId,
+      status: status ?? this.status,
+      blockedBy: blockedBy ?? this.blockedBy,
+      respondedAt: respondedAt ?? this.respondedAt,
     );
   }
 
@@ -7700,26 +7803,38 @@ class FollowsCompanion extends UpdateCompanion<Follow> {
     if (deletedAt.present) {
       map['deleted_at'] = Variable<DateTime>(deletedAt.value);
     }
-    if (followerId.present) {
-      map['follower_id'] = Variable<String>(followerId.value);
+    if (requesterId.present) {
+      map['requester_id'] = Variable<String>(requesterId.value);
     }
-    if (followeeId.present) {
-      map['followee_id'] = Variable<String>(followeeId.value);
+    if (addresseeId.present) {
+      map['addressee_id'] = Variable<String>(addresseeId.value);
+    }
+    if (status.present) {
+      map['status'] = Variable<String>(status.value);
+    }
+    if (blockedBy.present) {
+      map['blocked_by'] = Variable<String>(blockedBy.value);
+    }
+    if (respondedAt.present) {
+      map['responded_at'] = Variable<DateTime>(respondedAt.value);
     }
     return map;
   }
 
   @override
   String toString() {
-    return (StringBuffer('FollowsCompanion(')
+    return (StringBuffer('FriendshipsCompanion(')
           ..write('localId: $localId, ')
           ..write('remoteId: $remoteId, ')
           ..write('syncStatus: $syncStatus, ')
           ..write('createdAt: $createdAt, ')
           ..write('updatedAt: $updatedAt, ')
           ..write('deletedAt: $deletedAt, ')
-          ..write('followerId: $followerId, ')
-          ..write('followeeId: $followeeId')
+          ..write('requesterId: $requesterId, ')
+          ..write('addresseeId: $addresseeId, ')
+          ..write('status: $status, ')
+          ..write('blockedBy: $blockedBy, ')
+          ..write('respondedAt: $respondedAt')
           ..write(')'))
         .toString();
   }
@@ -7740,7 +7855,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
   );
   late final $WorkoutSetsTable workoutSets = $WorkoutSetsTable(this);
   late final $SyncQueueTable syncQueue = $SyncQueueTable(this);
-  late final $FollowsTable follows = $FollowsTable(this);
+  late final $FriendshipsTable friendships = $FriendshipsTable(this);
   @override
   Iterable<TableInfo<Table, Object?>> get allTables =>
       allSchemaEntities.whereType<TableInfo<Table, Object?>>();
@@ -7755,7 +7870,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     sessionExercises,
     workoutSets,
     syncQueue,
-    follows,
+    friendships,
   ];
 }
 
@@ -7768,6 +7883,7 @@ typedef $$UserProfilesTableCreateCompanionBuilder =
       Value<DateTime?> updatedAt,
       Value<DateTime?> deletedAt,
       Value<String?> displayName,
+      Value<String?> username,
       Value<String?> avatarUrl,
       Value<String?> bannerUrl,
       Value<String?> goal,
@@ -7793,6 +7909,7 @@ typedef $$UserProfilesTableUpdateCompanionBuilder =
       Value<DateTime?> updatedAt,
       Value<DateTime?> deletedAt,
       Value<String?> displayName,
+      Value<String?> username,
       Value<String?> avatarUrl,
       Value<String?> bannerUrl,
       Value<String?> goal,
@@ -7851,6 +7968,11 @@ class $$UserProfilesTableFilterComposer
 
   ColumnFilters<String> get displayName => $composableBuilder(
     column: $table.displayName,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get username => $composableBuilder(
+    column: $table.username,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -7974,6 +8096,11 @@ class $$UserProfilesTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<String> get username => $composableBuilder(
+    column: $table.username,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<String> get avatarUrl => $composableBuilder(
     column: $table.avatarUrl,
     builder: (column) => ColumnOrderings(column),
@@ -8084,6 +8211,9 @@ class $$UserProfilesTableAnnotationComposer
     builder: (column) => column,
   );
 
+  GeneratedColumn<String> get username =>
+      $composableBuilder(column: $table.username, builder: (column) => column);
+
   GeneratedColumn<String> get avatarUrl =>
       $composableBuilder(column: $table.avatarUrl, builder: (column) => column);
 
@@ -8171,13 +8301,12 @@ class $$UserProfilesTableTableManager
         TableManagerState(
           db: db,
           table: table,
-          createFilteringComposer:
-              () => $$UserProfilesTableFilterComposer($db: db, $table: table),
-          createOrderingComposer:
-              () => $$UserProfilesTableOrderingComposer($db: db, $table: table),
-          createComputedFieldComposer:
-              () =>
-                  $$UserProfilesTableAnnotationComposer($db: db, $table: table),
+          createFilteringComposer: () =>
+              $$UserProfilesTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$UserProfilesTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$UserProfilesTableAnnotationComposer($db: db, $table: table),
           updateCompanionCallback:
               ({
                 Value<int> localId = const Value.absent(),
@@ -8187,6 +8316,7 @@ class $$UserProfilesTableTableManager
                 Value<DateTime?> updatedAt = const Value.absent(),
                 Value<DateTime?> deletedAt = const Value.absent(),
                 Value<String?> displayName = const Value.absent(),
+                Value<String?> username = const Value.absent(),
                 Value<String?> avatarUrl = const Value.absent(),
                 Value<String?> bannerUrl = const Value.absent(),
                 Value<String?> goal = const Value.absent(),
@@ -8210,6 +8340,7 @@ class $$UserProfilesTableTableManager
                 updatedAt: updatedAt,
                 deletedAt: deletedAt,
                 displayName: displayName,
+                username: username,
                 avatarUrl: avatarUrl,
                 bannerUrl: bannerUrl,
                 goal: goal,
@@ -8235,6 +8366,7 @@ class $$UserProfilesTableTableManager
                 Value<DateTime?> updatedAt = const Value.absent(),
                 Value<DateTime?> deletedAt = const Value.absent(),
                 Value<String?> displayName = const Value.absent(),
+                Value<String?> username = const Value.absent(),
                 Value<String?> avatarUrl = const Value.absent(),
                 Value<String?> bannerUrl = const Value.absent(),
                 Value<String?> goal = const Value.absent(),
@@ -8258,6 +8390,7 @@ class $$UserProfilesTableTableManager
                 updatedAt: updatedAt,
                 deletedAt: deletedAt,
                 displayName: displayName,
+                username: username,
                 avatarUrl: avatarUrl,
                 bannerUrl: bannerUrl,
                 goal: goal,
@@ -8274,16 +8407,9 @@ class $$UserProfilesTableTableManager
                 fcmToken: fcmToken,
                 notificationTone: notificationTone,
               ),
-          withReferenceMapper:
-              (p0) =>
-                  p0
-                      .map(
-                        (e) => (
-                          e.readTable(table),
-                          BaseReferences(db, table, e),
-                        ),
-                      )
-                      .toList(),
+          withReferenceMapper: (p0) => p0
+              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
+              .toList(),
           prefetchHooksCallback: null,
         ),
       );
@@ -8685,12 +8811,12 @@ class $$ExercisesTableTableManager
         TableManagerState(
           db: db,
           table: table,
-          createFilteringComposer:
-              () => $$ExercisesTableFilterComposer($db: db, $table: table),
-          createOrderingComposer:
-              () => $$ExercisesTableOrderingComposer($db: db, $table: table),
-          createComputedFieldComposer:
-              () => $$ExercisesTableAnnotationComposer($db: db, $table: table),
+          createFilteringComposer: () =>
+              $$ExercisesTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$ExercisesTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$ExercisesTableAnnotationComposer($db: db, $table: table),
           updateCompanionCallback:
               ({
                 Value<int> localId = const Value.absent(),
@@ -8779,16 +8905,9 @@ class $$ExercisesTableTableManager
                 usageCount: usageCount,
                 isFavorite: isFavorite,
               ),
-          withReferenceMapper:
-              (p0) =>
-                  p0
-                      .map(
-                        (e) => (
-                          e.readTable(table),
-                          BaseReferences(db, table, e),
-                        ),
-                      )
-                      .toList(),
+          withReferenceMapper: (p0) => p0
+              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
+              .toList(),
           prefetchHooksCallback: null,
         ),
       );
@@ -8845,12 +8964,10 @@ final class $$SchedulesTableReferences
   );
 
   $$ScheduleDaysTableProcessedTableManager get scheduleDaysRefs {
-    final manager = $$ScheduleDaysTableTableManager(
-      $_db,
-      $_db.scheduleDays,
-    ).filter(
-      (f) => f.scheduleId.localId.sqlEquals($_itemColumn<int>('local_id')!),
-    );
+    final manager = $$ScheduleDaysTableTableManager($_db, $_db.scheduleDays)
+        .filter(
+          (f) => f.scheduleId.localId.sqlEquals($_itemColumn<int>('local_id')!),
+        );
 
     final cache = $_typedResult.readTableOrNull(_scheduleDaysRefsTable($_db));
     return ProcessedTableManager(
@@ -9136,12 +9253,12 @@ class $$SchedulesTableTableManager
         TableManagerState(
           db: db,
           table: table,
-          createFilteringComposer:
-              () => $$SchedulesTableFilterComposer($db: db, $table: table),
-          createOrderingComposer:
-              () => $$SchedulesTableOrderingComposer($db: db, $table: table),
-          createComputedFieldComposer:
-              () => $$SchedulesTableAnnotationComposer($db: db, $table: table),
+          createFilteringComposer: () =>
+              $$SchedulesTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$SchedulesTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$SchedulesTableAnnotationComposer($db: db, $table: table),
           updateCompanionCallback:
               ({
                 Value<int> localId = const Value.absent(),
@@ -9182,77 +9299,71 @@ class $$SchedulesTableTableManager
                 name: name,
                 isActive: isActive,
               ),
-          withReferenceMapper:
-              (p0) =>
-                  p0
-                      .map(
-                        (e) => (
-                          e.readTable(table),
-                          $$SchedulesTableReferences(db, table, e),
-                        ),
-                      )
-                      .toList(),
-          prefetchHooksCallback: ({
-            scheduleDaysRefs = false,
-            sessionsRefs = false,
-          }) {
-            return PrefetchHooks(
-              db: db,
-              explicitlyWatchedTables: [
-                if (scheduleDaysRefs) db.scheduleDays,
-                if (sessionsRefs) db.sessions,
-              ],
-              addJoins: null,
-              getPrefetchedDataCallback: (items) async {
-                return [
-                  if (scheduleDaysRefs)
-                    await $_getPrefetchedData<
-                      Schedule,
-                      $SchedulesTable,
-                      ScheduleDay
-                    >(
-                      currentTable: table,
-                      referencedTable: $$SchedulesTableReferences
-                          ._scheduleDaysRefsTable(db),
-                      managerFromTypedResult:
-                          (p0) =>
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) => (
+                  e.readTable(table),
+                  $$SchedulesTableReferences(db, table, e),
+                ),
+              )
+              .toList(),
+          prefetchHooksCallback:
+              ({scheduleDaysRefs = false, sessionsRefs = false}) {
+                return PrefetchHooks(
+                  db: db,
+                  explicitlyWatchedTables: [
+                    if (scheduleDaysRefs) db.scheduleDays,
+                    if (sessionsRefs) db.sessions,
+                  ],
+                  addJoins: null,
+                  getPrefetchedDataCallback: (items) async {
+                    return [
+                      if (scheduleDaysRefs)
+                        await $_getPrefetchedData<
+                          Schedule,
+                          $SchedulesTable,
+                          ScheduleDay
+                        >(
+                          currentTable: table,
+                          referencedTable: $$SchedulesTableReferences
+                              ._scheduleDaysRefsTable(db),
+                          managerFromTypedResult: (p0) =>
                               $$SchedulesTableReferences(
                                 db,
                                 table,
                                 p0,
                               ).scheduleDaysRefs,
-                      referencedItemsForCurrentItem:
-                          (item, referencedItems) => referencedItems.where(
-                            (e) => e.scheduleId == item.localId,
-                          ),
-                      typedResults: items,
-                    ),
-                  if (sessionsRefs)
-                    await $_getPrefetchedData<
-                      Schedule,
-                      $SchedulesTable,
-                      Session
-                    >(
-                      currentTable: table,
-                      referencedTable: $$SchedulesTableReferences
-                          ._sessionsRefsTable(db),
-                      managerFromTypedResult:
-                          (p0) =>
+                          referencedItemsForCurrentItem:
+                              (item, referencedItems) => referencedItems.where(
+                                (e) => e.scheduleId == item.localId,
+                              ),
+                          typedResults: items,
+                        ),
+                      if (sessionsRefs)
+                        await $_getPrefetchedData<
+                          Schedule,
+                          $SchedulesTable,
+                          Session
+                        >(
+                          currentTable: table,
+                          referencedTable: $$SchedulesTableReferences
+                              ._sessionsRefsTable(db),
+                          managerFromTypedResult: (p0) =>
                               $$SchedulesTableReferences(
                                 db,
                                 table,
                                 p0,
                               ).sessionsRefs,
-                      referencedItemsForCurrentItem:
-                          (item, referencedItems) => referencedItems.where(
-                            (e) => e.scheduleId == item.localId,
-                          ),
-                      typedResults: items,
-                    ),
-                ];
+                          referencedItemsForCurrentItem:
+                              (item, referencedItems) => referencedItems.where(
+                                (e) => e.scheduleId == item.localId,
+                              ),
+                          typedResults: items,
+                        ),
+                    ];
+                  },
+                );
               },
-            );
-          },
         ),
       );
 }
@@ -9332,12 +9443,14 @@ final class $$ScheduleDaysTableReferences
       );
 
   $$ScheduledExercisesTableProcessedTableManager get scheduledExercisesRefs {
-    final manager = $$ScheduledExercisesTableTableManager(
-      $_db,
-      $_db.scheduledExercises,
-    ).filter(
-      (f) => f.scheduleDayId.localId.sqlEquals($_itemColumn<int>('local_id')!),
-    );
+    final manager =
+        $$ScheduledExercisesTableTableManager(
+          $_db,
+          $_db.scheduledExercises,
+        ).filter(
+          (f) =>
+              f.scheduleDayId.localId.sqlEquals($_itemColumn<int>('local_id')!),
+        );
 
     final cache = $_typedResult.readTableOrNull(
       _scheduledExercisesRefsTable($_db),
@@ -9637,13 +9750,12 @@ class $$ScheduleDaysTableTableManager
         TableManagerState(
           db: db,
           table: table,
-          createFilteringComposer:
-              () => $$ScheduleDaysTableFilterComposer($db: db, $table: table),
-          createOrderingComposer:
-              () => $$ScheduleDaysTableOrderingComposer($db: db, $table: table),
-          createComputedFieldComposer:
-              () =>
-                  $$ScheduleDaysTableAnnotationComposer($db: db, $table: table),
+          createFilteringComposer: () =>
+              $$ScheduleDaysTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$ScheduleDaysTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$ScheduleDaysTableAnnotationComposer($db: db, $table: table),
           updateCompanionCallback:
               ({
                 Value<int> localId = const Value.absent(),
@@ -9692,85 +9804,82 @@ class $$ScheduleDaysTableTableManager
                 label: label,
                 isRestDay: isRestDay,
               ),
-          withReferenceMapper:
-              (p0) =>
-                  p0
-                      .map(
-                        (e) => (
-                          e.readTable(table),
-                          $$ScheduleDaysTableReferences(db, table, e),
-                        ),
-                      )
-                      .toList(),
-          prefetchHooksCallback: ({
-            scheduleId = false,
-            scheduledExercisesRefs = false,
-          }) {
-            return PrefetchHooks(
-              db: db,
-              explicitlyWatchedTables: [
-                if (scheduledExercisesRefs) db.scheduledExercises,
-              ],
-              addJoins: <
-                T extends TableManagerState<
-                  dynamic,
-                  dynamic,
-                  dynamic,
-                  dynamic,
-                  dynamic,
-                  dynamic,
-                  dynamic,
-                  dynamic,
-                  dynamic,
-                  dynamic,
-                  dynamic
-                >
-              >(state) {
-                if (scheduleId) {
-                  state =
-                      state.withJoin(
-                            currentTable: table,
-                            currentColumn: table.scheduleId,
-                            referencedTable: $$ScheduleDaysTableReferences
-                                ._scheduleIdTable(db),
-                            referencedColumn:
-                                $$ScheduleDaysTableReferences
-                                    ._scheduleIdTable(db)
-                                    .localId,
-                          )
-                          as T;
-                }
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) => (
+                  e.readTable(table),
+                  $$ScheduleDaysTableReferences(db, table, e),
+                ),
+              )
+              .toList(),
+          prefetchHooksCallback:
+              ({scheduleId = false, scheduledExercisesRefs = false}) {
+                return PrefetchHooks(
+                  db: db,
+                  explicitlyWatchedTables: [
+                    if (scheduledExercisesRefs) db.scheduledExercises,
+                  ],
+                  addJoins:
+                      <
+                        T extends TableManagerState<
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic
+                        >
+                      >(state) {
+                        if (scheduleId) {
+                          state =
+                              state.withJoin(
+                                    currentTable: table,
+                                    currentColumn: table.scheduleId,
+                                    referencedTable:
+                                        $$ScheduleDaysTableReferences
+                                            ._scheduleIdTable(db),
+                                    referencedColumn:
+                                        $$ScheduleDaysTableReferences
+                                            ._scheduleIdTable(db)
+                                            .localId,
+                                  )
+                                  as T;
+                        }
 
-                return state;
-              },
-              getPrefetchedDataCallback: (items) async {
-                return [
-                  if (scheduledExercisesRefs)
-                    await $_getPrefetchedData<
-                      ScheduleDay,
-                      $ScheduleDaysTable,
-                      ScheduledExercise
-                    >(
-                      currentTable: table,
-                      referencedTable: $$ScheduleDaysTableReferences
-                          ._scheduledExercisesRefsTable(db),
-                      managerFromTypedResult:
-                          (p0) =>
+                        return state;
+                      },
+                  getPrefetchedDataCallback: (items) async {
+                    return [
+                      if (scheduledExercisesRefs)
+                        await $_getPrefetchedData<
+                          ScheduleDay,
+                          $ScheduleDaysTable,
+                          ScheduledExercise
+                        >(
+                          currentTable: table,
+                          referencedTable: $$ScheduleDaysTableReferences
+                              ._scheduledExercisesRefsTable(db),
+                          managerFromTypedResult: (p0) =>
                               $$ScheduleDaysTableReferences(
                                 db,
                                 table,
                                 p0,
                               ).scheduledExercisesRefs,
-                      referencedItemsForCurrentItem:
-                          (item, referencedItems) => referencedItems.where(
-                            (e) => e.scheduleDayId == item.localId,
-                          ),
-                      typedResults: items,
-                    ),
-                ];
+                          referencedItemsForCurrentItem:
+                              (item, referencedItems) => referencedItems.where(
+                                (e) => e.scheduleDayId == item.localId,
+                              ),
+                          typedResults: items,
+                        ),
+                    ];
+                  },
+                );
               },
-            );
-          },
         ),
       );
 }
@@ -10149,18 +10258,12 @@ class $$ScheduledExercisesTableTableManager
         TableManagerState(
           db: db,
           table: table,
-          createFilteringComposer:
-              () => $$ScheduledExercisesTableFilterComposer(
-                $db: db,
-                $table: table,
-              ),
-          createOrderingComposer:
-              () => $$ScheduledExercisesTableOrderingComposer(
-                $db: db,
-                $table: table,
-              ),
-          createComputedFieldComposer:
-              () => $$ScheduledExercisesTableAnnotationComposer(
+          createFilteringComposer: () =>
+              $$ScheduledExercisesTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$ScheduledExercisesTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$ScheduledExercisesTableAnnotationComposer(
                 $db: db,
                 $table: table,
               ),
@@ -10224,52 +10327,52 @@ class $$ScheduledExercisesTableTableManager
                 targetDurationSeconds: targetDurationSeconds,
                 targetDistance: targetDistance,
               ),
-          withReferenceMapper:
-              (p0) =>
-                  p0
-                      .map(
-                        (e) => (
-                          e.readTable(table),
-                          $$ScheduledExercisesTableReferences(db, table, e),
-                        ),
-                      )
-                      .toList(),
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) => (
+                  e.readTable(table),
+                  $$ScheduledExercisesTableReferences(db, table, e),
+                ),
+              )
+              .toList(),
           prefetchHooksCallback: ({scheduleDayId = false}) {
             return PrefetchHooks(
               db: db,
               explicitlyWatchedTables: [],
-              addJoins: <
-                T extends TableManagerState<
-                  dynamic,
-                  dynamic,
-                  dynamic,
-                  dynamic,
-                  dynamic,
-                  dynamic,
-                  dynamic,
-                  dynamic,
-                  dynamic,
-                  dynamic,
-                  dynamic
-                >
-              >(state) {
-                if (scheduleDayId) {
-                  state =
-                      state.withJoin(
-                            currentTable: table,
-                            currentColumn: table.scheduleDayId,
-                            referencedTable: $$ScheduledExercisesTableReferences
-                                ._scheduleDayIdTable(db),
-                            referencedColumn:
-                                $$ScheduledExercisesTableReferences
-                                    ._scheduleDayIdTable(db)
-                                    .localId,
-                          )
-                          as T;
-                }
+              addJoins:
+                  <
+                    T extends TableManagerState<
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic
+                    >
+                  >(state) {
+                    if (scheduleDayId) {
+                      state =
+                          state.withJoin(
+                                currentTable: table,
+                                currentColumn: table.scheduleDayId,
+                                referencedTable:
+                                    $$ScheduledExercisesTableReferences
+                                        ._scheduleDayIdTable(db),
+                                referencedColumn:
+                                    $$ScheduledExercisesTableReferences
+                                        ._scheduleDayIdTable(db)
+                                        .localId,
+                              )
+                              as T;
+                    }
 
-                return state;
-              },
+                    return state;
+                  },
               getPrefetchedDataCallback: (items) async {
                 return [];
               },
@@ -10357,12 +10460,10 @@ final class $$SessionsTableReferences
   );
 
   $$SessionExercisesTableProcessedTableManager get sessionExercisesRefs {
-    final manager = $$SessionExercisesTableTableManager(
-      $_db,
-      $_db.sessionExercises,
-    ).filter(
-      (f) => f.sessionId.localId.sqlEquals($_itemColumn<int>('local_id')!),
-    );
+    final manager =
+        $$SessionExercisesTableTableManager($_db, $_db.sessionExercises).filter(
+          (f) => f.sessionId.localId.sqlEquals($_itemColumn<int>('local_id')!),
+        );
 
     final cache = $_typedResult.readTableOrNull(
       _sessionExercisesRefsTable($_db),
@@ -10693,12 +10794,12 @@ class $$SessionsTableTableManager
         TableManagerState(
           db: db,
           table: table,
-          createFilteringComposer:
-              () => $$SessionsTableFilterComposer($db: db, $table: table),
-          createOrderingComposer:
-              () => $$SessionsTableOrderingComposer($db: db, $table: table),
-          createComputedFieldComposer:
-              () => $$SessionsTableAnnotationComposer($db: db, $table: table),
+          createFilteringComposer: () =>
+              $$SessionsTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$SessionsTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$SessionsTableAnnotationComposer($db: db, $table: table),
           updateCompanionCallback:
               ({
                 Value<int> localId = const Value.absent(),
@@ -10755,85 +10856,80 @@ class $$SessionsTableTableManager
                 totalVolume: totalVolume,
                 notes: notes,
               ),
-          withReferenceMapper:
-              (p0) =>
-                  p0
-                      .map(
-                        (e) => (
-                          e.readTable(table),
-                          $$SessionsTableReferences(db, table, e),
-                        ),
-                      )
-                      .toList(),
-          prefetchHooksCallback: ({
-            scheduleId = false,
-            sessionExercisesRefs = false,
-          }) {
-            return PrefetchHooks(
-              db: db,
-              explicitlyWatchedTables: [
-                if (sessionExercisesRefs) db.sessionExercises,
-              ],
-              addJoins: <
-                T extends TableManagerState<
-                  dynamic,
-                  dynamic,
-                  dynamic,
-                  dynamic,
-                  dynamic,
-                  dynamic,
-                  dynamic,
-                  dynamic,
-                  dynamic,
-                  dynamic,
-                  dynamic
-                >
-              >(state) {
-                if (scheduleId) {
-                  state =
-                      state.withJoin(
-                            currentTable: table,
-                            currentColumn: table.scheduleId,
-                            referencedTable: $$SessionsTableReferences
-                                ._scheduleIdTable(db),
-                            referencedColumn:
-                                $$SessionsTableReferences
-                                    ._scheduleIdTable(db)
-                                    .localId,
-                          )
-                          as T;
-                }
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) => (
+                  e.readTable(table),
+                  $$SessionsTableReferences(db, table, e),
+                ),
+              )
+              .toList(),
+          prefetchHooksCallback:
+              ({scheduleId = false, sessionExercisesRefs = false}) {
+                return PrefetchHooks(
+                  db: db,
+                  explicitlyWatchedTables: [
+                    if (sessionExercisesRefs) db.sessionExercises,
+                  ],
+                  addJoins:
+                      <
+                        T extends TableManagerState<
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic
+                        >
+                      >(state) {
+                        if (scheduleId) {
+                          state =
+                              state.withJoin(
+                                    currentTable: table,
+                                    currentColumn: table.scheduleId,
+                                    referencedTable: $$SessionsTableReferences
+                                        ._scheduleIdTable(db),
+                                    referencedColumn: $$SessionsTableReferences
+                                        ._scheduleIdTable(db)
+                                        .localId,
+                                  )
+                                  as T;
+                        }
 
-                return state;
-              },
-              getPrefetchedDataCallback: (items) async {
-                return [
-                  if (sessionExercisesRefs)
-                    await $_getPrefetchedData<
-                      Session,
-                      $SessionsTable,
-                      SessionExercise
-                    >(
-                      currentTable: table,
-                      referencedTable: $$SessionsTableReferences
-                          ._sessionExercisesRefsTable(db),
-                      managerFromTypedResult:
-                          (p0) =>
+                        return state;
+                      },
+                  getPrefetchedDataCallback: (items) async {
+                    return [
+                      if (sessionExercisesRefs)
+                        await $_getPrefetchedData<
+                          Session,
+                          $SessionsTable,
+                          SessionExercise
+                        >(
+                          currentTable: table,
+                          referencedTable: $$SessionsTableReferences
+                              ._sessionExercisesRefsTable(db),
+                          managerFromTypedResult: (p0) =>
                               $$SessionsTableReferences(
                                 db,
                                 table,
                                 p0,
                               ).sessionExercisesRefs,
-                      referencedItemsForCurrentItem:
-                          (item, referencedItems) => referencedItems.where(
-                            (e) => e.sessionId == item.localId,
-                          ),
-                      typedResults: items,
-                    ),
-                ];
+                          referencedItemsForCurrentItem:
+                              (item, referencedItems) => referencedItems.where(
+                                (e) => e.sessionId == item.localId,
+                              ),
+                          typedResults: items,
+                        ),
+                    ];
+                  },
+                );
               },
-            );
-          },
         ),
       );
 }
@@ -10918,13 +11014,12 @@ final class $$SessionExercisesTableReferences
   );
 
   $$WorkoutSetsTableProcessedTableManager get workoutSetsRefs {
-    final manager = $$WorkoutSetsTableTableManager(
-      $_db,
-      $_db.workoutSets,
-    ).filter(
-      (f) =>
-          f.sessionExerciseId.localId.sqlEquals($_itemColumn<int>('local_id')!),
-    );
+    final manager = $$WorkoutSetsTableTableManager($_db, $_db.workoutSets)
+        .filter(
+          (f) => f.sessionExerciseId.localId.sqlEquals(
+            $_itemColumn<int>('local_id')!,
+          ),
+        );
 
     final cache = $_typedResult.readTableOrNull(_workoutSetsRefsTable($_db));
     return ProcessedTableManager(
@@ -11214,19 +11309,12 @@ class $$SessionExercisesTableTableManager
         TableManagerState(
           db: db,
           table: table,
-          createFilteringComposer:
-              () =>
-                  $$SessionExercisesTableFilterComposer($db: db, $table: table),
-          createOrderingComposer:
-              () => $$SessionExercisesTableOrderingComposer(
-                $db: db,
-                $table: table,
-              ),
-          createComputedFieldComposer:
-              () => $$SessionExercisesTableAnnotationComposer(
-                $db: db,
-                $table: table,
-              ),
+          createFilteringComposer: () =>
+              $$SessionExercisesTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$SessionExercisesTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$SessionExercisesTableAnnotationComposer($db: db, $table: table),
           updateCompanionCallback:
               ({
                 Value<int> localId = const Value.absent(),
@@ -11271,83 +11359,82 @@ class $$SessionExercisesTableTableManager
                 exerciseId: exerciseId,
                 orderIndex: orderIndex,
               ),
-          withReferenceMapper:
-              (p0) =>
-                  p0
-                      .map(
-                        (e) => (
-                          e.readTable(table),
-                          $$SessionExercisesTableReferences(db, table, e),
-                        ),
-                      )
-                      .toList(),
-          prefetchHooksCallback: ({
-            sessionId = false,
-            workoutSetsRefs = false,
-          }) {
-            return PrefetchHooks(
-              db: db,
-              explicitlyWatchedTables: [if (workoutSetsRefs) db.workoutSets],
-              addJoins: <
-                T extends TableManagerState<
-                  dynamic,
-                  dynamic,
-                  dynamic,
-                  dynamic,
-                  dynamic,
-                  dynamic,
-                  dynamic,
-                  dynamic,
-                  dynamic,
-                  dynamic,
-                  dynamic
-                >
-              >(state) {
-                if (sessionId) {
-                  state =
-                      state.withJoin(
-                            currentTable: table,
-                            currentColumn: table.sessionId,
-                            referencedTable: $$SessionExercisesTableReferences
-                                ._sessionIdTable(db),
-                            referencedColumn:
-                                $$SessionExercisesTableReferences
-                                    ._sessionIdTable(db)
-                                    .localId,
-                          )
-                          as T;
-                }
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) => (
+                  e.readTable(table),
+                  $$SessionExercisesTableReferences(db, table, e),
+                ),
+              )
+              .toList(),
+          prefetchHooksCallback:
+              ({sessionId = false, workoutSetsRefs = false}) {
+                return PrefetchHooks(
+                  db: db,
+                  explicitlyWatchedTables: [
+                    if (workoutSetsRefs) db.workoutSets,
+                  ],
+                  addJoins:
+                      <
+                        T extends TableManagerState<
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic
+                        >
+                      >(state) {
+                        if (sessionId) {
+                          state =
+                              state.withJoin(
+                                    currentTable: table,
+                                    currentColumn: table.sessionId,
+                                    referencedTable:
+                                        $$SessionExercisesTableReferences
+                                            ._sessionIdTable(db),
+                                    referencedColumn:
+                                        $$SessionExercisesTableReferences
+                                            ._sessionIdTable(db)
+                                            .localId,
+                                  )
+                                  as T;
+                        }
 
-                return state;
-              },
-              getPrefetchedDataCallback: (items) async {
-                return [
-                  if (workoutSetsRefs)
-                    await $_getPrefetchedData<
-                      SessionExercise,
-                      $SessionExercisesTable,
-                      WorkoutSet
-                    >(
-                      currentTable: table,
-                      referencedTable: $$SessionExercisesTableReferences
-                          ._workoutSetsRefsTable(db),
-                      managerFromTypedResult:
-                          (p0) =>
+                        return state;
+                      },
+                  getPrefetchedDataCallback: (items) async {
+                    return [
+                      if (workoutSetsRefs)
+                        await $_getPrefetchedData<
+                          SessionExercise,
+                          $SessionExercisesTable,
+                          WorkoutSet
+                        >(
+                          currentTable: table,
+                          referencedTable: $$SessionExercisesTableReferences
+                              ._workoutSetsRefsTable(db),
+                          managerFromTypedResult: (p0) =>
                               $$SessionExercisesTableReferences(
                                 db,
                                 table,
                                 p0,
                               ).workoutSetsRefs,
-                      referencedItemsForCurrentItem:
-                          (item, referencedItems) => referencedItems.where(
-                            (e) => e.sessionExerciseId == item.localId,
-                          ),
-                      typedResults: items,
-                    ),
-                ];
+                          referencedItemsForCurrentItem:
+                              (item, referencedItems) => referencedItems.where(
+                                (e) => e.sessionExerciseId == item.localId,
+                              ),
+                          typedResults: items,
+                        ),
+                    ];
+                  },
+                );
               },
-            );
-          },
         ),
       );
 }
@@ -11797,13 +11884,12 @@ class $$WorkoutSetsTableTableManager
         TableManagerState(
           db: db,
           table: table,
-          createFilteringComposer:
-              () => $$WorkoutSetsTableFilterComposer($db: db, $table: table),
-          createOrderingComposer:
-              () => $$WorkoutSetsTableOrderingComposer($db: db, $table: table),
-          createComputedFieldComposer:
-              () =>
-                  $$WorkoutSetsTableAnnotationComposer($db: db, $table: table),
+          createFilteringComposer: () =>
+              $$WorkoutSetsTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$WorkoutSetsTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$WorkoutSetsTableAnnotationComposer($db: db, $table: table),
           updateCompanionCallback:
               ({
                 Value<int> localId = const Value.absent(),
@@ -11888,52 +11974,50 @@ class $$WorkoutSetsTableTableManager
                 speed: speed,
                 incline: incline,
               ),
-          withReferenceMapper:
-              (p0) =>
-                  p0
-                      .map(
-                        (e) => (
-                          e.readTable(table),
-                          $$WorkoutSetsTableReferences(db, table, e),
-                        ),
-                      )
-                      .toList(),
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) => (
+                  e.readTable(table),
+                  $$WorkoutSetsTableReferences(db, table, e),
+                ),
+              )
+              .toList(),
           prefetchHooksCallback: ({sessionExerciseId = false}) {
             return PrefetchHooks(
               db: db,
               explicitlyWatchedTables: [],
-              addJoins: <
-                T extends TableManagerState<
-                  dynamic,
-                  dynamic,
-                  dynamic,
-                  dynamic,
-                  dynamic,
-                  dynamic,
-                  dynamic,
-                  dynamic,
-                  dynamic,
-                  dynamic,
-                  dynamic
-                >
-              >(state) {
-                if (sessionExerciseId) {
-                  state =
-                      state.withJoin(
-                            currentTable: table,
-                            currentColumn: table.sessionExerciseId,
-                            referencedTable: $$WorkoutSetsTableReferences
-                                ._sessionExerciseIdTable(db),
-                            referencedColumn:
-                                $$WorkoutSetsTableReferences
+              addJoins:
+                  <
+                    T extends TableManagerState<
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic
+                    >
+                  >(state) {
+                    if (sessionExerciseId) {
+                      state =
+                          state.withJoin(
+                                currentTable: table,
+                                currentColumn: table.sessionExerciseId,
+                                referencedTable: $$WorkoutSetsTableReferences
+                                    ._sessionExerciseIdTable(db),
+                                referencedColumn: $$WorkoutSetsTableReferences
                                     ._sessionExerciseIdTable(db)
                                     .localId,
-                          )
-                          as T;
-                }
+                              )
+                              as T;
+                    }
 
-                return state;
-              },
+                    return state;
+                  },
               getPrefetchedDataCallback: (items) async {
                 return [];
               },
@@ -12124,12 +12208,12 @@ class $$SyncQueueTableTableManager
         TableManagerState(
           db: db,
           table: table,
-          createFilteringComposer:
-              () => $$SyncQueueTableFilterComposer($db: db, $table: table),
-          createOrderingComposer:
-              () => $$SyncQueueTableOrderingComposer($db: db, $table: table),
-          createComputedFieldComposer:
-              () => $$SyncQueueTableAnnotationComposer($db: db, $table: table),
+          createFilteringComposer: () =>
+              $$SyncQueueTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$SyncQueueTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$SyncQueueTableAnnotationComposer($db: db, $table: table),
           updateCompanionCallback:
               ({
                 Value<int> localId = const Value.absent(),
@@ -12166,16 +12250,9 @@ class $$SyncQueueTableTableManager
                 createdAt: createdAt,
                 isSynced: isSynced,
               ),
-          withReferenceMapper:
-              (p0) =>
-                  p0
-                      .map(
-                        (e) => (
-                          e.readTable(table),
-                          BaseReferences(db, table, e),
-                        ),
-                      )
-                      .toList(),
+          withReferenceMapper: (p0) => p0
+              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
+              .toList(),
           prefetchHooksCallback: null,
         ),
       );
@@ -12198,32 +12275,38 @@ typedef $$SyncQueueTableProcessedTableManager =
       SyncQueueData,
       PrefetchHooks Function()
     >;
-typedef $$FollowsTableCreateCompanionBuilder =
-    FollowsCompanion Function({
+typedef $$FriendshipsTableCreateCompanionBuilder =
+    FriendshipsCompanion Function({
       Value<int> localId,
       Value<String?> remoteId,
       Value<String> syncStatus,
       Value<DateTime?> createdAt,
       Value<DateTime?> updatedAt,
       Value<DateTime?> deletedAt,
-      required String followerId,
-      required String followeeId,
+      required String requesterId,
+      required String addresseeId,
+      Value<String> status,
+      Value<String?> blockedBy,
+      Value<DateTime?> respondedAt,
     });
-typedef $$FollowsTableUpdateCompanionBuilder =
-    FollowsCompanion Function({
+typedef $$FriendshipsTableUpdateCompanionBuilder =
+    FriendshipsCompanion Function({
       Value<int> localId,
       Value<String?> remoteId,
       Value<String> syncStatus,
       Value<DateTime?> createdAt,
       Value<DateTime?> updatedAt,
       Value<DateTime?> deletedAt,
-      Value<String> followerId,
-      Value<String> followeeId,
+      Value<String> requesterId,
+      Value<String> addresseeId,
+      Value<String> status,
+      Value<String?> blockedBy,
+      Value<DateTime?> respondedAt,
     });
 
-class $$FollowsTableFilterComposer
-    extends Composer<_$AppDatabase, $FollowsTable> {
-  $$FollowsTableFilterComposer({
+class $$FriendshipsTableFilterComposer
+    extends Composer<_$AppDatabase, $FriendshipsTable> {
+  $$FriendshipsTableFilterComposer({
     required super.$db,
     required super.$table,
     super.joinBuilder,
@@ -12260,20 +12343,35 @@ class $$FollowsTableFilterComposer
     builder: (column) => ColumnFilters(column),
   );
 
-  ColumnFilters<String> get followerId => $composableBuilder(
-    column: $table.followerId,
+  ColumnFilters<String> get requesterId => $composableBuilder(
+    column: $table.requesterId,
     builder: (column) => ColumnFilters(column),
   );
 
-  ColumnFilters<String> get followeeId => $composableBuilder(
-    column: $table.followeeId,
+  ColumnFilters<String> get addresseeId => $composableBuilder(
+    column: $table.addresseeId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get status => $composableBuilder(
+    column: $table.status,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get blockedBy => $composableBuilder(
+    column: $table.blockedBy,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get respondedAt => $composableBuilder(
+    column: $table.respondedAt,
     builder: (column) => ColumnFilters(column),
   );
 }
 
-class $$FollowsTableOrderingComposer
-    extends Composer<_$AppDatabase, $FollowsTable> {
-  $$FollowsTableOrderingComposer({
+class $$FriendshipsTableOrderingComposer
+    extends Composer<_$AppDatabase, $FriendshipsTable> {
+  $$FriendshipsTableOrderingComposer({
     required super.$db,
     required super.$table,
     super.joinBuilder,
@@ -12310,20 +12408,35 @@ class $$FollowsTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
-  ColumnOrderings<String> get followerId => $composableBuilder(
-    column: $table.followerId,
+  ColumnOrderings<String> get requesterId => $composableBuilder(
+    column: $table.requesterId,
     builder: (column) => ColumnOrderings(column),
   );
 
-  ColumnOrderings<String> get followeeId => $composableBuilder(
-    column: $table.followeeId,
+  ColumnOrderings<String> get addresseeId => $composableBuilder(
+    column: $table.addresseeId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get status => $composableBuilder(
+    column: $table.status,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get blockedBy => $composableBuilder(
+    column: $table.blockedBy,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get respondedAt => $composableBuilder(
+    column: $table.respondedAt,
     builder: (column) => ColumnOrderings(column),
   );
 }
 
-class $$FollowsTableAnnotationComposer
-    extends Composer<_$AppDatabase, $FollowsTable> {
-  $$FollowsTableAnnotationComposer({
+class $$FriendshipsTableAnnotationComposer
+    extends Composer<_$AppDatabase, $FriendshipsTable> {
+  $$FriendshipsTableAnnotationComposer({
     required super.$db,
     required super.$table,
     super.joinBuilder,
@@ -12350,43 +12463,57 @@ class $$FollowsTableAnnotationComposer
   GeneratedColumn<DateTime> get deletedAt =>
       $composableBuilder(column: $table.deletedAt, builder: (column) => column);
 
-  GeneratedColumn<String> get followerId => $composableBuilder(
-    column: $table.followerId,
+  GeneratedColumn<String> get requesterId => $composableBuilder(
+    column: $table.requesterId,
     builder: (column) => column,
   );
 
-  GeneratedColumn<String> get followeeId => $composableBuilder(
-    column: $table.followeeId,
+  GeneratedColumn<String> get addresseeId => $composableBuilder(
+    column: $table.addresseeId,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get status =>
+      $composableBuilder(column: $table.status, builder: (column) => column);
+
+  GeneratedColumn<String> get blockedBy =>
+      $composableBuilder(column: $table.blockedBy, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get respondedAt => $composableBuilder(
+    column: $table.respondedAt,
     builder: (column) => column,
   );
 }
 
-class $$FollowsTableTableManager
+class $$FriendshipsTableTableManager
     extends
         RootTableManager<
           _$AppDatabase,
-          $FollowsTable,
-          Follow,
-          $$FollowsTableFilterComposer,
-          $$FollowsTableOrderingComposer,
-          $$FollowsTableAnnotationComposer,
-          $$FollowsTableCreateCompanionBuilder,
-          $$FollowsTableUpdateCompanionBuilder,
-          (Follow, BaseReferences<_$AppDatabase, $FollowsTable, Follow>),
-          Follow,
+          $FriendshipsTable,
+          Friendship,
+          $$FriendshipsTableFilterComposer,
+          $$FriendshipsTableOrderingComposer,
+          $$FriendshipsTableAnnotationComposer,
+          $$FriendshipsTableCreateCompanionBuilder,
+          $$FriendshipsTableUpdateCompanionBuilder,
+          (
+            Friendship,
+            BaseReferences<_$AppDatabase, $FriendshipsTable, Friendship>,
+          ),
+          Friendship,
           PrefetchHooks Function()
         > {
-  $$FollowsTableTableManager(_$AppDatabase db, $FollowsTable table)
+  $$FriendshipsTableTableManager(_$AppDatabase db, $FriendshipsTable table)
     : super(
         TableManagerState(
           db: db,
           table: table,
-          createFilteringComposer:
-              () => $$FollowsTableFilterComposer($db: db, $table: table),
-          createOrderingComposer:
-              () => $$FollowsTableOrderingComposer($db: db, $table: table),
-          createComputedFieldComposer:
-              () => $$FollowsTableAnnotationComposer($db: db, $table: table),
+          createFilteringComposer: () =>
+              $$FriendshipsTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$FriendshipsTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$FriendshipsTableAnnotationComposer($db: db, $table: table),
           updateCompanionCallback:
               ({
                 Value<int> localId = const Value.absent(),
@@ -12395,17 +12522,23 @@ class $$FollowsTableTableManager
                 Value<DateTime?> createdAt = const Value.absent(),
                 Value<DateTime?> updatedAt = const Value.absent(),
                 Value<DateTime?> deletedAt = const Value.absent(),
-                Value<String> followerId = const Value.absent(),
-                Value<String> followeeId = const Value.absent(),
-              }) => FollowsCompanion(
+                Value<String> requesterId = const Value.absent(),
+                Value<String> addresseeId = const Value.absent(),
+                Value<String> status = const Value.absent(),
+                Value<String?> blockedBy = const Value.absent(),
+                Value<DateTime?> respondedAt = const Value.absent(),
+              }) => FriendshipsCompanion(
                 localId: localId,
                 remoteId: remoteId,
                 syncStatus: syncStatus,
                 createdAt: createdAt,
                 updatedAt: updatedAt,
                 deletedAt: deletedAt,
-                followerId: followerId,
-                followeeId: followeeId,
+                requesterId: requesterId,
+                addresseeId: addresseeId,
+                status: status,
+                blockedBy: blockedBy,
+                respondedAt: respondedAt,
               ),
           createCompanionCallback:
               ({
@@ -12415,45 +12548,47 @@ class $$FollowsTableTableManager
                 Value<DateTime?> createdAt = const Value.absent(),
                 Value<DateTime?> updatedAt = const Value.absent(),
                 Value<DateTime?> deletedAt = const Value.absent(),
-                required String followerId,
-                required String followeeId,
-              }) => FollowsCompanion.insert(
+                required String requesterId,
+                required String addresseeId,
+                Value<String> status = const Value.absent(),
+                Value<String?> blockedBy = const Value.absent(),
+                Value<DateTime?> respondedAt = const Value.absent(),
+              }) => FriendshipsCompanion.insert(
                 localId: localId,
                 remoteId: remoteId,
                 syncStatus: syncStatus,
                 createdAt: createdAt,
                 updatedAt: updatedAt,
                 deletedAt: deletedAt,
-                followerId: followerId,
-                followeeId: followeeId,
+                requesterId: requesterId,
+                addresseeId: addresseeId,
+                status: status,
+                blockedBy: blockedBy,
+                respondedAt: respondedAt,
               ),
-          withReferenceMapper:
-              (p0) =>
-                  p0
-                      .map(
-                        (e) => (
-                          e.readTable(table),
-                          BaseReferences(db, table, e),
-                        ),
-                      )
-                      .toList(),
+          withReferenceMapper: (p0) => p0
+              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
+              .toList(),
           prefetchHooksCallback: null,
         ),
       );
 }
 
-typedef $$FollowsTableProcessedTableManager =
+typedef $$FriendshipsTableProcessedTableManager =
     ProcessedTableManager<
       _$AppDatabase,
-      $FollowsTable,
-      Follow,
-      $$FollowsTableFilterComposer,
-      $$FollowsTableOrderingComposer,
-      $$FollowsTableAnnotationComposer,
-      $$FollowsTableCreateCompanionBuilder,
-      $$FollowsTableUpdateCompanionBuilder,
-      (Follow, BaseReferences<_$AppDatabase, $FollowsTable, Follow>),
-      Follow,
+      $FriendshipsTable,
+      Friendship,
+      $$FriendshipsTableFilterComposer,
+      $$FriendshipsTableOrderingComposer,
+      $$FriendshipsTableAnnotationComposer,
+      $$FriendshipsTableCreateCompanionBuilder,
+      $$FriendshipsTableUpdateCompanionBuilder,
+      (
+        Friendship,
+        BaseReferences<_$AppDatabase, $FriendshipsTable, Friendship>,
+      ),
+      Friendship,
       PrefetchHooks Function()
     >;
 
@@ -12478,6 +12613,6 @@ class $AppDatabaseManager {
       $$WorkoutSetsTableTableManager(_db, _db.workoutSets);
   $$SyncQueueTableTableManager get syncQueue =>
       $$SyncQueueTableTableManager(_db, _db.syncQueue);
-  $$FollowsTableTableManager get follows =>
-      $$FollowsTableTableManager(_db, _db.follows);
+  $$FriendshipsTableTableManager get friendships =>
+      $$FriendshipsTableTableManager(_db, _db.friendships);
 }

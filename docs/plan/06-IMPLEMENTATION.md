@@ -88,21 +88,21 @@ Honest assessment of what exists today.
 **Goal:** users add each other as bros (request → accept) and view real public profiles. This is **Bros Phase B**.
 
 ### Deliverables
-- [ ] Supabase `friendships` table (requester/addressee + `pending|accepted|blocked` status) + RLS; friend count via view or maintained column.
-- [ ] Unique **@username** claim (lowercase, 3–20 chars) on `user_profiles` + exact-match lookup.
-- [ ] **Invite link + QR** sheet (deep link carries the username; App Store fallback for non-users).
-- [ ] Requests inbox on the Bros tab: accept / decline; badge on the add-bros button.
-- [ ] **Block + report** from the request and the profile (store requirement); blocking hides both directions.
-- [ ] Drift cache + sync wiring (outbox) for friendships; account deletion cleans the graph.
-- [ ] Public profile fetch: profile + friend count + achievements + streak (no posts — feed removed).
-- [ ] Profile screen: add-bro / pending / bros state, public-safe fields, gendered anatomy.
-- [ ] Privacy: hide sensitive raw metrics unless user opts in; no global real-name search.
+- [x] Supabase `friendships` table (requester/addressee + `pending|accepted|blocked` status) + RLS; friend count via view — **authored as `012_friendships.sql`, NOT deployed (SETUP-STATUS)**.
+- [x] Unique **@username** claim (lowercase, 3–20 chars) on `user_profiles` + exact-match lookup (claim/lookup are online-only by design; see 04-BACKEND §5).
+- [x] **Invite link + QR** sheet — client + in-app `/bro/:username` route done; ⚠️ universal-link platform config (AASA/assetlinks) + App Store fallback page pending (SETUP-STATUS).
+- [x] Requests inbox on the Bros tab (Bros sheet): accept / decline; badge on the 48pt add-bros header button.
+- [x] **Block + report** from the request row, search hit, and the add-bro/profile card; blocking hides both directions (blocked side sees `none`).
+- [x] Drift cache (v17) + sync wiring (outbox) for friendships; account deletion cleans the graph via `ON DELETE CASCADE`.
+- [ ] Public profile fetch: profile + friend count done (`public_profiles` + `PublicProfile`); achievements + streak on it still pending.
+- [ ] Profile screen: relationship states exist on the minimal add-bro card; the full §5.7 public profile (gendered anatomy, achievements, streak tabs) still pending.
+- [x] Privacy: no global real-name search (exact @username only); public_profiles exposes only safe columns.
 
 ### Phase 2 Checklist
-- [ ] Request → accept flow works offline-queued and syncs.
-- [ ] Friends power the Friends leaderboard scope + "Latest from your bros" strip.
-- [ ] Block/report works from every surface a stranger can reach.
-- [ ] No private data leaks on public profiles.
+- [x] Request → accept flow works offline-queued and syncs (unit-tested in `test/friend_repository_test.dart`; live sync against cloud pending deploy).
+- [ ] Friends power the Friends leaderboard scope + "Latest from your bros" strip (scope: view rebuilt server-side, verify after deploy; strip: `sessions_select_friends` RLS ready, strip UI not built).
+- [x] Block/report works from every surface a stranger can reach (request row, search result, add-bro card).
+- [ ] No private data leaks on public profiles — re-verify on the finished §5.7 profile screen.
 
 ---
 

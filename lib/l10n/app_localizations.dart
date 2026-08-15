@@ -1860,29 +1860,11 @@ abstract class AppLocalizations {
   /// **'Account'**
   String get account;
 
-  /// No description provided for @following.
+  /// No description provided for @statBros.
   ///
   /// In en, this message translates to:
-  /// **'Following'**
-  String get following;
-
-  /// No description provided for @followers.
-  ///
-  /// In en, this message translates to:
-  /// **'Followers'**
-  String get followers;
-
-  /// No description provided for @follow.
-  ///
-  /// In en, this message translates to:
-  /// **'Follow'**
-  String get follow;
-
-  /// No description provided for @friends.
-  ///
-  /// In en, this message translates to:
-  /// **'Friends'**
-  String get friends;
+  /// **'Bros'**
+  String get statBros;
 
   /// No description provided for @streak.
   ///
@@ -3701,6 +3683,288 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Discover Other Training Plans'**
   String get discoverOtherPlansCta;
+
+  /// No description provided for @addBros.
+  ///
+  /// In en, this message translates to:
+  /// **'Add bros'**
+  String get addBros;
+
+  /// No description provided for @myUsernameTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'My handle'**
+  String get myUsernameTitle;
+
+  /// No description provided for @claimUsernameTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Claim your handle'**
+  String get claimUsernameTitle;
+
+  /// No description provided for @claimUsernameExplainer.
+  ///
+  /// In en, this message translates to:
+  /// **'Bros find you by your @handle. 3–20 characters: lowercase letters, numbers, underscore.'**
+  String get claimUsernameExplainer;
+
+  /// No description provided for @claimUsernameHint.
+  ///
+  /// In en, this message translates to:
+  /// **'handle'**
+  String get claimUsernameHint;
+
+  /// No description provided for @claimAction.
+  ///
+  /// In en, this message translates to:
+  /// **'Claim'**
+  String get claimAction;
+
+  /// No description provided for @usernameTaken.
+  ///
+  /// In en, this message translates to:
+  /// **'That handle is already taken.'**
+  String get usernameTaken;
+
+  /// No description provided for @usernameInvalid.
+  ///
+  /// In en, this message translates to:
+  /// **'3–20 characters: lowercase letters, numbers, underscore.'**
+  String get usernameInvalid;
+
+  /// No description provided for @usernameNeedsOnline.
+  ///
+  /// In en, this message translates to:
+  /// **'Claiming a handle needs a connection.'**
+  String get usernameNeedsOnline;
+
+  /// No description provided for @searchByUsername.
+  ///
+  /// In en, this message translates to:
+  /// **'Add by @handle'**
+  String get searchByUsername;
+
+  /// No description provided for @searchByUsernameHint.
+  ///
+  /// In en, this message translates to:
+  /// **'@handle'**
+  String get searchByUsernameHint;
+
+  /// No description provided for @searchNoMatch.
+  ///
+  /// In en, this message translates to:
+  /// **'Nobody has that handle.'**
+  String get searchNoMatch;
+
+  /// No description provided for @searchNeedsOnline.
+  ///
+  /// In en, this message translates to:
+  /// **'Search needs a connection.'**
+  String get searchNeedsOnline;
+
+  /// No description provided for @requestsTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Requests'**
+  String get requestsTitle;
+
+  /// No description provided for @acceptAction.
+  ///
+  /// In en, this message translates to:
+  /// **'Accept'**
+  String get acceptAction;
+
+  /// No description provided for @declineAction.
+  ///
+  /// In en, this message translates to:
+  /// **'Decline'**
+  String get declineAction;
+
+  /// No description provided for @sentRequestsTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Sent'**
+  String get sentRequestsTitle;
+
+  /// No description provided for @cancelRequestAction.
+  ///
+  /// In en, this message translates to:
+  /// **'Cancel'**
+  String get cancelRequestAction;
+
+  /// No description provided for @myBrosTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'My bros'**
+  String get myBrosTitle;
+
+  /// No description provided for @noBrosYet.
+  ///
+  /// In en, this message translates to:
+  /// **'No bros yet. Invite your crew or add them by @handle.'**
+  String get noBrosYet;
+
+  /// No description provided for @inviteAction.
+  ///
+  /// In en, this message translates to:
+  /// **'Invite'**
+  String get inviteAction;
+
+  /// No description provided for @inviteSheetTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Invite a bro'**
+  String get inviteSheetTitle;
+
+  /// No description provided for @inviteQrHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Have your bro scan this with their camera'**
+  String get inviteQrHint;
+
+  /// No description provided for @inviteShareAction.
+  ///
+  /// In en, this message translates to:
+  /// **'Share invite link'**
+  String get inviteShareAction;
+
+  /// No description provided for @inviteMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Add me on MyGymBro — I\'m @{username}. {link}'**
+  String inviteMessage(String username, String link);
+
+  /// No description provided for @inviteNeedsUsername.
+  ///
+  /// In en, this message translates to:
+  /// **'Claim a handle first — your invite carries it.'**
+  String get inviteNeedsUsername;
+
+  /// No description provided for @removeBroAction.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove bro'**
+  String get removeBroAction;
+
+  /// No description provided for @removeBroConfirmTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove this bro?'**
+  String get removeBroConfirmTitle;
+
+  /// No description provided for @removeBroConfirmBody.
+  ///
+  /// In en, this message translates to:
+  /// **'You can always send a new request later.'**
+  String get removeBroConfirmBody;
+
+  /// No description provided for @blockAction.
+  ///
+  /// In en, this message translates to:
+  /// **'Block'**
+  String get blockAction;
+
+  /// No description provided for @blockConfirmTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Block this user?'**
+  String get blockConfirmTitle;
+
+  /// No description provided for @blockConfirmBody.
+  ///
+  /// In en, this message translates to:
+  /// **'You\'ll disappear from each other completely. Only you can undo this.'**
+  String get blockConfirmBody;
+
+  /// No description provided for @unblockAction.
+  ///
+  /// In en, this message translates to:
+  /// **'Unblock'**
+  String get unblockAction;
+
+  /// No description provided for @blockedTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Blocked'**
+  String get blockedTitle;
+
+  /// No description provided for @reportAction.
+  ///
+  /// In en, this message translates to:
+  /// **'Report'**
+  String get reportAction;
+
+  /// No description provided for @reportSheetTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Report this user'**
+  String get reportSheetTitle;
+
+  /// No description provided for @reportReasonSpam.
+  ///
+  /// In en, this message translates to:
+  /// **'Spam or fake account'**
+  String get reportReasonSpam;
+
+  /// No description provided for @reportReasonHarassment.
+  ///
+  /// In en, this message translates to:
+  /// **'Harassment or bullying'**
+  String get reportReasonHarassment;
+
+  /// No description provided for @reportReasonImpersonation.
+  ///
+  /// In en, this message translates to:
+  /// **'Impersonation'**
+  String get reportReasonImpersonation;
+
+  /// No description provided for @reportReasonOther.
+  ///
+  /// In en, this message translates to:
+  /// **'Something else'**
+  String get reportReasonOther;
+
+  /// No description provided for @reportSentToast.
+  ///
+  /// In en, this message translates to:
+  /// **'Report sent. We\'ll review it.'**
+  String get reportSentToast;
+
+  /// No description provided for @requestSentToast.
+  ///
+  /// In en, this message translates to:
+  /// **'Request sent.'**
+  String get requestSentToast;
+
+  /// No description provided for @nowBrosToast.
+  ///
+  /// In en, this message translates to:
+  /// **'You\'re bros now!'**
+  String get nowBrosToast;
+
+  /// No description provided for @requestFailedToast.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t send the request.'**
+  String get requestFailedToast;
+
+  /// No description provided for @addBroAction.
+  ///
+  /// In en, this message translates to:
+  /// **'Add bro'**
+  String get addBroAction;
+
+  /// No description provided for @pendingLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Pending'**
+  String get pendingLabel;
+
+  /// No description provided for @signInToAddBros.
+  ///
+  /// In en, this message translates to:
+  /// **'Sign in to add bros.'**
+  String get signInToAddBros;
 }
 
 class _AppLocalizationsDelegate

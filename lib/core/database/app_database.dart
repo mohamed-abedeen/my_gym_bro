@@ -17,6 +17,10 @@ class UserProfiles extends Table {
   DateTimeColumn get deletedAt => dateTime().nullable()();
 
   TextColumn get displayName => text().nullable()();
+
+  /// Unique @handle, the only social lookup key (lowercase a-z/0-9/_, 3–20).
+  /// Null until claimed; uniqueness is enforced server-side on sync.
+  TextColumn get username => text().nullable()();
   TextColumn get avatarUrl => text().nullable()();
   TextColumn get bannerUrl => text().nullable()();
   TextColumn get goal => text().nullable()();
@@ -193,7 +197,10 @@ class SyncQueue extends Table {
 /// row on delete-sync without first reading it back from the server. This is
 /// the device's offline source of truth for "am I following X?" and powers
 /// optimistic follow/unfollow.
-class Follows extends Table {
+/// Local cache of the current user's friendship edges — requests in and out,
+/// accepted bros, and blocked pairs (both directions, mirroring the Supabase
+/// `friendships` rows the user is a side of).
+class Friendships extends Table {
   IntColumn get localId => integer().autoIncrement()();
   TextColumn get remoteId => text().nullable()();
   TextColumn get syncStatus => text().withDefault(const Constant('pending'))();
@@ -201,15 +208,24 @@ class Follows extends Table {
   DateTimeColumn get updatedAt => dateTime().nullable()();
   DateTimeColumn get deletedAt => dateTime().nullable()();
 
-  /// The current user's auth id (the follower).
-  TextColumn get followerId => text()();
+  /// Auth id of the user who sent the request.
+  TextColumn get requesterId => text()();
 
-  /// The followed user's auth id.
-  TextColumn get followeeId => text()();
+  /// Auth id of the user who received it.
+  TextColumn get addresseeId => text()();
+
+  /// 'pending' | 'accepted' | 'blocked'
+  TextColumn get status => text().withDefault(const Constant('pending'))();
+
+  /// Auth id of whichever side blocked — set exactly when status is 'blocked'.
+  TextColumn get blockedBy => text().nullable()();
+
+  /// When the addressee accepted (declines delete the row instead).
+  DateTimeColumn get respondedAt => dateTime().nullable()();
 
   @override
   List<Set<Column>> get uniqueKeys => [
-        {followerId, followeeId},
+        {requesterId, addresseeId},
       ];
 }
 
@@ -228,7 +244,7 @@ class Follows extends Table {
     SessionExercises,
     WorkoutSets,
     SyncQueue,
-    Follows,
+    Friendships,
   ],
 )
 class AppDatabase extends _$AppDatabase {
@@ -241,7 +257,7 @@ class AppDatabase extends _$AppDatabase {
   }
 
   @override
-  int get schemaVersion => 16;
+  int get schemaVersion => 17;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -325,12 +341,9 @@ class AppDatabase extends _$AppDatabase {
         // are rows the user's history/routines reference (see helper).
         await _deleteUnreferencedCatalogue();
       }
-      if (from < 15) {
-        // Social graph — local cache of the current user's outgoing follows.
-        if (!await _hasTable('follows')) {
-          await m.createTable(follows);
-        }
-      }
+      // (v15 previously created the follows table; the one-way follow model
+      //  was superseded by friendships in v17, so the table is no longer
+      //  created here and is dropped below.)
       if (from < 16) {
         // Exercise source switched from the WorkoutX API to the ExerciseDB
         // OSS v1 API (testing until the ExerciseDB.io license is bought).
@@ -339,6 +352,17 @@ class AppDatabase extends _$AppDatabase {
         // API on the next browse. Custom exercises are preserved, as are
         // rows the user's history/routines reference (see helper).
         await _deleteUnreferencedCatalogue();
+      }
+      if (from < 17) {
+        // Bros Phase B — friends graph (PRD §5.6). @username claim on the
+        // profile plus a local cache of friendship edges (requests in/out,
+        // accepted, blocked). The one-way follows cache is superseded and
+        // dropped; the server-side follows table goes in migration 012.
+        await _addColumnIfMissing('user_profiles', 'username', 'TEXT');
+        if (!await _hasTable('friendships')) {
+          await m.createTable(friendships);
+        }
+        await customStatement('DROP TABLE IF EXISTS follows');
       }
     },
   );

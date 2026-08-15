@@ -92,7 +92,7 @@ void main() {
 
   tearDown(() => tmp.delete(recursive: true));
 
-  test('upgrade from v11 reaches v16 with columns, follows table and '
+  test('upgrade from v11 reaches v17 with columns, friendships table and '
       'catalogue wipe keeping referenced rows', () async {
     final file = File('${tmp.path}${Platform.pathSeparator}old.db');
 
@@ -132,21 +132,24 @@ void main() {
 
     // Migration completed and stamped the current version.
     final version = await query('PRAGMA user_version');
-    expect(version.single.read<int>('user_version'), 16);
+    expect(version.single.read<int>('user_version'), 17);
 
-    // v12 _addColumnIfMissing columns were added to user_profiles.
+    // v12/v17 _addColumnIfMissing columns were added to user_profiles.
     final profileCols = (await query('PRAGMA table_info(user_profiles)'))
         .map((r) => r.read<String>('name'))
         .toSet();
-    expect(profileCols, containsAll(['body_weight_kg', 'height_cm']));
+    expect(
+        profileCols, containsAll(['body_weight_kg', 'height_cm', 'username']));
 
-    // v15 created the follows table.
+    // v17 created the friendships cache; the superseded follows table is
+    // gone (never created on this path — v15's create step was retired).
     final tables = (await query(
       "SELECT name FROM sqlite_master WHERE type = 'table'",
     ))
         .map((r) => r.read<String>('name'))
         .toSet();
-    expect(tables, contains('follows'));
+    expect(tables, contains('friendships'));
+    expect(tables, isNot(contains('follows')));
 
     // v14/v16 catalogue wipe: referenced + custom rows survive, the
     // unreferenced catalogue row is deleted.
@@ -167,6 +170,54 @@ void main() {
     expect(profile.heightCm, isNull);
   });
 
+  test('upgrade from a v15-era DB drops the follows table and creates '
+      'friendships', () async {
+    final file = File('${tmp.path}${Platform.pathSeparator}v15.db');
+
+    final old = NativeDatabase(file);
+    await old.ensureOpen(_SchemaStamp(15));
+    for (final ddl in _v11Ddl) {
+      await old.runCustom(ddl);
+    }
+    // The columns v12 already added on a real v15 device.
+    await old
+        .runCustom('ALTER TABLE user_profiles ADD COLUMN body_weight_kg REAL');
+    await old.runCustom('ALTER TABLE user_profiles ADD COLUMN height_cm REAL');
+    // The follows cache as v15 created it, with a stale edge in it.
+    await old.runCustom('''
+      CREATE TABLE follows (
+        local_id INTEGER PRIMARY KEY AUTOINCREMENT,
+        remote_id TEXT,
+        sync_status TEXT NOT NULL DEFAULT 'pending',
+        created_at INTEGER, updated_at INTEGER, deleted_at INTEGER,
+        follower_id TEXT NOT NULL,
+        followee_id TEXT NOT NULL
+      )''');
+    await old.runCustom(
+      "INSERT INTO follows (follower_id, followee_id) VALUES ('me', 'them')",
+    );
+    await old.close();
+
+    final db = AppDatabase(NativeDatabase(file));
+    addTearDown(db.close);
+
+    Future<List<QueryRow>> query(String sql) => db.customSelect(sql).get();
+
+    final version = await query('PRAGMA user_version');
+    expect(version.single.read<int>('user_version'), 17);
+
+    final tables = (await query(
+      "SELECT name FROM sqlite_master WHERE type = 'table'",
+    ))
+        .map((r) => r.read<String>('name'))
+        .toSet();
+    expect(tables, isNot(contains('follows')));
+    expect(tables, contains('friendships'));
+
+    // The new cache starts empty and accepts a row with the v17 shape.
+    expect(await db.select(db.friendships).get(), isEmpty);
+  });
+
   test('running the same upgrade twice is idempotent (no duplicate column '
       'crash)', () async {
     final file = File('${tmp.path}${Platform.pathSeparator}twice.db');
@@ -185,7 +236,7 @@ void main() {
     final db = AppDatabase(NativeDatabase(file));
     addTearDown(db.close);
     final version = await db.customSelect('PRAGMA user_version').get();
-    expect(version.single.read<int>('user_version'), 16);
+    expect(version.single.read<int>('user_version'), 17);
   });
 
   test('fresh createAll builds every table', () async {
