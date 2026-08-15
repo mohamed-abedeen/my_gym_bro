@@ -662,13 +662,14 @@ class _ExerciseBrowserScreenState
                 children: [
                   // Close
                   LiquidGlassButton(
-                    width: 40.w,
-                    height: 40.w,
+                    width: AppSizes.headerActionBtn.w,
+                    height: AppSizes.headerActionBtn.w,
                     opacity: 0.15,
-                    radius: 20.r,
+                    radius: (AppSizes.headerActionBtn / 2).r,
                     onTap: () => Navigator.of(context).pop(),
                     child: Icon(Icons.close_rounded,
-                        color: colors.textPrimary, size: 20.sp),
+                        color: colors.textPrimary,
+                        size: AppSizes.headerActionIcon.sp),
                   ),
                   const Spacer(),
                   // Selected count badge (multi-pick only)
@@ -693,8 +694,8 @@ class _ExerciseBrowserScreenState
                     SizedBox(width: 10.w),
                   // Check (accent) — in multi-pick confirms all
                   if (_isMultiPick) Container(
-                          width: 40.w,
-                          height: 40.w,
+                          width: AppSizes.headerActionBtn.w,
+                          height: AppSizes.headerActionBtn.w,
                           decoration: BoxDecoration(
                             color: _selectedIds.isNotEmpty
                                 ? colors.accent
@@ -704,7 +705,8 @@ class _ExerciseBrowserScreenState
                           child: Material(
                             color: Colors.transparent,
                             child: InkWell(
-                              borderRadius: BorderRadius.circular(20.r),
+                              borderRadius: BorderRadius.circular(
+                                  (AppSizes.headerActionBtn / 2).r),
                               onTap: _selectedIds.isNotEmpty
                                   ? _confirmMultiSelect
                                   : null,
@@ -720,13 +722,14 @@ class _ExerciseBrowserScreenState
                             ),
                           ),
                         ) else LiquidGlassButton(
-                          width: 40.w,
-                          height: 40.w,
+                          width: AppSizes.headerActionBtn.w,
+                          height: AppSizes.headerActionBtn.w,
                           opacity: 0.25,
-                          radius: 20.r,
+                          radius: (AppSizes.headerActionBtn / 2).r,
                           onTap: () => Navigator.of(context).pop(),
                           child: Icon(Icons.check_rounded,
-                              color: colors.accent, size: 22.sp),
+                              color: colors.accent,
+                              size: AppSizes.headerActionIcon.sp),
                         ),
                 ],
               ),

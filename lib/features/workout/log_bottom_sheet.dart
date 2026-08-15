@@ -141,10 +141,10 @@ class _LogSheetState extends ConsumerState<_LogSheet> {
                   children: [
                     // Close: dismisses the calendar first if open.
                     LiquidGlassButton(
-                      width: 48.w,
-                      height: 48.h,
+                      width: AppSizes.headerActionBtn.w,
+                      height: AppSizes.headerActionBtn.w,
                       opacity: 0.15,
-                      radius: 24.r,
+                      radius: (AppSizes.headerActionBtn / 2).r,
                       onTap: () {
                         if (_showCalendar) {
                           setState(() => _showCalendar = false);
@@ -153,7 +153,8 @@ class _LogSheetState extends ConsumerState<_LogSheet> {
                         }
                       },
                       child: Icon(Icons.close_rounded,
-                          color: colors.textPrimary, size: 22.sp),
+                          color: colors.textPrimary,
+                          size: AppSizes.headerActionIcon.sp),
                     ),
                     Expanded(
                       child: Center(

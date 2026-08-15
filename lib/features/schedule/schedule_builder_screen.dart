@@ -184,7 +184,7 @@ class _ScheduleBuilderScreenState
                   // Close — liquid glass
                   OcGlassBtn(
                     type: OcGlassBtnType.close,
-                    size: 40,
+                    size: AppSizes.headerActionBtn,
                     onTap: () => Navigator.of(context).pop(),
                   ),
                   const Spacer(),
@@ -192,21 +192,21 @@ class _ScheduleBuilderScreenState
                     // Delete — liquid glass (red-tinted)
                     OcGlassBtn(
                       type: OcGlassBtnType.delete,
-                      size: 40,
+                      size: AppSizes.headerActionBtn,
                       onTap: _deleteSchedule,
                     ),
                     SizedBox(width: 10.w),
                     // Share — liquid glass
                     const OcGlassBtn(
                       type: OcGlassBtnType.share,
-                      size: 40,
+                      size: AppSizes.headerActionBtn,
                     ),
                     SizedBox(width: 10.w),
                   ],
                   // Done / Save — liquid glass (green checkmark when ready)
                   OcGlassBtn(
                     type: OcGlassBtnType.done,
-                    size: 40,
+                    size: AppSizes.headerActionBtn,
                     isActive: !_saving,
                     onTap: _saving ? null : _saveSchedule,
                   ),

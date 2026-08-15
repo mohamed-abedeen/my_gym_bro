@@ -79,15 +79,15 @@ class SettingsScreen extends ConsumerWidget {
                   GestureDetector(
                     onTap: () => Navigator.of(context).pop(),
                     child: Container(
-                      width: 34.w,
-                      height: 34.w,
+                      width: AppSizes.headerActionBtn.w,
+                      height: AppSizes.headerActionBtn.w,
                       decoration: BoxDecoration(
                         shape: BoxShape.circle,
                         color: colors.card,
                       ),
                       child: Icon(
                         Icons.close_rounded,
-                        size: 16.sp,
+                        size: AppSizes.headerActionIcon.sp,
                         color: colors.subtitleText,
                       ),
                     ),

@@ -95,8 +95,8 @@ class _MuscleDetailSheetState extends ConsumerState<_MuscleDetailSheet> {
                 GestureDetector(
                   onTap: () => Navigator.pop(context),
                   child: Container(
-                    width: 32.w,
-                    height: 32.w,
+                    width: AppSizes.headerActionBtn.w,
+                    height: AppSizes.headerActionBtn.w,
                     decoration: BoxDecoration(
                       color: colors.cardElevated,
                       shape: BoxShape.circle,
@@ -104,7 +104,7 @@ class _MuscleDetailSheetState extends ConsumerState<_MuscleDetailSheet> {
                     child: Icon(
                       Icons.close_rounded,
                       color: colors.textPrimary,
-                      size: 18.sp,
+                      size: AppSizes.headerActionIcon.sp,
                     ),
                   ),
                 ),

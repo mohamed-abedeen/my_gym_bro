@@ -436,6 +436,13 @@ class AppSizes {
   static const lgButtonSmall = 48.0;
   static const lgButtonTiny = 18.0;
 
+  /// Circular header action buttons (done / close / delete / share) shown at
+  /// the top of screens and sheets. Kept uniform across every screen so they
+  /// don't drift to different diameters — matches the status-sheet done button
+  /// that reads at the right size. Icon rides at ~46% of the diameter.
+  static const headerActionBtn = 48.0;
+  static const headerActionIcon = 22.0;
+
   // Schedule circles
   static const scheduleCircleD2FF00 = 69.0;
   static const scheduleCircleH = 68.0;
