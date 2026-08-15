@@ -6,7 +6,6 @@ import 'package:intl/intl.dart';
 import 'package:my_gym_bro/core/providers/providers.dart';
 import 'package:my_gym_bro/core/services/units.dart';
 import 'package:my_gym_bro/features/leaderboard/leaderboard_providers.dart';
-import 'package:my_gym_bro/features/leaderboard/leaderboard_screen.dart';
 import 'package:my_gym_bro/features/leaderboard/rank.dart';
 import 'package:my_gym_bro/features/settings/settings_screen.dart';
 import 'package:my_gym_bro/features/settings/skin_provider.dart';
@@ -17,6 +16,7 @@ import 'package:my_gym_bro/l10n/app_localizations.dart';
 import 'package:my_gym_bro/shared/constants.dart';
 import 'package:my_gym_bro/shared/responsive.dart';
 import 'package:my_gym_bro/shared/widgets/anatomy_body.dart';
+import 'package:my_gym_bro/shared/widgets/bottom_nav_pill.dart';
 import 'package:my_gym_bro/shared/widgets/liquid_glass_button.dart';
 import 'package:my_gym_bro/shared/widgets/shimmer_box.dart';
 import 'package:my_gym_bro/shared/widgets/user_avatar.dart';
@@ -35,16 +35,13 @@ class HomeScreen extends ConsumerWidget {
         _Header(l10n: l10n),
         SizedBox(height: 16.h),
 
-        // Leaderboard card — taps push the full Leaderboard screen
+        // Leaderboard card — taps switch to the Bros tab (which hosts the
+        // leaderboard) instead of pushing a duplicate copy of the screen.
         Padding(
           padding: EdgeInsets.symmetric(horizontal: AppSizes.contentPaddingH.w),
           child: GestureDetector(
             behavior: HitTestBehavior.opaque,
-            onTap: () => Navigator.of(context).push(
-              MaterialPageRoute<void>(
-                builder: (_) => const LeaderboardScreen(),
-              ),
-            ),
+            onTap: () => ref.read(navIndexProvider.notifier).state = 2,
             child: _LeaderboardCard(l10n: l10n),
           ),
         ),
@@ -145,8 +142,8 @@ class _Header extends ConsumerWidget {
               MaterialPageRoute<void>(builder: (_) => const SettingsScreen()),
             ),
             child: LiquidGlassButton(
-              width: 48.w,
-              height: 48.h,
+              width: AppSizes.headerActionBtn.w,
+              height: AppSizes.headerActionBtn.w,
               opacity: 0.65,
               radius: 296.r,
               child: UserAvatar(

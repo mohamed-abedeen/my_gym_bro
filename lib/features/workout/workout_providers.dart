@@ -832,6 +832,31 @@ class EnrichedSession {
   final List<String> targetedMuscleGroups;
 }
 
+/// Sessions that set a new all-time best set volume (weight × reps) for
+/// any exercise. Walked oldest→newest so the first time an exercise is
+/// ever performed counts as the baseline, not a PR. Shared by the log
+/// sheet's PR chips and the session share call sites (`hasPr`).
+Set<int> prSessionIds(List<EnrichedSession> newestFirst) {
+  final best = <String, double>{};
+  final prs = <int>{};
+  for (final e in newestFirst.reversed) {
+    var isPr = false;
+    for (final ex in e.exercises) {
+      for (final set in ex.setDetails) {
+        if (set.isWarmup || set.weight == null || set.reps == null) continue;
+        final vol = set.weight! * set.reps!;
+        final prev = best[ex.exerciseId];
+        if (prev == null || vol > prev) {
+          best[ex.exerciseId] = vol;
+          if (prev != null) isPr = true;
+        }
+      }
+    }
+    if (isPr) prs.add(e.session.localId);
+  }
+  return prs;
+}
+
 class SessionExerciseDetail {
   const SessionExerciseDetail({
     required this.name,

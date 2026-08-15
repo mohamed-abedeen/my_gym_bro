@@ -153,7 +153,7 @@ class _BottomNavPillState extends ConsumerState<BottomNavPill>
                       index: 2,
                       icon: Icons.people_rounded,
                       size: 38.sp,
-                      label: l10n.tabCommunity,
+                      label: l10n.tabBros,
                     ),
                   ],
                 ),

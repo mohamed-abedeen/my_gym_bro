@@ -30,7 +30,7 @@ Legend: ✅ done · 🟡 partial · 🔴 not built · ⚠️ remove · `[new]` b
 | Leaderboard — scope UI | 🟡 | `leaderboard_screen.dart:23` `enum _Scope {rivals,global,friends}` + tabs (leaderboard/challenges) exist |
 | Leaderboard — season boards | 🔴 | no weekly/monthly/all-time board switch; no reset/winners |
 | Leaderboard — data/scoring | 🔴 | hardcoded mock rows; no backend, no composite, no normalization |
-| Community feed | 🔴 | `MockCommunityRepository` / `community_mock_data.dart`; composer doesn't persist |
+| Community feed | ✂️ | REMOVED 2026-08-15 (Bros Phase A) — client UI deleted; dormant Supabase tables pending cleanup migration |
 | Profile — follower/following UI | 🟡 | `profile_screen.dart:472,478` show hardcoded `'9'`/`'120'` |
 | Followers/friends backend | 🔴 | no `follows` table, no mutual-friend logic |
 | Challenges backend | 🔴 | mock; no `challenges`/participants/reports tables or moderation |

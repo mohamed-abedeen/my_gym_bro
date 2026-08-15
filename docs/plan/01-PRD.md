@@ -22,7 +22,7 @@
 ## 1. Executive Summary
 
 ### 1.1 Vision
-MyGymBro is a **premium, offline-first** training companion that makes serious lifting feel personal and motivating. It pairs fast, reliable workout logging with a **living anatomy body** that shows what you trained and what's recovered, a **motivational voice** (your "gym bro") that talks to you in **the tone you choose**, and a **social layer** (followers, community, challenges, a global leaderboard) that turns consistency into something visible and competitive.
+MyGymBro is a **premium, offline-first** training companion that makes serious lifting feel personal and motivating. It pairs fast, reliable workout logging with a **living anatomy body** that shows what you trained and what's recovered, a **motivational voice** (your "gym bro") that talks to you in **the tone you choose**, and a **social layer** (the Bros tab: friends, challenges, a global leaderboard) that turns consistency into something visible and competitive.
 
 ### 1.2 Value Proposition
 - **Offline-first & fast** — log a full session in the gym with zero connectivity, no spinners.
@@ -47,7 +47,7 @@ A paid app for people who train regularly and want a tool that's both rigorous (
 - Local-first logging that is instant and reliable, syncing in the background.
 - An interactive anatomy body visualizing **recovery state** and **training volume**.
 - A **4-tone** coaching voice across every notification and motivation message.
-- A social layer that rewards consistency: followers, feed, challenges, and a composite leaderboard.
+- A social layer that rewards consistency: friends ("bros"), challenges, and a composite leaderboard — no feed (cut 2026-08-15, see §5.6/§5.8).
 
 ---
 
@@ -126,22 +126,24 @@ The visual centerpiece. Per-muscle SVG overlays on a gendered base body.
 - Local notifications already tone-aware; **Supabase motivation messages** must resolve tone server-side (see `04-BACKEND.md`).
 - **Compliance:** copy is **preset, human-written templates** — not AI-generated and not medical/professional advice. Never market this as an "AI coach"; avoid wording that implies clinical guidance or guaranteed results (App Store guidelines 1.4.1 / 2.3).
 
-### 5.6 Social Graph — Followers & Friends *(to build)*
-- **One-way following** (no approval) — follow/unfollow anyone, Instagram-style.
-- **Mutual follow = friends:** when A follows B *and* B follows A, they become **friends** automatically (no separate request flow).
-- Friends unlock the **Friends leaderboard** scope (head-to-head competition) and friend-only surfacing.
-- Profiles show **followers / following counts** (and friend count).
-- No DMs (the DM subsystem is being removed).
+### 5.6 Social Graph — Friends ("Bros") *(REDESIGNED 2026-08-15 — supersedes the followers model)*
+> **Decision (2026-08-15):** the follower model and the Community photo/text feed are **cut**. The third tab becomes the **Bros tab**: leaderboard + challenges + friends. Social is a *crew* model (2–5 gym bros you actually train with), not an audience model. This section is the canonical spec; older mentions of followers/feed elsewhere are superseded.
+
+- **Mutual friends with a request flow:** A sends a friend request → B accepts (or declines). No one-way following, no follower counts.
+- **Discovery:** (1) **invite link + QR code** (primary — bros are physically in the same gym; link doubles as the App Store growth loop), (2) **unique @username, exact-match search** (secondary). **No global real-name search** (privacy). Display names remain visible inside an accepted friendship; the username is the only lookup key.
+- Friends unlock the **Friends leaderboard** scope and the auto-generated **"Latest from your bros" activity strip** (workout summaries like "Karim finished Push Day — 8.4k kg" + 🔥 reactions — generated from workout data, **no free-text UGC**).
+- **Safety (store requirement):** block + report a user, available from the friend request and the profile. Blocking hides both directions.
+- No DMs (unchanged).
+- **Build phases:** **A)** tab swap — Bros tab replaces Community, feed removed (client-only). **B)** friends graph — `friendships` table + RLS, request/accept/decline, username claim, invite link/QR, requests inbox, block/report, account-deletion cleanup. **C)** challenges backend — duels / squad goals / open challenges, nudges (push, rate-limited per Apple 4.5.4).
 
 ### 5.7 Public Profiles *(partial → finish)*
-- Public profile shows: avatar, banner, display name, **gendered anatomy body**, **streak**, **achievements**, **posts**, follower/following counts.
-- Tabs: Status / Achievements / Posts.
+- Public profile shows: avatar, banner, display name, @username, **gendered anatomy body**, **streak**, **achievements**, friend count. *(Posts and follower/following counts removed with the feed — 2026-08-15.)*
+- Tabs: Status / Achievements.
 - Privacy: profiles are viewable by other users; sensitive raw data (exact bodyweight, etc.) stays private unless the user opts to show it.
 
-### 5.8 Community Feed *(mock → build)*
-- Subscriber-only feed of posts (text + image), likes, comments.
-- Post composer (text + image upload to Supabase Storage `community-images`).
-- Backed by Supabase `posts` / `post_likes` / `post_comments` (tables + RLS already exist) — replace `CommunityMockData` with a real `SupabaseCommunityRepository`.
+### 5.8 Community Feed — **REMOVED (2026-08-15)**
+- The photo/text post feed is cut from the product (see §5.6). Rationale: empty-room problem at launch scale, and full UGC moderation obligations (App Store 1.2) for a surface a crew-based app doesn't need. Its engagement job is replaced by the auto-generated bros activity strip (no free text → no content moderation).
+- Client feed UI deleted in Phase A. Supabase `posts` / `post_likes` / `post_comments` tables + `community-images` storage stay dormant server-side until a cleanup migration drops them (pre-launch, no user data at stake).
 
 ### 5.9 Challenges *(mock → build)*
 - **Two sources:** **curated** (you / a Supabase table + cron define a daily challenge) and **community-created** (users submit challenges others can join).
@@ -237,7 +239,7 @@ The visual centerpiece. Per-muscle SVG overlays on a gendered base body.
 | Decision | Choice | Rationale |
 |----------|--------|-----------|
 | Monetization | Hard paywall after 7-day trial | Simple, premium positioning, predictable revenue |
-| Social graph | One-way followers; **mutual follow = friends** | Instagram-style; low friction, no request flow; mutual unlocks Friends competition |
+| Social graph | **Friends with request flow ("Bros") — REVISED 2026-08-15** (was: one-way followers) | Crew model matches how people train; requests + block/report keep the safety surface small; discovery via invite link/QR + @username only |
 | Leaderboard score | Composite avg of streak + volume + challenge points | Rewards balanced behavior, not one metric |
 | Leaderboard scope | **Global + Friends + Rivals** | Global for reach, Friends for personal rivalry, Rivals for fair matched competition |
 | Rivals matching | Similar composite + experience + volume; weekly pod of ~10–20 | Fair, beatable competition vs. peers of equal level |
@@ -246,7 +248,7 @@ The visual centerpiece. Per-muscle SVG overlays on a gendered base body.
 | Home day strip | Tap → training calendar of worked days/sessions | Easy review of training history |
 | Light-mode accent | **Orange** (lime stays dark-mode only) | Lime is low-contrast on light backgrounds |
 | Wearables | Apple Health/Watch + Google Fit/Health Connect in v1 | Enrich sessions/recovery with HR & energy; sync workouts to health profile |
-| Challenges | Curated + community-created (moderated) | Fresh content + engagement, with safety |
+| Challenges | Curated + member-created duels/squad goals/open ladders (moderated) — lives in the Bros tab | Fresh content + engagement, with safety |
 | Skins | Earned + purchasable mix | Engagement driver + secondary revenue |
 | Anatomy view | Recovery + Volume modes | Recovery guides training; volume reveals balance |
 | Coaching voice | 4 tones, balanced default | Avoids alienating sensitive users; opt-in to harsh |

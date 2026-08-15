@@ -6,9 +6,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:my_gym_bro/core/security/secure_storage.dart';
 import 'package:my_gym_bro/core/services/subscription_sync_service.dart';
-import 'package:my_gym_bro/features/community/community_screen.dart';
 import 'package:my_gym_bro/features/home/home_screen.dart';
 import 'package:my_gym_bro/features/leaderboard/leaderboard_providers.dart';
+import 'package:my_gym_bro/features/leaderboard/leaderboard_screen.dart';
 import 'package:my_gym_bro/features/leaderboard/rank.dart';
 import 'package:my_gym_bro/features/leaderboard/rank_up_overlay.dart';
 import 'package:my_gym_bro/features/workout/achievement_planner.dart';
@@ -23,7 +23,9 @@ import 'package:my_gym_bro/shared/widgets/ios_native_nav.dart';
 
 /// Main app scaffold — animated tab switching with floating nav pill.
 ///
-/// Pages: [HomeScreen, WorkoutScreen, CommunityScreen]
+/// Pages: [HomeScreen, WorkoutScreen, LeaderboardScreen] — the third tab is
+/// the Bros tab (leaderboard + challenges; the community feed was removed
+/// 2026-08-15, see docs/plan/01-PRD.md §5.6/§5.8).
 /// Nav pill floats OVER content.
 class MyGymBroScaffold extends ConsumerStatefulWidget {
   const MyGymBroScaffold({super.key});
@@ -88,7 +90,7 @@ class _MyGymBroScaffoldState extends ConsumerState<MyGymBroScaffold>
   static const _pages = <Widget>[
     HomeScreen(),
     WorkoutScreen(),
-    CommunityScreen(),
+    LeaderboardScreen(),
   ];
 
   @override

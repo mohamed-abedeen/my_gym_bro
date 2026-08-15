@@ -138,23 +138,21 @@ Generates weekly + monthly progress reports.
 
 ---
 
-## 4. Community Feed (replace mocks)
+## 4. Community Feed — **REMOVED (2026-08-15, PRD §5.8)**
 
-Client uses the Supabase SDK directly (tables + RLS already exist):
-- **Feed:** `posts` join `post_likes`/`post_comments` counts; paginate by `created_at desc`. Reads gated by `has_active_subscription`.
-- **Compose:** upload image to Storage `community-images/<uid>/...` → insert `posts` row with `image_url`.
-- **Like/Comment:** insert/delete `post_likes`; insert `post_comments`.
-- Replace `MockCommunityRepository` with `SupabaseCommunityRepository`; keep the same interface so the UI is untouched.
+The feed is cut. No `SupabaseCommunityRepository` will be built. Dormant `posts` / `post_likes` / `post_comments` tables and the `community-images` bucket get dropped in a cleanup migration (pre-launch, no user data).
 
 ---
 
-## 5. Followers (client contracts)
+## 5. Friends / "Bros" (client contracts) *(REDESIGNED 2026-08-15 — was one-way followers; PRD §5.6)*
 
-- **Follow:** insert `follows(follower_id=me, followee_id=target)` (outbox-synced).
-- **Unfollow:** delete the row.
-- **Friends:** derived — a friend is a mutual follow (read via the `friends` view, `03-DATABASE.md` §3.1). No explicit accept step. Friend count = rows in `friends` for the user.
-- **Counts:** read from a `user_profiles` view exposing `follower_count`/`following_count` (+ `friend_count`), or maintained columns updated by trigger on `follows`.
-- **Profile fetch:** `user_profiles` (public-safe columns) + counts + recent `posts` + achievements + streak. Profile shows a relationship state (not following / following / **friends** when mutual).
+- **Request:** insert `friendships(requester_id=me, addressee_id=target, status='pending')` (outbox-synced).
+- **Accept / decline:** addressee updates status to `accepted` / deletes the row.
+- **Block:** either side sets `status='blocked'` (blocker recorded); blocked pairs are invisible both ways and can't re-request. **Report** goes to a `user_reports` table for review.
+- **Lookup:** exact-match on unique `user_profiles.username` (lowercase); invite link/QR encodes the username. No name search endpoint.
+- **Counts:** `friend_count` from accepted rows (view or maintained column).
+- **Profile fetch:** `user_profiles` (public-safe columns) + friend count + achievements + streak (no posts). Profile shows relationship state (none / pending out / pending in / bros / blocked).
+- **Activity strip:** "Latest from your bros" reads friends' recent session summaries (already synced `sessions` rows) — no new content type, no free text.
 
 ---
 

@@ -307,17 +307,17 @@ class _Header extends ConsumerWidget {
 
           const Spacer(),
 
-          // Glass menu button (48x48, 0.25 opacity)
+          // Glass menu button (header spec, 0.25 opacity)
           LiquidGlassButton(
-            width: 48.w,
-            height: 48.w,
+            width: AppSizes.headerActionBtn.w,
+            height: AppSizes.headerActionBtn.w,
             opacity: 0.25,
-            radius: 24.r,
+            radius: (AppSizes.headerActionBtn / 2).r,
             onTap: () => context.push(AppRoutes.settings),
             child: Icon(
               Icons.menu_rounded,
               color: colors.textPrimary,
-              size: 24.sp,
+              size: AppSizes.headerActionIcon.sp,
             ),
           ),
         ],

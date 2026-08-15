@@ -1,10 +1,15 @@
+import 'dart:async';
+
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:my_gym_bro/core/database/app_database.dart';
+import 'package:my_gym_bro/core/router/app_router.dart';
 import 'package:my_gym_bro/core/services/exercise_gif_cache.dart';
 import 'package:my_gym_bro/core/services/units.dart';
+import 'package:my_gym_bro/features/workout/share/share_card_data.dart';
 import 'package:my_gym_bro/features/workout/workout_providers.dart';
 import 'package:my_gym_bro/l10n/app_localizations.dart';
 import 'package:my_gym_bro/shared/constants.dart';
@@ -106,27 +111,54 @@ class _ExerciseDetailSheet extends ConsumerWidget {
                 child: Row(
                   children: [
                     LiquidGlassButton(
-                      width: 48.w,
-                      height: 48.h,
+                      width: AppSizes.headerActionBtn.w,
+                      height: AppSizes.headerActionBtn.w,
                       opacity: 0.15,
-                      radius: 24.r,
+                      radius: (AppSizes.headerActionBtn / 2).r,
                       onTap: () => Navigator.of(context).pop(),
                       child: Icon(
                         Icons.arrow_back_ios_new_rounded,
                         color: colors.textPrimary,
-                        size: 20.sp,
+                        size: AppSizes.headerActionIcon.sp,
                       ),
                     ),
                     const Spacer(),
                     LiquidGlassButton(
-                      width: 48.w,
-                      height: 48.h,
+                      width: AppSizes.headerActionBtn.w,
+                      height: AppSizes.headerActionBtn.w,
                       opacity: 0.15,
-                      radius: 24.r,
+                      radius: (AppSizes.headerActionBtn / 2).r,
+                      // Shares the whole session this exercise belongs to —
+                      // the sheet only holds the raw Session row, so resolve
+                      // the enriched form the share card needs by id.
+                      onTap: () async {
+                        final sessions =
+                            await ref.read(enrichedAllSessionsProvider.future);
+                        EnrichedSession? enriched;
+                        for (final e in sessions) {
+                          if (e.session.localId == session.localId) {
+                            enriched = e;
+                            break;
+                          }
+                        }
+                        if (enriched == null || !context.mounted) return;
+                        final profile =
+                            ref.read(userProfileProvider).valueOrNull;
+                        unawaited(context.push(
+                          AppRoutes.shareCard,
+                          extra: ShareCardData.fromEnrichedSession(
+                            enriched,
+                            hasPr: prSessionIds(sessions)
+                                .contains(session.localId),
+                            bodyWeightKg: profile?.bodyWeightKg,
+                            gender: profile?.gender,
+                          ),
+                        ));
+                      },
                       child: Icon(
                         Icons.ios_share_rounded,
                         color: colors.textPrimary,
-                        size: 20.sp,
+                        size: AppSizes.headerActionIcon.sp,
                       ),
                     ),
                   ],

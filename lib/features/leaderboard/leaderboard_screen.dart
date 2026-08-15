@@ -79,104 +79,85 @@ class _LeaderboardScreenState extends ConsumerState<LeaderboardScreen> {
     final colors = AppColors.of(context);
     final l10n = AppLocalizations.of(context);
 
-    return Scaffold(
-      backgroundColor: colors.background,
-      body: Stack(
-        children: [
-          // Top gradient header strip (Figma Rectangle 23: 440x599)
-          Positioned.fill(
-            child: Align(
-              alignment: Alignment.topCenter,
-              child: Container(
-                height: 599.h,
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    begin: Alignment.topCenter,
-                    end: Alignment.bottomCenter,
-                    colors: [
-                      colors.cardElevated.withValues(alpha: 0.4),
-                      colors.background,
-                    ],
-                  ),
+    // Bros tab (2026-08-15): rendered as the third tab inside
+    // MyGymBroScaffold — no own Scaffold, no back button, and the content
+    // ends clear of the bottom nav.
+    return Stack(
+      children: [
+        // Top gradient header strip (Figma Rectangle 23: 440x599)
+        Positioned.fill(
+          child: Align(
+            alignment: Alignment.topCenter,
+            child: Container(
+              height: 599.h,
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                  colors: [
+                    colors.cardElevated.withValues(alpha: 0.4),
+                    colors.background,
+                  ],
                 ),
               ),
             ),
           ),
+        ),
 
-          SafeArea(
-            child: Column(
-              children: [
-                SizedBox(height: 8.h),
-                _TopBar(
-                  tab: _tab,
-                  onChange: (t) => setState(() => _tab = t),
-                  onBack: () => Navigator.of(context).pop(),
-                  l10n: l10n,
-                ),
-                SizedBox(height: 16.h),
-                Expanded(
-                  child: _tab == _Tab.leaderboard
-                      ? _LeaderboardTab(
-                          scope: _scope,
-                          onScope: (s) => setState(() => _scope = s),
-                          l10n: l10n,
-                        )
-                      : _ChallengesTab(l10n: l10n),
-                ),
-              ],
-            ),
+        SafeArea(
+          bottom: false,
+          child: Column(
+            children: [
+              SizedBox(height: 8.h),
+              _TopBar(
+                tab: _tab,
+                onChange: (t) => setState(() => _tab = t),
+                l10n: l10n,
+              ),
+              SizedBox(height: 16.h),
+              Expanded(
+                child: _tab == _Tab.leaderboard
+                    ? _LeaderboardTab(
+                        scope: _scope,
+                        onScope: (s) => setState(() => _scope = s),
+                        l10n: l10n,
+                      )
+                    : _ChallengesTab(l10n: l10n),
+              ),
+              // Keeps lists/cards clear of the bottom nav.
+              SizedBox(height: AppSizes.navClearanceOf(context)),
+            ],
           ),
-        ],
-      ),
+        ),
+      ],
     );
   }
 }
 
 // ─────────────────────────────────────────────
 // T O P   B A R
-// Back chip + Leaderboard pill + Challenges pill
+// Leaderboard pill + Challenges pill (no back —
+// this is a root tab, not a pushed screen)
 // ─────────────────────────────────────────────
 
 class _TopBar extends StatelessWidget {
   const _TopBar({
     required this.tab,
     required this.onChange,
-    required this.onBack,
     required this.l10n,
   });
 
   final _Tab tab;
   final ValueChanged<_Tab> onChange;
-  final VoidCallback onBack;
   final AppLocalizations l10n;
 
   @override
   Widget build(BuildContext context) {
-    final colors = AppColors.of(context);
-
     return Padding(
       padding: EdgeInsets.symmetric(horizontal: 10.w),
       child: Row(
+        mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          // Back chip — 34x34 rounded
-          GestureDetector(
-            onTap: onBack,
-            behavior: HitTestBehavior.opaque,
-            child: Container(
-              width: 34.w,
-              height: 34.h,
-              decoration: BoxDecoration(
-                color: colors.panelBackground,
-                shape: BoxShape.circle,
-              ),
-              child: Icon(
-                Icons.chevron_left_rounded,
-                color: colors.textPrimary,
-                size: 22.sp,
-              ),
-            ),
-          ),
-          const Spacer(),
           // Leaderboard pill
           _TopPill(
             label: l10n.leaderboardTab,

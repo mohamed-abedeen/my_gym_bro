@@ -66,8 +66,7 @@ lib/
 │   ├── schedule/                  # schedule/program builder
 │   ├── exercises/                 # browser + detail
 │   ├── home/                      # dashboard
-│   ├── community/                 # feed (DMs removed in v1)
-│   ├── leaderboard/               # leaderboard + challenges
+│   ├── leaderboard/               # Bros tab: leaderboard + challenges (community feed removed 2026-08-15)
 │   ├── profile/                   # profile screen + providers
 │   ├── settings/                  # settings + skins
 │   ├── paywall/                   # RevenueCat paywall

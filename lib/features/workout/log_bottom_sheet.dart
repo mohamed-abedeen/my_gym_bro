@@ -57,30 +57,6 @@ class _LogSheetState extends ConsumerState<_LogSheet> {
     });
   }
 
-  /// Sessions that set a new all-time best set volume (weight × reps) for
-  /// any exercise. Walked oldest→newest so the first time an exercise is
-  /// ever performed counts as the baseline, not a PR.
-  Set<int> _prSessionIds(List<EnrichedSession> newestFirst) {
-    final best = <String, double>{};
-    final prs = <int>{};
-    for (final e in newestFirst.reversed) {
-      var isPr = false;
-      for (final ex in e.exercises) {
-        for (final set in ex.setDetails) {
-          if (set.isWarmup || set.weight == null || set.reps == null) continue;
-          final vol = set.weight! * set.reps!;
-          final prev = best[ex.exerciseId];
-          if (prev == null || vol > prev) {
-            best[ex.exerciseId] = vol;
-            if (prev != null) isPr = true;
-          }
-        }
-      }
-      if (isPr) prs.add(e.session.localId);
-    }
-    return prs;
-  }
-
   /// Volume trend (%) per session vs the previous session with the same
   /// derived workout name. Absent when there is nothing to compare.
   Map<int, double> _trendBySessionId(List<EnrichedSession> newestFirst) {
@@ -185,25 +161,27 @@ class _LogSheetState extends ConsumerState<_LogSheet> {
                                   color: colors.accent, size: 22.sp),
                             ),
                           ) else LiquidGlassButton(
-                            width: 48.w,
-                            height: 48.h,
+                            width: AppSizes.headerActionBtn.w,
+                            height: AppSizes.headerActionBtn.w,
                             opacity: 0.15,
-                            radius: 24.r,
+                            radius: (AppSizes.headerActionBtn / 2).r,
                             onTap: () =>
                                 setState(() => _showCalendar = true),
                             child: Icon(Icons.search_rounded,
-                                color: colors.textPrimary, size: 22.sp),
+                                color: colors.textPrimary,
+                                size: AppSizes.headerActionIcon.sp),
                           ),
                     SizedBox(width: 10.w),
                     // Checkmark (accent glass circle)
                     LiquidGlassButton(
-                      width: 48.w,
-                      height: 48.h,
+                      width: AppSizes.headerActionBtn.w,
+                      height: AppSizes.headerActionBtn.w,
                       opacity: 0.25,
-                      radius: 24.r,
+                      radius: (AppSizes.headerActionBtn / 2).r,
                       onTap: () => Navigator.of(context).pop(),
                       child: Icon(Icons.check_rounded,
-                          color: colors.accent, size: 22.sp),
+                          color: colors.accent,
+                          size: AppSizes.headerActionIcon.sp),
                     ),
                   ],
                 ),
@@ -247,7 +225,7 @@ class _LogSheetState extends ConsumerState<_LogSheet> {
         }
 
         final sessions = [...data];
-        final prIds = _prSessionIds(data);
+        final prIds = prSessionIds(data);
         final trends = _trendBySessionId(data);
 
         // Pin the selected day's session (or the nearest earlier one) to
@@ -944,7 +922,7 @@ class _SessionCardState extends ConsumerState<_SessionCard> {
                     const Spacer(),
                     LiquidGlassButton(
                       width: 48.w,
-                      height: 48.h,
+                      height: 48.w,
                       opacity: 0.15,
                       radius: 24.r,
                       onTap: () => _confirmDeleteSession(
@@ -956,7 +934,7 @@ class _SessionCardState extends ConsumerState<_SessionCard> {
                     SizedBox(width: 8.w),
                     LiquidGlassButton(
                       width: 48.w,
-                      height: 48.h,
+                      height: 48.w,
                       opacity: 0.15,
                       radius: 24.r,
                       onTap: () {

@@ -21,7 +21,7 @@ class AppLocalizationsDe extends AppLocalizations {
   String get tabLog => 'Protokoll';
 
   @override
-  String get tabCommunity => 'Community';
+  String get tabBros => 'Bros';
 
   @override
   String get status => 'Status';
@@ -409,7 +409,7 @@ class AppLocalizationsDe extends AppLocalizations {
   String get exportData => 'Daten exportieren';
 
   @override
-  String get clearCache => 'Community-Cache leeren';
+  String get clearCache => 'Bild-Cache leeren';
 
   @override
   String get deleteAccount => 'Konto löschen';
@@ -460,13 +460,6 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get whatOnYourMind => 'Was gibt es Neues?';
-
-  @override
-  String get communityEmpty => 'Noch keine Beiträge. Sei der Erste!';
-
-  @override
-  String get communityError =>
-      'Feed konnte nicht geladen werden. Zieh nach unten, um es erneut zu versuchen.';
 
   @override
   String get postFailed =>
@@ -612,7 +605,7 @@ class AppLocalizationsDe extends AppLocalizations {
   String get trainingReminders => 'Trainings-Erinnerungen';
 
   @override
-  String get communityNotifications => 'Community-Challenges';
+  String get communityNotifications => 'Challenges';
 
   @override
   String get darkMode => 'Dunkelmodus';
@@ -1685,6 +1678,20 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get shareSaveError => 'Speichern in der Galerie fehlgeschlagen';
+
+  @override
+  String get shareExerciseTitle => 'Dein Fortschritt.';
+
+  @override
+  String get sharePersonalRecords => 'Persönliche Rekorde';
+
+  @override
+  String get shareVolumeTrend => 'Volumen-Trend';
+
+  @override
+  String shareTrendSessions(int count) {
+    return 'Letzte $count Einheiten';
+  }
 
   @override
   String get shareVolumeCaption => 'Das ist ordentlich Eisen.';

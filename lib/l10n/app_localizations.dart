@@ -126,11 +126,11 @@ abstract class AppLocalizations {
   /// **'Log'**
   String get tabLog;
 
-  /// No description provided for @tabCommunity.
+  /// No description provided for @tabBros.
   ///
   /// In en, this message translates to:
-  /// **'Community'**
-  String get tabCommunity;
+  /// **'Bros'**
+  String get tabBros;
 
   /// No description provided for @status.
   ///
@@ -849,7 +849,7 @@ abstract class AppLocalizations {
   /// No description provided for @clearCache.
   ///
   /// In en, this message translates to:
-  /// **'Clear Community Cache'**
+  /// **'Clear Image Cache'**
   String get clearCache;
 
   /// No description provided for @deleteAccount.
@@ -941,18 +941,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'What\'s on your mind?'**
   String get whatOnYourMind;
-
-  /// No description provided for @communityEmpty.
-  ///
-  /// In en, this message translates to:
-  /// **'No posts yet. Be the first to share!'**
-  String get communityEmpty;
-
-  /// No description provided for @communityError.
-  ///
-  /// In en, this message translates to:
-  /// **'Couldn\'t load the feed. Pull down to retry.'**
-  String get communityError;
 
   /// No description provided for @postFailed.
   ///
@@ -1227,7 +1215,7 @@ abstract class AppLocalizations {
   /// No description provided for @communityNotifications.
   ///
   /// In en, this message translates to:
-  /// **'Community challenges'**
+  /// **'Challenges'**
   String get communityNotifications;
 
   /// No description provided for @darkMode.
@@ -3155,6 +3143,30 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Couldn\'t save to gallery'**
   String get shareSaveError;
+
+  /// No description provided for @shareExerciseTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Your progress.'**
+  String get shareExerciseTitle;
+
+  /// No description provided for @sharePersonalRecords.
+  ///
+  /// In en, this message translates to:
+  /// **'Personal Records'**
+  String get sharePersonalRecords;
+
+  /// No description provided for @shareVolumeTrend.
+  ///
+  /// In en, this message translates to:
+  /// **'Volume Trend'**
+  String get shareVolumeTrend;
+
+  /// Caption over the exercise share card's volume sparkline; {count} = sessions plotted.
+  ///
+  /// In en, this message translates to:
+  /// **'Last {count} sessions'**
+  String shareTrendSessions(int count);
 
   /// No description provided for @shareVolumeCaption.
   ///

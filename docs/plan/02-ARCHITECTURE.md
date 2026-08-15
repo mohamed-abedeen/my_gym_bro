@@ -66,7 +66,7 @@
 |-----------|---------|
 | Supabase Auth | Email/password + Google/Apple OAuth |
 | Supabase Postgres + RLS | Cloud data store |
-| Supabase Storage | `community-images`, avatars |
+| Supabase Storage | avatars (`community-images` dormant — feed removed 2026-08-15, pending drop) |
 | Supabase Edge Functions (Deno) | Server logic, push, webhooks |
 | RevenueCat (`purchases_flutter`) | Subscriptions + one-time skin IAP |
 | Firebase Cloud Messaging | Push delivery |

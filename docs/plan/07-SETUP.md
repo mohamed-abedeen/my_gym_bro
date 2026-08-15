@@ -122,7 +122,7 @@ Run `gen-l10n` after editing any `app_*.arb`.
 - [ ] Paywall gate enforced; trial countdown; restore + delete-account verified on device.
 - [ ] RevenueCat products + entitlements live (prod), webhook reachable.
 - [ ] FCM push verified on real devices; tone+locale resolved server-side.
-- [ ] Leaderboard recomputes on schedule; community + challenges on real data.
+- [ ] Leaderboard recomputes on schedule; challenges on real data (community feed removed 2026-08-15).
 - [ ] No DM code/tables remain.
 - [ ] Crashlytics receiving events; no critical crashes in smoke tests.
 - [ ] Store listings, screenshots, privacy, ratings submitted.

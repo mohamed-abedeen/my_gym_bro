@@ -716,7 +716,7 @@ class _ExerciseBrowserScreenState
                                   color: _selectedIds.isNotEmpty
                                       ? colors.panelBackground
                                       : colors.textSecondary,
-                                  size: 22.sp,
+                                  size: AppSizes.headerActionIcon.sp,
                                 ),
                               ),
                             ),
@@ -1347,7 +1347,7 @@ class _FilterResetButton extends ConsumerWidget {
       },
       child: Container(
         width: 48.w,
-        height: 48.h,
+        height: 48.w,
         decoration: BoxDecoration(
           color: AppColors.of(context).white.withValues(alpha: 0.07),
           shape: BoxShape.circle,

@@ -21,7 +21,7 @@ class AppLocalizationsEs extends AppLocalizations {
   String get tabLog => 'Registro';
 
   @override
-  String get tabCommunity => 'Comunidad';
+  String get tabBros => 'Bros';
 
   @override
   String get status => 'Estado';
@@ -408,7 +408,7 @@ class AppLocalizationsEs extends AppLocalizations {
   String get exportData => 'Exportar mis datos';
 
   @override
-  String get clearCache => 'Limpiar caché comunidad';
+  String get clearCache => 'Limpiar caché de imágenes';
 
   @override
   String get deleteAccount => 'Eliminar cuenta';
@@ -459,13 +459,6 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get whatOnYourMind => '¿Qué hay de nuevo?';
-
-  @override
-  String get communityEmpty => 'Aún no hay publicaciones. ¡Sé el primero!';
-
-  @override
-  String get communityError =>
-      'No se pudo cargar el feed. Desliza hacia abajo para reintentar.';
 
   @override
   String get postFailed => 'No se pudo publicar. Inténtalo de nuevo.';
@@ -609,7 +602,7 @@ class AppLocalizationsEs extends AppLocalizations {
   String get trainingReminders => 'Recordatorios de entrenamiento';
 
   @override
-  String get communityNotifications => 'Retos de comunidad';
+  String get communityNotifications => 'Retos';
 
   @override
   String get darkMode => 'Modo oscuro';
@@ -1676,6 +1669,20 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get shareSaveError => 'No se pudo guardar en la galería';
+
+  @override
+  String get shareExerciseTitle => 'Tu progreso.';
+
+  @override
+  String get sharePersonalRecords => 'Récords personales';
+
+  @override
+  String get shareVolumeTrend => 'Tendencia de volumen';
+
+  @override
+  String shareTrendSessions(int count) {
+    return 'Últimas $count sesiones';
+  }
 
   @override
   String get shareVolumeCaption => 'Eso es hierro de verdad.';

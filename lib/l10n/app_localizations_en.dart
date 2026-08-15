@@ -21,7 +21,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get tabLog => 'Log';
 
   @override
-  String get tabCommunity => 'Community';
+  String get tabBros => 'Bros';
 
   @override
   String get status => 'Status';
@@ -406,7 +406,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get exportData => 'Export My Data';
 
   @override
-  String get clearCache => 'Clear Community Cache';
+  String get clearCache => 'Clear Image Cache';
 
   @override
   String get deleteAccount => 'Delete Account';
@@ -457,12 +457,6 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get whatOnYourMind => 'What\'s on your mind?';
-
-  @override
-  String get communityEmpty => 'No posts yet. Be the first to share!';
-
-  @override
-  String get communityError => 'Couldn\'t load the feed. Pull down to retry.';
 
   @override
   String get postFailed => 'Couldn\'t publish your post. Try again.';
@@ -607,7 +601,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get trainingReminders => 'Training reminders';
 
   @override
-  String get communityNotifications => 'Community challenges';
+  String get communityNotifications => 'Challenges';
 
   @override
   String get darkMode => 'Dark Mode';
@@ -1667,6 +1661,20 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get shareSaveError => 'Couldn\'t save to gallery';
+
+  @override
+  String get shareExerciseTitle => 'Your progress.';
+
+  @override
+  String get sharePersonalRecords => 'Personal Records';
+
+  @override
+  String get shareVolumeTrend => 'Volume Trend';
+
+  @override
+  String shareTrendSessions(int count) {
+    return 'Last $count sessions';
+  }
 
   @override
   String get shareVolumeCaption => 'That\'s some serious iron.';

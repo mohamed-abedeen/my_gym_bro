@@ -1,15 +1,19 @@
+import 'dart:async';
 import 'dart:math' as math;
 
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:my_gym_bro/core/database/app_database.dart';
 import 'package:my_gym_bro/core/database/daos/session_dao.dart';
+import 'package:my_gym_bro/core/router/app_router.dart';
 import 'package:my_gym_bro/core/services/exercise_gif_cache.dart';
 import 'package:my_gym_bro/core/services/units.dart';
 import 'package:my_gym_bro/features/exercises/lift_rank/lift_rank_providers.dart';
 import 'package:my_gym_bro/features/leaderboard/rank.dart';
+import 'package:my_gym_bro/features/workout/share/exercise_share_data.dart';
 import 'package:my_gym_bro/features/workout/workout_providers.dart';
 import 'package:my_gym_bro/l10n/app_localizations.dart';
 import 'package:my_gym_bro/shared/constants.dart';
@@ -145,13 +149,13 @@ class _ExerciseDetailScreenState extends ConsumerState<ExerciseDetailScreen>
       child: Row(
         children: [
           LiquidGlassButton(
-            width: 40.w,
-            height: 40.w,
+            width: AppSizes.headerActionBtn.w,
+            height: AppSizes.headerActionBtn.w,
             opacity: 0.15,
-            radius: 20.r,
+            radius: (AppSizes.headerActionBtn / 2).r,
             onTap: () => Navigator.of(context).pop(),
             child: Icon(Icons.arrow_back_rounded,
-                color: colors.textPrimary, size: 20.sp),
+                color: colors.textPrimary, size: AppSizes.headerActionIcon.sp),
           ),
           Expanded(
             child: Text(
@@ -167,12 +171,39 @@ class _ExerciseDetailScreenState extends ConsumerState<ExerciseDetailScreen>
             ),
           ),
           LiquidGlassButton(
-            width: 40.w,
-            height: 40.w,
+            width: AppSizes.headerActionBtn.w,
+            height: AppSizes.headerActionBtn.w,
             opacity: 0.15,
-            radius: 20.r,
+            radius: (AppSizes.headerActionBtn / 2).r,
+            // Opens the exercise share card with all-time stats. The reads
+            // resolve instantly when the summary tab already loaded them;
+            // the volume history is re-read unwindowed (from: null) so the
+            // card's trend is all-time regardless of the selected period.
+            onTap: () async {
+              final records = await ref.read(
+                exercisePersonalRecordsProvider(exercise.exerciseId).future,
+              );
+              final rank =
+                  await ref.read(liftRankProvider(exercise.exerciseId).future);
+              final history = await ref.read(
+                exerciseVolumeWithDatesProvider(
+                  ExerciseVolumeParams(exercise.exerciseId),
+                ).future,
+              );
+              if (!context.mounted) return;
+              unawaited(context.push(
+                AppRoutes.shareExercise,
+                extra: ExerciseShareData.fromStats(
+                  exerciseName: exercise.name,
+                  muscleGroup: exercise.muscleGroup,
+                  records: records,
+                  rank: rank,
+                  volumeHistory: history,
+                ),
+              ));
+            },
             child: Icon(Icons.ios_share_rounded,
-                color: colors.textPrimary, size: 18.sp),
+                color: colors.textPrimary, size: AppSizes.headerActionIcon.sp),
           ),
         ],
       ),
@@ -1303,360 +1334,6 @@ class _BarChartPainter extends CustomPainter {
       old.data != data ||
       old.barColor != barColor ||
       old.gridColor != gridColor;
-}
-
-// ═══════════════════════════════════════════════════════════════════
-// ExerciseStatusScreen — post-workout view (unchanged)
-// ═══════════════════════════════════════════════════════════════════
-
-class ExerciseStatusScreen extends StatelessWidget {
-  const ExerciseStatusScreen({
-    required this.exercise,
-    super.key,
-    this.setsData = const [],
-    this.duration = '5m',
-    this.volume = '37170 lbs',
-    this.avgStrength = '86',
-    this.records = '5',
-    this.calBurned = '250 cal',
-    this.sessionLabel,
-    this.nextSessionInfo,
-  });
-
-  final Exercise exercise;
-  final List<Map<String, dynamic>> setsData;
-  final String duration;
-  final String volume;
-  final String avgStrength;
-  final String records;
-  final String calBurned;
-  final String? sessionLabel;
-  final String? nextSessionInfo;
-
-  @override
-  Widget build(BuildContext context) {
-    Responsive.init(context);
-    final colors = AppColors.of(context);
-    final l10n = AppLocalizations.of(context);
-
-    return Scaffold(
-      backgroundColor: colors.background,
-      body: SafeArea(
-        child: SingleChildScrollView(
-          child: Padding(
-            padding: EdgeInsets.symmetric(horizontal: 7.w),
-            child: Container(
-              width: double.infinity,
-              decoration: BoxDecoration(
-                color: colors.panelBackground,
-                borderRadius: BorderRadius.circular(55.r),
-              ),
-              padding: EdgeInsets.all(16.w),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  SizedBox(height: 10.h),
-
-                  Row(
-                    children: [
-                      LiquidGlassButton(
-                        width: 48.w,
-                        height: 48.w,
-                        opacity: 0.15,
-                        radius: 24.r,
-                        onTap: () => Navigator.of(context).pop(),
-                        child: Icon(Icons.arrow_back_rounded,
-                            color: colors.textPrimary, size: 22.sp),
-                      ),
-                      const Spacer(),
-                      LiquidGlassButton(
-                        width: 48.w,
-                        height: 48.w,
-                        opacity: 0.15,
-                        radius: 24.r,
-                        child: Icon(Icons.ios_share_rounded,
-                            color: colors.textPrimary, size: 20.sp),
-                      ),
-                    ],
-                  ),
-                  SizedBox(height: 24.h),
-
-                  Row(
-                    children: [
-                      ClipOval(
-                        child: exercise.gifUrl != null
-                            ? CachedNetworkImage(
-                                cacheManager: ExerciseGifCache.instance,
-                                imageUrl: exercise.gifUrl!,
-                                width: 83.w,
-                                height: 83.w,
-                                fit: BoxFit.cover,
-                                placeholder: (_, __) =>
-                                    _circPlaceholder(colors, 83.w),
-                                errorWidget: (_, __, ___) =>
-                                    _circPlaceholder(colors, 83.w),
-                              )
-                            : _circPlaceholder(colors, 83.w),
-                      ),
-                      SizedBox(width: 14.w),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              exercise.name,
-                              style: TextStyle(
-                                color: colors.textPrimary,
-                                fontSize: 24.sp,
-                                fontWeight: FontWeight.w700,
-                              ),
-                            ),
-                            Text(
-                              _currentTime(context),
-                              style: TextStyle(
-                                color: colors.subtitleText,
-                                fontSize: 11.sp,
-                                fontWeight: FontWeight.w700,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                      Text(
-                        duration,
-                        style: TextStyle(
-                          color: colors.textPrimary,
-                          fontSize: 24.sp,
-                          fontWeight: FontWeight.w700,
-                        ),
-                      ),
-                    ],
-                  ),
-                  SizedBox(height: 16.h),
-
-                  Container(
-                    width: double.infinity,
-                    decoration: BoxDecoration(
-                      color: colors.cardElevated,
-                      borderRadius: BorderRadius.circular(26.r),
-                    ),
-                    padding: EdgeInsets.all(16.w),
-                    child: Column(
-                      children: [
-                        _setsHeaderRow(colors, l10n),
-                        SizedBox(height: 8.h),
-                        ...(_effectiveSets().asMap().entries.map((entry) {
-                          final i = entry.key;
-                          final s = entry.value;
-                          return Padding(
-                            padding: EdgeInsets.symmetric(vertical: 4.h),
-                            child: Row(
-                              children: [
-                                SizedBox(
-                                  width: 50.w,
-                                  child: Text('${i + 1}',
-                                      style: TextStyle(
-                                          color: colors.textPrimary,
-                                          fontSize: 16.sp,
-                                          fontWeight: FontWeight.w700)),
-                                ),
-                                Expanded(
-                                  child: Center(
-                                    child: Text('${s['weight'] ?? '-'}',
-                                        style: TextStyle(
-                                            color: colors.textPrimary,
-                                            fontSize: 16.sp,
-                                            fontWeight: FontWeight.w700)),
-                                  ),
-                                ),
-                                SizedBox(
-                                  width: 50.w,
-                                  child: Text('${s['reps'] ?? '-'}',
-                                      textAlign: TextAlign.end,
-                                      style: TextStyle(
-                                          color: colors.textPrimary,
-                                          fontSize: 16.sp,
-                                          fontWeight: FontWeight.w700)),
-                                ),
-                              ],
-                            ),
-                          );
-                        })),
-                        Container(
-                            height: 1,
-                            color: colors.divider,
-                            margin: EdgeInsets.symmetric(vertical: 12.h)),
-                        Row(
-                          children: [
-                            Expanded(
-                                child: _statBlock(colors, l10n.volume, volume,
-                                    colors.success)),
-                            Expanded(
-                                child: _statBlock(colors, l10n.avgStrength,
-                                    avgStrength, colors.success)),
-                          ],
-                        ),
-                        SizedBox(height: 10.h),
-                        Row(
-                          children: [
-                            Expanded(
-                                child: _statBlock(colors, l10n.totalDuration,
-                                    duration, colors.success)),
-                            Expanded(
-                                child: _statBlock(colors, l10n.records,
-                                    records, colors.success)),
-                          ],
-                        ),
-                        Container(
-                            height: 1,
-                            color: colors.divider,
-                            margin: EdgeInsets.symmetric(vertical: 12.h)),
-                        Row(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Expanded(
-                              child: Row(
-                                children: [
-                                  Text('🔥',
-                                      style: TextStyle(fontSize: 28.sp)),
-                                  SizedBox(width: 8.w),
-                                  Column(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.start,
-                                    children: [
-                                      Text(l10n.calBurned,
-                                          style: TextStyle(
-                                              color: colors.textPrimary,
-                                              fontSize: 10.sp)),
-                                      Text(calBurned,
-                                          style: TextStyle(
-                                              color: colors.textPrimary,
-                                              fontSize: 16.sp,
-                                              fontWeight: FontWeight.w500)),
-                                    ],
-                                  ),
-                                ],
-                              ),
-                            ),
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(l10n.progressLabel,
-                                      style: TextStyle(
-                                          color: colors.textPrimary,
-                                          fontSize: 12.sp,
-                                          fontWeight: FontWeight.w700)),
-                                  SizedBox(height: 4.h),
-                                  Container(
-                                    width: double.infinity,
-                                    height: 26.h,
-                                    decoration: BoxDecoration(
-                                      gradient: LinearGradient(
-                                        begin: Alignment.topCenter,
-                                        end: Alignment.bottomCenter,
-                                        colors: [
-                                          AppColors.of(context)
-                                              .white
-                                              .withValues(alpha: 0.35),
-                                          AppColors.of(context)
-                                              .white
-                                              .withValues(alpha: 0),
-                                        ],
-                                      ),
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ],
-                        ),
-                      ],
-                    ),
-                  ),
-                  SizedBox(height: 40.h),
-                ],
-              ),
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _setsHeaderRow(AppColorsTheme colors, AppLocalizations l10n) {
-    return Row(
-      children: [
-        SizedBox(
-          width: 50.w,
-          child: Text(l10n.sets,
-              style: TextStyle(
-                  color: colors.subtitleText,
-                  fontSize: 13.sp,
-                  fontWeight: FontWeight.w700)),
-        ),
-        Expanded(
-          child: Center(
-            child: Text(l10n.weightsKg,
-                style: TextStyle(
-                    color: colors.subtitleText,
-                    fontSize: 13.sp,
-                    fontWeight: FontWeight.w700)),
-          ),
-        ),
-        SizedBox(
-          width: 50.w,
-          child: Text(l10n.reps,
-              textAlign: TextAlign.end,
-              style: TextStyle(
-                  color: colors.subtitleText,
-                  fontSize: 13.sp,
-                  fontWeight: FontWeight.w700)),
-        ),
-      ],
-    );
-  }
-
-  Widget _statBlock(AppColorsTheme colors, String label, String value,
-      Color changeColor) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(label,
-            style: TextStyle(color: colors.textPrimary, fontSize: 10.sp)),
-        SizedBox(height: 2.h),
-        Text(value,
-            style: TextStyle(
-                color: colors.textPrimary,
-                fontSize: 20.sp,
-                fontWeight: FontWeight.w400)),
-      ],
-    );
-  }
-
-  List<Map<String, dynamic>> _effectiveSets() {
-    if (setsData.isNotEmpty) return setsData;
-    return [
-      {'weight': 90, 'reps': 8},
-      {'weight': 80, 'reps': 10},
-      {'weight': 70, 'reps': 12},
-      {'weight': 60, 'reps': 4},
-      {'weight': 50, 'reps': '-'},
-    ];
-  }
-
-  String _currentTime(BuildContext context) =>
-      DateFormat.jm(Localizations.localeOf(context).toString())
-          .format(DateTime.now())
-          .toLowerCase();
-
-  Widget _circPlaceholder(AppColorsTheme colors, double size) => Container(
-        width: size,
-        height: size,
-        color: colors.separator,
-        child: Icon(Icons.fitness_center_rounded,
-            color: colors.textSecondary, size: size * 0.4),
-      );
 }
 
 // ═══════════════════════════════════════════════════════════════════

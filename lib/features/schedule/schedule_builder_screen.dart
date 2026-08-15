@@ -339,7 +339,7 @@ class _ScheduleBuilderScreenState
             // + button
             LiquidGlassButton(
               width: 40.w,
-              height: 40.h,
+              height: 40.w,
               opacity: 0.15,
               radius: 20.r,
               child: Icon(Icons.add_rounded,
@@ -467,7 +467,7 @@ class _ScheduleBuilderScreenState
                   children: [
                     LiquidGlassButton(
                       width: 36.w,
-                      height: 36.h,
+                      height: 36.w,
                       opacity: 0.15,
                       radius: 18.r,
                       child: Icon(Icons.add_rounded,

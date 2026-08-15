@@ -4,14 +4,17 @@ import 'dart:ui';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:intl/intl.dart';
+import 'package:my_gym_bro/core/router/app_router.dart';
 import 'package:my_gym_bro/core/services/exercise_gif_cache.dart';
 import 'package:my_gym_bro/core/services/units.dart';
 import 'package:my_gym_bro/features/profile/profile_providers.dart';
 import 'package:my_gym_bro/features/settings/skin_provider.dart';
 import 'package:my_gym_bro/features/social/follow_providers.dart';
 import 'package:my_gym_bro/features/workout/exercise_detail_sheet.dart';
+import 'package:my_gym_bro/features/workout/share/share_card_data.dart';
 import 'package:my_gym_bro/features/workout/workout_providers.dart';
 import 'package:my_gym_bro/l10n/app_localizations.dart';
 import 'package:my_gym_bro/shared/constants.dart';
@@ -324,22 +327,22 @@ class _BannerSectionState extends ConsumerState<_BannerSection> {
             left: 12.w,
             top: MediaQuery.of(context).padding.top + 8.h,
             child: LiquidGlassButton(
-              width: 44.w,
-              height: 44.h,
+              width: AppSizes.headerActionBtn.w,
+              height: AppSizes.headerActionBtn.w,
               opacity: 0.15,
-              radius: 22.r,
+              radius: (AppSizes.headerActionBtn / 2).r,
               onTap: () => Navigator.of(context).pop(),
               child: Icon(
                 Icons.chevron_left_rounded,
                 color: colors.textPrimary,
-                size: 28.sp,
+                size: AppSizes.headerActionIcon.sp,
               ),
             ),
           ),
 
           // ── Display name (top header) ──
           Positioned(
-            left: 60.w,
+            left: 66.w,
             top: MediaQuery.of(context).padding.top + 18.h,
             child: Text(
               widget.displayName,
@@ -356,14 +359,17 @@ class _BannerSectionState extends ConsumerState<_BannerSection> {
             right: 16.w,
             top: MediaQuery.of(context).padding.top + 8.h,
             child: LiquidGlassButton(
-              width: 44.w,
-              height: 44.h,
+              width: AppSizes.headerActionBtn.w,
+              height: AppSizes.headerActionBtn.w,
               opacity: 0.15,
-              radius: 22.r,
+              radius: (AppSizes.headerActionBtn / 2).r,
+              // App convention: the header menu icon opens Settings (same as
+              // the workout, split-overview, and active-session screens).
+              onTap: () => context.push(AppRoutes.settings),
               child: Icon(
                 Icons.menu_rounded,
                 color: colors.textPrimary,
-                size: 22.sp,
+                size: AppSizes.headerActionIcon.sp,
               ),
             ),
           ),
@@ -988,7 +994,7 @@ class _ProfileSessionCardState extends ConsumerState<_ProfileSessionCard>
                             // Delete button
                             LiquidGlassButton(
                               width: 48.w,
-                              height: 48.h,
+                              height: 48.w,
                               opacity: 0.15,
                               radius: 24.r,
                               onTap: () => _confirmDeleteSession(
@@ -1005,9 +1011,30 @@ class _ProfileSessionCardState extends ConsumerState<_ProfileSessionCard>
                             SizedBox(width: 8.w),
                             LiquidGlassButton(
                               width: 48.w,
-                              height: 48.h,
+                              height: 48.w,
                               opacity: 0.15,
                               radius: 24.r,
+                              onTap: () {
+                                // The list this card renders from is already
+                                // loaded, so the sync read is safe.
+                                final sessions = ref
+                                        .read(enrichedAllSessionsProvider)
+                                        .valueOrNull ??
+                                    const <EnrichedSession>[];
+                                final profile =
+                                    ref.read(userProfileProvider).valueOrNull;
+                                context.push(
+                                  AppRoutes.shareCard,
+                                  extra: ShareCardData.fromEnrichedSession(
+                                    widget.enriched,
+                                    hasPr: prSessionIds(sessions).contains(
+                                      widget.enriched.session.localId,
+                                    ),
+                                    bodyWeightKg: profile?.bodyWeightKg,
+                                    gender: profile?.gender,
+                                  ),
+                                );
+                              },
                               child: Icon(
                                 Icons.ios_share_rounded,
                                 color: colors.textPrimary,

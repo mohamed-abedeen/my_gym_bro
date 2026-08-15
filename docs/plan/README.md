@@ -1,6 +1,6 @@
 # 🏋️ MyGymBro — Master Plan
 
-A paid, offline-first fitness training app for iOS and Android. Local-first workout tracking with a premium "liquid glass" UI, an interactive anatomy body that visualizes muscle recovery and training volume, a social layer (followers, community feed, challenges, global leaderboard), and a tone-adjustable coach that talks to you the way you want.
+A paid, offline-first fitness training app for iOS and Android. Local-first workout tracking with a premium "liquid glass" UI, an interactive anatomy body that visualizes muscle recovery and training volume, a social layer (the Bros tab: friends, challenges, global leaderboard), and a tone-adjustable coach that talks to you the way you want.
 
 > **Status:** ~70% built. This plan is the authoritative source of truth for the **vision** and the **roadmap to ship v1**. It documents what already exists (lighter detail) and goes deep on what remains.
 
@@ -31,7 +31,7 @@ A subscription fitness app for both beginners and experienced lifters, built sol
 - **Interactive anatomy body** — colors muscles by recovery state *and* training volume
 - **Rest timer** with persistent notification + actionable controls
 - **Tone-adjustable coach** — every notification ships in 4 voices (supportive / balanced / bold / savage)
-- **Social layer** — followers (mutual follow = friends, Instagram-style), community feed, daily + community challenges
+- **Social layer** — the **Bros tab** (decision 2026-08-15, PRD §5.6): friends with a request flow, leaderboard, challenges, auto-generated bros activity strip. The community feed and follower model were cut.
 - **Leaderboard** — composite score (avg of streak, volume, challenge points); **Global + Friends + Rivals** scopes; all-time + **weekly & monthly seasons** (reset + crowned winner)
 - **Rivals** — auto-matched weekly pods of similar-level users for fair, beatable competition
 - **Cosmetic skins** for the anatomy body — some earned, some purchasable
@@ -73,8 +73,8 @@ The "finish the job" roadmap is **8 phases** building on the existing foundation
 |-------|-------|
 | 1 | Paywall enforcement + DM removal + cleanup |
 | 2 | Social graph (followers + mutual=friends) + public profiles |
-| 3 | Community feed backend (replace mocks) |
-| 4 | Challenges (curated + community) + moderation |
+| 3 | ~~Community feed backend~~ (cancelled 2026-08-15) |
+| 4 | Challenges (curated + member-created) + moderation |
 | 5 | Leaderboard (composite scoring; Global + Friends + Rivals scopes) |
 | 6 | Anatomy volume + skins + charts + reports + training calendar + share cards + light-mode accent + l10n |
 | 7 | Wearables (Apple Health/Watch, Google Fit/Health Connect) |
@@ -92,7 +92,7 @@ The "finish the job" roadmap is **8 phases** building on the existing foundation
 | Anatomy body (recovery coloring) | 🟡 Partial — no volume view |
 | Localization (DE/ES/FR) | 🟡 ~77% (84 keys missing each) |
 | Notifications + tone system | 🟡 Partial — force-kill resilience deferred |
-| Community feed, leaderboard, challenges | 🔴 Mock data only |
+| Bros tab (leaderboard, challenges) | 🔴 Leaderboard live; challenges mock; feed removed 2026-08-15 |
 | Followers / friends / public profiles | 🔴 Not built |
 | Leaderboard scopes (Global / Friends / Rivals) | 🔴 Not built |
 | Paywall **gate** (enforcement) | 🟡 Partial — gate logic exists (`scaffold`), needs hardening |

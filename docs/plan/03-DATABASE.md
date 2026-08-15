@@ -67,29 +67,25 @@ From `001_initial_schema.sql` (+ 002/003/004). **RLS enabled on all user-scoped 
 
 > Each via a new numbered migration with RLS. Add indexes on FKs and query columns.
 
-### 3.1 Social: follows
+### 3.1 Social: friendships *(REDESIGNED 2026-08-15 — replaces the `follows` design; PRD §5.6)*
 ```
-follows (
+friendships (
   id uuid pk default gen_random_uuid(),
-  follower_id uuid not null references auth.users,   -- the one who follows
-  followee_id uuid not null references auth.users,   -- the one being followed
+  requester_id uuid not null references auth.users,  -- who sent the request
+  addressee_id uuid not null references auth.users,  -- who received it
+  status text not null default 'pending',            -- pending | accepted | blocked
+  blocked_by uuid references auth.users,             -- set when status = 'blocked'
   created_at timestamptz default now(),
-  unique (follower_id, followee_id),
-  check (follower_id <> followee_id)
+  responded_at timestamptz,
+  unique (requester_id, addressee_id),
+  check (requester_id <> addressee_id)
 )
 ```
-- **RLS:** insert/delete where `follower_id = auth.uid()`; select allowed for any authenticated user (counts are public).
-- **Counts:** expose `follower_count` / `following_count` via a view or maintained columns on `user_profiles`.
-- **Friends = mutual follow.** No separate table needed: A and B are friends iff both `(A→B)` and `(B→A)` rows exist. Expose a `friends` view:
-  ```
-  create view friends as
-    select f1.follower_id as user_id, f1.followee_id as friend_id
-    from follows f1
-    join follows f2
-      on f1.follower_id = f2.followee_id
-     and f1.followee_id = f2.follower_id;
-  ```
-  Used by the Friends leaderboard scope and friend counts.
+- **RLS:** insert where `requester_id = auth.uid()` (and no existing blocked row between the pair); update/delete where `auth.uid()` is requester or addressee (addressee accepts/declines, either side blocks); select where `auth.uid()` is either side.
+- **Username:** add unique `username text` (lowercase, 3–20 chars) to `user_profiles`; exact-match lookup only — no name search.
+- **Friends = accepted rows.** Expose a `friends` view (both directions of accepted, excluding blocked) — used by the Friends leaderboard scope, the bros activity strip, and `friend_count`.
+- **Reports:** `user_reports(reporter_id, reported_id, reason, created_at)`, insert-only via RLS, reviewed manually.
+- The old `follows` table design is superseded; if it was ever created in an environment, the Phase B migration drops it.
 
 ### 3.2 Challenges
 ```

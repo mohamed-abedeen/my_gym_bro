@@ -28,9 +28,9 @@ Honest assessment of what exists today.
 
 ### 🔴 NOT BUILT / MOCK (build for v1)
 - **Skins economy** — 14 skins are *selectable* but there's no ownership/earn/purchase/persistence (every skin free; selection not saved).
-- **Community feed** — `CommunityMockData` only; composer doesn't persist.
+- **Community feed** — REMOVED 2026-08-15 (Bros Phase A); client UI deleted, dormant tables pending a cleanup migration.
 - **Leaderboard** — hardcoded rows; no scoring, no backend.
-- **Followers / social graph** — does not exist.
+- **Friends ("bros") graph** — does not exist yet (Bros Phase B; the followers design was scrapped 2026-08-15).
 - **Challenges** — mock; no curated/community backend, no moderation.
 - **Progress charts** — not built.
 - **Share cards** — not built.
@@ -51,9 +51,9 @@ Honest assessment of what exists today.
 | Phase | Theme | Unblocks |
 |-------|-------|----------|
 | 1 | Monetization gate + DM removal + cleanup | Revenue, smaller surface |
-| 2 | Social graph (followers) + public profiles | Leaderboard rows, community identity |
-| 3 | Community feed backend | Engagement loop |
-| 4 | Challenges (curated + community) + moderation | Challenge points |
+| 2 | Friends ("bros") graph + public profiles (Bros Phase B) | Leaderboard rows, bros identity |
+| 3 | ~~Community feed backend~~ **CANCELLED 2026-08-15** | — |
+| 4 | Challenges (curated + member-created; Bros Phase C) + moderation | Challenge points |
 | 5 | Leaderboard (composite scoring; Global + Friends + Rivals) | Competition loop |
 | 6 | Anatomy volume + skins + charts + reports + calendar + share cards + light-mode accent + l10n | Engagement complete |
 | 7 | Wearables (Apple Health/Watch, Google Fit/Health Connect) | Health sync, live HR |
@@ -83,37 +83,32 @@ Honest assessment of what exists today.
 
 ---
 
-## 👥 Phase 2 — Social Graph (Followers) + Public Profiles
+## 👥 Phase 2 — Friends ("Bros") Graph + Public Profiles *(REDESIGNED 2026-08-15 — was Followers; see PRD §5.6)*
 
-**Goal:** users can follow each other and view real public profiles.
+**Goal:** users add each other as bros (request → accept) and view real public profiles. This is **Bros Phase B**.
 
 ### Deliverables
-- [ ] Supabase `follows` table + RLS; counts via view or maintained columns on `user_profiles`.
-- [ ] **`friends` view** (mutual follow) + friend count; relationship state (not following / following / friends).
-- [ ] Drift `Follows` cache + sync wiring (outbox).
-- [ ] Follow/unfollow actions (optimistic local → sync); mutual follow surfaces "friends" automatically.
-- [ ] Public profile fetch: profile + counts + recent posts + achievements + streak.
-- [ ] Profile screen: follow button (with friend state), follower/following/friend counts, public-safe fields, gendered anatomy.
-- [ ] Privacy: hide sensitive raw metrics unless user opts in.
+- [ ] Supabase `friendships` table (requester/addressee + `pending|accepted|blocked` status) + RLS; friend count via view or maintained column.
+- [ ] Unique **@username** claim (lowercase, 3–20 chars) on `user_profiles` + exact-match lookup.
+- [ ] **Invite link + QR** sheet (deep link carries the username; App Store fallback for non-users).
+- [ ] Requests inbox on the Bros tab: accept / decline; badge on the add-bros button.
+- [ ] **Block + report** from the request and the profile (store requirement); blocking hides both directions.
+- [ ] Drift cache + sync wiring (outbox) for friendships; account deletion cleans the graph.
+- [ ] Public profile fetch: profile + friend count + achievements + streak (no posts — feed removed).
+- [ ] Profile screen: add-bro / pending / bros state, public-safe fields, gendered anatomy.
+- [ ] Privacy: hide sensitive raw metrics unless user opts in; no global real-name search.
 
 ### Phase 2 Checklist
-- [ ] Follow/unfollow works offline and syncs.
-- [ ] Mutual follow correctly yields "friends" (powers Phase 5 Friends board).
-- [ ] Counts accurate; tapping a leaderboard/feed row opens that profile.
+- [ ] Request → accept flow works offline-queued and syncs.
+- [ ] Friends power the Friends leaderboard scope + "Latest from your bros" strip.
+- [ ] Block/report works from every surface a stranger can reach.
 - [ ] No private data leaks on public profiles.
 
 ---
 
-## 📰 Phase 3 — Community Feed Backend
+## 📰 Phase 3 — Community Feed Backend — **CANCELLED (2026-08-15)**
 
-**Goal:** replace mock feed with real Supabase-backed posts.
-
-### Deliverables
-- [ ] `SupabaseCommunityRepository` implementing the existing repo interface (drop-in for `MockCommunityRepository`).
-- [ ] Feed: paginated `posts` + like/comment counts; reads gated by `has_active_subscription`.
-- [ ] Composer: image upload to `community-images/<uid>/…` + insert post (sanitize text via `input_sanitiser`).
-- [ ] Likes/comments (insert/delete `post_likes`, insert `post_comments`).
-- [ ] Loading/empty/error states; delete `community_mock_data.dart` once wired.
+The photo/text feed is cut (PRD §5.8). The client feed UI was deleted in Bros Phase A; the dormant `posts` / `post_likes` / `post_comments` tables + `community-images` bucket get dropped in a cleanup migration. The engagement job moves to the auto-generated bros activity strip (Phase B) and challenges (Phase 4 = Bros Phase C: duels, squad goals, open ladders, rate-limited nudges).
 
 ### Phase 3 Checklist
 - [ ] Posting/liking/commenting persists and appears across accounts.

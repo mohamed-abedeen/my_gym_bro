@@ -8,7 +8,8 @@ import 'package:my_gym_bro/shared/responsive.dart';
 import 'package:my_gym_bro/shared/widgets/anatomy_body.dart';
 import 'package:my_gym_bro/shared/widgets/liquid_glass_button.dart';
 
-/// 48×48 frosted circle header button used across the split-switcher screens.
+/// Frosted circle header button (shared 48pt header-action spec) used across
+/// the split-switcher screens.
 class SplitHeaderButton extends StatelessWidget {
   const SplitHeaderButton({required this.icon, this.onTap, super.key});
   final IconData icon;
@@ -18,10 +19,11 @@ class SplitHeaderButton extends StatelessWidget {
   Widget build(BuildContext context) {
     final colors = AppColors.of(context);
     return LiquidGlassButton(
-      width: 48.w,
-      height: 48.w,
+      width: AppSizes.headerActionBtn.w,
+      height: AppSizes.headerActionBtn.w,
       onTap: onTap,
-      child: Icon(icon, color: colors.textPrimary, size: 24.sp),
+      child: Icon(icon,
+          color: colors.textPrimary, size: AppSizes.headerActionIcon.sp),
     );
   }
 }
