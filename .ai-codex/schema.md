@@ -120,20 +120,6 @@ Offline change log for Supabase sync. No soft-delete columns.
 | `created_at` | DATETIME | |
 | `is_synced` | BOOLEAN | `false` |
 
-### `dm_messages`
-Local cache for DM messages (mirrors Supabase `dm_messages`).
-| Column | Type | Default | Notes |
-|---|---|---|---|
-| `id` | TEXT PK | | UUID from Supabase or temp local |
-| `conversation_id` | TEXT | | |
-| `sender_id` | TEXT | | |
-| `type` | TEXT | `'text'` | `'text' \| 'image' \| 'schedule'` |
-| `body` | TEXT NULL | | Text content or JSON payload |
-| `image_url` | TEXT NULL | | Signed URL for images |
-| `created_at` | DATETIME | | |
-| `is_mine` | BOOLEAN | `false` | Quick check if sent by me |
-| `is_optimistic` | BOOLEAN | `false` | True while not synced |
-
 ---
 
 ## Relationships (ERD summary)
@@ -153,7 +139,7 @@ sessions >── schedules (nullable)
 | `SessionDao` | `daos/session_dao.dart` | Sessions, SessionExercises, WorkoutSets |
 | `SyncQueueDao` | `daos/sync_queue_dao.dart` | SyncQueue |
 | `UserProfileDao` | `daos/user_profile_dao.dart` | UserProfiles |
-| `DmDao` | `daos/dm_dao.dart` | DmMessages |
+| `FriendshipDao` | `daos/friendship_dao.dart` | Friendships |
 
 ## Migration history
 | Version | Change |
@@ -161,4 +147,4 @@ sessions >── schedules (nullable)
 | 1 | Initial schema + all tables |
 | 2 | Added indexes |
 | 3 | `ALTER TABLE user_profiles ADD COLUMN gender TEXT` |
-| 4 | `CREATE TABLE dm_messages` |
+| 4 | (dm_messages — created here, DMs removed and table dropped in v13) |

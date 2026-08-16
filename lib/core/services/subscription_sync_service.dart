@@ -45,6 +45,22 @@ class SubscriptionSyncService {
     });
   }
 
+  /// Restore purchases (store requirement) and mirror the result into the
+  /// local profile. Returns true when an active premium entitlement came
+  /// back, false on no-entitlement, user-cancel, or any failure — callers
+  /// surface the result; this never throws.
+  static Future<bool> restore(UserProfileDao dao) async {
+    try {
+      if (!await Purchases.isConfigured) return false;
+      final info = await Purchases.restorePurchases();
+      await _apply(dao, info);
+      return info.entitlements.active.containsKey(entitlementId);
+    } on Object catch (e) {
+      if (kDebugMode) debugPrint('[SubSync] restore failed: $e');
+      return false;
+    }
+  }
+
   static DateTime? _lastServerVerify;
 
   /// Ask the `verify-subscription` edge function for the authoritative

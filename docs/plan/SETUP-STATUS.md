@@ -86,12 +86,15 @@ The cloud project serves auth + data for beta builds, but repo state has NOT bee
 pushed. As of the last check the following were pending — **verify with
 `supabase migration list` before relying on cloud state**:
 
-- `supabase db push` — repo migrations go up to `012_friendships.sql` (Bros Phase B,
-  authored 2026-08-15, **never run against cloud**); cloud is known to be several behind
-  (at minimum 007–012, incl. `009_security_hardening.sql` which closes a real
-  paywall-bypass hole). After pushing 012, run the RLS matrix in its header comment
-  (request/accept/decline/block both sides, username-claim race, `leaderboard_friends`
-  still returns rows, delete-account cascades the friendship graph).
+- `supabase db push` — repo migrations go up to `013_drop_community_feed.sql`
+  (012 = Bros Phase B friendships, 013 = feed/bucket drop + `delete_account_data`
+  rewrite; both authored 2026-08-15/16, **never run against cloud**); cloud is known
+  to be several behind (at minimum 007–013, incl. `009_security_hardening.sql` which
+  closes a real paywall-bypass hole). ⚠️ 012 and 013 must land together: 012 drops
+  `follows` and only 013 rewrites `delete_account_data` to stop referencing it —
+  012 without 013 breaks account deletion (store blocker). After pushing, run the
+  RLS matrix in 012's header (request/accept/decline/block both sides, username-claim
+  race, `leaderboard_friends` still returns rows) and verify delete-account end to end.
 - **Bros invite deep link** — `https://mygymbro.app/bro/<username>` is generated/QR-encoded
   by the client and the in-app `/bro/:username` route exists, but the universal-link
   platform config (Apple AASA, Android assetlinks, and the web fallback page with the App

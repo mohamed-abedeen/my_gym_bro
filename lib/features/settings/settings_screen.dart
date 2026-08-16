@@ -15,6 +15,7 @@ import 'package:my_gym_bro/core/services/crash_reporter.dart';
 import 'package:my_gym_bro/core/services/exercise_gif_cache.dart';
 import 'package:my_gym_bro/core/services/notification_service.dart';
 import 'package:my_gym_bro/core/services/notification_tone.dart';
+import 'package:my_gym_bro/core/services/subscription_sync_service.dart';
 import 'package:my_gym_bro/core/services/units.dart';
 import 'package:my_gym_bro/features/settings/app_settings_provider.dart';
 import 'package:my_gym_bro/features/settings/skin_provider.dart';
@@ -388,6 +389,14 @@ class SettingsScreen extends ConsumerWidget {
                     label: l10n.clearCache,
                     onTap: () => _clearCache(context, l10n),
                   ),
+                  // Direct restore entry (store requirement: reachable from
+                  // Settings, not only one-tap-away on the paywall).
+                  SettingsNavRow(
+                    icon: Icons.restore_rounded,
+                    iconColor: SettingsBadgeColors.green,
+                    label: l10n.restoreSubscription,
+                    onTap: () => _restorePurchases(context, ref, l10n),
+                  ),
                   SettingsNavRow(
                     icon: Icons.delete_forever_rounded,
                     iconColor: SettingsBadgeColors.red,
@@ -628,6 +637,19 @@ class SettingsScreen extends ConsumerWidget {
     if (!confirmed) return;
     await ref.read(authNotifierProvider.notifier).signOut();
     if (context.mounted) context.go(AppRoutes.signIn);
+  }
+
+  // ── Restore purchases (store requirement) ──
+
+  static Future<void> _restorePurchases(
+    BuildContext context,
+    WidgetRef ref,
+    AppLocalizations l10n,
+  ) async {
+    final restored =
+        await SubscriptionSyncService.restore(ref.read(userProfileDaoProvider));
+    if (!context.mounted) return;
+    _showSnack(context, restored ? l10n.restoreSuccess : l10n.restoreFailed);
   }
 
   // ── Delete account dialog ──

@@ -47,32 +47,7 @@
 
 ---
 
-## Direct Messaging (DM) providers — `lib/features/community/dm/dm_providers.dart`
-
-| Provider | Type | Returns | Notes |
-|---|---|---|---|
-| `dmDaoProvider` | `Provider<DmDao>` | `DmDao` | Provides access to `DmMessages` local cache |
-| `dmRepositoryProvider` | `Provider<DmRepository?>` | `DmRepository?` | Handles Supabase & Drift sync (null if unauth) |
-| `dmConversationsProvider` | `StreamProvider<List<DmConversation>>` | `List<DmConversation>` | Live updates from Supabase `dm_conversations` table |
-| `dmMessagesProvider` | `StreamProvider.family<List<DmMessage>, String>` | `List<DmMessage>` | Realtime stream per `conversationId` |
-| `activeDmConversationProvider` | `StateProvider<String?>` | `String?` | Tracks currently opened chat |
-
----
-
 ## Data Models
-
-### DM Models (`dm_models.dart`)
-```dart
-enum DmMessageType { text, image, schedule }
-
-class DmConversation {
-  String id; String otherUserId; String otherUserName;
-  String? otherAvatarUrl; String? lastMessageText; DateTime? lastMessageAt; int unreadCount;
-}
-
-class SharedSchedule { String name; List<SharedScheduleDay> days; }
-class SharedScheduleDay { int dayIndex; String? label; bool isRestDay; }
-```
 
 ### Workout Models (`workout_providers.dart`)
 ```dart

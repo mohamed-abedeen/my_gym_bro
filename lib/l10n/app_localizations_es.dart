@@ -307,6 +307,9 @@ class AppLocalizationsEs extends AppLocalizations {
       'No se pudieron restaurar las compras. Inténtalo de nuevo.';
 
   @override
+  String get restoreSuccess => 'Compras restauradas.';
+
+  @override
   String get noOfferingsAvailable =>
       'No hay ofertas disponibles. Inténtalo más tarde.';
 
@@ -827,78 +830,6 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get monthly => 'Mensual';
-
-  @override
-  String get dmMessages => 'Mensajes';
-
-  @override
-  String get dmSearch => 'Buscar';
-
-  @override
-  String get dmNoMessagesYet => 'Aún no hay mensajes';
-
-  @override
-  String get dmStartChatting => '¡Chatea con tus Gym Bros!';
-
-  @override
-  String get dmNewConversationUnavailable =>
-      'Nueva conversación no disponible en v1';
-
-  @override
-  String dmStartConversation(String name) {
-    return 'Empieza tu conversación\ncon $name';
-  }
-
-  @override
-  String get dmMessageHint => 'Mensaje...';
-
-  @override
-  String get dmSendFailed =>
-      'No se pudo enviar el mensaje. Inténtalo de nuevo.';
-
-  @override
-  String get dmSavedToSchedules => '¡Guardado en tus programas!';
-
-  @override
-  String get dmCamera => 'Cámara';
-
-  @override
-  String get dmGallery => 'Galería';
-
-  @override
-  String get dmSchedule => 'Programa';
-
-  @override
-  String get dmShareSchedule => 'Compartir programa';
-
-  @override
-  String get dmNoSchedulesToShare => 'No hay programas para compartir';
-
-  @override
-  String get dmSharedSchedule => 'Programa compartido';
-
-  @override
-  String get dmInvalidSchedule => 'Datos de programa no válidos';
-
-  @override
-  String get dmSaveToMySchedules => 'Guardar en mis programas';
-
-  @override
-  String get dmUploading => 'Subiendo...';
-
-  @override
-  String get dmSentMessage => 'Mensaje enviado';
-
-  @override
-  String get dmImageTooLarge => 'La imagen supera el límite de 10 MB.';
-
-  @override
-  String dmDaysCount(int count) {
-    return '$count días';
-  }
-
-  @override
-  String get dmWorkout => 'Entrenamiento';
 
   @override
   String get addDayTitle => 'Añadir día';

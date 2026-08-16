@@ -36,15 +36,8 @@
 | `AppRoutes.scheduleBuilder` | `/schedule/build` | `ScheduleBuilderScreen` | `extra: int? scheduleId` |
 | `AppRoutes.paywall` | `/paywall` | Inline scaffold (placeholder) | |
 
-### Direct Messaging
-| Constant | Path | Screen / Widget | Notes |
-|---|---|---|---|
-| `AppRoutes.dmInbox` | `/dm` | `DmInboxScreen` | |
-| `AppRoutes.dmChat` | `/dm/:conversationId` | `DmChatScreen` | `extra: DmConversation` |
-
 ## Navigation pattern
 ```dart
 context.go(AppRoutes.home);
 context.push(AppRoutes.activeSession, extra: scheduleDayId);
-context.push(AppRoutes.dmChat, extra: conversation);
 ```

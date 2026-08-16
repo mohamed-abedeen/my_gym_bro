@@ -149,6 +149,7 @@
   "termsOfUse": "Terms of Use",
   "purchaseFailed": "Purchase failed. Please try again.",
   "restoreFailed": "Could not restore purchases. Please try again.",
+  "restoreSuccess": "Purchases restored.",
   "noOfferingsAvailable": "No offerings available. Try again later.",
   "signIn": "Sign In",
   "signUp": "Create Account",
@@ -349,47 +350,8 @@
   "cm": "cm",
   "ft": "ft",
   "freeTrial": "Free Trial",
-  "trialDaysLeft": "{days} days left",
-  "@trialDaysLeft": {
-    "placeholders": {
-      "days": { "type": "int" }
-    }
-  },
   "yearly": "Yearly",
   "monthly": "Monthly",
-
-  "dmMessages": "Messages",
-  "dmSearch": "Search",
-  "dmNoMessagesYet": "No messages yet",
-  "dmStartChatting": "Start chatting with your Gym Bros!",
-  "dmNewConversationUnavailable": "New conversation not supported in v1",
-  "dmStartConversation": "Start your conversation\nwith {name}",
-  "@dmStartConversation": {
-    "placeholders": {
-      "name": { "type": "String" }
-    }
-  },
-  "dmMessageHint": "Message...",
-  "dmSendFailed": "Message failed to send. Please try again.",
-  "dmSavedToSchedules": "Saved to your schedules!",
-  "dmCamera": "Camera",
-  "dmGallery": "Gallery",
-  "dmSchedule": "Schedule",
-  "dmShareSchedule": "Share Schedule",
-  "dmNoSchedulesToShare": "No schedules to share",
-  "dmSharedSchedule": "Shared Schedule",
-  "dmInvalidSchedule": "Invalid schedule data",
-  "dmSaveToMySchedules": "Save to my schedules",
-  "dmUploading": "Uploading...",
-  "dmSentMessage": "Sent a message",
-  "dmImageTooLarge": "Image exceeds 10 MB limit.",
-  "dmDaysCount": "{count} days",
-  "@dmDaysCount": {
-    "placeholders": {
-      "count": { "type": "int" }
-    }
-  },
-  "dmWorkout": "Workout",
 
   "addDayTitle": "Add Day",
   "oneStepCloserBro": "One step closer bro",

@@ -11,7 +11,7 @@ lib/
 │   ├── database/
 │   │   ├── app_database.dart         # Drift DB definition (all Tables), AppDatabase class, schemaVersion=4
 │   │   ├── app_database.g.dart       # Generated Drift code (don't edit)
-│   │   └── daos/ ...                 # Data Access Objects (Exercise, Schedule, Session, Sync, User, DM)
+│   │   └── daos/ ...                 # Data Access Objects (Exercise, Schedule, Session, Sync, User, Friendship)
 │   ├── providers/
 │   │   └── providers.dart            # Global providers: database, locale, themeMode, supabase, auth, etc.
 │   ├── router/
@@ -21,13 +21,6 @@ lib/
 │
 ├── features/
 │   ├── auth/ ...                     # SignIn / Auth flow
-│   ├── community/
-│   │   ├── community_screen.dart     # Main feed with glass composer
-│   │   └── dm/                       # Direct Messaging Feature
-│   │       ├── dm_chat_screen.dart   # Real-time chat (text/image/schedule)
-│   │       ├── dm_inbox_screen.dart  # Inbox with conversations
-│   │       ├── dm_repository.dart    # Supabase Realtime + Drift sync
-│   │       └── widgets/ ...          # DmBubble, ScheduleShareSheet, DmConversationTile
 │   ├── exercises/ ...                # Exercise Browser & Detail
 │   ├── home/ ...                     # Home dashboard
 │   ├── onboarding/ ...               # 12-screen welcome flow

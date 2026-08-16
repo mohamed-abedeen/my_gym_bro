@@ -138,4 +138,54 @@ void main() {
       expect((await dao.getFirst())!.subscriptionStatus, 'trial');
     });
   });
+
+  group('SubscriptionSyncService.restore', () {
+    void mockRestore(Map<String, Object?> payload) {
+      TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+          .setMockMethodCallHandler(channel, (call) async {
+        if (call.method == 'isConfigured') return true;
+        if (call.method == 'restorePurchases') return payload;
+        return null;
+      });
+    }
+
+    test('restoring an active entitlement returns true and unlocks the '
+        'profile', () async {
+      await seedProfile(status: 'expired');
+      mockRestore(_customerInfoJson(entitlements: {
+        'premium': _premiumEntitlement(
+          expirationDate: '2026-09-01T00:00:00.000Z',
+        ),
+      }));
+
+      final restored = await SubscriptionSyncService.restore(dao);
+
+      expect(restored, isTrue);
+      final profile = (await dao.getFirst())!;
+      expect(profile.subscriptionStatus, 'active');
+      expect(profile.subscriptionExpiresAt?.toUtc(), DateTime.utc(2026, 9));
+    });
+
+    test('nothing to restore returns false and keeps the gate state honest',
+        () async {
+      final trialEnd = DateTime.now().subtract(const Duration(days: 1));
+      await seedProfile(status: 'trial', expiresAt: trialEnd);
+      mockRestore(_customerInfoJson());
+
+      final restored = await SubscriptionSyncService.restore(dao);
+
+      expect(restored, isFalse);
+      expect((await dao.getFirst())!.subscriptionStatus, 'expired');
+    });
+
+    test('platform failure returns false and leaves local state untouched',
+        () async {
+      await seedProfile(status: 'active');
+      // No mock handler installed → MissingPluginException inside restore.
+      final restored = await SubscriptionSyncService.restore(dao);
+
+      expect(restored, isFalse);
+      expect((await dao.getFirst())!.subscriptionStatus, 'active');
+    });
+  });
 }

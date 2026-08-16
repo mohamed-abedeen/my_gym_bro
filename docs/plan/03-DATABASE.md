@@ -23,7 +23,7 @@ Two stores kept in sync:
 | **SessionExercises** | localId, sessionId (FK), exerciseId, orderIndex | |
 | **WorkoutSets** | localId, sessionExerciseId (FK), weight, reps, isWarmup, isDropset, isFailure, isCompleted, rpe, durationSeconds, distance, speed, incline | |
 | **SyncQueue** | localId, syncTableName, rowId, operation, payload(JSON), isSynced | Offline outbox. |
-| **DmMessages** | id(UUID), conversationId, senderId, type, body, imageUrl, createdAt, isOptimistic | ⚠️ **REMOVE** (DMs dropped). |
+| ~~**DmMessages**~~ | — | ✅ Removed — table dropped in Drift v13, leftover `dm*` strings purged 2026-08-16. |
 
 **Migration history of note:** v7 cardio, v9 favorites, v11 completion tracking, v12
 biometrics, v13 DM drop, v15 follows cache, **v17 friendships + username (drops the
@@ -57,10 +57,10 @@ From `001_initial_schema.sql` (+ 002/003/004). **RLS enabled on all user-scoped 
 | **schedules / schedule_days / scheduled_exercises** | user_id on each, FK tree | Owner CRUD. |
 | **sessions / session_exercises / sets** | user_id, workout data, completed_at | Owner CRUD. |
 | **subscriptions** | user_id(unique), status, product_id, expiration_date, is_sandbox | Written by webhook (service role). |
-| **posts / post_likes / post_comments** | user_id, body, image_url, counts | **Read gated by `has_active_subscription(auth.uid())`**; write = owner. |
+| ~~**posts / post_likes / post_comments**~~ | — | ✅ **Dropped in `013_drop_community_feed.sql`** (feed cancelled 2026-08-15; `community-images` bucket removed; `delete_account_data` rewritten for the new schema). |
 | **notification_templates** | id, category, tone columns, locale | Global read-only seed (18 templates). |
 | **exercises** | shared catalog | All authenticated read; writes service-role only (`002`). |
-| **dm_conversations / dm_messages** | participant_a/b, body… | ⚠️ **REMOVE** (drop in a new migration; `003_dm_rls.sql` becomes obsolete). |
+| ~~**dm_conversations / dm_messages**~~ | — | ✅ Resolved — these tables were never created in the repo's migrations (001 has no DM DDL; there is no `003_dm_rls.sql`), so no drop was needed. |
 
 **Helpers/triggers:** `has_active_subscription(uid)`; `updated_at = now()` trigger on all tables; Storage bucket `community-images` with per-user folder RLS.
 
@@ -257,11 +257,13 @@ When adding/altering a table:
 
 ---
 
-## 5. DM Removal (cleanup task)
+## 5. DM Removal — ✅ DONE (closed 2026-08-16)
 
-- Drift: drop `DmMessages` table + `dm_dao.dart` (migration that deletes the table).
-- Supabase: new migration dropping `dm_conversations`, `dm_messages`, and their policies (supersedes `003_dm_rls.sql`).
-- App: delete `lib/features/community/dm/**` (9 files) and any references (e.g., schedule-share-via-DM).
+- Drift: `DmMessages` + `dm_dao.dart` dropped in v13.
+- Supabase: nothing to drop — DM tables were never created in the repo's migrations.
+- App: `lib/features/community/dm/**` deleted in v13-era work; the last remnants
+  (22 `dm*` l10n keys × 4 ARBs, stale `.ai-codex` DM docs) purged 2026-08-16.
+- The community feed tables went with the same cleanup: `013_drop_community_feed.sql`.
 
 ---
 

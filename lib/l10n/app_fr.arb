@@ -1,12 +1,6 @@
 {
   "@@locale": "fr",
   "appName": "My Gym Bro",
-  "trialDaysLeft": "{days} jours restants",
-  "@trialDaysLeft": {
-    "placeholders": {
-      "days": { "type": "int" }
-    }
-  },
   "tabHome": "Accueil",
   "tabWorkout": "Entraînement",
   "tabLog": "Journal",
@@ -107,6 +101,7 @@
   "termsOfUse": "Conditions d'utilisation",
   "purchaseFailed": "Échec de l'achat. Veuillez réessayer.",
   "restoreFailed": "Impossible de restaurer les achats. Veuillez réessayer.",
+  "restoreSuccess": "Achats restaurés.",
   "noOfferingsAvailable": "Aucune offre disponible. Réessayez plus tard.",
   "signIn": "Se connecter",
   "signUp": "Créer un compte",
@@ -244,29 +239,6 @@
   "orDivider": "ou",
   "signUpError": "Impossible de créer le compte. Veuillez réessayer.",
   "signInError": "E-mail ou mot de passe invalide.",
-
-  "dmMessages": "Messages",
-  "dmSearch": "Rechercher",
-  "dmNoMessagesYet": "Pas encore de messages",
-  "dmStartChatting": "Discutez avec vos Gym Bros !",
-  "dmNewConversationUnavailable": "Nouvelle conversation non disponible en v1",
-  "dmStartConversation": "Commencez votre conversation\navec {name}",
-  "dmMessageHint": "Message...",
-  "dmSendFailed": "Échec de l'envoi du message. Veuillez réessayer.",
-  "dmSavedToSchedules": "Enregistré dans vos programmes !",
-  "dmCamera": "Caméra",
-  "dmGallery": "Galerie",
-  "dmSchedule": "Programme",
-  "dmShareSchedule": "Partager le programme",
-  "dmNoSchedulesToShare": "Aucun programme à partager",
-  "dmSharedSchedule": "Programme partagé",
-  "dmInvalidSchedule": "Données de programme invalides",
-  "dmSaveToMySchedules": "Enregistrer dans mes programmes",
-  "dmUploading": "Envoi en cours...",
-  "dmSentMessage": "Message envoyé",
-  "dmImageTooLarge": "L'image dépasse la limite de 10 Mo.",
-  "dmDaysCount": "{count} jours",
-  "dmWorkout": "Entraînement",
 
   "addDayTitle": "Ajouter un jour",
   "oneStepCloserBro": "Un pas de plus, bro",

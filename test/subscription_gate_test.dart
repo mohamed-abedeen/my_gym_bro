@@ -82,6 +82,39 @@ void main() {
       expect(await _locked(c), isFalse);
     });
 
+    test('active with a recently-past expiry keeps offline grace', () async {
+      final c = _containerFor(_profile(
+        subscriptionStatus: 'active',
+        subscriptionExpiresAt:
+            DateTime.now().subtract(const Duration(days: 10)),
+      ));
+      expect(await _locked(c), isFalse);
+    });
+
+    test('active more than 30 days past expiry locks (bounded backstop)',
+        () async {
+      final c = _containerFor(_profile(
+        subscriptionStatus: 'active',
+        subscriptionExpiresAt:
+            DateTime.now().subtract(const Duration(days: 31)),
+      ));
+      expect(await _locked(c), isTrue);
+    });
+
+    test('grace_period more than 30 days past expiry locks', () async {
+      final c = _containerFor(_profile(
+        subscriptionStatus: 'grace_period',
+        subscriptionExpiresAt:
+            DateTime.now().subtract(const Duration(days: 31)),
+      ));
+      expect(await _locked(c), isTrue);
+    });
+
+    test('active with null expiry (lifetime) never locks', () async {
+      final c = _containerFor(_profile(subscriptionStatus: 'active'));
+      expect(await _locked(c), isFalse);
+    });
+
     test('unknown / free status does not lock', () async {
       expect(
         await _locked(_containerFor(_profile(subscriptionStatus: 'free'))),

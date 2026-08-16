@@ -378,14 +378,26 @@ final subscriptionLockedProvider = Provider<bool>((ref) {
   if (profile == null) return false;
   switch (profile.subscriptionStatus) {
     case 'active':
-      return false;
+    case 'grace_period': {
+      // Bounded offline backstop: honor the entitlement until 30 days past
+      // its last known expiry. RevenueCat's listener + the server webhook
+      // refresh both status and expiry whenever the device is online, so
+      // this only ever locks a device kept offline for a month past lapse —
+      // an unbounded fail-open would make airplane-mode-forever a free
+      // subscription. Null expiry (e.g. lifetime) never locks.
+      final end = profile.subscriptionExpiresAt;
+      return end != null &&
+          DateTime.now().isAfter(end.add(const Duration(days: 30)));
+    }
     case 'expired':
       return true;
-    case 'trial':
+    case 'trial': {
       final end = profile.subscriptionExpiresAt;
       return end != null && DateTime.now().isAfter(end);
+    }
     default:
-      // 'grace_period' or any unknown status → don't lock.
+      // Any unknown status → don't lock: offline-first, never brick on a
+      // bad write; the next RC sync / server verify rewrites it.
       return false;
   }
 });

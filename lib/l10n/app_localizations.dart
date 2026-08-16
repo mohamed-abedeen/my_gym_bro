@@ -648,6 +648,12 @@ abstract class AppLocalizations {
   /// **'Could not restore purchases. Please try again.'**
   String get restoreFailed;
 
+  /// No description provided for @restoreSuccess.
+  ///
+  /// In en, this message translates to:
+  /// **'Purchases restored.'**
+  String get restoreSuccess;
+
   /// No description provided for @noOfferingsAvailable.
   ///
   /// In en, this message translates to:
@@ -1029,7 +1035,7 @@ abstract class AppLocalizations {
   /// No description provided for @trialDaysLeft.
   ///
   /// In en, this message translates to:
-  /// **'{days} days left'**
+  /// **'Trial — {days} days left'**
   String trialDaysLeft(int days);
 
   /// No description provided for @subscriptionExpired.
@@ -1619,138 +1625,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Monthly'**
   String get monthly;
-
-  /// No description provided for @dmMessages.
-  ///
-  /// In en, this message translates to:
-  /// **'Messages'**
-  String get dmMessages;
-
-  /// No description provided for @dmSearch.
-  ///
-  /// In en, this message translates to:
-  /// **'Search'**
-  String get dmSearch;
-
-  /// No description provided for @dmNoMessagesYet.
-  ///
-  /// In en, this message translates to:
-  /// **'No messages yet'**
-  String get dmNoMessagesYet;
-
-  /// No description provided for @dmStartChatting.
-  ///
-  /// In en, this message translates to:
-  /// **'Start chatting with your Gym Bros!'**
-  String get dmStartChatting;
-
-  /// No description provided for @dmNewConversationUnavailable.
-  ///
-  /// In en, this message translates to:
-  /// **'New conversation not supported in v1'**
-  String get dmNewConversationUnavailable;
-
-  /// No description provided for @dmStartConversation.
-  ///
-  /// In en, this message translates to:
-  /// **'Start your conversation\nwith {name}'**
-  String dmStartConversation(String name);
-
-  /// No description provided for @dmMessageHint.
-  ///
-  /// In en, this message translates to:
-  /// **'Message...'**
-  String get dmMessageHint;
-
-  /// No description provided for @dmSendFailed.
-  ///
-  /// In en, this message translates to:
-  /// **'Message failed to send. Please try again.'**
-  String get dmSendFailed;
-
-  /// No description provided for @dmSavedToSchedules.
-  ///
-  /// In en, this message translates to:
-  /// **'Saved to your schedules!'**
-  String get dmSavedToSchedules;
-
-  /// No description provided for @dmCamera.
-  ///
-  /// In en, this message translates to:
-  /// **'Camera'**
-  String get dmCamera;
-
-  /// No description provided for @dmGallery.
-  ///
-  /// In en, this message translates to:
-  /// **'Gallery'**
-  String get dmGallery;
-
-  /// No description provided for @dmSchedule.
-  ///
-  /// In en, this message translates to:
-  /// **'Schedule'**
-  String get dmSchedule;
-
-  /// No description provided for @dmShareSchedule.
-  ///
-  /// In en, this message translates to:
-  /// **'Share Schedule'**
-  String get dmShareSchedule;
-
-  /// No description provided for @dmNoSchedulesToShare.
-  ///
-  /// In en, this message translates to:
-  /// **'No schedules to share'**
-  String get dmNoSchedulesToShare;
-
-  /// No description provided for @dmSharedSchedule.
-  ///
-  /// In en, this message translates to:
-  /// **'Shared Schedule'**
-  String get dmSharedSchedule;
-
-  /// No description provided for @dmInvalidSchedule.
-  ///
-  /// In en, this message translates to:
-  /// **'Invalid schedule data'**
-  String get dmInvalidSchedule;
-
-  /// No description provided for @dmSaveToMySchedules.
-  ///
-  /// In en, this message translates to:
-  /// **'Save to my schedules'**
-  String get dmSaveToMySchedules;
-
-  /// No description provided for @dmUploading.
-  ///
-  /// In en, this message translates to:
-  /// **'Uploading...'**
-  String get dmUploading;
-
-  /// No description provided for @dmSentMessage.
-  ///
-  /// In en, this message translates to:
-  /// **'Sent a message'**
-  String get dmSentMessage;
-
-  /// No description provided for @dmImageTooLarge.
-  ///
-  /// In en, this message translates to:
-  /// **'Image exceeds 10 MB limit.'**
-  String get dmImageTooLarge;
-
-  /// No description provided for @dmDaysCount.
-  ///
-  /// In en, this message translates to:
-  /// **'{count} days'**
-  String dmDaysCount(int count);
-
-  /// No description provided for @dmWorkout.
-  ///
-  /// In en, this message translates to:
-  /// **'Workout'**
-  String get dmWorkout;
 
   /// No description provided for @addDayTitle.
   ///

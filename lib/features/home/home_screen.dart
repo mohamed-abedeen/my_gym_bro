@@ -2,8 +2,10 @@ import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:my_gym_bro/core/providers/providers.dart';
+import 'package:my_gym_bro/core/router/app_router.dart';
 import 'package:my_gym_bro/core/services/units.dart';
 import 'package:my_gym_bro/features/leaderboard/leaderboard_providers.dart';
 import 'package:my_gym_bro/features/leaderboard/rank.dart';
@@ -17,6 +19,7 @@ import 'package:my_gym_bro/shared/constants.dart';
 import 'package:my_gym_bro/shared/responsive.dart';
 import 'package:my_gym_bro/shared/widgets/anatomy_body.dart';
 import 'package:my_gym_bro/shared/widgets/bottom_nav_pill.dart';
+import 'package:my_gym_bro/shared/widgets/glass_surface.dart';
 import 'package:my_gym_bro/shared/widgets/liquid_glass_button.dart';
 import 'package:my_gym_bro/shared/widgets/shimmer_box.dart';
 import 'package:my_gym_bro/shared/widgets/user_avatar.dart';
@@ -34,6 +37,10 @@ class HomeScreen extends ConsumerWidget {
       children: [
         _Header(l10n: l10n),
         SizedBox(height: 16.h),
+
+        // Trial countdown (Phase 1 deliverable) — only while a trial runs;
+        // kBetaFreeAccess nulls the provider so beta builds never see it.
+        _TrialBanner(l10n: l10n),
 
         // Leaderboard card — taps switch to the Bros tab (which hosts the
         // leaderboard) instead of pushing a duplicate copy of the screen.
@@ -82,6 +89,54 @@ class HomeScreen extends ConsumerWidget {
           ),
         ),
       ],
+    );
+  }
+}
+
+/// Compact frosted banner: "Trial — X days left", tap → paywall. Renders
+/// nothing outside a running trial.
+class _TrialBanner extends ConsumerWidget {
+  const _TrialBanner({required this.l10n});
+
+  final AppLocalizations l10n;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final colors = AppColors.of(context);
+    final daysLeft = ref.watch(trialDaysLeftProvider);
+    if (daysLeft == null) return const SizedBox.shrink();
+
+    return Padding(
+      padding: EdgeInsets.fromLTRB(16.w, 0, 16.w, 12.h),
+      child: GlassSurface(
+        radius: 16.r,
+        blurSigma: AppGlass.blurButton,
+        padding: EdgeInsets.symmetric(horizontal: 14.w, vertical: 10.h),
+        onTap: () => context.push(AppRoutes.paywall),
+        child: Row(
+          children: [
+            Icon(Icons.timer_outlined, size: 16.sp, color: colors.accent),
+            SizedBox(width: 8.w),
+            Expanded(
+              child: Text(
+                l10n.trialDaysLeft(daysLeft),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(
+                  color: colors.textPrimary,
+                  fontSize: 12.sp,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+            ),
+            Icon(
+              Icons.chevron_right_rounded,
+              size: 16.sp,
+              color: colors.textSecondary,
+            ),
+          ],
+        ),
+      ),
     );
   }
 }

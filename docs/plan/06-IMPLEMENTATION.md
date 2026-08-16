@@ -67,19 +67,20 @@ Honest assessment of what exists today.
 
 **Goal:** the paywall actually gates the app; dead DM code is gone.
 
-### Deliverables
-- [ ] **Paywall gate:** central guard reading `UserProfiles.subscriptionStatus` (`trial`/`active`/`grace_period`/`expired`). On `expired` (and trial elapsed), route to paywall and block core use.
-- [ ] Wire `verify-subscription` + `SubscriptionSyncService` on app start and resume to refresh status.
-- [ ] Trial countdown surfaced in UI (days left).
-- [ ] **Restore Purchases** + **Delete Account** reachable from Settings and (restore) from paywall.
-- [ ] **Remove DMs:** delete `lib/features/community/dm/**`; drop `DmMessages` + `dm_dao.dart` (Drift migration); new Supabase migration dropping `dm_*` tables/policies; remove share-via-DM hooks.
-- [ ] Verify offline behavior: a previously-active subscriber stays in (grace) when offline; new/expired users see gate.
+### Deliverables *(audited + gap-filled 2026-08-16)*
+- [x] **Paywall gate:** `subscriptionLockedProvider` (single source of truth) + GoRouter redirect with `refreshListenable`; trial-elapsed locks; `kBetaFreeAccess` kill switch; **bounded offline grace** — `active`/`grace_period` honored until 30 days past the last known expiry, then locked (airplane-mode-forever is not a free subscription).
+- [x] Wire `verify-subscription` + `SubscriptionSyncService` on app start (main.dart), resume (scaffold lifecycle observer), post-purchase/restore (paywall), and explicitly after sign-in (auth_notifier).
+- [x] Trial countdown surfaced in UI: Settings pill + Home banner (frosted, tap → paywall). Fixed the duplicate `trialDaysLeft` ARB key that made en render a different string shape than de/es/fr.
+- [x] **Restore Purchases** (`SubscriptionSyncService.restore`) now a direct Settings row AND on the paywall; **Delete Account** from Settings → `delete-account` edge fn + local wipe.
+- [x] **Remove DMs:** client code/tables were already gone (Drift v13); purged the 22 leftover `dm*` keys × 4 ARBs and the stale `.ai-codex` DM docs. Server-side there were never DM tables — nothing to drop.
+- [x] Community feed server-side cleanup (`013_drop_community_feed.sql`, NOT deployed): drops `posts`/`post_likes`/`post_comments` + `community-images` bucket/policies, and **rewrites `delete_account_data`** (it still referenced posts and the 012-dropped `follows` — left alone, account deletion would fail).
+- [x] Offline behavior verified in tests: active subscriber offline stays in (≤30d past expiry), expired/new users gated.
 
 ### Phase 1 Checklist
-- [ ] Expired user cannot use core features without subscribing/restoring.
-- [ ] Trial users have full access with visible countdown.
-- [ ] Restore + delete-account work end to end.
-- [ ] No DM code/tables remain; app compiles, `flutter analyze` clean.
+- [x] Expired user cannot use core features without subscribing/restoring (gate + redirect; unit-tested).
+- [x] Trial users have full access with visible countdown (Home banner + Settings pill).
+- [x] Restore + delete-account flows implemented + unit-tested; end-to-end against live RC/Supabase pending service setup (SETUP-STATUS).
+- [x] No DM code/tables/strings remain; app compiles, `flutter analyze` clean.
 
 ---
 

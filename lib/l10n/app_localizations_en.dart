@@ -306,6 +306,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get restoreFailed => 'Could not restore purchases. Please try again.';
 
   @override
+  String get restoreSuccess => 'Purchases restored.';
+
+  @override
   String get noOfferingsAvailable => 'No offerings available. Try again later.';
 
   @override
@@ -504,7 +507,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String trialDaysLeft(int days) {
-    return '$days days left';
+    return 'Trial — $days days left';
   }
 
   @override
@@ -825,77 +828,6 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get monthly => 'Monthly';
-
-  @override
-  String get dmMessages => 'Messages';
-
-  @override
-  String get dmSearch => 'Search';
-
-  @override
-  String get dmNoMessagesYet => 'No messages yet';
-
-  @override
-  String get dmStartChatting => 'Start chatting with your Gym Bros!';
-
-  @override
-  String get dmNewConversationUnavailable =>
-      'New conversation not supported in v1';
-
-  @override
-  String dmStartConversation(String name) {
-    return 'Start your conversation\nwith $name';
-  }
-
-  @override
-  String get dmMessageHint => 'Message...';
-
-  @override
-  String get dmSendFailed => 'Message failed to send. Please try again.';
-
-  @override
-  String get dmSavedToSchedules => 'Saved to your schedules!';
-
-  @override
-  String get dmCamera => 'Camera';
-
-  @override
-  String get dmGallery => 'Gallery';
-
-  @override
-  String get dmSchedule => 'Schedule';
-
-  @override
-  String get dmShareSchedule => 'Share Schedule';
-
-  @override
-  String get dmNoSchedulesToShare => 'No schedules to share';
-
-  @override
-  String get dmSharedSchedule => 'Shared Schedule';
-
-  @override
-  String get dmInvalidSchedule => 'Invalid schedule data';
-
-  @override
-  String get dmSaveToMySchedules => 'Save to my schedules';
-
-  @override
-  String get dmUploading => 'Uploading...';
-
-  @override
-  String get dmSentMessage => 'Sent a message';
-
-  @override
-  String get dmImageTooLarge => 'Image exceeds 10 MB limit.';
-
-  @override
-  String dmDaysCount(int count) {
-    return '$count days';
-  }
-
-  @override
-  String get dmWorkout => 'Workout';
 
   @override
   String get addDayTitle => 'Add Day';

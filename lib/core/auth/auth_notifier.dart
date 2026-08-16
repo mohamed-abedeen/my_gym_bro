@@ -11,6 +11,7 @@ import 'package:my_gym_bro/core/database/daos/user_profile_dao.dart';
 import 'package:my_gym_bro/core/security/input_sanitiser.dart';
 import 'package:my_gym_bro/core/security/secure_storage.dart';
 import 'package:my_gym_bro/core/services/crash_reporter.dart';
+import 'package:my_gym_bro/core/services/subscription_sync_service.dart';
 import 'package:my_gym_bro/core/services/sync_service.dart';
 import 'package:my_gym_bro/shared/app_constants.dart';
 import 'package:purchases_flutter/purchases_flutter.dart';
@@ -102,6 +103,9 @@ class AuthNotifier extends StateNotifier<AppAuthState> {
       // (process death, not a catchable exception).
       if (!await Purchases.isConfigured) return;
       await Purchases.logIn(userId);
+      // Pull entitlements for the just-identified user right away instead of
+      // waiting for the customer-info listener to fire.
+      await SubscriptionSyncService.syncNow(UserProfileDao(_db));
     } on Exception catch (e) {
       CrashReporter.recordError(e, reason: 'RevenueCat logIn failed');
     }
