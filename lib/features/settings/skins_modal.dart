@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:my_gym_bro/core/providers/providers.dart';
 import 'package:my_gym_bro/features/settings/skin_provider.dart';
+import 'package:my_gym_bro/features/settings/skin_repository.dart';
 import 'package:my_gym_bro/l10n/app_localizations.dart';
 import 'package:my_gym_bro/shared/constants.dart';
 import 'package:my_gym_bro/shared/responsive.dart';
@@ -31,7 +32,7 @@ void showSkinsModal(BuildContext context, WidgetRef ref) {
   );
 }
 
-class _SkinsGrid extends ConsumerWidget {
+class _SkinsGrid extends ConsumerStatefulWidget {
   const _SkinsGrid({
     required this.scrollController,
     required this.colors,
@@ -41,8 +42,88 @@ class _SkinsGrid extends ConsumerWidget {
   final AppColorsTheme colors;
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<_SkinsGrid> createState() => _SkinsGridState();
+}
+
+class _SkinsGridState extends ConsumerState<_SkinsGrid> {
+  /// A purchase/restore round-trip is in flight — block further store taps.
+  bool _busy = false;
+
+  void _snack(String message) {
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(message)),
+    );
+  }
+
+  /// Unlock every skin the receipt proves + refresh state after a store flow.
+  Future<void> _applyReceipt(SkinFlowOutcome outcome) async {
+    for (final id in skinIdsForProducts(outcome.ownedProductIds)) {
+      await ref.read(ownedSkinsProvider.notifier).unlock(id);
+    }
+  }
+
+  Future<void> _buy(Skin skin) async {
     final l10n = AppLocalizations.of(context);
+    final productId = skin.productId;
+    if (productId == null || _busy) return;
+    setState(() => _busy = true);
+    try {
+      final outcome =
+          await ref.read(skinRepositoryProvider).purchase(productId);
+      if (!mounted) return;
+      switch (outcome.status) {
+        case SkinFlowStatus.success:
+          await _applyReceipt(outcome);
+          // Auto-equip what was just bought.
+          await selectSkin(ref, skin.id);
+          _snack(l10n.skinPurchaseSuccess);
+        case SkinFlowStatus.cancelled:
+          break;
+        case SkinFlowStatus.unavailable:
+          _snack(l10n.skinPremiumSoon);
+        case SkinFlowStatus.error:
+          _snack(l10n.skinPurchaseFailed);
+      }
+    } finally {
+      if (mounted) setState(() => _busy = false);
+    }
+  }
+
+  Future<void> _restore() async {
+    final l10n = AppLocalizations.of(context);
+    if (_busy) return;
+    setState(() => _busy = true);
+    try {
+      final outcome = await ref.read(skinRepositoryProvider).restore();
+      if (!mounted) return;
+      switch (outcome.status) {
+        case SkinFlowStatus.success:
+          await _applyReceipt(outcome);
+          _snack(
+            skinIdsForProducts(outcome.ownedProductIds).isEmpty
+                ? l10n.skinRestoreNone
+                : l10n.restoreSuccess,
+          );
+        case SkinFlowStatus.cancelled:
+          break;
+        case SkinFlowStatus.unavailable:
+          _snack(l10n.skinPremiumSoon);
+        case SkinFlowStatus.error:
+          _snack(l10n.restoreFailed);
+      }
+    } finally {
+      if (mounted) setState(() => _busy = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = widget.colors;
+    final l10n = AppLocalizations.of(context);
+    // Opening the gallery pulls fresh server grants (new earned skins,
+    // purchases from another device) into the offline mirror.
+    ref.watch(skinOwnershipRefreshProvider);
     final isFemale =
         ref.watch(anatomyGenderProvider) == AnatomyGender.female;
     final selectedId = ref.watch(selectedSkinProvider);
@@ -88,6 +169,33 @@ class _SkinsGrid extends ConsumerWidget {
                   ),
                 ),
                 const Spacer(),
+                // Restore purchases (store requirement for one-time IAP).
+                GestureDetector(
+                  onTap: _busy ? null : _restore,
+                  child: Padding(
+                    padding:
+                        EdgeInsets.symmetric(horizontal: 8.w, vertical: 4.h),
+                    child: _busy
+                        ? SizedBox(
+                            width: 14.sp,
+                            height: 14.sp,
+                            child: CircularProgressIndicator(
+                              color: colors.textSecondary,
+                              strokeWidth: 2,
+                            ),
+                          )
+                        : Text(
+                            l10n.restoreSubscription,
+                            style: TextStyle(
+                              color: colors.textSecondary,
+                              fontSize: 11.sp,
+                              fontWeight: FontWeight.w600,
+                              decoration: TextDecoration.underline,
+                            ),
+                          ),
+                  ),
+                ),
+                SizedBox(width: 6.w),
                 Container(
                   padding:
                       EdgeInsets.symmetric(horizontal: 10.w, vertical: 4.h),
@@ -111,7 +219,7 @@ class _SkinsGrid extends ConsumerWidget {
           // ── Grid ──
           Expanded(
             child: GridView.builder(
-              controller: scrollController,
+              controller: widget.scrollController,
               padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 8.h),
               gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
                 crossAxisCount: 2,
@@ -134,20 +242,19 @@ class _SkinsGrid extends ConsumerWidget {
                   colors: colors,
                   onTap: () {
                     if (isLocked) {
-                      // Locked: explain how to unlock instead of selecting.
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(
-                          content: Text(
-                            skin.unlock == SkinUnlock.paid
-                                ? l10n.skinPremiumSoon
-                                : l10n.skinLockedProgress(
-                                    skin.requiredSessions ?? 0),
-                          ),
-                        ),
-                      );
+                      if (skin.unlock == SkinUnlock.paid) {
+                        // Locked paid skin → straight into the store flow;
+                        // the system payment sheet is the confirmation.
+                        _buy(skin);
+                      } else {
+                        // Locked progress skin: explain how to unlock.
+                        _snack(
+                          l10n.skinLockedProgress(skin.requiredSessions ?? 0),
+                        );
+                      }
                       return;
                     }
-                    ref.read(selectedSkinProvider.notifier).select(skin.id);
+                    selectSkin(ref, skin.id);
                     Navigator.of(context).pop();
                   },
                 );

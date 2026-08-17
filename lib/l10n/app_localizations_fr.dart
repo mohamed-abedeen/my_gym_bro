@@ -1331,6 +1331,15 @@ class AppLocalizationsFr extends AppLocalizations {
   String get skinPremiumSoon => 'Skin premium — achats bientôt disponibles';
 
   @override
+  String get skinPurchaseSuccess => 'Skin débloqué. Ça te va bien !';
+
+  @override
+  String get skinPurchaseFailed => 'Échec de l\'achat. Veuillez réessayer.';
+
+  @override
+  String get skinRestoreNone => 'Aucun achat de skin à restaurer.';
+
+  @override
   String skinWorkoutsShort(int count) {
     return '$count séances';
   }

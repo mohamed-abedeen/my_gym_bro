@@ -50,6 +50,15 @@ const SEASON_MESSAGES: Record<Tone, [string, string]> = {
   ],
 };
 
+// {skin} = display name from the skins catalog (migration 016). Sent by
+// evaluate_earned_skins() on a new grant.
+const SKIN_MESSAGES: Record<Tone, string> = {
+  supportive: "You unlocked the {skin} skin! Go try it on 🎉",
+  balanced: "New skin unlocked: {skin}.",
+  bold: "The {skin} skin is yours. Wear it.",
+  savage: "{skin} unlocked. You've earned the flex.",
+};
+
 function ordinal(n: number): string {
   if (n % 100 >= 11 && n % 100 <= 13) return `${n}th`;
   return `${n}${["th", "st", "nd", "rd"][n % 10] ?? "th"}`;
@@ -72,6 +81,8 @@ serve(async (req: Request) => {
       kind?: string;
       board?: string;
       placement?: number;
+      skin_id?: string;
+      skin_name?: string;
     } = await req.json();
 
     const userIds = raw.userIds ?? raw.user_ids;
@@ -121,6 +132,42 @@ serve(async (req: Request) => {
           tokens,
           { title: "Season ended!", body: message },
           { type: "season_ended", board, placement: `${placement}`, tone },
+        );
+        sent += result.sent;
+        failed += result.failed;
+        staleTokens.push(...result.staleTokens);
+      }
+    } else if (raw.kind === "skin_unlocked") {
+      const skinName = (raw.skin_name ?? "").trim() || "Secret";
+
+      const { data: profiles, error: fetchError } = await supabaseAdmin
+        .from("user_profiles")
+        .select("fcm_token, notification_tone")
+        .in("user_id", userIds)
+        .not("fcm_token", "is", null);
+      if (fetchError) {
+        console.error("Error fetching tokens:", fetchError);
+        return jsonResponse({ error: "Failed to fetch tokens" }, 500);
+      }
+
+      // Tone-resolved per recipient (04-BACKEND §3.7), same shape as
+      // season_ended above.
+      const byTone = new Map<Tone, string[]>();
+      for (const p of profiles ?? []) {
+        const token = (p.fcm_token ?? "").trim();
+        if (!token) continue;
+        const tone: Tone = TONES.includes(p.notification_tone as Tone)
+          ? (p.notification_tone as Tone)
+          : "balanced";
+        byTone.set(tone, [...(byTone.get(tone) ?? []), token]);
+      }
+
+      for (const [tone, tokens] of byTone) {
+        const message = SKIN_MESSAGES[tone].replace(/\{skin\}/g, skinName);
+        const result = await sendPush(
+          tokens,
+          { title: "Skin unlocked!", body: message },
+          { type: "skin_unlocked", skin_id: raw.skin_id ?? "", tone },
         );
         sent += result.sent;
         failed += result.failed;

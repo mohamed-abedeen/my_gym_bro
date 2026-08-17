@@ -400,6 +400,9 @@
   "rankShieldTooltip": "Escudo de descenso: tu rango está protegido mientras te recuperas.",
   "skinPremium": "Premium",
   "skinPremiumSoon": "Skin premium — compras disponibles pronto",
+  "skinPurchaseSuccess": "Skin desbloqueada. ¡Te queda genial!",
+  "skinPurchaseFailed": "No se pudo completar la compra. Inténtalo de nuevo.",
+  "skinRestoreNone": "No hay compras de skins para restaurar.",
   "skinWorkoutsShort": "{count} entrenos",
   "@skinWorkoutsShort": {
     "placeholders": {

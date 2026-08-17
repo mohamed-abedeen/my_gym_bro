@@ -400,6 +400,9 @@
   "rankShieldTooltip": "Abstiegsschutz — dein Rang ist geschützt, während du dich zurückkämpfst.",
   "skinPremium": "Premium",
   "skinPremiumSoon": "Premium-Skin — Kauf bald verfügbar",
+  "skinPurchaseSuccess": "Skin freigeschaltet. Steht dir gut!",
+  "skinPurchaseFailed": "Kauf fehlgeschlagen. Bitte versuche es erneut.",
+  "skinRestoreNone": "Keine Skin-Käufe zum Wiederherstellen.",
   "skinWorkoutsShort": "{count} Workouts",
   "@skinWorkoutsShort": {
     "placeholders": {

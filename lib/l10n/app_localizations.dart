@@ -2526,6 +2526,24 @@ abstract class AppLocalizations {
   /// **'Premium skin — purchases coming soon'**
   String get skinPremiumSoon;
 
+  /// No description provided for @skinPurchaseSuccess.
+  ///
+  /// In en, this message translates to:
+  /// **'Skin unlocked. Looking good!'**
+  String get skinPurchaseSuccess;
+
+  /// No description provided for @skinPurchaseFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Purchase failed. Please try again.'**
+  String get skinPurchaseFailed;
+
+  /// No description provided for @skinRestoreNone.
+  ///
+  /// In en, this message translates to:
+  /// **'No skin purchases to restore.'**
+  String get skinRestoreNone;
+
   /// No description provided for @skinWorkoutsShort.
   ///
   /// In en, this message translates to:

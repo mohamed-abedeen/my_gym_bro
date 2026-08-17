@@ -269,6 +269,17 @@ class $UserProfilesTable extends UserProfiles
     requiredDuringInsert: false,
     defaultValue: const Constant('balanced'),
   );
+  static const VerificationMeta _activeSkinIdMeta = const VerificationMeta(
+    'activeSkinId',
+  );
+  @override
+  late final GeneratedColumn<String> activeSkinId = GeneratedColumn<String>(
+    'active_skin_id',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
   @override
   List<GeneratedColumn> get $columns => [
     localId,
@@ -294,6 +305,7 @@ class $UserProfilesTable extends UserProfiles
     defaultRestSeconds,
     fcmToken,
     notificationTone,
+    activeSkinId,
   ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -469,6 +481,15 @@ class $UserProfilesTable extends UserProfiles
         ),
       );
     }
+    if (data.containsKey('active_skin_id')) {
+      context.handle(
+        _activeSkinIdMeta,
+        activeSkinId.isAcceptableOrUnknown(
+          data['active_skin_id']!,
+          _activeSkinIdMeta,
+        ),
+      );
+    }
     return context;
   }
 
@@ -570,6 +591,10 @@ class $UserProfilesTable extends UserProfiles
         DriftSqlType.string,
         data['${effectivePrefix}notification_tone'],
       )!,
+      activeSkinId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}active_skin_id'],
+      ),
     );
   }
 
@@ -614,6 +639,11 @@ class UserProfile extends DataClass implements Insertable<UserProfile> {
 
   /// 'supportive' | 'balanced' | 'bold' | 'savage'
   final String notificationTone;
+
+  /// Selected cosmetic skin id (ids from the static catalog in
+  /// skin_provider.dart). Null = default body. Synced like any other
+  /// profile field; lock-gating happens at selection time.
+  final String? activeSkinId;
   const UserProfile({
     required this.localId,
     this.remoteId,
@@ -638,6 +668,7 @@ class UserProfile extends DataClass implements Insertable<UserProfile> {
     required this.defaultRestSeconds,
     this.fcmToken,
     required this.notificationTone,
+    this.activeSkinId,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -699,6 +730,9 @@ class UserProfile extends DataClass implements Insertable<UserProfile> {
       map['fcm_token'] = Variable<String>(fcmToken);
     }
     map['notification_tone'] = Variable<String>(notificationTone);
+    if (!nullToAbsent || activeSkinId != null) {
+      map['active_skin_id'] = Variable<String>(activeSkinId);
+    }
     return map;
   }
 
@@ -757,6 +791,9 @@ class UserProfile extends DataClass implements Insertable<UserProfile> {
           ? const Value.absent()
           : Value(fcmToken),
       notificationTone: Value(notificationTone),
+      activeSkinId: activeSkinId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(activeSkinId),
     );
   }
 
@@ -793,6 +830,7 @@ class UserProfile extends DataClass implements Insertable<UserProfile> {
       defaultRestSeconds: serializer.fromJson<int>(json['defaultRestSeconds']),
       fcmToken: serializer.fromJson<String?>(json['fcmToken']),
       notificationTone: serializer.fromJson<String>(json['notificationTone']),
+      activeSkinId: serializer.fromJson<String?>(json['activeSkinId']),
     );
   }
   @override
@@ -824,6 +862,7 @@ class UserProfile extends DataClass implements Insertable<UserProfile> {
       'defaultRestSeconds': serializer.toJson<int>(defaultRestSeconds),
       'fcmToken': serializer.toJson<String?>(fcmToken),
       'notificationTone': serializer.toJson<String>(notificationTone),
+      'activeSkinId': serializer.toJson<String?>(activeSkinId),
     };
   }
 
@@ -851,6 +890,7 @@ class UserProfile extends DataClass implements Insertable<UserProfile> {
     int? defaultRestSeconds,
     Value<String?> fcmToken = const Value.absent(),
     String? notificationTone,
+    Value<String?> activeSkinId = const Value.absent(),
   }) => UserProfile(
     localId: localId ?? this.localId,
     remoteId: remoteId.present ? remoteId.value : this.remoteId,
@@ -879,6 +919,7 @@ class UserProfile extends DataClass implements Insertable<UserProfile> {
     defaultRestSeconds: defaultRestSeconds ?? this.defaultRestSeconds,
     fcmToken: fcmToken.present ? fcmToken.value : this.fcmToken,
     notificationTone: notificationTone ?? this.notificationTone,
+    activeSkinId: activeSkinId.present ? activeSkinId.value : this.activeSkinId,
   );
   UserProfile copyWithCompanion(UserProfilesCompanion data) {
     return UserProfile(
@@ -927,6 +968,9 @@ class UserProfile extends DataClass implements Insertable<UserProfile> {
       notificationTone: data.notificationTone.present
           ? data.notificationTone.value
           : this.notificationTone,
+      activeSkinId: data.activeSkinId.present
+          ? data.activeSkinId.value
+          : this.activeSkinId,
     );
   }
 
@@ -955,7 +999,8 @@ class UserProfile extends DataClass implements Insertable<UserProfile> {
           ..write('subscriptionExpiresAt: $subscriptionExpiresAt, ')
           ..write('defaultRestSeconds: $defaultRestSeconds, ')
           ..write('fcmToken: $fcmToken, ')
-          ..write('notificationTone: $notificationTone')
+          ..write('notificationTone: $notificationTone, ')
+          ..write('activeSkinId: $activeSkinId')
           ..write(')'))
         .toString();
   }
@@ -985,6 +1030,7 @@ class UserProfile extends DataClass implements Insertable<UserProfile> {
     defaultRestSeconds,
     fcmToken,
     notificationTone,
+    activeSkinId,
   ]);
   @override
   bool operator ==(Object other) =>
@@ -1012,7 +1058,8 @@ class UserProfile extends DataClass implements Insertable<UserProfile> {
           other.subscriptionExpiresAt == this.subscriptionExpiresAt &&
           other.defaultRestSeconds == this.defaultRestSeconds &&
           other.fcmToken == this.fcmToken &&
-          other.notificationTone == this.notificationTone);
+          other.notificationTone == this.notificationTone &&
+          other.activeSkinId == this.activeSkinId);
 }
 
 class UserProfilesCompanion extends UpdateCompanion<UserProfile> {
@@ -1039,6 +1086,7 @@ class UserProfilesCompanion extends UpdateCompanion<UserProfile> {
   final Value<int> defaultRestSeconds;
   final Value<String?> fcmToken;
   final Value<String> notificationTone;
+  final Value<String?> activeSkinId;
   const UserProfilesCompanion({
     this.localId = const Value.absent(),
     this.remoteId = const Value.absent(),
@@ -1063,6 +1111,7 @@ class UserProfilesCompanion extends UpdateCompanion<UserProfile> {
     this.defaultRestSeconds = const Value.absent(),
     this.fcmToken = const Value.absent(),
     this.notificationTone = const Value.absent(),
+    this.activeSkinId = const Value.absent(),
   });
   UserProfilesCompanion.insert({
     this.localId = const Value.absent(),
@@ -1088,6 +1137,7 @@ class UserProfilesCompanion extends UpdateCompanion<UserProfile> {
     this.defaultRestSeconds = const Value.absent(),
     this.fcmToken = const Value.absent(),
     this.notificationTone = const Value.absent(),
+    this.activeSkinId = const Value.absent(),
   });
   static Insertable<UserProfile> custom({
     Expression<int>? localId,
@@ -1113,6 +1163,7 @@ class UserProfilesCompanion extends UpdateCompanion<UserProfile> {
     Expression<int>? defaultRestSeconds,
     Expression<String>? fcmToken,
     Expression<String>? notificationTone,
+    Expression<String>? activeSkinId,
   }) {
     return RawValuesInsertable({
       if (localId != null) 'local_id': localId,
@@ -1140,6 +1191,7 @@ class UserProfilesCompanion extends UpdateCompanion<UserProfile> {
         'default_rest_seconds': defaultRestSeconds,
       if (fcmToken != null) 'fcm_token': fcmToken,
       if (notificationTone != null) 'notification_tone': notificationTone,
+      if (activeSkinId != null) 'active_skin_id': activeSkinId,
     });
   }
 
@@ -1167,6 +1219,7 @@ class UserProfilesCompanion extends UpdateCompanion<UserProfile> {
     Value<int>? defaultRestSeconds,
     Value<String?>? fcmToken,
     Value<String>? notificationTone,
+    Value<String?>? activeSkinId,
   }) {
     return UserProfilesCompanion(
       localId: localId ?? this.localId,
@@ -1193,6 +1246,7 @@ class UserProfilesCompanion extends UpdateCompanion<UserProfile> {
       defaultRestSeconds: defaultRestSeconds ?? this.defaultRestSeconds,
       fcmToken: fcmToken ?? this.fcmToken,
       notificationTone: notificationTone ?? this.notificationTone,
+      activeSkinId: activeSkinId ?? this.activeSkinId,
     );
   }
 
@@ -1270,6 +1324,9 @@ class UserProfilesCompanion extends UpdateCompanion<UserProfile> {
     if (notificationTone.present) {
       map['notification_tone'] = Variable<String>(notificationTone.value);
     }
+    if (activeSkinId.present) {
+      map['active_skin_id'] = Variable<String>(activeSkinId.value);
+    }
     return map;
   }
 
@@ -1298,7 +1355,8 @@ class UserProfilesCompanion extends UpdateCompanion<UserProfile> {
           ..write('subscriptionExpiresAt: $subscriptionExpiresAt, ')
           ..write('defaultRestSeconds: $defaultRestSeconds, ')
           ..write('fcmToken: $fcmToken, ')
-          ..write('notificationTone: $notificationTone')
+          ..write('notificationTone: $notificationTone, ')
+          ..write('activeSkinId: $activeSkinId')
           ..write(')'))
         .toString();
   }
@@ -10673,6 +10731,366 @@ class SeasonWinnerCacheCompanion
   }
 }
 
+class $SkinOwnershipsTable extends SkinOwnerships
+    with TableInfo<$SkinOwnershipsTable, SkinOwnership> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $SkinOwnershipsTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _localIdMeta = const VerificationMeta(
+    'localId',
+  );
+  @override
+  late final GeneratedColumn<int> localId = GeneratedColumn<int>(
+    'local_id',
+    aliasedName,
+    false,
+    hasAutoIncrement: true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'PRIMARY KEY AUTOINCREMENT',
+    ),
+  );
+  static const VerificationMeta _skinIdMeta = const VerificationMeta('skinId');
+  @override
+  late final GeneratedColumn<String> skinId = GeneratedColumn<String>(
+    'skin_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+    defaultConstraints: GeneratedColumn.constraintIsAlways('UNIQUE'),
+  );
+  static const VerificationMeta _sourceMeta = const VerificationMeta('source');
+  @override
+  late final GeneratedColumn<String> source = GeneratedColumn<String>(
+    'source',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _acquiredAtMeta = const VerificationMeta(
+    'acquiredAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> acquiredAt = GeneratedColumn<DateTime>(
+    'acquired_at',
+    aliasedName,
+    true,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _fetchedAtMeta = const VerificationMeta(
+    'fetchedAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> fetchedAt = GeneratedColumn<DateTime>(
+    'fetched_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: true,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    localId,
+    skinId,
+    source,
+    acquiredAt,
+    fetchedAt,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'skin_ownerships';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<SkinOwnership> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('local_id')) {
+      context.handle(
+        _localIdMeta,
+        localId.isAcceptableOrUnknown(data['local_id']!, _localIdMeta),
+      );
+    }
+    if (data.containsKey('skin_id')) {
+      context.handle(
+        _skinIdMeta,
+        skinId.isAcceptableOrUnknown(data['skin_id']!, _skinIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_skinIdMeta);
+    }
+    if (data.containsKey('source')) {
+      context.handle(
+        _sourceMeta,
+        source.isAcceptableOrUnknown(data['source']!, _sourceMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_sourceMeta);
+    }
+    if (data.containsKey('acquired_at')) {
+      context.handle(
+        _acquiredAtMeta,
+        acquiredAt.isAcceptableOrUnknown(data['acquired_at']!, _acquiredAtMeta),
+      );
+    }
+    if (data.containsKey('fetched_at')) {
+      context.handle(
+        _fetchedAtMeta,
+        fetchedAt.isAcceptableOrUnknown(data['fetched_at']!, _fetchedAtMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_fetchedAtMeta);
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {localId};
+  @override
+  SkinOwnership map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return SkinOwnership(
+      localId: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}local_id'],
+      )!,
+      skinId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}skin_id'],
+      )!,
+      source: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}source'],
+      )!,
+      acquiredAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}acquired_at'],
+      ),
+      fetchedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}fetched_at'],
+      )!,
+    );
+  }
+
+  @override
+  $SkinOwnershipsTable createAlias(String alias) {
+    return $SkinOwnershipsTable(attachedDatabase, alias);
+  }
+}
+
+class SkinOwnership extends DataClass implements Insertable<SkinOwnership> {
+  final int localId;
+  final String skinId;
+
+  /// 'earned' | 'purchased'
+  final String source;
+  final DateTime? acquiredAt;
+  final DateTime fetchedAt;
+  const SkinOwnership({
+    required this.localId,
+    required this.skinId,
+    required this.source,
+    this.acquiredAt,
+    required this.fetchedAt,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['local_id'] = Variable<int>(localId);
+    map['skin_id'] = Variable<String>(skinId);
+    map['source'] = Variable<String>(source);
+    if (!nullToAbsent || acquiredAt != null) {
+      map['acquired_at'] = Variable<DateTime>(acquiredAt);
+    }
+    map['fetched_at'] = Variable<DateTime>(fetchedAt);
+    return map;
+  }
+
+  SkinOwnershipsCompanion toCompanion(bool nullToAbsent) {
+    return SkinOwnershipsCompanion(
+      localId: Value(localId),
+      skinId: Value(skinId),
+      source: Value(source),
+      acquiredAt: acquiredAt == null && nullToAbsent
+          ? const Value.absent()
+          : Value(acquiredAt),
+      fetchedAt: Value(fetchedAt),
+    );
+  }
+
+  factory SkinOwnership.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return SkinOwnership(
+      localId: serializer.fromJson<int>(json['localId']),
+      skinId: serializer.fromJson<String>(json['skinId']),
+      source: serializer.fromJson<String>(json['source']),
+      acquiredAt: serializer.fromJson<DateTime?>(json['acquiredAt']),
+      fetchedAt: serializer.fromJson<DateTime>(json['fetchedAt']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'localId': serializer.toJson<int>(localId),
+      'skinId': serializer.toJson<String>(skinId),
+      'source': serializer.toJson<String>(source),
+      'acquiredAt': serializer.toJson<DateTime?>(acquiredAt),
+      'fetchedAt': serializer.toJson<DateTime>(fetchedAt),
+    };
+  }
+
+  SkinOwnership copyWith({
+    int? localId,
+    String? skinId,
+    String? source,
+    Value<DateTime?> acquiredAt = const Value.absent(),
+    DateTime? fetchedAt,
+  }) => SkinOwnership(
+    localId: localId ?? this.localId,
+    skinId: skinId ?? this.skinId,
+    source: source ?? this.source,
+    acquiredAt: acquiredAt.present ? acquiredAt.value : this.acquiredAt,
+    fetchedAt: fetchedAt ?? this.fetchedAt,
+  );
+  SkinOwnership copyWithCompanion(SkinOwnershipsCompanion data) {
+    return SkinOwnership(
+      localId: data.localId.present ? data.localId.value : this.localId,
+      skinId: data.skinId.present ? data.skinId.value : this.skinId,
+      source: data.source.present ? data.source.value : this.source,
+      acquiredAt: data.acquiredAt.present
+          ? data.acquiredAt.value
+          : this.acquiredAt,
+      fetchedAt: data.fetchedAt.present ? data.fetchedAt.value : this.fetchedAt,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('SkinOwnership(')
+          ..write('localId: $localId, ')
+          ..write('skinId: $skinId, ')
+          ..write('source: $source, ')
+          ..write('acquiredAt: $acquiredAt, ')
+          ..write('fetchedAt: $fetchedAt')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode =>
+      Object.hash(localId, skinId, source, acquiredAt, fetchedAt);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is SkinOwnership &&
+          other.localId == this.localId &&
+          other.skinId == this.skinId &&
+          other.source == this.source &&
+          other.acquiredAt == this.acquiredAt &&
+          other.fetchedAt == this.fetchedAt);
+}
+
+class SkinOwnershipsCompanion extends UpdateCompanion<SkinOwnership> {
+  final Value<int> localId;
+  final Value<String> skinId;
+  final Value<String> source;
+  final Value<DateTime?> acquiredAt;
+  final Value<DateTime> fetchedAt;
+  const SkinOwnershipsCompanion({
+    this.localId = const Value.absent(),
+    this.skinId = const Value.absent(),
+    this.source = const Value.absent(),
+    this.acquiredAt = const Value.absent(),
+    this.fetchedAt = const Value.absent(),
+  });
+  SkinOwnershipsCompanion.insert({
+    this.localId = const Value.absent(),
+    required String skinId,
+    required String source,
+    this.acquiredAt = const Value.absent(),
+    required DateTime fetchedAt,
+  }) : skinId = Value(skinId),
+       source = Value(source),
+       fetchedAt = Value(fetchedAt);
+  static Insertable<SkinOwnership> custom({
+    Expression<int>? localId,
+    Expression<String>? skinId,
+    Expression<String>? source,
+    Expression<DateTime>? acquiredAt,
+    Expression<DateTime>? fetchedAt,
+  }) {
+    return RawValuesInsertable({
+      if (localId != null) 'local_id': localId,
+      if (skinId != null) 'skin_id': skinId,
+      if (source != null) 'source': source,
+      if (acquiredAt != null) 'acquired_at': acquiredAt,
+      if (fetchedAt != null) 'fetched_at': fetchedAt,
+    });
+  }
+
+  SkinOwnershipsCompanion copyWith({
+    Value<int>? localId,
+    Value<String>? skinId,
+    Value<String>? source,
+    Value<DateTime?>? acquiredAt,
+    Value<DateTime>? fetchedAt,
+  }) {
+    return SkinOwnershipsCompanion(
+      localId: localId ?? this.localId,
+      skinId: skinId ?? this.skinId,
+      source: source ?? this.source,
+      acquiredAt: acquiredAt ?? this.acquiredAt,
+      fetchedAt: fetchedAt ?? this.fetchedAt,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (localId.present) {
+      map['local_id'] = Variable<int>(localId.value);
+    }
+    if (skinId.present) {
+      map['skin_id'] = Variable<String>(skinId.value);
+    }
+    if (source.present) {
+      map['source'] = Variable<String>(source.value);
+    }
+    if (acquiredAt.present) {
+      map['acquired_at'] = Variable<DateTime>(acquiredAt.value);
+    }
+    if (fetchedAt.present) {
+      map['fetched_at'] = Variable<DateTime>(fetchedAt.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('SkinOwnershipsCompanion(')
+          ..write('localId: $localId, ')
+          ..write('skinId: $skinId, ')
+          ..write('source: $source, ')
+          ..write('acquiredAt: $acquiredAt, ')
+          ..write('fetchedAt: $fetchedAt')
+          ..write(')'))
+        .toString();
+  }
+}
+
 abstract class _$AppDatabase extends GeneratedDatabase {
   _$AppDatabase(QueryExecutor e) : super(e);
   $AppDatabaseManager get managers => $AppDatabaseManager(this);
@@ -10697,6 +11115,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
   );
   late final $SeasonWinnerCacheTable seasonWinnerCache =
       $SeasonWinnerCacheTable(this);
+  late final $SkinOwnershipsTable skinOwnerships = $SkinOwnershipsTable(this);
   @override
   Iterable<TableInfo<Table, Object?>> get allTables =>
       allSchemaEntities.whereType<TableInfo<Table, Object?>>();
@@ -10716,6 +11135,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     challengeParticipants,
     leaderboardCache,
     seasonWinnerCache,
+    skinOwnerships,
   ];
 }
 
@@ -10744,6 +11164,7 @@ typedef $$UserProfilesTableCreateCompanionBuilder =
       Value<int> defaultRestSeconds,
       Value<String?> fcmToken,
       Value<String> notificationTone,
+      Value<String?> activeSkinId,
     });
 typedef $$UserProfilesTableUpdateCompanionBuilder =
     UserProfilesCompanion Function({
@@ -10770,6 +11191,7 @@ typedef $$UserProfilesTableUpdateCompanionBuilder =
       Value<int> defaultRestSeconds,
       Value<String?> fcmToken,
       Value<String> notificationTone,
+      Value<String?> activeSkinId,
     });
 
 class $$UserProfilesTableFilterComposer
@@ -10893,6 +11315,11 @@ class $$UserProfilesTableFilterComposer
 
   ColumnFilters<String> get notificationTone => $composableBuilder(
     column: $table.notificationTone,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get activeSkinId => $composableBuilder(
+    column: $table.activeSkinId,
     builder: (column) => ColumnFilters(column),
   );
 }
@@ -11020,6 +11447,11 @@ class $$UserProfilesTableOrderingComposer
     column: $table.notificationTone,
     builder: (column) => ColumnOrderings(column),
   );
+
+  ColumnOrderings<String> get activeSkinId => $composableBuilder(
+    column: $table.activeSkinId,
+    builder: (column) => ColumnOrderings(column),
+  );
 }
 
 class $$UserProfilesTableAnnotationComposer
@@ -11121,6 +11553,11 @@ class $$UserProfilesTableAnnotationComposer
     column: $table.notificationTone,
     builder: (column) => column,
   );
+
+  GeneratedColumn<String> get activeSkinId => $composableBuilder(
+    column: $table.activeSkinId,
+    builder: (column) => column,
+  );
 }
 
 class $$UserProfilesTableTableManager
@@ -11177,6 +11614,7 @@ class $$UserProfilesTableTableManager
                 Value<int> defaultRestSeconds = const Value.absent(),
                 Value<String?> fcmToken = const Value.absent(),
                 Value<String> notificationTone = const Value.absent(),
+                Value<String?> activeSkinId = const Value.absent(),
               }) => UserProfilesCompanion(
                 localId: localId,
                 remoteId: remoteId,
@@ -11201,6 +11639,7 @@ class $$UserProfilesTableTableManager
                 defaultRestSeconds: defaultRestSeconds,
                 fcmToken: fcmToken,
                 notificationTone: notificationTone,
+                activeSkinId: activeSkinId,
               ),
           createCompanionCallback:
               ({
@@ -11227,6 +11666,7 @@ class $$UserProfilesTableTableManager
                 Value<int> defaultRestSeconds = const Value.absent(),
                 Value<String?> fcmToken = const Value.absent(),
                 Value<String> notificationTone = const Value.absent(),
+                Value<String?> activeSkinId = const Value.absent(),
               }) => UserProfilesCompanion.insert(
                 localId: localId,
                 remoteId: remoteId,
@@ -11251,6 +11691,7 @@ class $$UserProfilesTableTableManager
                 defaultRestSeconds: defaultRestSeconds,
                 fcmToken: fcmToken,
                 notificationTone: notificationTone,
+                activeSkinId: activeSkinId,
               ),
           withReferenceMapper: (p0) => p0
               .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
@@ -16799,6 +17240,204 @@ typedef $$SeasonWinnerCacheTableProcessedTableManager =
       SeasonWinnerCacheData,
       PrefetchHooks Function()
     >;
+typedef $$SkinOwnershipsTableCreateCompanionBuilder =
+    SkinOwnershipsCompanion Function({
+      Value<int> localId,
+      required String skinId,
+      required String source,
+      Value<DateTime?> acquiredAt,
+      required DateTime fetchedAt,
+    });
+typedef $$SkinOwnershipsTableUpdateCompanionBuilder =
+    SkinOwnershipsCompanion Function({
+      Value<int> localId,
+      Value<String> skinId,
+      Value<String> source,
+      Value<DateTime?> acquiredAt,
+      Value<DateTime> fetchedAt,
+    });
+
+class $$SkinOwnershipsTableFilterComposer
+    extends Composer<_$AppDatabase, $SkinOwnershipsTable> {
+  $$SkinOwnershipsTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<int> get localId => $composableBuilder(
+    column: $table.localId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get skinId => $composableBuilder(
+    column: $table.skinId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get source => $composableBuilder(
+    column: $table.source,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get acquiredAt => $composableBuilder(
+    column: $table.acquiredAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get fetchedAt => $composableBuilder(
+    column: $table.fetchedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+}
+
+class $$SkinOwnershipsTableOrderingComposer
+    extends Composer<_$AppDatabase, $SkinOwnershipsTable> {
+  $$SkinOwnershipsTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<int> get localId => $composableBuilder(
+    column: $table.localId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get skinId => $composableBuilder(
+    column: $table.skinId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get source => $composableBuilder(
+    column: $table.source,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get acquiredAt => $composableBuilder(
+    column: $table.acquiredAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get fetchedAt => $composableBuilder(
+    column: $table.fetchedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+}
+
+class $$SkinOwnershipsTableAnnotationComposer
+    extends Composer<_$AppDatabase, $SkinOwnershipsTable> {
+  $$SkinOwnershipsTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<int> get localId =>
+      $composableBuilder(column: $table.localId, builder: (column) => column);
+
+  GeneratedColumn<String> get skinId =>
+      $composableBuilder(column: $table.skinId, builder: (column) => column);
+
+  GeneratedColumn<String> get source =>
+      $composableBuilder(column: $table.source, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get acquiredAt => $composableBuilder(
+    column: $table.acquiredAt,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<DateTime> get fetchedAt =>
+      $composableBuilder(column: $table.fetchedAt, builder: (column) => column);
+}
+
+class $$SkinOwnershipsTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $SkinOwnershipsTable,
+          SkinOwnership,
+          $$SkinOwnershipsTableFilterComposer,
+          $$SkinOwnershipsTableOrderingComposer,
+          $$SkinOwnershipsTableAnnotationComposer,
+          $$SkinOwnershipsTableCreateCompanionBuilder,
+          $$SkinOwnershipsTableUpdateCompanionBuilder,
+          (
+            SkinOwnership,
+            BaseReferences<_$AppDatabase, $SkinOwnershipsTable, SkinOwnership>,
+          ),
+          SkinOwnership,
+          PrefetchHooks Function()
+        > {
+  $$SkinOwnershipsTableTableManager(
+    _$AppDatabase db,
+    $SkinOwnershipsTable table,
+  ) : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$SkinOwnershipsTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$SkinOwnershipsTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$SkinOwnershipsTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<int> localId = const Value.absent(),
+                Value<String> skinId = const Value.absent(),
+                Value<String> source = const Value.absent(),
+                Value<DateTime?> acquiredAt = const Value.absent(),
+                Value<DateTime> fetchedAt = const Value.absent(),
+              }) => SkinOwnershipsCompanion(
+                localId: localId,
+                skinId: skinId,
+                source: source,
+                acquiredAt: acquiredAt,
+                fetchedAt: fetchedAt,
+              ),
+          createCompanionCallback:
+              ({
+                Value<int> localId = const Value.absent(),
+                required String skinId,
+                required String source,
+                Value<DateTime?> acquiredAt = const Value.absent(),
+                required DateTime fetchedAt,
+              }) => SkinOwnershipsCompanion.insert(
+                localId: localId,
+                skinId: skinId,
+                source: source,
+                acquiredAt: acquiredAt,
+                fetchedAt: fetchedAt,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
+              .toList(),
+          prefetchHooksCallback: null,
+        ),
+      );
+}
+
+typedef $$SkinOwnershipsTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $SkinOwnershipsTable,
+      SkinOwnership,
+      $$SkinOwnershipsTableFilterComposer,
+      $$SkinOwnershipsTableOrderingComposer,
+      $$SkinOwnershipsTableAnnotationComposer,
+      $$SkinOwnershipsTableCreateCompanionBuilder,
+      $$SkinOwnershipsTableUpdateCompanionBuilder,
+      (
+        SkinOwnership,
+        BaseReferences<_$AppDatabase, $SkinOwnershipsTable, SkinOwnership>,
+      ),
+      SkinOwnership,
+      PrefetchHooks Function()
+    >;
 
 class $AppDatabaseManager {
   final _$AppDatabase _db;
@@ -16831,4 +17470,6 @@ class $AppDatabaseManager {
       $$LeaderboardCacheTableTableManager(_db, _db.leaderboardCache);
   $$SeasonWinnerCacheTableTableManager get seasonWinnerCache =>
       $$SeasonWinnerCacheTableTableManager(_db, _db.seasonWinnerCache);
+  $$SkinOwnershipsTableTableManager get skinOwnerships =>
+      $$SkinOwnershipsTableTableManager(_db, _db.skinOwnerships);
 }

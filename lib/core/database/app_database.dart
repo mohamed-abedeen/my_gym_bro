@@ -45,6 +45,10 @@ class UserProfiles extends Table {
   /// 'supportive' | 'balanced' | 'bold' | 'savage'
   TextColumn get notificationTone =>
       text().withDefault(const Constant('balanced'))();
+  /// Selected cosmetic skin id (ids from the static catalog in
+  /// skin_provider.dart). Null = default body. Synced like any other
+  /// profile field; lock-gating happens at selection time.
+  TextColumn get activeSkinId => text().nullable()();
 }
 
 /// Bundled + custom exercises.
@@ -338,6 +342,20 @@ class SeasonWinnerCache extends Table {
       ];
 }
 
+/// Offline mirror of server `skin_ownership` — earned/purchased skin grants.
+/// Server-authoritative (purchase-skin verify / evaluate_earned_skins), so no
+/// sync queue: a successful refresh replaces the whole set, and a verified
+/// purchase upserts its row directly.
+class SkinOwnerships extends Table {
+  IntColumn get localId => integer().autoIncrement()();
+  TextColumn get skinId => text().unique()();
+
+  /// 'earned' | 'purchased'
+  TextColumn get source => text()();
+  DateTimeColumn get acquiredAt => dateTime().nullable()();
+  DateTimeColumn get fetchedAt => dateTime()();
+}
+
 // ─────────────────────────────────────────────
 // D A T A B A S E
 // ─────────────────────────────────────────────
@@ -358,6 +376,7 @@ class SeasonWinnerCache extends Table {
     ChallengeParticipants,
     LeaderboardCache,
     SeasonWinnerCache,
+    SkinOwnerships,
   ],
 )
 class AppDatabase extends _$AppDatabase {
@@ -370,7 +389,7 @@ class AppDatabase extends _$AppDatabase {
   }
 
   @override
-  int get schemaVersion => 19;
+  int get schemaVersion => 20;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -497,6 +516,15 @@ class AppDatabase extends _$AppDatabase {
         }
         if (!await _hasTable('season_winner_cache')) {
           await m.createTable(seasonWinnerCache);
+        }
+      }
+      if (from < 20) {
+        // Phase 6.2 — skins economy (PRD §5.10): the selected skin joins the
+        // synced profile, and server-granted ownership (earned/purchased)
+        // gets a local mirror so the gallery renders offline.
+        await _addColumnIfMissing('user_profiles', 'active_skin_id', 'TEXT');
+        if (!await _hasTable('skin_ownerships')) {
+          await m.createTable(skinOwnerships);
         }
       }
     },

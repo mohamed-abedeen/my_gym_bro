@@ -1,6 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:my_gym_bro/core/providers/providers.dart';
 import 'package:my_gym_bro/core/security/secure_storage.dart';
+import 'package:my_gym_bro/features/settings/skin_repository.dart';
 import 'package:my_gym_bro/features/workout/workout_providers.dart';
 import 'package:my_gym_bro/shared/widgets/anatomy_body.dart';
 
@@ -34,6 +35,7 @@ class Skin {
     this.femalePath,
     this.unlock = SkinUnlock.free,
     this.requiredSessions,
+    this.productId,
   });
 
   final String id;
@@ -48,6 +50,10 @@ class Skin {
 
   /// Finished workouts needed to earn a [SkinUnlock.progress] skin.
   final int? requiredSessions;
+
+  /// RevenueCat one-time product id for [SkinUnlock.paid] skins. Must match
+  /// the `skins.product_id` seeds in migration 016.
+  final String? productId;
 
   /// Returns the asset path for the given gender, or `null` if unavailable.
   String? pathForGender({required bool isFemale}) =>
@@ -106,6 +112,7 @@ const availableSkins = <Skin>[
     malePath: 'assets/skins/male gold.png',
     femalePath: 'assets/skins/Female gold.png',
     unlock: SkinUnlock.paid,
+    productId: 'mgb_skin_gold',
   ),
   Skin(
     id: 'metal',
@@ -137,6 +144,7 @@ const availableSkins = <Skin>[
     // no male galaxy skin — malePath intentionally omitted
     femalePath: 'assets/skins/Female galaxy.png',
     unlock: SkinUnlock.paid,
+    productId: 'mgb_skin_galaxy',
   ),
   Skin(
     id: 'teddy_bear',
@@ -144,6 +152,7 @@ const availableSkins = <Skin>[
     // no male teddy bear skin — malePath intentionally omitted
     femalePath: 'assets/skins/Female Teddy Bear.png',
     unlock: SkinUnlock.paid,
+    productId: 'mgb_skin_teddy_bear',
   ),
   Skin(
     id: 'gren_guy',
@@ -193,10 +202,12 @@ final ownedSkinsProvider =
 );
 
 /// Pure gating logic: which [availableSkins] ids are unlocked given the user's
-/// finished-[sessions] count and the set of [owned] paid skin ids. Free skins
-/// are always in; progress skins unlock once the session threshold is met;
-/// paid skins only when owned. Extracted so it can be unit-tested without the
-/// SecureStorage-backed [ownedSkinsProvider].
+/// finished-[sessions] count and the set of [owned] skin ids (purchases and
+/// server grants). Free skins are always in; progress skins unlock once the
+/// session threshold is met — or when a server grant owns them, since
+/// migration 016 seeds OR-alternative earn rules (challenges, season
+/// placements) for the top tiers; paid skins only when owned. Extracted so it
+/// can be unit-tested without the storage-backed providers.
 Set<String> computeUnlockedSkinIds({
   required int sessions,
   required Set<String> owned,
@@ -205,7 +216,8 @@ Set<String> computeUnlockedSkinIds({
     for (final s in availableSkins)
       if (switch (s.unlock) {
         SkinUnlock.free => true,
-        SkinUnlock.progress => sessions >= (s.requiredSessions ?? 0),
+        SkinUnlock.progress =>
+          sessions >= (s.requiredSessions ?? 0) || owned.contains(s.id),
         SkinUnlock.paid => owned.contains(s.id),
       })
         s.id,
@@ -214,11 +226,15 @@ Set<String> computeUnlockedSkinIds({
 
 /// Ids of every skin the user can select right now: free skins, progress
 /// skins whose workout requirement is met (from local session history, so
-/// it works offline), and purchased paid skins.
+/// it works offline), and owned skins — the legacy SecureStorage set merged
+/// with the server-granted ownership mirror (earned + purchased).
 final unlockedSkinIdsProvider = Provider<Set<String>>((ref) {
   final sessions =
       ref.watch(lifetimeStatsProvider).valueOrNull?.sessionCount ?? 0;
-  final owned = ref.watch(ownedSkinsProvider);
+  final owned = {
+    ...ref.watch(ownedSkinsProvider),
+    ...?ref.watch(serverOwnedSkinsProvider).valueOrNull,
+  };
   return computeUnlockedSkinIds(sessions: sessions, owned: owned);
 });
 
@@ -270,3 +286,39 @@ final activeSkinPathProvider = Provider<String>((ref) {
   return skin.pathForGender(isFemale: isFemale) ??
       (isFemale ? _defaultFemale : _defaultMale);
 });
+
+// ── Skins economy (Phase 6.2) ──
+
+final skinRepositoryProvider = Provider<SkinRepository>((ref) {
+  return SkinRepository(
+    db: ref.watch(databaseProvider),
+    sync: ref.watch(syncServiceProvider),
+    supabase: ref.watch(supabaseProvider),
+  );
+});
+
+/// Server-granted skins (earned + purchased) from the offline mirror.
+final serverOwnedSkinsProvider = StreamProvider<Set<String>>(
+  (ref) => ref.watch(skinRepositoryProvider).watchOwnedIds(),
+);
+
+/// Fire-and-forget ownership refresh — watched by the gallery so opening it
+/// pulls fresh grants (new earned skins, purchases from another device).
+final skinOwnershipRefreshProvider = FutureProvider.autoDispose<void>(
+  (ref) => ref.watch(skinRepositoryProvider).refreshFromServer(),
+);
+
+/// Selects a skin everywhere: SecureStorage for the instant local render,
+/// plus the synced profile column (cross-device, shows on the public
+/// profile). Lock-gating stays at the call site (the gallery).
+Future<void> selectSkin(WidgetRef ref, String id) async {
+  await ref.read(selectedSkinProvider.notifier).select(id);
+  await ref.read(skinRepositoryProvider).persistActiveSkin(id);
+}
+
+/// Maps store product ids from a purchase/restore receipt back to skin ids —
+/// the instant local unlock when server verification is offline.
+Set<String> skinIdsForProducts(Set<String> productIds) => {
+      for (final s in availableSkins)
+        if (s.productId != null && productIds.contains(s.productId)) s.id,
+    };

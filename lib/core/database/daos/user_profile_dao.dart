@@ -73,6 +73,11 @@ class UserProfileDao extends DatabaseAccessor<AppDatabase>
       (update(userProfiles)..where((t) => t.localId.equals(localId)))
           .write(UserProfilesCompanion(username: Value(username)));
 
+  /// Update the selected cosmetic skin id (null = default body).
+  Future<void> updateActiveSkin(int localId, String? skinId) =>
+      (update(userProfiles)..where((t) => t.localId.equals(localId)))
+          .write(UserProfilesCompanion(activeSkinId: Value(skinId)));
+
   /// Delete every profile row on this device. Used by the account-deletion
   /// flow so the next sign-up on the same device starts with a clean slate.
   Future<int> clearAll() => delete(userProfiles).go();

@@ -155,8 +155,25 @@ When `challenge_participants.completed_at` is set, award `challenges.points` →
 ### 3.3 `purchase-skin` / verify
 On a RevenueCat one-time skin purchase, verify the entitlement/receipt server-side and insert `skin_ownership(source='purchased')`. Prevents client-spoofed ownership.
 
+> ✅ **Authored 2026-08-17 (not deployed).** User-JWT function (`verify_jwt`
+> stays on). Ignores any client-asserted product: it fetches the caller's
+> RevenueCat subscriber (`REVENUECAT_SECRET_KEY`, a *secret* API key — new
+> function secret, see SETUP-STATUS) and grants EVERY purchasable skin whose
+> product appears in `non_subscriptions` — so one endpoint serves purchase,
+> restore, and reinstall, idempotent on `(user_id, skin_id)`. Returns the full
+> ownership snapshot for the client mirror. 503 while the secret is unset
+> (client degrades to local unlock). Accepted gap: RC v1 keeps refunded
+> purchases, so a refund still verifies as owned (webhook/v2-only signal).
+> Products: `mgb_skin_gold` / `mgb_skin_galaxy` / `mgb_skin_teddy_bear`.
+
 ### 3.4 `evaluate-earned-skins` (scheduled or on-event)
 Evaluates `skins.unlock_rule` against user stats (streak length, leaderboard placement, challenge completions) and inserts `skin_ownership(source='earned')`. Fires a "skin unlocked" push.
+
+> ✅ **Shipped as SQL + pg_cron in 016** (the 014/015 precedent — no edge
+> function): `evaluate_earned_skins()` daily at 00:20 UTC, after
+> finalize_season. New grants push through `send-push-notification`
+> (`kind: skin_unlocked`, tone-resolved per recipient, best-effort). Run it
+> once at deploy so existing users get session-based grants immediately.
 
 ### 3.5 `moderate-challenges` (scheduled or trigger)
 Counts `challenge_reports` per challenge; flips to `hidden` past a threshold; surfaces a review queue (admin via service role).

@@ -587,6 +587,9 @@
   "rankShieldTooltip": "Demotion shield — your rank is protected while you climb back.",
   "skinPremium": "Premium",
   "skinPremiumSoon": "Premium skin — purchases coming soon",
+  "skinPurchaseSuccess": "Skin unlocked. Looking good!",
+  "skinPurchaseFailed": "Purchase failed. Please try again.",
+  "skinRestoreNone": "No skin purchases to restore.",
   "skinWorkoutsShort": "{count} workouts",
   "@skinWorkoutsShort": {
     "placeholders": {

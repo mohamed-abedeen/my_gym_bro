@@ -155,6 +155,26 @@ challenge_reports (            -- moderation
 - **Moderation:** a community challenge with enough reports flips to `hidden`; manual review path (admin via service role / dashboard).
 
 ### 3.3 Skins
+
+> **Status (2026-08-17, `016_skins.sql` — authored, NOT deployed):** shipped
+> as planned, plus: `sort_order` + a `gender` column ('both'/'male'/'female'),
+> catalog seeded from the client map (ids must stay in lockstep with
+> `skin_provider.dart`), and explicit `GRANT SELECT` on both tables (projects
+> created after 2026-05-30 no longer auto-grant table privileges to the API
+> roles — RLS alone isn't enough; **audit 012–015 tables for the same gap
+> before the first db push**). Earning runs as SQL + pg_cron
+> (`evaluate_earned_skins()`, daily 00:20 UTC) instead of an edge function —
+> rule types: `sessions`, `challenges` (excluding self-created and hidden
+> challenges, mirroring 014's anti-mint posture), `season_win` /
+> `season_top3` (from `season_results`); `streak` rules are deliberately NOT
+> seeded until server-side streak parity with `computeStreak` exists. Session
+> thresholds shipped in the client are preserved exactly; challenge/season
+> rules are OR-alternatives on top tiers only. `user_profiles.active_skin_id`
+> added with a column-level GRANT (009 pattern) and exposed on
+> `public_profiles`; `delete_account_data` rewritten to wipe
+> `skin_ownership`. Client mirror: Drift v20 `skin_ownerships` (read-only,
+> LeaderboardCache doctrine).
+
 ```
 skins (                       -- catalog (could also be a static client map)
   id text pk,                 -- e.g. 'carbone','gold','galaxy'

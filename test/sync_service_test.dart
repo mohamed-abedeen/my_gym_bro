@@ -18,6 +18,22 @@ void main() {
     });
   });
 
+  group('SyncService.remoteKeyColumn', () {
+    test('user_profiles is keyed by the auth uid, not the server PK', () {
+      // The profile row's remote_id holds auth.users.id (auth_notifier
+      // bootstraps it that way); the server row's `id` is an unrelated
+      // generated uuid. PATCHing by `id` matched zero rows and silently
+      // dropped tone/username/skin updates.
+      expect(SyncService.remoteKeyColumn('user_profiles'), 'user_id');
+    });
+
+    test('every other synced table is keyed by the server PK', () {
+      expect(SyncService.remoteKeyColumn('sessions'), 'id');
+      expect(SyncService.remoteKeyColumn('friendships'), 'id');
+      expect(SyncService.remoteKeyColumn('challenge_participants'), 'id');
+    });
+  });
+
   group('SyncService.extractRemoteId', () {
     test('returns remote_id and removes it from the payload', () {
       final payload = <String, dynamic>{'remote_id': 'abc', 'a': 1};

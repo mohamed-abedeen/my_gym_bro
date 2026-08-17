@@ -54,5 +54,14 @@ void main() {
       expect(ids, contains('gold'));
       expect(ids, isNot(contains('galaxy')));
     });
+
+    test('a server grant unlocks a progress skin below its session bar', () {
+      // Migration 016 seeds OR-alternative earn rules (e.g. volkano = 200
+      // sessions OR a weekly season win) — the grant arrives as ownership.
+      final ids = computeUnlockedSkinIds(sessions: 0, owned: const {'volkano'});
+      expect(ids, contains('volkano'));
+      // The grant is per-skin: other progress skins stay session-gated.
+      expect(ids, isNot(contains('gren_guy')));
+    });
   });
 }

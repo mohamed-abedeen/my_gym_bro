@@ -166,13 +166,19 @@ class SyncService {
         final remoteId =
             payloadRemoteId ?? await _resolveRemoteId(table, item.rowId);
         if (remoteId == null) return _SyncResult.deferred;
-        await _supabase!.from(table).update(payload).eq('id', remoteId);
+        await _supabase!
+            .from(table)
+            .update(payload)
+            .eq(remoteKeyColumn(table), remoteId);
         return _SyncResult.synced;
       case 'delete':
         final remoteId =
             payloadRemoteId ?? await _resolveRemoteId(table, item.rowId);
         if (remoteId == null) return _SyncResult.deferred;
-        await _supabase!.from(table).delete().eq('id', remoteId);
+        await _supabase!
+            .from(table)
+            .delete()
+            .eq(remoteKeyColumn(table), remoteId);
         return _SyncResult.synced;
       default:
         CrashReporter.recordError(
@@ -182,6 +188,16 @@ class SyncService {
         return _SyncResult.synced; // discard unknown ops
     }
   }
+
+  /// Which server column a table's `remote_id` matches. The profile row is
+  /// the exception: auth_notifier bootstraps its `remote_id` with the auth
+  /// uid (`user_profiles.user_id`), while the server PK `id` is an unrelated
+  /// generated uuid — PATCHing by `id` would match zero rows and PostgREST
+  /// would report success, silently dropping tone/username/skin updates.
+  /// Every other synced table's `remote_id` is the server PK.
+  @visibleForTesting
+  static String remoteKeyColumn(String table) =>
+      table == 'user_profiles' ? 'user_id' : 'id';
 
   /// Look up a row's `remote_id` in the local DB — the initial insert may
   /// have completed and written it back since this queue item was created.

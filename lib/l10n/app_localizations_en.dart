@@ -1319,6 +1319,15 @@ class AppLocalizationsEn extends AppLocalizations {
   String get skinPremiumSoon => 'Premium skin — purchases coming soon';
 
   @override
+  String get skinPurchaseSuccess => 'Skin unlocked. Looking good!';
+
+  @override
+  String get skinPurchaseFailed => 'Purchase failed. Please try again.';
+
+  @override
+  String get skinRestoreNone => 'No skin purchases to restore.';
+
+  @override
   String skinWorkoutsShort(int count) {
     return '$count workouts';
   }

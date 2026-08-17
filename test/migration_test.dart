@@ -132,14 +132,16 @@ void main() {
 
     // Migration completed and stamped the current version.
     final version = await query('PRAGMA user_version');
-    expect(version.single.read<int>('user_version'), 19);
+    expect(version.single.read<int>('user_version'), 20);
 
     // v12/v17 _addColumnIfMissing columns were added to user_profiles.
     final profileCols = (await query('PRAGMA table_info(user_profiles)'))
         .map((r) => r.read<String>('name'))
         .toSet();
     expect(
-        profileCols, containsAll(['body_weight_kg', 'height_cm', 'username']));
+        profileCols,
+        containsAll(
+            ['body_weight_kg', 'height_cm', 'username', 'active_skin_id']));
 
     // v17 created the friendships cache; the superseded follows table is
     // gone (never created on this path — v15's create step was retired).
@@ -152,6 +154,8 @@ void main() {
     expect(tables, contains('friendships'));
     expect(tables, isNot(contains('follows')));
     expect(tables, containsAll(['challenges', 'challenge_participants']));
+    // v20 created the skin-ownership mirror.
+    expect(tables, contains('skin_ownerships'));
 
     // v14/v16 catalogue wipe: referenced + custom rows survive, the
     // unreferenced catalogue row is deleted.
@@ -206,7 +210,7 @@ void main() {
     Future<List<QueryRow>> query(String sql) => db.customSelect(sql).get();
 
     final version = await query('PRAGMA user_version');
-    expect(version.single.read<int>('user_version'), 19);
+    expect(version.single.read<int>('user_version'), 20);
 
     final tables = (await query(
       "SELECT name FROM sqlite_master WHERE type = 'table'",
@@ -241,7 +245,7 @@ void main() {
     final db = AppDatabase(NativeDatabase(file));
     addTearDown(db.close);
     final version = await db.customSelect('PRAGMA user_version').get();
-    expect(version.single.read<int>('user_version'), 19);
+    expect(version.single.read<int>('user_version'), 20);
   });
 
   test('fresh createAll builds every table', () async {
@@ -252,6 +256,6 @@ void main() {
     for (final table in db.allTables) {
       await db.select(table).get();
     }
-    expect(db.allTables.length, 14);
+    expect(db.allTables.length, 15);
   });
 }

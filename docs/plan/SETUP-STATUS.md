@@ -80,13 +80,28 @@ packages if IDs mismatch.
 key), set `REVENUECAT_WEBHOOK_SECRET` on Supabase, deploy (next section), then an end-to-end
 sandbox purchase test.
 
+**Skin one-time products (Phase 6.2, added 2026-08-17):** the client + `purchase-skin`
+edge function are wired for three **non-consumable** IAPs — `mgb_skin_gold`,
+`mgb_skin_galaxy`, `mgb_skin_teddy_bear` (ids must match the `skins` catalog seeds in
+migration 016 and `skin_provider.dart`). Owner steps, after the subscription flow above:
+1. ASC: create the three in-app purchases (type **Non-Consumable**), price + en/de/es/fr
+   localizations + review screenshot each.
+2. RevenueCat: add the three products to the project (no entitlement needed — ownership is
+   granted via `purchase-skin`, not an entitlement).
+3. Supabase: `supabase secrets set REVENUECAT_SECRET_KEY=sk_…` (a RevenueCat **secret** API
+   key — new secret, separate from the webhook one). `purchase-skin` returns 503 until set;
+   the app degrades to a local, receipt-derived unlock and heals server-side on the next
+   restore once the secret exists.
+⚠️ The whole server-verification path is **deployable but untested** until this setup
+finishes — test a sandbox skin purchase + restore end-to-end then.
+
 ## Supabase cloud (behind the repo — deploy pending)
 
 The cloud project serves auth + data for beta builds, but repo state has NOT been fully
 pushed. As of the last check the following were pending — **verify with
 `supabase migration list` before relying on cloud state**:
 
-- `supabase db push` — repo migrations go up to `015_leaderboard_seasons.sql`
+- `supabase db push` — repo migrations go up to `016_skins.sql`
   (012 = Bros Phase B friendships, 013 = feed/bucket drop + `delete_account_data`
   rewrite, 014 = Phase 4 challenges + leaderboard points wiring +
   another `delete_account_data` rewrite; authored 2026-08-15/16, **never run
@@ -106,6 +121,23 @@ pushed. As of the last check the following were pending — **verify with
   curated challenge immediately. Post-deploy check: curated card appears in
   the app, join → complete → `points_awarded` set by the trigger, hourly
   `compute-leaderboard` picks points up in the composite.
+- **Skins (016) deploy notes (2026-08-17):** schedules `evaluate-earned-skins-daily`
+  (00:20 UTC, after finalize_season) — same Vault secrets as 010; run
+  `SELECT evaluate_earned_skins();` once after push so existing users get their
+  session-based grants immediately. Deploy the `purchase-skin` function (verify_jwt stays
+  ON — no config change) and set `REVENUECAT_SECRET_KEY` (RevenueCat section above).
+  ⚠️ **Grants audit before the first push:** projects created after 2026-05-30 don't
+  auto-grant table privileges to the API roles — 016's tables carry explicit
+  `GRANT SELECT`, but the 012/014/015 tables (`friendships`, `user_reports`,
+  `challenges`, `challenge_participants`, `challenge_reports`, `season_results`,
+  `rival_pods`, `rival_pod_members`) rely on the old default and may need the same
+  grants on a fresh cloud project. Post-deploy check: gallery shows owned skins after
+  a `skin_ownership` grant; profile-field sync verified (a 2026-08-17 client fix — 
+  `user_profiles` PATCHes were silently matching zero rows by keying on `id` instead of
+  `user_id`, which also broke tone/username sync; verify tone + skin selection land in
+  the cloud row). Also note: 013's storage cleanup was rewritten 2026-08-17 (current
+  Storage API forbids direct DML on storage tables; the DO block downgrades it to a
+  NOTICE) — if the cloud bucket ever had objects, empty it via the Storage API.
 - **Seasons (015) deploy notes:** schedules `finalize-season-weekly` (Wed
   00:02 UTC), `finalize-season-monthly` (3rd 00:02) — 48 h after each
   boundary so offline late-syncs still count — plus `assign-rivals-weekly`

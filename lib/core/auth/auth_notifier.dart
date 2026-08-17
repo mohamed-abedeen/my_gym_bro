@@ -7,6 +7,7 @@ import 'package:drift/drift.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:my_gym_bro/core/database/app_database.dart';
+import 'package:my_gym_bro/core/database/daos/skin_dao.dart';
 import 'package:my_gym_bro/core/database/daos/user_profile_dao.dart';
 import 'package:my_gym_bro/core/security/input_sanitiser.dart';
 import 'package:my_gym_bro/core/security/secure_storage.dart';
@@ -411,6 +412,16 @@ class AuthNotifier extends StateNotifier<AppAuthState> {
         await UserProfileDao(_db).clearAll();
       } on Exception catch (e) {
         CrashReporter.recordError(e, reason: 'Local profile wipe failed');
+      }
+
+      // Same for cosmetics: the ownership mirror and the SecureStorage skin
+      // keys are per-account, not per-device.
+      try {
+        await SkinDao(_db).clearAll();
+        await SecureStorage().delete('setting_owned_skins');
+        await SecureStorage().delete('setting_selected_skin');
+      } on Exception catch (e) {
+        CrashReporter.recordError(e, reason: 'Local skin wipe failed');
       }
 
       try {

@@ -21,8 +21,19 @@
 
 -- ── community-images storage: objects, bucket, and its 4 policies ───────────
 -- Objects must go before the bucket (FK). Policy names from 001 §7.
-DELETE FROM storage.objects WHERE bucket_id = 'community-images';
-DELETE FROM storage.buckets WHERE id = 'community-images';
+-- Storage API ≥ mid-2026 installs an event trigger that forbids direct DML on
+-- storage tables (SQLSTATE 42501, "Use the Storage API instead"), which made
+-- the bare DELETEs abort the whole migration on current stacks. Pre-launch
+-- the bucket is empty, so skipping the cleanup is safe — the DO block deletes
+-- where allowed and downgrades the refusal to a NOTICE. If a deployed project
+-- ever has objects in this bucket, empty + delete it via the Storage API.
+DO $$
+BEGIN
+    DELETE FROM storage.objects WHERE bucket_id = 'community-images';
+    DELETE FROM storage.buckets WHERE id = 'community-images';
+EXCEPTION WHEN OTHERS THEN
+    RAISE NOTICE 'community-images storage cleanup skipped: %', SQLERRM;
+END $$;
 
 DROP POLICY IF EXISTS "Users can upload community images" ON storage.objects;
 DROP POLICY IF EXISTS "Users can view community images" ON storage.objects;

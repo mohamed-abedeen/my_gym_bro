@@ -400,6 +400,9 @@
   "rankShieldTooltip": "Bouclier de relégation — ton rang est protégé pendant que tu remontes.",
   "skinPremium": "Premium",
   "skinPremiumSoon": "Skin premium — achats bientôt disponibles",
+  "skinPurchaseSuccess": "Skin débloqué. Ça te va bien !",
+  "skinPurchaseFailed": "Échec de l'achat. Veuillez réessayer.",
+  "skinRestoreNone": "Aucun achat de skin à restaurer.",
   "skinWorkoutsShort": "{count} séances",
   "@skinWorkoutsShort": {
     "placeholders": {

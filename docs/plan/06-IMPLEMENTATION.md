@@ -194,10 +194,28 @@ The photo/text feed is cut (PRD §5.8). The client feed UI was deleted in Bros P
 - [x] Smooth state transitions; verify both genders.
 
 ### 6.2 Skins Economy
-- [ ] `skins` catalog + `skin_ownership` + `user_profiles.active_skin_id`.
-- [ ] Skins gallery (owned / earnable / buyable) with preview + select; wire all ~20 variants.
-- [ ] Purchasable skins via RevenueCat one-time products → `purchase-skin` verify → ownership.
-- [ ] Earned skins via `evaluate-earned-skins` (streak/leaderboard/challenge rules) → ownership + unlock push.
+> **Status (2026-08-17): built offline, not deployed.** Migration `016_skins.sql`
+> (catalog seeded from the client's 14-skin map, `skin_ownership`
+> server-write-only, `active_skin_id` + column GRANT + public_profiles,
+> `evaluate_earned_skins()` daily cron with tone-resolved `skin_unlocked`
+> push, delete_account_data + skin wipe) + `purchase-skin` edge fn
+> (receipt-verified, serves purchase/restore/reinstall) + Drift v20
+> `skin_ownerships` mirror + `SkinRepository` (null-safe RevenueCat) +
+> gallery wired: select syncs to the profile, locked-paid tap → store sheet →
+> auto-equip, Restore in the header, ownership refresh on open. Adversarial
+> review (schema+sync) done — all findings fixed, incl. an inherited
+> profile-sync bug (user_profiles PATCHed by the wrong key — also silently
+> broke tone/username sync) and a 013 storage-DML fix surfaced by replaying
+> 001→016 on a current local stack. Earn rules: session thresholds unchanged;
+> challenges/season placements added as OR-alternatives on top tiers; streak
+> rules deferred (no computeStreak server parity). Deploy + RevenueCat
+> product steps in SETUP-STATUS; server verification is deployable but
+> untested until RevenueCat setup finishes.
+
+- [x] `skins` catalog + `skin_ownership` + `user_profiles.active_skin_id`.
+- [x] Skins gallery (owned / earnable / buyable) with preview + select; wire all ~20 variants *(all 14 skins/20 assets were already in the picker; the economy is now wired through it)*.
+- [x] Purchasable skins via RevenueCat one-time products → `purchase-skin` verify → ownership *(untested against live RevenueCat — setup pending)*.
+- [x] Earned skins via `evaluate-earned-skins` (streak/leaderboard/challenge rules) → ownership + unlock push *(streak rules deferred — see status note)*.
 
 ### 6.3 Progress Charts (Status Log)
 - [ ] Compare identical past sessions over time (volume, top set, est. 1RM) per exercise; charts in status/profile.
