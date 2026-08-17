@@ -964,6 +964,38 @@ class AppLocalizationsDe extends AppLocalizations {
       'Tippe unten auf einen Muskel, um ihn am Körper hervorzuheben';
 
   @override
+  String get anatomyModeRecovery => 'Erholung';
+
+  @override
+  String get trainingVolume => 'Trainingsvolumen';
+
+  @override
+  String get volumeWindowFourWeeks => '4 Wochen';
+
+  @override
+  String get volumeTargetHint =>
+      'Ziel: 10–20 gewichtete Sätze pro Muskel und Woche';
+
+  @override
+  String get volumeAboveTarget => 'Über dem Ziel';
+
+  @override
+  String get volumeOnTarget => 'Im Ziel';
+
+  @override
+  String get volumeBelowTarget => 'Unter dem Ziel';
+
+  @override
+  String volumeSetsThisWeek(String sets) {
+    return '$sets gewichtete Sätze diese Woche';
+  }
+
+  @override
+  String volumeSetsPerWeek(String sets) {
+    return '$sets Sätze/Woche in den letzten 4 Wochen';
+  }
+
+  @override
   String get readyNow => 'Jetzt bereit';
 
   @override

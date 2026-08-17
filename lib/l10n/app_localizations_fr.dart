@@ -966,6 +966,38 @@ class AppLocalizationsFr extends AppLocalizations {
       'Touchez un muscle ci-dessous pour le mettre en évidence sur le corps';
 
   @override
+  String get anatomyModeRecovery => 'Récupération';
+
+  @override
+  String get trainingVolume => 'Volume d\'entraînement';
+
+  @override
+  String get volumeWindowFourWeeks => '4 semaines';
+
+  @override
+  String get volumeTargetHint =>
+      'Objectif : 10–20 séries pondérées par muscle et par semaine';
+
+  @override
+  String get volumeAboveTarget => 'Au-dessus de l\'objectif';
+
+  @override
+  String get volumeOnTarget => 'Dans l\'objectif';
+
+  @override
+  String get volumeBelowTarget => 'Sous l\'objectif';
+
+  @override
+  String volumeSetsThisWeek(String sets) {
+    return '$sets séries pondérées cette semaine';
+  }
+
+  @override
+  String volumeSetsPerWeek(String sets) {
+    return '$sets séries/semaine sur les 4 dernières semaines';
+  }
+
+  @override
   String get readyNow => 'Prêt maintenant';
 
   @override

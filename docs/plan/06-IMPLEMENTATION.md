@@ -181,8 +181,17 @@ The photo/text feed is cut (PRD §5.8). The client feed UI was deleted in Bros P
 **Goal:** complete the visual/engagement features.
 
 ### 6.1 Anatomy Volume View
-- [ ] Volume mode: color/annotate muscles by training volume over a window; Recovery|Volume toggle.
-- [ ] Smooth state transitions; verify both genders.
+> **Status (2026-08-17): built.** Volume lens on the Recovery Hub sheet
+> (`muscle_detail_sheet.dart`): Recovery|Volume pills + This week / 4 weeks
+> window switch; weekly-equivalent weighted sets (primary ×1.0 / secondary
+> ×0.5, from `getMuscleDoseTotals`) against the 10–20 sets/wk guideline;
+> continuous amber→green→red scale (`muscle_volume.dart`); bucket-grouped
+> list (Above/On/Below target, Not trained); 250 ms cross-fade between
+> lenses/windows. Both genders verified by widget tests
+> (`anatomy_volume_view_test.dart` — every overlay SVG exists per gender).
+
+- [x] Volume mode: color/annotate muscles by training volume over a window; Recovery|Volume toggle.
+- [x] Smooth state transitions; verify both genders.
 
 ### 6.2 Skins Economy
 - [ ] `skins` catalog + `skin_ownership` + `user_profiles.active_skin_id`.

@@ -424,6 +424,25 @@
   "muscleRecovery": "Muscle Recovery",
   "sore": "Sore",
   "tapMuscleToFocus": "Tap a muscle below to focus it on the body",
+  "anatomyModeRecovery": "Recovery",
+  "trainingVolume": "Training Volume",
+  "volumeWindowFourWeeks": "4 weeks",
+  "volumeTargetHint": "Target: 10–20 weighted sets per muscle, per week",
+  "volumeAboveTarget": "Above target",
+  "volumeOnTarget": "On target",
+  "volumeBelowTarget": "Below target",
+  "volumeSetsThisWeek": "{sets} weighted sets this week",
+  "@volumeSetsThisWeek": {
+    "placeholders": {
+      "sets": { "type": "String" }
+    }
+  },
+  "volumeSetsPerWeek": "{sets} sets/week over the last 4 weeks",
+  "@volumeSetsPerWeek": {
+    "placeholders": {
+      "sets": { "type": "String" }
+    }
+  },
   "readyNow": "Ready now",
   "notTrainedYet": "Not trained yet",
   "fullyRecovered": "Fully recovered — ready to train",

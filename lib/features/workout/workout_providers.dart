@@ -15,6 +15,7 @@ import 'package:my_gym_bro/core/providers/providers.dart';
 import 'package:my_gym_bro/core/services/widget_sync_service.dart';
 import 'package:my_gym_bro/features/workout/calorie_service.dart';
 import 'package:my_gym_bro/features/workout/muscle_recovery_service.dart';
+import 'package:my_gym_bro/features/workout/muscle_volume.dart';
 import 'package:my_gym_bro/features/workout/workout_log_repository.dart';
 
 // ── DAOs ──────────────────────────────────────
@@ -1084,6 +1085,32 @@ final weeklySetsPerMuscleProvider = FutureProvider<Map<String, double>>((ref) {
   return MuscleRecoveryService(sessionDao, exerciseDao).getMuscleDoseTotals(
     from: weekStart,
     to: weekStart.add(const Duration(days: 7)),
+  );
+});
+
+/// Per-muscle training volume for the anatomy Volume lens, over a selectable
+/// window. Weekly-equivalent weighted sets (primary ×1.0 / secondary ×0.5)
+/// per canonical muscle group, Cardio excluded. autoDispose: the provider
+/// only lives while the muscle detail sheet is open, so it re-fetches fresh
+/// on every open — no invalidation wiring needed.
+final muscleVolumeProvider = FutureProvider.autoDispose
+    .family<List<MuscleVolumeInfo>, VolumeWindow>((ref, window) async {
+  final sessionDao = ref.watch(sessionDaoProvider);
+  final exerciseDao = ref.watch(exerciseDaoProvider);
+  final service = MuscleRecoveryService(sessionDao, exerciseDao);
+  final now = DateTime.now();
+  final (from, weeks) = switch (window) {
+    VolumeWindow.thisWeek => (_startOfWeek(now), 1),
+    VolumeWindow.fourWeeks => (now.subtract(const Duration(days: 28)), 4),
+  };
+  final totals = await service.getMuscleDoseTotals(
+    from: from,
+    to: now.add(const Duration(days: 1)),
+  );
+  return buildMuscleVolumeInfos(
+    totals: totals,
+    allGroups: MuscleRecoveryService.allMuscleGroups,
+    weeksInWindow: weeks,
   );
 });
 

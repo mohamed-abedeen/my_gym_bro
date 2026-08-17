@@ -958,6 +958,38 @@ class AppLocalizationsEs extends AppLocalizations {
       'Toca un músculo abajo para enfocarlo en el cuerpo';
 
   @override
+  String get anatomyModeRecovery => 'Recuperación';
+
+  @override
+  String get trainingVolume => 'Volumen de entrenamiento';
+
+  @override
+  String get volumeWindowFourWeeks => '4 semanas';
+
+  @override
+  String get volumeTargetHint =>
+      'Objetivo: 10–20 series ponderadas por músculo a la semana';
+
+  @override
+  String get volumeAboveTarget => 'Por encima del objetivo';
+
+  @override
+  String get volumeOnTarget => 'En el objetivo';
+
+  @override
+  String get volumeBelowTarget => 'Por debajo del objetivo';
+
+  @override
+  String volumeSetsThisWeek(String sets) {
+    return '$sets series ponderadas esta semana';
+  }
+
+  @override
+  String volumeSetsPerWeek(String sets) {
+    return '$sets series/semana en las últimas 4 semanas';
+  }
+
+  @override
   String get readyNow => 'Listo ahora';
 
   @override

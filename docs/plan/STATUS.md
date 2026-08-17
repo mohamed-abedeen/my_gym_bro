@@ -94,7 +94,7 @@ Legend: ✅ done · 🟡 partial · 🔴 not built · ⚠️ remove · `[new]` b
 - 🔴 `[new]` Drift `LeaderboardCache` (all scopes/boards) for offline display.
 
 ### Phase 6 — Anatomy volume, skins economy, charts, reports, calendar, share cards, accent, l10n
-- 🔴 `[new]` Anatomy **Volume mode** + Recovery|Volume toggle; smooth transitions; both genders.
+- ✅ `[new]` Anatomy **Volume mode** + Recovery|Volume toggle; smooth transitions; both genders *(2026-08-17)*.
 - 🔴 `[new]` Skins economy: `skins` catalog + `skin_ownership` + `user_profiles.active_skin_id`; persist selection (replace plain `selectedSkinProvider`).
 - 🔴 `[new]` Skins gallery (owned/earnable/buyable) + preview; purchasable via RevenueCat one-time → `purchase-skin` verify; earned via `evaluate-earned-skins`.
 - 🔴 `[new]` Progress charts (compare identical past sessions: volume/top set/est-1RM).

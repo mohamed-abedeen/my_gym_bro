@@ -1848,6 +1848,60 @@ abstract class AppLocalizations {
   /// **'Tap a muscle below to focus it on the body'**
   String get tapMuscleToFocus;
 
+  /// No description provided for @anatomyModeRecovery.
+  ///
+  /// In en, this message translates to:
+  /// **'Recovery'**
+  String get anatomyModeRecovery;
+
+  /// No description provided for @trainingVolume.
+  ///
+  /// In en, this message translates to:
+  /// **'Training Volume'**
+  String get trainingVolume;
+
+  /// No description provided for @volumeWindowFourWeeks.
+  ///
+  /// In en, this message translates to:
+  /// **'4 weeks'**
+  String get volumeWindowFourWeeks;
+
+  /// No description provided for @volumeTargetHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Target: 10–20 weighted sets per muscle, per week'**
+  String get volumeTargetHint;
+
+  /// No description provided for @volumeAboveTarget.
+  ///
+  /// In en, this message translates to:
+  /// **'Above target'**
+  String get volumeAboveTarget;
+
+  /// No description provided for @volumeOnTarget.
+  ///
+  /// In en, this message translates to:
+  /// **'On target'**
+  String get volumeOnTarget;
+
+  /// No description provided for @volumeBelowTarget.
+  ///
+  /// In en, this message translates to:
+  /// **'Below target'**
+  String get volumeBelowTarget;
+
+  /// No description provided for @volumeSetsThisWeek.
+  ///
+  /// In en, this message translates to:
+  /// **'{sets} weighted sets this week'**
+  String volumeSetsThisWeek(String sets);
+
+  /// No description provided for @volumeSetsPerWeek.
+  ///
+  /// In en, this message translates to:
+  /// **'{sets} sets/week over the last 4 weeks'**
+  String volumeSetsPerWeek(String sets);
+
   /// No description provided for @readyNow.
   ///
   /// In en, this message translates to:

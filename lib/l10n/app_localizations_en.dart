@@ -955,6 +955,38 @@ class AppLocalizationsEn extends AppLocalizations {
   String get tapMuscleToFocus => 'Tap a muscle below to focus it on the body';
 
   @override
+  String get anatomyModeRecovery => 'Recovery';
+
+  @override
+  String get trainingVolume => 'Training Volume';
+
+  @override
+  String get volumeWindowFourWeeks => '4 weeks';
+
+  @override
+  String get volumeTargetHint =>
+      'Target: 10–20 weighted sets per muscle, per week';
+
+  @override
+  String get volumeAboveTarget => 'Above target';
+
+  @override
+  String get volumeOnTarget => 'On target';
+
+  @override
+  String get volumeBelowTarget => 'Below target';
+
+  @override
+  String volumeSetsThisWeek(String sets) {
+    return '$sets weighted sets this week';
+  }
+
+  @override
+  String volumeSetsPerWeek(String sets) {
+    return '$sets sets/week over the last 4 weeks';
+  }
+
+  @override
   String get readyNow => 'Ready now';
 
   @override

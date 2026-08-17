@@ -161,7 +161,9 @@ class MuscleRecoveryService {
 
   // ── Canonical muscle group list ──────────────────────────────────────────
 
-  static const _allMuscleGroups = [
+  /// Canonical muscle-group list — the iteration order for any per-muscle
+  /// view (recovery sheet, volume lens). 'Cardio' has no anatomy overlay.
+  static const allMuscleGroups = [
     'Chest',
     'Lats',
     'Upper Back',
@@ -510,7 +512,7 @@ class MuscleRecoveryService {
   Future<List<MuscleStateInfo>> getAllMuscleStates() async {
     final history = await _getMuscleDoseHistory();
 
-    return _allMuscleGroups.map((group) {
+    return allMuscleGroups.map((group) {
       final window = resolveRecoveryWindow(group, history[group] ?? const []);
       final trainedAt = window?.lastTrainedAt;
       final recoveryH = window?.recoveryHours;
