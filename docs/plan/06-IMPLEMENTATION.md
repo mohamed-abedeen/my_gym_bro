@@ -218,7 +218,16 @@ The photo/text feed is cut (PRD §5.8). The client feed UI was deleted in Bros P
 - [x] Earned skins via `evaluate-earned-skins` (streak/leaderboard/challenge rules) → ownership + unlock push *(streak rules deferred — see status note)*.
 
 ### 6.3 Progress Charts (Status Log)
-- [ ] Compare identical past sessions over time (volume, top set, est. 1RM) per exercise; charts in status/profile.
+> **Status (2026-08-18): built.** "Exercise Progress" section in the Status
+> sheet (`status_bottom_sheet.dart`): chip row of the most-logged exercises
+> (`getMostLoggedExercises`, ≥2 finished sessions), Volume | Top set |
+> Est. 1RM metric toggle, hand-rolled single-series line chart
+> (`_ProgressLinePainter`, house CustomPainter style — no chart dep), values
+> unit-converted + thousands-grouped, first→last caption. Pure point builder
+> in `exercise_progress.dart` (mirrors the DAO's volume semantics; Epley
+> e1RM), unit-tested against an in-memory DB.
+
+- [x] Compare identical past sessions over time (volume, top set, est. 1RM) per exercise; charts in status/profile.
 
 ### 6.4 Share Cards
 - [ ] On session completion, render a shareable summary image (volume/duration/PRs/streak); share + optional post to feed.

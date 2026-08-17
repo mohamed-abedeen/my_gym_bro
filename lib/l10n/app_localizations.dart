@@ -1902,6 +1902,30 @@ abstract class AppLocalizations {
   /// **'{sets} sets/week over the last 4 weeks'**
   String volumeSetsPerWeek(String sets);
 
+  /// No description provided for @statusProgressTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Exercise Progress'**
+  String get statusProgressTitle;
+
+  /// No description provided for @metricTopSet.
+  ///
+  /// In en, this message translates to:
+  /// **'Top set'**
+  String get metricTopSet;
+
+  /// No description provided for @metricE1rm.
+  ///
+  /// In en, this message translates to:
+  /// **'Est. 1RM'**
+  String get metricE1rm;
+
+  /// No description provided for @statusProgressRange.
+  ///
+  /// In en, this message translates to:
+  /// **'{name}: {first} → {last}'**
+  String statusProgressRange(String name, String first, String last);
+
   /// No description provided for @readyNow.
   ///
   /// In en, this message translates to:

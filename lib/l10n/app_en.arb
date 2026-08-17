@@ -443,6 +443,17 @@
       "sets": { "type": "String" }
     }
   },
+  "statusProgressTitle": "Exercise Progress",
+  "metricTopSet": "Top set",
+  "metricE1rm": "Est. 1RM",
+  "statusProgressRange": "{name}: {first} → {last}",
+  "@statusProgressRange": {
+    "placeholders": {
+      "name": { "type": "String" },
+      "first": { "type": "String" },
+      "last": { "type": "String" }
+    }
+  },
   "readyNow": "Ready now",
   "notTrainedYet": "Not trained yet",
   "fullyRecovered": "Fully recovered — ready to train",

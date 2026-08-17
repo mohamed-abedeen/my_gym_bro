@@ -990,6 +990,20 @@ class AppLocalizationsEs extends AppLocalizations {
   }
 
   @override
+  String get statusProgressTitle => 'Progreso por ejercicio';
+
+  @override
+  String get metricTopSet => 'Mejor serie';
+
+  @override
+  String get metricE1rm => '1RM est.';
+
+  @override
+  String statusProgressRange(String name, String first, String last) {
+    return '$name: $first → $last';
+  }
+
+  @override
   String get readyNow => 'Listo ahora';
 
   @override

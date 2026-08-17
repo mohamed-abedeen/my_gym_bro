@@ -28,6 +28,9 @@ class ExerciseHistoryEntry {
   final String? scheduleName;
 }
 
+/// An exercise with enough logged history to chart (progress section).
+typedef ChartableExercise = ({String exerciseId, String name, int sessions});
+
 /// Data access object for workout sessions, session exercises, and sets.
 @DriftAccessor(tables: [Sessions, SessionExercises, WorkoutSets])
 class SessionDao extends DatabaseAccessor<AppDatabase>
@@ -425,5 +428,38 @@ class SessionDao extends DatabaseAccessor<AppDatabase>
             session.scheduleId != null ? scheduleNames[session.scheduleId] : null,
       );
     }).toList();
+  }
+
+  /// Exercises logged in at least [minSessions] finished sessions, most
+  /// logged first (ties: most recently trained first). Feeds the progress
+  /// section's exercise picker.
+  Future<List<ChartableExercise>> getMostLoggedExercises({
+    int limit = 8,
+    int minSessions = 2,
+  }) async {
+    final rows = await customSelect(
+      'SELECT se.exercise_id, e.name, '
+      '  COUNT(DISTINCT se.session_id) AS n, '
+      '  MAX(s.started_at) AS last_at '
+      'FROM session_exercises se '
+      'JOIN sessions s ON s.local_id = se.session_id '
+      '  AND s.finished_at IS NOT NULL '
+      'JOIN exercises e ON e.exercise_id = se.exercise_id '
+      'GROUP BY se.exercise_id, e.name '
+      'HAVING COUNT(DISTINCT se.session_id) >= ? '
+      'ORDER BY n DESC, last_at DESC '
+      'LIMIT ?',
+      variables: [Variable<int>(minSessions), Variable<int>(limit)],
+      readsFrom: {sessionExercises, sessions},
+    ).get();
+
+    return [
+      for (final r in rows)
+        (
+          exerciseId: r.read<String>('exercise_id'),
+          name: r.read<String>('name'),
+          sessions: r.read<int>('n'),
+        ),
+    ];
   }
 }

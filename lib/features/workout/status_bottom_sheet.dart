@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart' hide TextDirection;
 import 'package:my_gym_bro/core/services/units.dart';
 import 'package:my_gym_bro/features/settings/app_settings_provider.dart';
+import 'package:my_gym_bro/features/workout/exercise_progress.dart';
 import 'package:my_gym_bro/features/workout/reports_screen.dart';
 import 'package:my_gym_bro/features/workout/workout_providers.dart';
 import 'package:my_gym_bro/l10n/app_localizations.dart';
@@ -166,6 +167,7 @@ class _StatusSheetState extends State<_StatusSheet> {
                       // one leaves no gap.
                       _TonnageSection(l10n: l10n),
                       _RepsWeightSection(l10n: l10n),
+                      _ExerciseProgressSection(l10n: l10n),
                       _RingsSection(l10n: l10n),
                     ],
                   ),
@@ -1108,4 +1110,338 @@ class _RingsPainter extends CustomPainter {
   @override
   bool shouldRepaint(_RingsPainter old) =>
       old.outerFraction != outerFraction || old.innerFraction != innerFraction;
+}
+
+// ── Exercise Progress — identical past sessions compared (PRD §5.12) ─
+// Chip-pick one of the most-logged exercises, toggle the metric
+// (volume / top set / est. 1RM), and see its per-session trend.
+
+class _ExerciseProgressSection extends ConsumerStatefulWidget {
+  const _ExerciseProgressSection({required this.l10n});
+  final AppLocalizations l10n;
+
+  @override
+  ConsumerState<_ExerciseProgressSection> createState() =>
+      _ExerciseProgressSectionState();
+}
+
+class _ExerciseProgressSectionState
+    extends ConsumerState<_ExerciseProgressSection> {
+  String? _exerciseId;
+  ProgressMetric _metric = ProgressMetric.volume;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = widget.l10n;
+    final colors = AppColors.of(context);
+    final unit = ref.watch(weightUnitProvider);
+    final locale = Localizations.localeOf(context);
+    final exercises =
+        ref.watch(chartableExercisesProvider).asData?.value ?? const [];
+    if (exercises.isEmpty) return const SizedBox.shrink();
+
+    final selected = exercises.firstWhere(
+      (e) => e.exerciseId == _exerciseId,
+      orElse: () => exercises.first,
+    );
+    final points = ref
+            .watch(exerciseProgressProvider(selected.exerciseId))
+            .asData
+            ?.value ??
+        const <ExerciseProgressPoint>[];
+
+    // All three metrics are weights — convert once for painter + caption.
+    final values = [
+      for (final p in points) convertFromKg(p.valueFor(_metric), unit),
+    ];
+
+    final fmt = NumberFormat.decimalPattern(locale.toString());
+    final dateFmt = DateFormat.MMMd(locale.languageCode);
+    final unitLabel = weightUnitLabel(unit);
+
+    return Padding(
+      padding: EdgeInsets.symmetric(horizontal: AppSizes.contentPaddingH.w),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          SizedBox(height: 56.h),
+          Text(
+            l10n.statusProgressTitle.toUpperCase(),
+            style: TextStyle(
+              color: colors.textSecondary,
+              fontSize: 12.sp,
+              fontWeight: FontWeight.w800,
+              letterSpacing: 0.08 * 12.sp,
+            ),
+          ),
+          SizedBox(height: 12.h),
+          SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            child: Row(
+              children: [
+                for (final e in exercises) ...[
+                  _ChipPill(
+                    label: e.name,
+                    active: e.exerciseId == selected.exerciseId,
+                    colors: colors,
+                    onTap: () => setState(() => _exerciseId = e.exerciseId),
+                  ),
+                  SizedBox(width: 6.w),
+                ],
+              ],
+            ),
+          ),
+          SizedBox(height: 10.h),
+          Row(
+            children: [
+              for (final (metric, label) in [
+                (ProgressMetric.volume, l10n.volume),
+                (ProgressMetric.topSet, l10n.metricTopSet),
+                (ProgressMetric.e1rm, l10n.metricE1rm),
+              ]) ...[
+                _ChipPill(
+                  label: label,
+                  active: _metric == metric,
+                  colors: colors,
+                  onTap: () => setState(() => _metric = metric),
+                ),
+                SizedBox(width: 6.w),
+              ],
+            ],
+          ),
+          if (values.length >= 2) ...[
+            SizedBox(height: 14.h),
+            SizedBox(
+              height: 180.h,
+              width: double.infinity,
+              child: CustomPaint(
+                painter: _ProgressLinePainter(
+                  values: values,
+                  startLabel: dateFmt.format(points.first.date),
+                  endLabel: dateFmt.format(points.last.date),
+                  lineColor: colors.accent,
+                  gridColor: colors.textSecondary.withValues(alpha: 0.25),
+                  axisTextColor: colors.textSecondary,
+                  textSize: 10.sp,
+                  formatValue: (v) => fmt.format(v.round()),
+                ),
+              ),
+            ),
+            SizedBox(height: 16.h),
+            Center(
+              child: Padding(
+                padding: EdgeInsets.symmetric(horizontal: 12.w),
+                child: Builder(
+                  builder: (_) {
+                    final firstLabel =
+                        '${fmt.format(values.first.round())} $unitLabel';
+                    final lastLabel =
+                        '${fmt.format(values.last.round())} $unitLabel';
+                    return _Caption(
+                      text: l10n.statusProgressRange(
+                        selected.name,
+                        firstLabel,
+                        lastLabel,
+                      ),
+                      highlights: {lastLabel: colors.accent},
+                    );
+                  },
+                ),
+              ),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+}
+
+/// Small selector pill for the progress section's exercise + metric rows.
+class _ChipPill extends StatelessWidget {
+  const _ChipPill({
+    required this.label,
+    required this.active,
+    required this.colors,
+    required this.onTap,
+  });
+  final String label;
+  final bool active;
+  final AppColorsTheme colors;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
+        padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 6.h),
+        decoration: BoxDecoration(
+          color: active ? colors.cardElevated : Colors.transparent,
+          borderRadius: BorderRadius.circular(999.r),
+          border: Border.all(
+            color: active ? colors.accent : colors.separator,
+            width: active ? 2.w : 1.w,
+          ),
+        ),
+        child: Text(
+          label,
+          style: TextStyle(
+            color: colors.textPrimary,
+            fontSize: 12.sp,
+            fontWeight: FontWeight.w700,
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// Single-series line chart: dashed gridlines with y labels on the left,
+/// accent line + dots, first/last date labels underneath. Same visual
+/// language as [_DualLinePainter], one series.
+class _ProgressLinePainter extends CustomPainter {
+  _ProgressLinePainter({
+    required this.values,
+    required this.startLabel,
+    required this.endLabel,
+    required this.lineColor,
+    required this.gridColor,
+    required this.axisTextColor,
+    required this.textSize,
+    required this.formatValue,
+  });
+
+  final List<double> values;
+  final String startLabel;
+  final String endLabel;
+  final Color lineColor;
+  final Color gridColor;
+  final Color axisTextColor;
+  final double textSize;
+  final String Function(double) formatValue;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    if (values.length < 2) return;
+
+    const axisW = 44.0;
+    final bottomH = textSize + 8;
+    final chart =
+        Rect.fromLTRB(axisW, 4, size.width - 4, size.height - bottomH);
+
+    var min = values.first;
+    var max = values.first;
+    for (final v in values) {
+      if (v < min) min = v;
+      if (v > max) max = v;
+    }
+    if (max == min) {
+      // Flat series: pad so the line sits mid-chart instead of on an edge.
+      max += max == 0 ? 1 : max.abs() * 0.1;
+      min -= min == 0 ? 1 : min.abs() * 0.1;
+    }
+
+    double yFor(double v) =>
+        chart.bottom - (v - min) / (max - min) * chart.height;
+    double xFor(int i) => chart.left + i / (values.length - 1) * chart.width;
+
+    // Gridlines at max / mid / min, dashed, labeled on the left.
+    final gridPaint = Paint()
+      ..color = gridColor
+      ..strokeWidth = 1;
+    for (final v in [max, (max + min) / 2, min]) {
+      final y = yFor(v);
+      _dashedLine(
+        canvas,
+        Offset(chart.left, y),
+        Offset(chart.right, y),
+        gridPaint,
+      );
+      _text(
+        canvas,
+        formatValue(v),
+        Offset(0, y - textSize / 2),
+        axisTextColor,
+        maxWidth: axisW - 6,
+      );
+    }
+
+    // Line + dots.
+    final linePaint = Paint()
+      ..color = lineColor
+      ..strokeWidth = 2.5
+      ..style = PaintingStyle.stroke
+      ..strokeCap = StrokeCap.round;
+    final path = Path()..moveTo(xFor(0), yFor(values[0]));
+    for (var i = 1; i < values.length; i++) {
+      path.lineTo(xFor(i), yFor(values[i]));
+    }
+    canvas.drawPath(path, linePaint);
+
+    final dotPaint = Paint()..color = lineColor;
+    for (var i = 0; i < values.length; i++) {
+      canvas.drawCircle(Offset(xFor(i), yFor(values[i])), 3.5, dotPaint);
+    }
+
+    // First/last date labels.
+    _text(
+      canvas,
+      startLabel,
+      Offset(chart.left, size.height - textSize - 2),
+      axisTextColor,
+    );
+    _text(
+      canvas,
+      endLabel,
+      Offset(chart.right, size.height - textSize - 2),
+      axisTextColor,
+      alignRight: true,
+    );
+  }
+
+  void _dashedLine(Canvas canvas, Offset a, Offset b, Paint paint) {
+    const dash = 4.0;
+    const gap = 4.0;
+    var x = a.dx;
+    while (x < b.dx) {
+      canvas.drawLine(
+        Offset(x, a.dy),
+        Offset((x + dash).clamp(a.dx, b.dx), b.dy),
+        paint,
+      );
+      x += dash + gap;
+    }
+  }
+
+  void _text(
+    Canvas canvas,
+    String s,
+    Offset at,
+    Color color, {
+    double? maxWidth,
+    bool alignRight = false,
+  }) {
+    final tp = TextPainter(
+      text: TextSpan(
+        text: s,
+        style: TextStyle(
+          color: color,
+          fontSize: textSize,
+          fontWeight: FontWeight.w600,
+        ),
+      ),
+      textDirection: TextDirection.ltr,
+      ellipsis: '…',
+      maxLines: 1,
+    )..layout(maxWidth: maxWidth ?? double.infinity);
+    tp.paint(canvas, alignRight ? at - Offset(tp.width, 0) : at);
+  }
+
+  @override
+  bool shouldRepaint(covariant _ProgressLinePainter old) =>
+      old.values != values ||
+      old.startLabel != startLabel ||
+      old.endLabel != endLabel ||
+      old.lineColor != lineColor;
 }
