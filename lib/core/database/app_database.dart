@@ -229,6 +229,76 @@ class Friendships extends Table {
       ];
 }
 
+/// Local cache of challenges (PRD §5.9) — the curated daily plus community
+/// challenges snapshotted from Supabase, and the user's own creations before
+/// they push. [remoteId] is the client-generated UUID used as the Supabase
+/// `id` (server rows carry theirs), so joins/reports can target the row
+/// without a read-back.
+class Challenges extends Table {
+  IntColumn get localId => integer().autoIncrement()();
+  TextColumn get remoteId => text().nullable()();
+  TextColumn get syncStatus => text().withDefault(const Constant('pending'))();
+  DateTimeColumn get createdAt => dateTime().nullable()();
+  DateTimeColumn get updatedAt => dateTime().nullable()();
+  DateTimeColumn get deletedAt => dateTime().nullable()();
+
+  /// 'curated' | 'community'
+  TextColumn get source => text()();
+
+  /// Auth id of the creator — null for curated.
+  TextColumn get creatorId => text().nullable()();
+
+  /// Curated template id — the client localizes known ids via ARB keys and
+  /// falls back to [title]/[description] for unknown ones.
+  TextColumn get templateId => text().nullable()();
+
+  TextColumn get title => text()();
+  TextColumn get description => text().nullable()();
+
+  /// 'volume' | 'sessions' | 'sets' | 'streak' | 'custom'
+  TextColumn get goalType => text()();
+  RealColumn get goalValue => real()();
+  DateTimeColumn get startsAt => dateTime()();
+  DateTimeColumn get endsAt => dateTime()();
+  IntColumn get points => integer().withDefault(const Constant(0))();
+
+  /// 'active' | 'ended' | 'hidden' | 'pending_review'
+  TextColumn get status => text().withDefault(const Constant('active'))();
+
+  @override
+  List<Set<Column>> get uniqueKeys => [
+        {remoteId},
+      ];
+}
+
+/// Local cache of the current user's challenge participation rows. Progress
+/// is recomputed locally from sessions/sets and synced up; completion and
+/// points are server-confirmed on refresh (the award trigger is the source
+/// of truth — see 04-BACKEND.md §3.2).
+class ChallengeParticipants extends Table {
+  IntColumn get localId => integer().autoIncrement()();
+  TextColumn get remoteId => text().nullable()();
+  TextColumn get syncStatus => text().withDefault(const Constant('pending'))();
+  DateTimeColumn get createdAt => dateTime().nullable()();
+  DateTimeColumn get updatedAt => dateTime().nullable()();
+  DateTimeColumn get deletedAt => dateTime().nullable()();
+
+  /// Supabase `challenges.id` this row belongs to.
+  TextColumn get challengeRemoteId => text()();
+
+  /// Auth id of the participant (the current user).
+  TextColumn get userId => text()();
+  RealColumn get progress => real().withDefault(const Constant(0))();
+  DateTimeColumn get joinedAt => dateTime().nullable()();
+  DateTimeColumn get completedAt => dateTime().nullable()();
+  IntColumn get pointsAwarded => integer().withDefault(const Constant(0))();
+
+  @override
+  List<Set<Column>> get uniqueKeys => [
+        {challengeRemoteId, userId},
+      ];
+}
+
 // ─────────────────────────────────────────────
 // D A T A B A S E
 // ─────────────────────────────────────────────
@@ -245,6 +315,8 @@ class Friendships extends Table {
     WorkoutSets,
     SyncQueue,
     Friendships,
+    Challenges,
+    ChallengeParticipants,
   ],
 )
 class AppDatabase extends _$AppDatabase {
@@ -257,7 +329,7 @@ class AppDatabase extends _$AppDatabase {
   }
 
   @override
-  int get schemaVersion => 17;
+  int get schemaVersion => 18;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -363,6 +435,17 @@ class AppDatabase extends _$AppDatabase {
           await m.createTable(friendships);
         }
         await customStatement('DROP TABLE IF EXISTS follows');
+      }
+      if (from < 18) {
+        // Phase 4 — challenges (PRD §5.9): local mirror of the server's
+        // challenges plus the user's participation rows, so the Bros tab's
+        // challenge list, progress, and completions all work offline.
+        if (!await _hasTable('challenges')) {
+          await m.createTable(challenges);
+        }
+        if (!await _hasTable('challenge_participants')) {
+          await m.createTable(challengeParticipants);
+        }
       }
     },
   );

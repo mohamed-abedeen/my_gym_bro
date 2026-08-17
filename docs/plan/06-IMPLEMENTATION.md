@@ -122,15 +122,24 @@ The photo/text feed is cut (PRD §5.8). The client feed UI was deleted in Bros P
 
 **Goal:** real challenges that award points.
 
-### Deliverables
-- [ ] Supabase `challenges`, `challenge_participants`, `challenge_reports` + RLS.
-- [ ] Curated daily challenge source (table + cron/edge seeding).
-- [ ] Community challenge creation (lands `pending_review`/`active` per policy).
-- [ ] Join + progress tracking; completion → `award-challenge-points` (or trigger) → `points_awarded` + `notify-social-challenge`.
-- [ ] Moderation: report action; `moderate-challenges` hides over-reported challenges; review queue.
-- [ ] Challenges UI (Leaderboard tab): curated daily + community list, join, progress, create, report.
+> **Status (2026-08-16): built offline, not deployed.** Migration
+> `014_challenges.sql` + rewritten `notify-social-challenge` + Drift v18
+> caches + `ChallengeRepository`/providers + Challenges tab UI (hero cards
+> restored from history) + ARB ×4 + unit tests. Award/moderation run as DB
+> triggers; curated seeding is SQL + pg_cron. Challenge points now feed the
+> leaderboard composite (three-way average — the Phase 5 contract).
+> Remaining: cloud deploy (SETUP-STATUS), then the checklist below against
+> real accounts.
 
-### Phase 4 Checklist
+### Deliverables
+- [x] Supabase `challenges`, `challenge_participants`, `challenge_reports` + RLS.
+- [x] Curated daily challenge source (table + cron/edge seeding) — `challenge_templates` + `seed_daily_challenge()` on pg_cron.
+- [x] Community challenge creation (lands `active`; report-threshold auto-hide is the launch policy, `pending_review` reserved).
+- [x] Join + progress tracking; completion → `award_challenge_points` trigger → `points_awarded` + `notify-social-challenge`.
+- [x] Moderation: report action; `moderate_challenges` trigger hides over-reported challenges; `challenge_review_queue`.
+- [x] Challenges UI (Bros tab): curated daily + community list, join, progress, create, report.
+
+### Phase 4 Checklist *(needs cloud deploy)*
 - [ ] Curated daily challenge appears and is joinable.
 - [ ] Users can create/join community challenges; reports hide abusive ones.
 - [ ] Completing a challenge awards points (idempotent) and notifies.

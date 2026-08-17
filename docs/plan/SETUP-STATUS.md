@@ -86,15 +86,26 @@ The cloud project serves auth + data for beta builds, but repo state has NOT bee
 pushed. As of the last check the following were pending — **verify with
 `supabase migration list` before relying on cloud state**:
 
-- `supabase db push` — repo migrations go up to `013_drop_community_feed.sql`
+- `supabase db push` — repo migrations go up to `014_challenges.sql`
   (012 = Bros Phase B friendships, 013 = feed/bucket drop + `delete_account_data`
-  rewrite; both authored 2026-08-15/16, **never run against cloud**); cloud is known
-  to be several behind (at minimum 007–013, incl. `009_security_hardening.sql` which
+  rewrite, 014 = Phase 4 challenges + leaderboard points wiring +
+  another `delete_account_data` rewrite; authored 2026-08-15/16, **never run
+  against cloud**); cloud is known
+  to be several behind (at minimum 007–014, incl. `009_security_hardening.sql` which
   closes a real paywall-bypass hole). ⚠️ 012 and 013 must land together: 012 drops
   `follows` and only 013 rewrites `delete_account_data` to stop referencing it —
   012 without 013 breaks account deletion (store blocker). After pushing, run the
   RLS matrix in 012's header (request/accept/decline/block both sides, username-claim
   race, `leaderboard_friends` still returns rows) and verify delete-account end to end.
+- **Challenges (014) deploy notes:** the completion-push trigger reads the same
+  Vault secrets 010 documents (`project_url`, `cron_secret`) — it silently
+  skips pushes until they exist. `notify-social-challenge` must be redeployed
+  with `verify_jwt` **off** (it self-authenticates: user JWT for PRs,
+  `x-cron-secret` from the DB trigger — config.toml already set). 014 also
+  schedules the `seed-daily-challenge` pg_cron job and seeds deploy-day's
+  curated challenge immediately. Post-deploy check: curated card appears in
+  the app, join → complete → `points_awarded` set by the trigger, hourly
+  `compute-leaderboard` picks points up in the composite.
 - **Bros invite deep link** — `https://mygymbro.app/bro/<username>` is generated/QR-encoded
   by the client and the in-app `/bro/:username` route exists, but the universal-link
   platform config (Apple AASA, Android assetlinks, and the web fallback page with the App

@@ -100,6 +100,25 @@ friendships (
 - The old `follows` table design is superseded; if it was ever created in an environment, the Phase B migration drops it.
 
 ### 3.2 Challenges
+
+> **Status (014_challenges.sql — authored 2026-08-16, not deployed):** shipped
+> as specced below plus: a server-only `challenge_templates` pool +
+> `seed_daily_challenge()` (pg_cron `5 0 * * *`, also flips `active→ended`;
+> one curated challenge per UTC day, idempotent); goal_type gains `'sets'`;
+> award + moderation are **DB triggers** (allowed "or DB trigger"), with
+> anti-cheat hardening: `challenge_id` immutable on UPDATE, `points_awarded`/
+> `completed_at` always recomputed server-side, awards locked once granted,
+> 48 h receipt deadline after `ends_at`, community points ≤ 50/challenge +
+> `goal_value ≥ 1`, self-created challenges pay 0. Launch moderation policy:
+> community rows land **'active'**; ≥ 3 distinct reporters auto-hide
+> (`pending_review` kept in the enum for a later pre-approval policy);
+> admin review via the `challenge_review_queue` view. Visibility is
+> block-aware (no challenges/participation across a blocked pair).
+> Completion push rides the `trg_notify_challenge_completion` trigger →
+> pg_net → `notify-social-challenge` (best-effort, Vault-gated).
+> `delete_account_data` was extended for the three challenge tables.
+> Client cache: Drift v18 `challenges` + `challenge_participants` mirrors.
+
 ```
 challenges (
   id uuid pk,
@@ -164,8 +183,10 @@ skin_ownership (
 > `compute_leaderboard_scores()` (called from the `compute-leaderboard` edge
 > function on a cron). RPCs `leaderboard_global` / `leaderboard_friends` /
 > `leaderboard_rivals` serve the three scopes. Deviations from the plan below:
-> challenge points are 0 until the challenges backend ships (composite averages
-> streak+volume only); Rivals is a read-time ±5 window around the caller's
+> ~~challenge points are 0 until the challenges backend ships~~ **resolved by
+> 014**: `compute_leaderboard_scores()` now sums window `points_awarded`
+> (excluding hidden and self-created challenges, community-sourced capped at
+> 100/window) and the composite is the three-way average; Rivals is a read-time ±5 window around the caller's
 > global rank instead of stored pods (§3.4a can replace it later without
 > changing the RPC shape); `season_winners` / finalize job not yet built.
 > Anti-cheat: volume is recomputed server-side from `sets` with per-set

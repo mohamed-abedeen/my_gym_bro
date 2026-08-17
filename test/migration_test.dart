@@ -92,7 +92,7 @@ void main() {
 
   tearDown(() => tmp.delete(recursive: true));
 
-  test('upgrade from v11 reaches v17 with columns, friendships table and '
+  test('upgrade from v11 reaches v18 with columns, social tables and '
       'catalogue wipe keeping referenced rows', () async {
     final file = File('${tmp.path}${Platform.pathSeparator}old.db');
 
@@ -132,7 +132,7 @@ void main() {
 
     // Migration completed and stamped the current version.
     final version = await query('PRAGMA user_version');
-    expect(version.single.read<int>('user_version'), 17);
+    expect(version.single.read<int>('user_version'), 18);
 
     // v12/v17 _addColumnIfMissing columns were added to user_profiles.
     final profileCols = (await query('PRAGMA table_info(user_profiles)'))
@@ -143,6 +143,7 @@ void main() {
 
     // v17 created the friendships cache; the superseded follows table is
     // gone (never created on this path — v15's create step was retired).
+    // v18 created the challenge caches.
     final tables = (await query(
       "SELECT name FROM sqlite_master WHERE type = 'table'",
     ))
@@ -150,6 +151,7 @@ void main() {
         .toSet();
     expect(tables, contains('friendships'));
     expect(tables, isNot(contains('follows')));
+    expect(tables, containsAll(['challenges', 'challenge_participants']));
 
     // v14/v16 catalogue wipe: referenced + custom rows survive, the
     // unreferenced catalogue row is deleted.
@@ -204,7 +206,7 @@ void main() {
     Future<List<QueryRow>> query(String sql) => db.customSelect(sql).get();
 
     final version = await query('PRAGMA user_version');
-    expect(version.single.read<int>('user_version'), 17);
+    expect(version.single.read<int>('user_version'), 18);
 
     final tables = (await query(
       "SELECT name FROM sqlite_master WHERE type = 'table'",
@@ -213,9 +215,12 @@ void main() {
         .toSet();
     expect(tables, isNot(contains('follows')));
     expect(tables, contains('friendships'));
+    expect(tables, containsAll(['challenges', 'challenge_participants']));
 
-    // The new cache starts empty and accepts a row with the v17 shape.
+    // The new caches start empty.
     expect(await db.select(db.friendships).get(), isEmpty);
+    expect(await db.select(db.challenges).get(), isEmpty);
+    expect(await db.select(db.challengeParticipants).get(), isEmpty);
   });
 
   test('running the same upgrade twice is idempotent (no duplicate column '
@@ -236,7 +241,7 @@ void main() {
     final db = AppDatabase(NativeDatabase(file));
     addTearDown(db.close);
     final version = await db.customSelect('PRAGMA user_version').get();
-    expect(version.single.read<int>('user_version'), 17);
+    expect(version.single.read<int>('user_version'), 18);
   });
 
   test('fresh createAll builds every table', () async {
@@ -247,6 +252,6 @@ void main() {
     for (final table in db.allTables) {
       await db.select(table).get();
     }
-    expect(db.allTables.length, 10);
+    expect(db.allTables.length, 12);
   });
 }

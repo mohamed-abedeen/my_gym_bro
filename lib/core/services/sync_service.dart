@@ -16,9 +16,18 @@ class SyncService {
   final AppDatabase _db;
   final SupabaseClient? _supabase;
   final SyncQueueDao _dao;
-  bool _isSyncing = false;
+  Future<void>? _inFlight;
 
   static const _maxRetries = 3;
+
+  /// Postgres/PostgREST error codes that can never succeed on retry: unique
+  /// violation, FK violation, CHECK violation, RLS/privilege denial. Retrying
+  /// these forever would poison the queue — every later pass would pay the
+  /// full retry+backoff cost for an op the server will always reject (easy to
+  /// hit with time-windowed RLS, e.g. a challenge join synced after the
+  /// window's grace period). The op is dropped; the local row stays until the
+  /// owning feature's server snapshot reconciles it.
+  static const _permanentPgCodes = {'23505', '23503', '23514', '42501'};
 
   /// A raw SQL identifier is interpolated into [_resolveRemoteId]. Every real
   /// sync table is lowercase snake_case; reject anything else so the table name
@@ -39,19 +48,35 @@ class SyncService {
       payload.remove('remote_id') as String?;
 
   /// Attempt to sync all pending queue items to Supabase.
-  Future<void> syncAll() async {
-    if (_supabase == null) return;
-    if (_isSyncing) return; // Prevent concurrent syncs
+  ///
+  /// Concurrent callers join the in-flight pass instead of silently returning
+  /// — so `await syncAll()` genuinely means "a drain ran to completion after
+  /// this call", which snapshot pulls (refreshFromServer flows) rely on
+  /// before replacing local caches.
+  Future<void> syncAll() {
+    if (_supabase == null) return Future.value();
+    final inFlight = _inFlight;
+    if (inFlight != null) return inFlight;
+    final run = _runSyncPass().whenComplete(() => _inFlight = null);
+    _inFlight = run;
+    return run;
+  }
 
-    _isSyncing = true;
-    try {
-      // Check connectivity first
-      final connectivityResults = await Connectivity().checkConnectivity();
-      final hasConnection = connectivityResults.isNotEmpty &&
-          !connectivityResults.contains(ConnectivityResult.none);
-      if (!hasConnection) return;
+  Future<void> _runSyncPass() async {
+    // Check connectivity first
+    final connectivityResults = await Connectivity().checkConnectivity();
+    final hasConnection = connectivityResults.isNotEmpty &&
+        !connectivityResults.contains(ConnectivityResult.none);
+    if (!hasConnection) return;
 
+    // Keep draining while items enqueued mid-pass keep arriving; stop when a
+    // sweep makes no progress (only deferred/transiently-failing items left)
+    // so a stuck item can't spin this loop.
+    var madeProgress = true;
+    while (madeProgress) {
+      madeProgress = false;
       final pending = await _dao.getPending();
+      if (pending.isEmpty) break;
 
       for (final item in pending) {
         var success = false;
@@ -61,6 +86,7 @@ class SyncService {
             switch (result) {
               case _SyncResult.synced:
                 success = true;
+                madeProgress = true;
                 await _dao.markSynced(item.localId);
               case _SyncResult.deferred:
                 // remote_id not yet available — leave in queue for next pass.
@@ -72,24 +98,47 @@ class SyncService {
                 success = true; // don't retry this pass, but don't mark synced
             }
             if (success) break;
-          } on Exception catch (e) {
-            CrashReporter.recordError(
+          } on PostgrestException catch (e) {
+            if (_permanentPgCodes.contains(e.code)) {
+              // The server will reject this op forever — drop it instead of
+              // poisoning every future pass with retries and backoff.
+              CrashReporter.recordError(
                 e,
                 stackTrace: StackTrace.current,
-                reason: 'Sync: attempt $attempt/$_maxRetries failed for item ${item.localId}',
+                reason:
+                    'Sync: item ${item.localId} (${item.operation} on ${item.syncTableName}) permanently rejected (${e.code}) — dropped',
               );
-            if (attempt < _maxRetries) {
-              // Exponential backoff: 1s, 2s, 4s
-              await Future<void>.delayed(Duration(seconds: 1 << (attempt - 1)));
+              success = true;
+              madeProgress = true;
+              await _dao.markSynced(item.localId);
+              break;
             }
+            await _recordTransientFailure(e, item, attempt);
+          } on Exception catch (e) {
+            await _recordTransientFailure(e, item, attempt);
           }
         }
       }
+    }
 
-      // Clean up synced entries
-      await _dao.clearSynced();
-    } finally {
-      _isSyncing = false;
+    // Clean up synced entries
+    await _dao.clearSynced();
+  }
+
+  Future<void> _recordTransientFailure(
+    Exception e,
+    SyncQueueData item,
+    int attempt,
+  ) async {
+    CrashReporter.recordError(
+      e,
+      stackTrace: StackTrace.current,
+      reason:
+          'Sync: attempt $attempt/$_maxRetries failed for item ${item.localId}',
+    );
+    if (attempt < _maxRetries) {
+      // Exponential backoff: 1s, 2s, 4s
+      await Future<void>.delayed(Duration(seconds: 1 << (attempt - 1)));
     }
   }
 

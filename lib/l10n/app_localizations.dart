@@ -3839,6 +3839,264 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Sign in to add bros.'**
   String get signInToAddBros;
+
+  /// No description provided for @communityChallenges.
+  ///
+  /// In en, this message translates to:
+  /// **'Community Challenges'**
+  String get communityChallenges;
+
+  /// No description provided for @endsInShort.
+  ///
+  /// In en, this message translates to:
+  /// **'Ends in {time}'**
+  String endsInShort(Object time);
+
+  /// No description provided for @endedLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Ended'**
+  String get endedLabel;
+
+  /// No description provided for @durationShortDays.
+  ///
+  /// In en, this message translates to:
+  /// **'{n}d'**
+  String durationShortDays(Object n);
+
+  /// No description provided for @durationShortHours.
+  ///
+  /// In en, this message translates to:
+  /// **'{n}h'**
+  String durationShortHours(Object n);
+
+  /// No description provided for @percentDone.
+  ///
+  /// In en, this message translates to:
+  /// **'{percent}% done'**
+  String percentDone(Object percent);
+
+  /// No description provided for @progressOfGoal.
+  ///
+  /// In en, this message translates to:
+  /// **'{progress} / {goal}'**
+  String progressOfGoal(Object goal, Object progress);
+
+  /// No description provided for @joinChallenge.
+  ///
+  /// In en, this message translates to:
+  /// **'Join'**
+  String get joinChallenge;
+
+  /// No description provided for @joinedChallenge.
+  ///
+  /// In en, this message translates to:
+  /// **'Joined'**
+  String get joinedChallenge;
+
+  /// No description provided for @leaveChallenge.
+  ///
+  /// In en, this message translates to:
+  /// **'Leave challenge'**
+  String get leaveChallenge;
+
+  /// No description provided for @challengeCompleted.
+  ///
+  /// In en, this message translates to:
+  /// **'Completed'**
+  String get challengeCompleted;
+
+  /// No description provided for @plusPoints.
+  ///
+  /// In en, this message translates to:
+  /// **'+{points} pts'**
+  String plusPoints(Object points);
+
+  /// No description provided for @challengePointsChip.
+  ///
+  /// In en, this message translates to:
+  /// **'{points} pts'**
+  String challengePointsChip(Object points);
+
+  /// No description provided for @createChallenge.
+  ///
+  /// In en, this message translates to:
+  /// **'Create Challenge'**
+  String get createChallenge;
+
+  /// No description provided for @challengeTitleLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Title'**
+  String get challengeTitleLabel;
+
+  /// No description provided for @challengeDescriptionLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Description (optional)'**
+  String get challengeDescriptionLabel;
+
+  /// No description provided for @challengeGoalLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Goal'**
+  String get challengeGoalLabel;
+
+  /// No description provided for @goalTypeVolume.
+  ///
+  /// In en, this message translates to:
+  /// **'Volume (kg)'**
+  String get goalTypeVolume;
+
+  /// No description provided for @goalTypeSessions.
+  ///
+  /// In en, this message translates to:
+  /// **'Workouts'**
+  String get goalTypeSessions;
+
+  /// No description provided for @goalTypeSets.
+  ///
+  /// In en, this message translates to:
+  /// **'Sets'**
+  String get goalTypeSets;
+
+  /// No description provided for @goalTypeStreak.
+  ///
+  /// In en, this message translates to:
+  /// **'Training days'**
+  String get goalTypeStreak;
+
+  /// No description provided for @goalTypeCustom.
+  ///
+  /// In en, this message translates to:
+  /// **'Custom (honor system)'**
+  String get goalTypeCustom;
+
+  /// No description provided for @challengeTargetLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Target'**
+  String get challengeTargetLabel;
+
+  /// No description provided for @challengeDurationLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Duration'**
+  String get challengeDurationLabel;
+
+  /// No description provided for @durationDaysOption.
+  ///
+  /// In en, this message translates to:
+  /// **'{days} days'**
+  String durationDaysOption(Object days);
+
+  /// No description provided for @challengePointsLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Points (max {max})'**
+  String challengePointsLabel(Object max);
+
+  /// No description provided for @reportChallenge.
+  ///
+  /// In en, this message translates to:
+  /// **'Report challenge'**
+  String get reportChallenge;
+
+  /// No description provided for @deleteChallenge.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete challenge'**
+  String get deleteChallenge;
+
+  /// No description provided for @markComplete.
+  ///
+  /// In en, this message translates to:
+  /// **'Mark complete'**
+  String get markComplete;
+
+  /// No description provided for @challengeCreatedToast.
+  ///
+  /// In en, this message translates to:
+  /// **'Challenge created'**
+  String get challengeCreatedToast;
+
+  /// No description provided for @challengeInvalidToast.
+  ///
+  /// In en, this message translates to:
+  /// **'Check the challenge details and try again.'**
+  String get challengeInvalidToast;
+
+  /// No description provided for @challengeReportedToast.
+  ///
+  /// In en, this message translates to:
+  /// **'Thanks — this challenge will be reviewed.'**
+  String get challengeReportedToast;
+
+  /// No description provided for @signInToJoinChallenges.
+  ///
+  /// In en, this message translates to:
+  /// **'Sign in to join challenges.'**
+  String get signInToJoinChallenges;
+
+  /// No description provided for @tplDailyOneSessionTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Show Up'**
+  String get tplDailyOneSessionTitle;
+
+  /// No description provided for @tplDailyOneSessionDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Complete one workout session today.'**
+  String get tplDailyOneSessionDesc;
+
+  /// No description provided for @tplDailyVolume5kTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Move 5,000 kg'**
+  String get tplDailyVolume5kTitle;
+
+  /// No description provided for @tplDailyVolume5kDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Lift a total of 5,000 kg across all sets today.'**
+  String get tplDailyVolume5kDesc;
+
+  /// No description provided for @tplDailyVolume10kTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Move 10,000 kg'**
+  String get tplDailyVolume10kTitle;
+
+  /// No description provided for @tplDailyVolume10kDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Lift a total of 10,000 kg across all sets today.'**
+  String get tplDailyVolume10kDesc;
+
+  /// No description provided for @tplDailySets12Title.
+  ///
+  /// In en, this message translates to:
+  /// **'12 Working Sets'**
+  String get tplDailySets12Title;
+
+  /// No description provided for @tplDailySets12Desc.
+  ///
+  /// In en, this message translates to:
+  /// **'Complete 12 working sets today (warm-ups don\'t count).'**
+  String get tplDailySets12Desc;
+
+  /// No description provided for @tplDailySets20Title.
+  ///
+  /// In en, this message translates to:
+  /// **'20 Working Sets'**
+  String get tplDailySets20Title;
+
+  /// No description provided for @tplDailySets20Desc.
+  ///
+  /// In en, this message translates to:
+  /// **'Complete 20 working sets today (warm-ups don\'t count).'**
+  String get tplDailySets20Desc;
 }
 
 class _AppLocalizationsDelegate

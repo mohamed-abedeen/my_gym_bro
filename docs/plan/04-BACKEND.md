@@ -116,6 +116,21 @@ Builds the weekly rival pods.
 ### 3.2 `award-challenge-points` (or DB trigger)
 When `challenge_participants.completed_at` is set, award `challenges.points` → `points_awarded`, and trigger `notify-social-challenge`. Idempotent (unique participant row).
 
+> ✅ **Shipped as DB triggers in 014** (2026-08-16): `award_challenge_points`
+> (BEFORE INSERT/UPDATE — server-derives completion + points, locks standing
+> awards, `challenge_id` immutable, 48 h receipt deadline, creator self-award
+> pays 0) and `trg_notify_challenge_completion` (AFTER, fires only on the
+> NULL→set completion transition, pg_net → `notify-social-challenge` with
+> `x-cron-secret`, best-effort). `notify-social-challenge` itself was
+> rewritten: audience is now the `friends` view (the follows audience died
+> with 012), dual entry (user JWT for PRs / cron-secret for the trigger, so
+> `verify_jwt = false` in config.toml), challenge completions verified
+> against `challenge_participants` before broadcasting, and messages are
+> tone-resolved per recipient from `user_profiles.notification_tone`
+> (in-function template sets; the §3.7 `notification_templates` tone columns
+> remain future work). Curated seeding is `seed_daily_challenge()` SQL +
+> pg_cron — no edge function needed.
+
 ### 3.3 `purchase-skin` / verify
 On a RevenueCat one-time skin purchase, verify the entitlement/receipt server-side and insert `skin_ownership(source='purchased')`. Prevents client-spoofed ownership.
 
@@ -124,6 +139,11 @@ Evaluates `skins.unlock_rule` against user stats (streak length, leaderboard pla
 
 ### 3.5 `moderate-challenges` (scheduled or trigger)
 Counts `challenge_reports` per challenge; flips to `hidden` past a threshold; surfaces a review queue (admin via service role).
+
+> ✅ **Shipped as a trigger in 014**: AFTER INSERT on `challenge_reports`,
+> hides a community challenge at ≥ 3 distinct reporters (UNIQUE
+> (challenge, reporter) makes the count people, not clicks). Review queue =
+> `challenge_review_queue` view, service-role only.
 
 ### 3.6 `generate-reports` (scheduled)
 Generates weekly + monthly progress reports.

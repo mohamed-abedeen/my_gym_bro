@@ -2081,4 +2081,157 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String get signInToAddBros => 'Connecte-toi pour ajouter des bros.';
+
+  @override
+  String get communityChallenges => 'Défis de la communauté';
+
+  @override
+  String endsInShort(Object time) {
+    return 'Se termine dans $time';
+  }
+
+  @override
+  String get endedLabel => 'Terminé';
+
+  @override
+  String durationShortDays(Object n) {
+    return '$n j';
+  }
+
+  @override
+  String durationShortHours(Object n) {
+    return '$n h';
+  }
+
+  @override
+  String percentDone(Object percent) {
+    return '$percent% fait';
+  }
+
+  @override
+  String progressOfGoal(Object goal, Object progress) {
+    return '$progress / $goal';
+  }
+
+  @override
+  String get joinChallenge => 'Rejoindre';
+
+  @override
+  String get joinedChallenge => 'Inscrit';
+
+  @override
+  String get leaveChallenge => 'Quitter le défi';
+
+  @override
+  String get challengeCompleted => 'Terminé';
+
+  @override
+  String plusPoints(Object points) {
+    return '+$points pts';
+  }
+
+  @override
+  String challengePointsChip(Object points) {
+    return '$points pts';
+  }
+
+  @override
+  String get createChallenge => 'Créer un défi';
+
+  @override
+  String get challengeTitleLabel => 'Titre';
+
+  @override
+  String get challengeDescriptionLabel => 'Description (facultatif)';
+
+  @override
+  String get challengeGoalLabel => 'Objectif';
+
+  @override
+  String get goalTypeVolume => 'Volume (kg)';
+
+  @override
+  String get goalTypeSessions => 'Séances';
+
+  @override
+  String get goalTypeSets => 'Séries';
+
+  @override
+  String get goalTypeStreak => 'Jours d\'entraînement';
+
+  @override
+  String get goalTypeCustom => 'Personnalisé (sur l\'honneur)';
+
+  @override
+  String get challengeTargetLabel => 'Cible';
+
+  @override
+  String get challengeDurationLabel => 'Durée';
+
+  @override
+  String durationDaysOption(Object days) {
+    return '$days jours';
+  }
+
+  @override
+  String challengePointsLabel(Object max) {
+    return 'Points (max $max)';
+  }
+
+  @override
+  String get reportChallenge => 'Signaler le défi';
+
+  @override
+  String get deleteChallenge => 'Supprimer le défi';
+
+  @override
+  String get markComplete => 'Marquer comme terminé';
+
+  @override
+  String get challengeCreatedToast => 'Défi créé';
+
+  @override
+  String get challengeInvalidToast =>
+      'Vérifie les détails du défi et réessaie.';
+
+  @override
+  String get challengeReportedToast => 'Merci — ce défi sera examiné.';
+
+  @override
+  String get signInToJoinChallenges => 'Connecte-toi pour rejoindre les défis.';
+
+  @override
+  String get tplDailyOneSessionTitle => 'Sois là';
+
+  @override
+  String get tplDailyOneSessionDesc =>
+      'Termine une séance d\'entraînement aujourd\'hui.';
+
+  @override
+  String get tplDailyVolume5kTitle => 'Soulève 5 000 kg';
+
+  @override
+  String get tplDailyVolume5kDesc =>
+      'Soulève un total de 5 000 kg sur toutes les séries aujourd\'hui.';
+
+  @override
+  String get tplDailyVolume10kTitle => 'Soulève 10 000 kg';
+
+  @override
+  String get tplDailyVolume10kDesc =>
+      'Soulève un total de 10 000 kg sur toutes les séries aujourd\'hui.';
+
+  @override
+  String get tplDailySets12Title => '12 séries effectives';
+
+  @override
+  String get tplDailySets12Desc =>
+      'Termine 12 séries effectives aujourd\'hui (l\'échauffement ne compte pas).';
+
+  @override
+  String get tplDailySets20Title => '20 séries effectives';
+
+  @override
+  String get tplDailySets20Desc =>
+      'Termine 20 séries effectives aujourd\'hui (l\'échauffement ne compte pas).';
 }

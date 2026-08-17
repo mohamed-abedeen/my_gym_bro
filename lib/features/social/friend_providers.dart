@@ -23,12 +23,20 @@ final friendRepositoryProvider = Provider<FriendRepository>((ref) {
 });
 
 /// The signed-in user's auth id, or null when signed-out / Supabase-less.
+/// Derived from [authNotifierProvider] (which follows onAuthStateChange) so
+/// dependents genuinely re-run on mid-session sign-in/out; the direct
+/// currentUser read covers the cold-start gap before the first auth event.
 final currentUserIdProvider = Provider<String?>((ref) {
-  return ref.watch(supabaseProvider)?.auth.currentUser?.id;
+  final fromAuth = ref.watch(authNotifierProvider.select((s) => s.user?.id));
+  return fromAuth ?? ref.watch(supabaseProvider)?.auth.currentUser?.id;
 });
 
 /// Every live friendship edge involving the current user (local cache).
 final friendshipEdgesProvider = StreamProvider<List<Friendship>>((ref) {
+  // The repo captures the uid when the stream is created — rebuild on auth
+  // changes so a mid-session sign-in doesn't leave the empty signed-out
+  // stream in place until restart.
+  ref.watch(currentUserIdProvider);
   return ref.watch(friendRepositoryProvider).watchEdges();
 });
 

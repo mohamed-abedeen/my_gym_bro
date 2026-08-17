@@ -407,7 +407,9 @@ allow_dynamic_registration = false
 # webhook). With the default verify_jwt = true the gateway would reject them
 # before their own auth check runs, so entitlements would never be granted and
 # crons would never fire. User-facing functions (verify-subscription,
-# notify-social-challenge, delete-account) keep the default JWT gate.
+# delete-account) keep the default JWT gate. notify-social-challenge is dual-
+# entry since 014 (user JWT for PRs, x-cron-secret from the completion trigger)
+# and enforces both paths itself.
 [functions.revenuecat-webhook]
 verify_jwt = false
 
@@ -418,6 +420,9 @@ verify_jwt = false
 verify_jwt = false
 
 [functions.send-push-notification]
+verify_jwt = false
+
+[functions.notify-social-challenge]
 verify_jwt = false
 
 [edge_runtime]

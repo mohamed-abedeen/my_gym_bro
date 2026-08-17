@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
+import 'package:my_gym_bro/features/leaderboard/challenges_tab.dart';
 import 'package:my_gym_bro/features/leaderboard/leaderboard_providers.dart';
 import 'package:my_gym_bro/features/leaderboard/rank.dart';
 import 'package:my_gym_bro/features/social/bros_sheet.dart';
@@ -17,8 +18,9 @@ import 'package:my_gym_bro/shared/widgets/user_avatar.dart';
 ///  • Leaderboard tab — Current League card, scope (Rivals/Global/Friends),
 ///    and a server-ranked list with tier colours (weekly board via the
 ///    `leaderboard_*` RPCs; offline/empty states handled).
-///  • Challenges tab — empty state only until the challenges backend ships
-///    (the Figma card UI lives in git history; no mock data is rendered).
+///  • Challenges tab — curated daily + community challenges from the local
+///    cache (Phase 4), hero-card UI restored from history in
+///    `challenges_tab.dart`.
 class LeaderboardScreen extends ConsumerStatefulWidget {
   const LeaderboardScreen({super.key});
 
@@ -125,7 +127,7 @@ class _LeaderboardScreenState extends ConsumerState<LeaderboardScreen> {
                         onScope: (s) => setState(() => _scope = s),
                         l10n: l10n,
                       )
-                    : _ChallengesTab(l10n: l10n),
+                    : const ChallengesTab(),
               ),
               // Keeps lists/cards clear of the bottom nav.
               SizedBox(height: AppSizes.navClearanceOf(context)),
@@ -819,27 +821,4 @@ class _AvatarMedal extends StatelessWidget {
   }
 }
 
-// ─────────────────────────────────────────────
-// C H A L L E N G E S   T A B
-// ─────────────────────────────────────────────
-
-class _ChallengesTab extends StatelessWidget {
-  const _ChallengesTab({required this.l10n});
-
-  final AppLocalizations l10n;
-
-  @override
-  Widget build(BuildContext context) {
-    // ponytail: no challenges backend exists — render only the honest empty
-    // state. The mock cards (fake title/progress/rank, hardcoded "End in Nd"
-    // countdown, placeholder hero) were removed pre-launch; restore the card
-    // UI from git history once real challenge data ships.
-    final colors = AppColors.of(context);
-    return Center(
-      child: Text(
-        l10n.noChallengesYet,
-        style: TextStyle(color: colors.textSecondary, fontSize: 14.sp),
-      ),
-    );
-  }
-}
+// The Challenges tab lives in `challenges_tab.dart` (Phase 4).

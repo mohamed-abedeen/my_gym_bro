@@ -2061,4 +2061,157 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get signInToAddBros => 'Sign in to add bros.';
+
+  @override
+  String get communityChallenges => 'Community Challenges';
+
+  @override
+  String endsInShort(Object time) {
+    return 'Ends in $time';
+  }
+
+  @override
+  String get endedLabel => 'Ended';
+
+  @override
+  String durationShortDays(Object n) {
+    return '${n}d';
+  }
+
+  @override
+  String durationShortHours(Object n) {
+    return '${n}h';
+  }
+
+  @override
+  String percentDone(Object percent) {
+    return '$percent% done';
+  }
+
+  @override
+  String progressOfGoal(Object goal, Object progress) {
+    return '$progress / $goal';
+  }
+
+  @override
+  String get joinChallenge => 'Join';
+
+  @override
+  String get joinedChallenge => 'Joined';
+
+  @override
+  String get leaveChallenge => 'Leave challenge';
+
+  @override
+  String get challengeCompleted => 'Completed';
+
+  @override
+  String plusPoints(Object points) {
+    return '+$points pts';
+  }
+
+  @override
+  String challengePointsChip(Object points) {
+    return '$points pts';
+  }
+
+  @override
+  String get createChallenge => 'Create Challenge';
+
+  @override
+  String get challengeTitleLabel => 'Title';
+
+  @override
+  String get challengeDescriptionLabel => 'Description (optional)';
+
+  @override
+  String get challengeGoalLabel => 'Goal';
+
+  @override
+  String get goalTypeVolume => 'Volume (kg)';
+
+  @override
+  String get goalTypeSessions => 'Workouts';
+
+  @override
+  String get goalTypeSets => 'Sets';
+
+  @override
+  String get goalTypeStreak => 'Training days';
+
+  @override
+  String get goalTypeCustom => 'Custom (honor system)';
+
+  @override
+  String get challengeTargetLabel => 'Target';
+
+  @override
+  String get challengeDurationLabel => 'Duration';
+
+  @override
+  String durationDaysOption(Object days) {
+    return '$days days';
+  }
+
+  @override
+  String challengePointsLabel(Object max) {
+    return 'Points (max $max)';
+  }
+
+  @override
+  String get reportChallenge => 'Report challenge';
+
+  @override
+  String get deleteChallenge => 'Delete challenge';
+
+  @override
+  String get markComplete => 'Mark complete';
+
+  @override
+  String get challengeCreatedToast => 'Challenge created';
+
+  @override
+  String get challengeInvalidToast =>
+      'Check the challenge details and try again.';
+
+  @override
+  String get challengeReportedToast =>
+      'Thanks — this challenge will be reviewed.';
+
+  @override
+  String get signInToJoinChallenges => 'Sign in to join challenges.';
+
+  @override
+  String get tplDailyOneSessionTitle => 'Show Up';
+
+  @override
+  String get tplDailyOneSessionDesc => 'Complete one workout session today.';
+
+  @override
+  String get tplDailyVolume5kTitle => 'Move 5,000 kg';
+
+  @override
+  String get tplDailyVolume5kDesc =>
+      'Lift a total of 5,000 kg across all sets today.';
+
+  @override
+  String get tplDailyVolume10kTitle => 'Move 10,000 kg';
+
+  @override
+  String get tplDailyVolume10kDesc =>
+      'Lift a total of 10,000 kg across all sets today.';
+
+  @override
+  String get tplDailySets12Title => '12 Working Sets';
+
+  @override
+  String get tplDailySets12Desc =>
+      'Complete 12 working sets today (warm-ups don\'t count).';
+
+  @override
+  String get tplDailySets20Title => '20 Working Sets';
+
+  @override
+  String get tplDailySets20Desc =>
+      'Complete 20 working sets today (warm-ups don\'t count).';
 }
