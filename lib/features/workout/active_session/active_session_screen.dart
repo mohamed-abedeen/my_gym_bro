@@ -571,6 +571,16 @@ class _ActiveSessionScreenState extends ConsumerState<ActiveSessionScreen> {
         // Count is a nice-to-have; a stats failure shouldn't lose the card.
       }
 
+      var streak = 0;
+      try {
+        // Same deal: fresh streak including the just-saved session; the
+        // cards hide the streak line when it's 0.
+        ref.invalidate(streakProvider);
+        streak = await ref.read(streakProvider.future);
+      } on Object {
+        // Nice-to-have only.
+      }
+
       if (!mounted) return;
       final workoutName = deriveWorkoutName(
         snapshot.exercises.map((e) => e.muscleGroup),
@@ -582,6 +592,7 @@ class _ActiveSessionScreenState extends ConsumerState<ActiveSessionScreen> {
         workoutNumber: n,
         bodyWeightKg: profile?.bodyWeightKg,
         gender: profile?.gender,
+        streakDays: streak,
       );
     } on Object {
       data = null;

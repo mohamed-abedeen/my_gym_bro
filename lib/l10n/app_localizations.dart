@@ -1902,6 +1902,12 @@ abstract class AppLocalizations {
   /// **'{sets} sets/week over the last 4 weeks'**
   String volumeSetsPerWeek(String sets);
 
+  /// No description provided for @shareStreakDays.
+  ///
+  /// In en, this message translates to:
+  /// **'{days}-day streak'**
+  String shareStreakDays(int days);
+
   /// No description provided for @statusProgressTitle.
   ///
   /// In en, this message translates to:

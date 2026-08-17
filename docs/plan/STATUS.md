@@ -100,7 +100,7 @@ Legend: ✅ done · 🟡 partial · 🔴 not built · ⚠️ remove · `[new]` b
 - ✅ `[new]` Progress charts (compare identical past sessions: volume/top set/est-1RM) *(2026-08-18)*.
 - 🔴 `[new]` Periodic reports: `user_reports` + `generate-reports` (weekly+monthly, metrics+deltas); tone push; **Reports window** from Workout→Status→Reports; Drift `UserReports` cache.
 - 🔴 `[new]` Training calendar: Home day-strip tap → month calendar of worked days (local `Sessions`) → day detail.
-- 🔴 `[new]` Share cards on session completion (image; share + optional post).
+- ✅ `[new]` Share cards on session completion (image; external share — feed post void) *(v2 was already built; streak stat added 2026-08-18)*.
 - 🔴 `[fix]` Light-mode **orange** accent: make `accent` brightness-resolved in `constants.dart` (light ≠ lime); apply to accent text, selected nav icon, Start Workout button, streak icon.
 - 🟡 `[fix]` Notification force-kill resync on resume; verify reminder cron + server-side tone/locale.
 - 🟡 `[fix]` Backfill ~84 missing keys in `app_de/es/fr.arb`; no English leakage (except tone samples).

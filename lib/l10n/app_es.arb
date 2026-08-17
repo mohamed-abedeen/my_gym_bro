@@ -272,6 +272,7 @@
   "volumeBelowTarget": "Por debajo del objetivo",
   "volumeSetsThisWeek": "{sets} series ponderadas esta semana",
   "volumeSetsPerWeek": "{sets} series/semana en las últimas 4 semanas",
+  "shareStreakDays": "Racha de {days} días",
   "statusProgressTitle": "Progreso por ejercicio",
   "metricTopSet": "Mejor serie",
   "metricE1rm": "1RM est.",

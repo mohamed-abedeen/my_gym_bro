@@ -139,6 +139,21 @@ class EditorialShareCard extends ConsumerWidget {
               value: _durationRich(formatShareDuration(data.durationSeconds)),
             ),
             const _Hairline(),
+            if (data.streakDays > 0) ...[
+              _LedgerRow(
+                label: l10n.streak.toUpperCase(),
+                value: Text(
+                  '${data.streakDays}',
+                  style: shareArchivo(
+                    34,
+                    weight: 800,
+                    letterSpacing: -1,
+                    height: 1,
+                  ),
+                ),
+              ),
+              const _Hairline(),
+            ],
 
             const SizedBox(height: 22),
             const ShareFooter(showRule: false, showLogo: true),

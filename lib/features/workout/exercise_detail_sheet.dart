@@ -152,6 +152,8 @@ class _ExerciseDetailSheet extends ConsumerWidget {
                                 .contains(session.localId),
                             bodyWeightKg: profile?.bodyWeightKg,
                             gender: profile?.gender,
+                            streakDays:
+                                ref.read(streakProvider).valueOrNull ?? 0,
                           ),
                         ));
                       },

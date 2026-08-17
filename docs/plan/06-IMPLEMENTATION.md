@@ -230,7 +230,16 @@ The photo/text feed is cut (PRD §5.8). The client feed UI was deleted in Bros P
 - [x] Compare identical past sessions over time (volume, top set, est. 1RM) per exercise; charts in status/profile.
 
 ### 6.4 Share Cards
-- [ ] On session completion, render a shareable summary image (volume/duration/PRs/streak); share + optional post to feed.
+> **Status (2026-08-18): done.** The share-cards v2 build (5 templates,
+> RepaintBoundary capture, session-completion push, per-exercise variant)
+> already covered the spec except **streak** — now added: `ShareCardData.
+> streakDays` (fresh `streakProvider` read incl. the just-saved session at
+> the completion call site; history shares pass the current streak), shown in
+> the Hype mini-stats line and as an Editorial ledger row (hidden at 0).
+> "Post to feed" is void — the feed was cut 2026-08-15 (PRD §5.8); external
+> share via share_plus is the whole flow.
+
+- [x] On session completion, render a shareable summary image (volume/duration/PRs/streak); share ~~+ optional post to feed~~ *(feed removed 2026-08-15)*.
 
 ### 6.4a Periodic Reports
 - [ ] `user_reports` table + `generate-reports` scheduled function (weekly + monthly, metrics + deltas vs. prior period).

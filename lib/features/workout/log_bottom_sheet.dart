@@ -947,6 +947,8 @@ class _SessionCardState extends ConsumerState<_SessionCard> {
                             hasPr: widget.isPr,
                             bodyWeightKg: profile?.bodyWeightKg,
                             gender: profile?.gender,
+                            streakDays:
+                                ref.read(streakProvider).valueOrNull ?? 0,
                           ),
                         );
                       },

@@ -49,6 +49,7 @@ void main() {
     // only care that the screens compose.
     workedMuscleGroups: const {},
     hasPr: true,
+    streakDays: 12,
     date: DateTime(2026, 7, 13),
   );
 
@@ -125,10 +126,12 @@ void main() {
     expect(find.text('CHEST'), findsOneWidget);
     expect(find.text('DAY'), findsOneWidget);
     expect(find.text('MON · JUL 13 2026'), findsOneWidget);
-    // Ledger labels.
+    // Ledger labels — streak appears because the data carries streakDays.
     expect(find.text('VOLUME'), findsOneWidget);
     expect(find.text('SETS'), findsOneWidget);
     expect(find.text('DURATION'), findsOneWidget);
+    expect(find.text('STREAK'), findsOneWidget);
+    expect(find.text('12'), findsWidgets);
     expect(find.text('MYGYMBRO.APP'), findsOneWidget);
   });
 
@@ -223,6 +226,9 @@ void main() {
     expect(find.text('YOU · 8,310 KG'), findsOneWidget);
     expect(find.text('ELEPHANT · 6,000 KG'), findsOneWidget);
     // Mini stats line.
-    expect(find.text('12 SETS · 58M · CHEST DAY'), findsOneWidget);
+    expect(
+      find.text('12 SETS · 58M · 12-DAY STREAK · CHEST DAY'),
+      findsOneWidget,
+    );
   });
 }

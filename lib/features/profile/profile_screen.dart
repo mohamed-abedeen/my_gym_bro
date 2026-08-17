@@ -1021,6 +1021,10 @@ class _ProfileSessionCardState extends ConsumerState<_ProfileSessionCard>
                                     ),
                                     bodyWeightKg: profile?.bodyWeightKg,
                                     gender: profile?.gender,
+                                    streakDays: ref
+                                            .read(streakProvider)
+                                            .valueOrNull ??
+                                        0,
                                   ),
                                 );
                               },

@@ -49,6 +49,7 @@ class ShareCardData {
     required this.workedMuscleGroups,
     required this.hasPr,
     this.liftRanks = const [],
+    this.streakDays = 0,
     this.date,
   });
 
@@ -64,6 +65,7 @@ class ShareCardData {
     required int workoutNumber,
     double? bodyWeightKg,
     String? gender,
+    int streakDays = 0,
   }) {
     final exercises = <ShareExercise>[];
     final workedMuscleGroups = <String>{};
@@ -106,6 +108,7 @@ class ShareCardData {
       workedMuscleGroups: workedMuscleGroups,
       hasPr: state.prEvent != null,
       liftRanks: liftRanks,
+      streakDays: streakDays,
       date: state.startedAt ?? DateTime.now(),
     );
   }
@@ -119,6 +122,7 @@ class ShareCardData {
     bool hasPr = false,
     double? bodyWeightKg,
     String? gender,
+    int streakDays = 0,
   }) {
     final exercises = <ShareExercise>[];
     final workedMuscleGroups = <String>{};
@@ -163,6 +167,7 @@ class ShareCardData {
       workedMuscleGroups: workedMuscleGroups,
       hasPr: hasPr,
       liftRanks: liftRanks,
+      streakDays: streakDays,
       date: enriched.session.startedAt,
     );
   }
@@ -234,6 +239,12 @@ class ShareCardData {
   /// Empty when none were trained or no bodyweight was available — the
   /// "Ranks" share template is only offered when this is non-empty.
   final List<ShareLiftRank> liftRanks;
+
+  /// The user's workout streak (days) as of this share, including the shared
+  /// session. 0 = unknown/none — cards hide the streak line (PRD §5.13 puts
+  /// streak on the card; it's the one aggregate stat allowed on a
+  /// per-session snapshot).
+  final int streakDays;
 
   /// When the workout happened — the date line on the cards. Null only in
   /// hand-built test data; cards fall back to "now".

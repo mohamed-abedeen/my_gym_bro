@@ -443,6 +443,12 @@
       "sets": { "type": "String" }
     }
   },
+  "shareStreakDays": "{days}-day streak",
+  "@shareStreakDays": {
+    "placeholders": {
+      "days": { "type": "int" }
+    }
+  },
   "statusProgressTitle": "Exercise Progress",
   "metricTopSet": "Top set",
   "metricE1rm": "Est. 1RM",

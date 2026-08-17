@@ -272,6 +272,7 @@
   "volumeBelowTarget": "Unter dem Ziel",
   "volumeSetsThisWeek": "{sets} gewichtete Sätze diese Woche",
   "volumeSetsPerWeek": "{sets} Sätze/Woche in den letzten 4 Wochen",
+  "shareStreakDays": "{days}-Tage-Serie",
   "statusProgressTitle": "Übungsfortschritt",
   "metricTopSet": "Top-Satz",
   "metricE1rm": "Gesch. 1RM",

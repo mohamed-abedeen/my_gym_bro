@@ -38,6 +38,7 @@ class HypeShareCard extends ConsumerWidget {
     final miniStats = [
       '${data.totalSets} ${l10n.sets}',
       formatShareDuration(data.durationSeconds),
+      if (data.streakDays > 0) l10n.shareStreakDays(data.streakDays),
       data.workoutName,
     ].join(' · ').toUpperCase();
 

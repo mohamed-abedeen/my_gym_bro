@@ -987,6 +987,11 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String shareStreakDays(int days) {
+    return '$days-day streak';
+  }
+
+  @override
   String get statusProgressTitle => 'Exercise Progress';
 
   @override
