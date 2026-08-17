@@ -231,7 +231,10 @@ class _LeaderboardCard extends ConsumerWidget {
     final bros = [
       for (final e
           in ref
-                  .watch(leaderboardProvider(LeaderboardScope.global))
+                  .watch(leaderboardProvider((
+                    scope: LeaderboardScope.global,
+                    board: LeaderboardBoard.weekly,
+                  )))
                   .valueOrNull ??
               const <LeaderboardEntry>[])
         if (!e.isMe) e,

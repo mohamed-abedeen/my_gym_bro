@@ -72,6 +72,20 @@ rank         = row_number() over (order by composite desc)
 - Write results to `leaderboard_scores` with `global_rank`; client reads top-N + own row for the **Global** scope.
 
 ### 3.1b `finalize-season` (scheduled, at each boundary)
+
+> ✅ **Shipped in 015** (2026-08-17, not deployed): `finalize_season(board)`
+> SQL fn on pg_cron (Wed 00:02 / the 3rd 00:02 UTC — 48 h after the boundary
+> so 014's late-sync receipt window is fully honored) writes the FULL final
+> standings of the closed window into `season_results` (idempotent on PK) —
+> one snapshot serves global top-N, own placement, the Friends winner (join
+> at read time), and Rivals pod winners; Phase 6 skins/achievements read it
+> too. Scoring is the shared `score_board_window(start, end)` fn (008/014
+> engine, window-parameterized) — needed because date_trunc has already
+> rolled the live table by the time the boundary cron fires; that also makes
+> "advance season_start" a no-op by construction. Top-3 pushes go via pg_net
+> → `send-push-notification` `{kind:'season_ended'}`, tone-resolved there.
+> Client banner reads the `leaderboard_last_winner(board, scope)` RPC.
+
 Runs at the weekly (Monday 00:00) and monthly (1st) reset.
 - For each scope (global / friends / rivals), snapshot the final standings of the ending season and write `season_winners` (at least the top placements; rivals = per-pod winners).
 - Fire tone-aware "season ended — you placed Nth / you won!" pushes.
@@ -105,6 +119,13 @@ order by ls.composite desc;
 ```
 
 ### 3.1a `assign-rivals` (scheduled, weekly)
+
+> ✅ **Shipped in 015**: `assign_rivals()` SQL fn on pg_cron (Mon 00:10 UTC),
+> pods of ~15 ordered by newcomer-status → experience → all-time composite →
+> 30-day volume; idempotent per period via UNIQUE (user_id, period_start).
+> `leaderboard_rivals()` REPLACED in place (same signature): ranks the
+> caller's latest pod, falling back to 008's rank-window for pod-less users.
+
 Builds the weekly rival pods.
 - Order active subscribers by all-time `composite`; refine the similarity key with `experience` level and recent 30-day volume so pods group users of comparable level and progress.
 - Slice the ordered/bucketed list into pods of ~10–20; newcomers (little/no data) form their own pods.

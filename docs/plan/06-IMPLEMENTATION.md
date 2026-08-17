@@ -150,14 +150,21 @@ The photo/text feed is cut (PRD §5.8). The client feed UI was deleted in Bros P
 
 **Goal:** a real Global leaderboard with all-time + rolling boards.
 
+> **Status (2026-08-17): built offline, not deployed.** Migration
+> `015_leaderboard_seasons.sql` (season_results snapshots, finalize_season +
+> assign_rivals crons, pod-backed leaderboard_rivals, leaderboard_last_winner
+> RPC, shared score_board_window engine), tone-resolved season push in
+> send-push-notification, Drift v19 caches, board switch + countdown +
+> winner banner + row-tap in the client. Deploy checklist in SETUP-STATUS.
+
 ### Deliverables
-- [ ] Supabase `leaderboard_scores` + indexes.
-- [ ] `compute-leaderboard` scheduled function implementing the **composite = avg(streak_norm, volume_norm, points_norm)** contract (percentile normalization) for `all_time` / `weekly` / `monthly` **seasons** (since `season_start`, not rolling) — see `04-BACKEND.md`.
-- [ ] **Seasons:** `finalize-season` job at weekly (Mon) + monthly (1st) boundaries → write `season_winners`, "season ended" push, advance `season_start`; fixed TZ (UTC). Feed winners to achievements/earned skins.
-- [ ] **Friends scope:** `leaderboard_friends(board)` RPC ranking the viewer's mutual-follow friends by composite (depends on Phase 2 `friends` view).
-- [ ] **Rivals scope:** `rival_pods` / `rival_pod_members` + `assign-rivals` weekly matching (similar composite + experience + recent volume); `leaderboard_rivals(board)` RPC ranks the caller's pod. Weekly pod reset aligns with the weekly season.
-- [ ] Client: replace mock rows with a Riverpod provider reading top-N + own rank; **scope switch (Global / Friends / Rivals)** + board switch (All-time / Weekly / Monthly); **reset countdown** + last-winner banner; offline cache (`LeaderboardCache`, all scopes).
-- [ ] Row tap → public profile.
+- [x] Supabase `leaderboard_scores` + indexes *(008)*.
+- [x] `compute-leaderboard` scheduled function implementing the **composite = avg(streak_norm, volume_norm, points_norm)** contract (percentile normalization) for `all_time` / `weekly` / `monthly` **seasons** *(008 + 014 points + 015 shared engine; season windows are date_trunc-derived, so no stored season_start)*.
+- [x] **Seasons:** `finalize_season` at weekly (Mon) + monthly (1st) UTC boundaries → full `season_results` snapshot, "season ended" push (top 3, tone-resolved); winners feed achievements/earned skins via `season_results` (Phase 6).
+- [x] **Friends scope:** `leaderboard_friends(board)` RPC *(008)*.
+- [x] **Rivals scope:** `rival_pods` / `rival_pod_members` + `assign_rivals` weekly matching; `leaderboard_rivals(board)` ranks the caller's pod (rank-window fallback for pod-less users). Weekly pod reset aligns with the weekly season.
+- [x] Client: scope switch (was built with 008) + board switch (All-time / Weekly / Monthly); reset countdown + last-winner banner; offline cache (`LeaderboardCache` + `SeasonWinnerCache`, all scopes×boards).
+- [x] Row tap → public profile (self → profile screen; others resolve @username → bro screen).
 
 ### Phase 5 Checklist
 - [ ] Scores recompute on schedule; global ranks correct and stable.

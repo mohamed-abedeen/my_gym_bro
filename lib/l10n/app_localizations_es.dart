@@ -2224,4 +2224,23 @@ class AppLocalizationsEs extends AppLocalizations {
   @override
   String get tplDailySets20Desc =>
       'Completa 20 series efectivas hoy (el calentamiento no cuenta).';
+
+  @override
+  String get boardWeekly => 'Semanal';
+
+  @override
+  String get boardMonthly => 'Mensual';
+
+  @override
+  String get boardAllTime => 'Histórico';
+
+  @override
+  String resetsIn(Object time) {
+    return 'Se reinicia en $time';
+  }
+
+  @override
+  String lastWinnerLabel(Object name) {
+    return 'Último ganador: $name';
+  }
 }

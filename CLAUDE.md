@@ -72,7 +72,7 @@ Real Apple Liquid Glass via `cupertino_native_better` (`CNTabBar`), **iOS only**
 ---
 
 ## 🗄️ Drift migrations must stay idempotent
-`lib/core/database/app_database.dart` is at **schemaVersion 18** (v17 = Bros friendships, v18 = challenge caches). Columns are declared in the table definitions, so a fresh `createAll()` already adds them — which means raw `ALTER TABLE … ADD COLUMN` in `onUpgrade` can crash with "duplicate column" on version-inconsistent DBs.
+`lib/core/database/app_database.dart` is at **schemaVersion 19** (v17 = Bros friendships, v18 = challenge caches, v19 = leaderboard caches). Columns are declared in the table definitions, so a fresh `createAll()` already adds them — which means raw `ALTER TABLE … ADD COLUMN` in `onUpgrade` can crash with "duplicate column" on version-inconsistent DBs.
 
 - **Every `ADD COLUMN` migration must go through `_addColumnIfMissing(table, column, definition)`.**
 - **Guard `createTable(...)` with `_hasTable(name)`.**

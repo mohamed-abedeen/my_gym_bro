@@ -956,5 +956,10 @@
   "tplDailySets12Title": "12 Working Sets",
   "tplDailySets12Desc": "Complete 12 working sets today (warm-ups don't count).",
   "tplDailySets20Title": "20 Working Sets",
-  "tplDailySets20Desc": "Complete 20 working sets today (warm-ups don't count)."
+  "tplDailySets20Desc": "Complete 20 working sets today (warm-ups don't count).",
+  "boardWeekly": "Weekly",
+  "boardMonthly": "Monthly",
+  "boardAllTime": "All-time",
+  "resetsIn": "Resets in {time}",
+  "lastWinnerLabel": "Last winner: {name}"
 }

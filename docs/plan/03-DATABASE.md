@@ -192,6 +192,14 @@ skin_ownership (
 > Anti-cheat: volume is recomputed server-side from `sets` with per-set
 > plausibility caps (≤500 kg, ≤60 reps, ≤6000 kg·reps) — the client-reported
 > session total is never trusted.
+>
+> **015 update (2026-08-17):** seasons + pods shipped. `season_results`
+> stores the FULL final standings per (board, season_start, user) at each
+> UTC boundary (finalize_season cron); `rival_pods`/`rival_pod_members` +
+> `assign_rivals` replace the read-time Rivals deviation (rank-window kept
+> as fallback for pod-less users); `leaderboard_last_winner(board, scope)`
+> serves the banner. Scoring lives in the shared `score_board_window()` fn.
+> Client caches: Drift v19 `leaderboard_cache` + `season_winner_cache`.
 
 Leaderboard is **derived**, not a hand-edited table. Recommended:
 ```

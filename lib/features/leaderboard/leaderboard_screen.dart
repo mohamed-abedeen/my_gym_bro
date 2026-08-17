@@ -1,11 +1,16 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
+import 'package:my_gym_bro/core/router/app_router.dart';
 import 'package:my_gym_bro/features/leaderboard/challenges_tab.dart';
 import 'package:my_gym_bro/features/leaderboard/leaderboard_providers.dart';
 import 'package:my_gym_bro/features/leaderboard/rank.dart';
 import 'package:my_gym_bro/features/social/bros_sheet.dart';
 import 'package:my_gym_bro/features/social/friend_providers.dart';
+import 'package:my_gym_bro/features/social/public_profile.dart';
 import 'package:my_gym_bro/l10n/app_localizations.dart';
 import 'package:my_gym_bro/shared/constants.dart';
 import 'package:my_gym_bro/shared/responsive.dart';
@@ -293,7 +298,8 @@ class _LeaderboardTab extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final colors = AppColors.of(context);
-    final entries = ref.watch(leaderboardProvider(scope));
+    final board = ref.watch(leaderboardBoardProvider);
+    final entries = ref.watch(leaderboardProvider((scope: scope, board: board)));
 
     LeaderboardEntry? me;
     for (final e in entries.valueOrNull ?? const <LeaderboardEntry>[]) {
@@ -309,7 +315,10 @@ class _LeaderboardTab extends ConsumerWidget {
         _CurrentLeagueCard(me: me, l10n: l10n),
         SizedBox(height: 18.h),
         _ScopeSelector(scope: scope, onChange: onScope, l10n: l10n),
-        SizedBox(height: 18.h),
+        SizedBox(height: 10.h),
+        _BoardSelector(board: board, l10n: l10n),
+        _SeasonMetaRow(scope: scope, board: board, l10n: l10n),
+        SizedBox(height: 12.h),
         ...entries.when(
           data: (list) {
             if (list.isEmpty) {
@@ -343,7 +352,11 @@ class _LeaderboardTab extends ConsumerWidget {
             ];
             return [
               for (var i = 0; i < rows.length; i++) ...[
-                _LeaderboardRow(row: rows[i], l10n: l10n),
+                GestureDetector(
+                  behavior: HitTestBehavior.opaque,
+                  onTap: () => _openProfile(context, ref, list[i]),
+                  child: _LeaderboardRow(row: rows[i], l10n: l10n),
+                ),
                 if (i < rows.length - 1) SizedBox(height: 10.h),
               ],
             ];
@@ -822,3 +835,159 @@ class _AvatarMedal extends StatelessWidget {
 }
 
 // The Challenges tab lives in `challenges_tab.dart` (Phase 4).
+
+// ─────────────────────────────────────────────
+// B O A R D S   &   S E A S O N S  (Phase 5)
+// ─────────────────────────────────────────────
+
+/// Row tap → public profile. Self goes to the own-profile screen; others
+/// resolve their @username (online) and open the existing bro-profile screen,
+/// which already carries the add/block/report actions. Offline or
+/// username-less rows no-op — never block on the network with a spinner.
+Future<void> _openProfile(
+  BuildContext context,
+  WidgetRef ref,
+  LeaderboardEntry entry,
+) async {
+  if (entry.isMe) {
+    unawaited(context.push(AppRoutes.profile));
+    return;
+  }
+  final uid = entry.userId;
+  if (uid == null) return;
+  final PublicProfile? profile;
+  try {
+    profile = await ref.read(friendRepositoryProvider).fetchPublicProfile(uid);
+  } on Exception {
+    return; // offline / transient — tap is a silent no-op
+  }
+  final username = profile?.username;
+  if (username == null || username.isEmpty || !context.mounted) return;
+  unawaited(context.push('/bro/$username'));
+}
+
+/// All-time / Weekly / Monthly pills — same chrome as the top-bar pills.
+class _BoardSelector extends ConsumerWidget {
+  const _BoardSelector({required this.board, required this.l10n});
+
+  final LeaderboardBoard board;
+  final AppLocalizations l10n;
+
+  String _label(LeaderboardBoard b) => switch (b) {
+        LeaderboardBoard.weekly => l10n.boardWeekly,
+        LeaderboardBoard.monthly => l10n.boardMonthly,
+        LeaderboardBoard.allTime => l10n.boardAllTime,
+      };
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        for (final b in LeaderboardBoard.values) ...[
+          _TopPill(
+            label: _label(b),
+            active: board == b,
+            onTap: () =>
+                ref.read(leaderboardBoardProvider.notifier).state = b,
+          ),
+          if (b != LeaderboardBoard.values.last) SizedBox(width: 4.w),
+        ],
+      ],
+    );
+  }
+}
+
+/// Reset countdown + last-season winner, under the board pills. All-time has
+/// neither (it never resets); the winner line appears once a season has
+/// finalized (needs the deployed backend — hidden until data exists).
+/// Rebuilds every minute so the countdown stays live across a boundary.
+class _SeasonMetaRow extends ConsumerStatefulWidget {
+  const _SeasonMetaRow({
+    required this.scope,
+    required this.board,
+    required this.l10n,
+  });
+
+  final LeaderboardScope scope;
+  final LeaderboardBoard board;
+  final AppLocalizations l10n;
+
+  @override
+  ConsumerState<_SeasonMetaRow> createState() => _SeasonMetaRowState();
+}
+
+class _SeasonMetaRowState extends ConsumerState<_SeasonMetaRow> {
+  Timer? _ticker;
+
+  @override
+  void initState() {
+    super.initState();
+    _ticker = Timer.periodic(const Duration(minutes: 1), (_) {
+      if (mounted) setState(() {});
+    });
+  }
+
+  @override
+  void dispose() {
+    _ticker?.cancel();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final scope = widget.scope;
+    final board = widget.board;
+    final l10n = widget.l10n;
+    final colors = AppColors.of(context);
+    final next = nextResetUtc(board);
+    if (next == null) return const SizedBox.shrink();
+
+    final remaining = next.difference(DateTime.now().toUtc());
+    // Ceil both units: Monday 00:01 reads "7d", not a misleading "6d".
+    final time = remaining.inHours >= 48
+        ? l10n.durationShortDays('${(remaining.inHours + 23) ~/ 24}')
+        : l10n.durationShortHours(
+            '${((remaining.inMinutes + 59) ~/ 60).clamp(1, 48)}');
+    final winner =
+        ref.watch(lastWinnerProvider((scope: scope, board: board))).valueOrNull;
+
+    return Padding(
+      padding: EdgeInsets.only(top: 8.h),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(Icons.timer_outlined,
+              color: colors.textSecondary, size: 13.sp),
+          SizedBox(width: 4.w),
+          Text(
+            l10n.resetsIn(time),
+            style: TextStyle(
+              color: colors.textSecondary,
+              fontSize: 11.sp,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+          if (winner != null) ...[
+            SizedBox(width: 12.w),
+            Icon(Icons.emoji_events_outlined,
+                color: colors.accent, size: 13.sp),
+            SizedBox(width: 4.w),
+            Flexible(
+              child: Text(
+                l10n.lastWinnerLabel(winner.name),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(
+                  color: colors.textSecondary,
+                  fontSize: 11.sp,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+}

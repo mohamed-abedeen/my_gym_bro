@@ -9519,6 +9519,1160 @@ class ChallengeParticipantsCompanion
   }
 }
 
+class $LeaderboardCacheTable extends LeaderboardCache
+    with TableInfo<$LeaderboardCacheTable, LeaderboardCacheData> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $LeaderboardCacheTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _localIdMeta = const VerificationMeta(
+    'localId',
+  );
+  @override
+  late final GeneratedColumn<int> localId = GeneratedColumn<int>(
+    'local_id',
+    aliasedName,
+    false,
+    hasAutoIncrement: true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'PRIMARY KEY AUTOINCREMENT',
+    ),
+  );
+  static const VerificationMeta _scopeMeta = const VerificationMeta('scope');
+  @override
+  late final GeneratedColumn<String> scope = GeneratedColumn<String>(
+    'scope',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _boardMeta = const VerificationMeta('board');
+  @override
+  late final GeneratedColumn<String> board = GeneratedColumn<String>(
+    'board',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _rankMeta = const VerificationMeta('rank');
+  @override
+  late final GeneratedColumn<int> rank = GeneratedColumn<int>(
+    'rank',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _userIdMeta = const VerificationMeta('userId');
+  @override
+  late final GeneratedColumn<String> userId = GeneratedColumn<String>(
+    'user_id',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _nameMeta = const VerificationMeta('name');
+  @override
+  late final GeneratedColumn<String> name = GeneratedColumn<String>(
+    'name',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _avatarUrlMeta = const VerificationMeta(
+    'avatarUrl',
+  );
+  @override
+  late final GeneratedColumn<String> avatarUrl = GeneratedColumn<String>(
+    'avatar_url',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _volumeMeta = const VerificationMeta('volume');
+  @override
+  late final GeneratedColumn<double> volume = GeneratedColumn<double>(
+    'volume',
+    aliasedName,
+    false,
+    type: DriftSqlType.double,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(0),
+  );
+  static const VerificationMeta _compositeMeta = const VerificationMeta(
+    'composite',
+  );
+  @override
+  late final GeneratedColumn<double> composite = GeneratedColumn<double>(
+    'composite',
+    aliasedName,
+    false,
+    type: DriftSqlType.double,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(0),
+  );
+  static const VerificationMeta _isMeMeta = const VerificationMeta('isMe');
+  @override
+  late final GeneratedColumn<bool> isMe = GeneratedColumn<bool>(
+    'is_me',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("is_me" IN (0, 1))',
+    ),
+    defaultValue: const Constant(false),
+  );
+  static const VerificationMeta _fetchedAtMeta = const VerificationMeta(
+    'fetchedAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> fetchedAt = GeneratedColumn<DateTime>(
+    'fetched_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: true,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    localId,
+    scope,
+    board,
+    rank,
+    userId,
+    name,
+    avatarUrl,
+    volume,
+    composite,
+    isMe,
+    fetchedAt,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'leaderboard_cache';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<LeaderboardCacheData> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('local_id')) {
+      context.handle(
+        _localIdMeta,
+        localId.isAcceptableOrUnknown(data['local_id']!, _localIdMeta),
+      );
+    }
+    if (data.containsKey('scope')) {
+      context.handle(
+        _scopeMeta,
+        scope.isAcceptableOrUnknown(data['scope']!, _scopeMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_scopeMeta);
+    }
+    if (data.containsKey('board')) {
+      context.handle(
+        _boardMeta,
+        board.isAcceptableOrUnknown(data['board']!, _boardMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_boardMeta);
+    }
+    if (data.containsKey('rank')) {
+      context.handle(
+        _rankMeta,
+        rank.isAcceptableOrUnknown(data['rank']!, _rankMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_rankMeta);
+    }
+    if (data.containsKey('user_id')) {
+      context.handle(
+        _userIdMeta,
+        userId.isAcceptableOrUnknown(data['user_id']!, _userIdMeta),
+      );
+    }
+    if (data.containsKey('name')) {
+      context.handle(
+        _nameMeta,
+        name.isAcceptableOrUnknown(data['name']!, _nameMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_nameMeta);
+    }
+    if (data.containsKey('avatar_url')) {
+      context.handle(
+        _avatarUrlMeta,
+        avatarUrl.isAcceptableOrUnknown(data['avatar_url']!, _avatarUrlMeta),
+      );
+    }
+    if (data.containsKey('volume')) {
+      context.handle(
+        _volumeMeta,
+        volume.isAcceptableOrUnknown(data['volume']!, _volumeMeta),
+      );
+    }
+    if (data.containsKey('composite')) {
+      context.handle(
+        _compositeMeta,
+        composite.isAcceptableOrUnknown(data['composite']!, _compositeMeta),
+      );
+    }
+    if (data.containsKey('is_me')) {
+      context.handle(
+        _isMeMeta,
+        isMe.isAcceptableOrUnknown(data['is_me']!, _isMeMeta),
+      );
+    }
+    if (data.containsKey('fetched_at')) {
+      context.handle(
+        _fetchedAtMeta,
+        fetchedAt.isAcceptableOrUnknown(data['fetched_at']!, _fetchedAtMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_fetchedAtMeta);
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {localId};
+  @override
+  LeaderboardCacheData map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return LeaderboardCacheData(
+      localId: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}local_id'],
+      )!,
+      scope: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}scope'],
+      )!,
+      board: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}board'],
+      )!,
+      rank: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}rank'],
+      )!,
+      userId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}user_id'],
+      ),
+      name: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}name'],
+      )!,
+      avatarUrl: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}avatar_url'],
+      ),
+      volume: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}volume'],
+      )!,
+      composite: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}composite'],
+      )!,
+      isMe: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}is_me'],
+      )!,
+      fetchedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}fetched_at'],
+      )!,
+    );
+  }
+
+  @override
+  $LeaderboardCacheTable createAlias(String alias) {
+    return $LeaderboardCacheTable(attachedDatabase, alias);
+  }
+}
+
+class LeaderboardCacheData extends DataClass
+    implements Insertable<LeaderboardCacheData> {
+  final int localId;
+
+  /// 'rivals' | 'global' | 'friends'
+  final String scope;
+
+  /// 'weekly' | 'monthly' | 'all_time'
+  final String board;
+  final int rank;
+  final String? userId;
+  final String name;
+  final String? avatarUrl;
+  final double volume;
+  final double composite;
+  final bool isMe;
+  final DateTime fetchedAt;
+  const LeaderboardCacheData({
+    required this.localId,
+    required this.scope,
+    required this.board,
+    required this.rank,
+    this.userId,
+    required this.name,
+    this.avatarUrl,
+    required this.volume,
+    required this.composite,
+    required this.isMe,
+    required this.fetchedAt,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['local_id'] = Variable<int>(localId);
+    map['scope'] = Variable<String>(scope);
+    map['board'] = Variable<String>(board);
+    map['rank'] = Variable<int>(rank);
+    if (!nullToAbsent || userId != null) {
+      map['user_id'] = Variable<String>(userId);
+    }
+    map['name'] = Variable<String>(name);
+    if (!nullToAbsent || avatarUrl != null) {
+      map['avatar_url'] = Variable<String>(avatarUrl);
+    }
+    map['volume'] = Variable<double>(volume);
+    map['composite'] = Variable<double>(composite);
+    map['is_me'] = Variable<bool>(isMe);
+    map['fetched_at'] = Variable<DateTime>(fetchedAt);
+    return map;
+  }
+
+  LeaderboardCacheCompanion toCompanion(bool nullToAbsent) {
+    return LeaderboardCacheCompanion(
+      localId: Value(localId),
+      scope: Value(scope),
+      board: Value(board),
+      rank: Value(rank),
+      userId: userId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(userId),
+      name: Value(name),
+      avatarUrl: avatarUrl == null && nullToAbsent
+          ? const Value.absent()
+          : Value(avatarUrl),
+      volume: Value(volume),
+      composite: Value(composite),
+      isMe: Value(isMe),
+      fetchedAt: Value(fetchedAt),
+    );
+  }
+
+  factory LeaderboardCacheData.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return LeaderboardCacheData(
+      localId: serializer.fromJson<int>(json['localId']),
+      scope: serializer.fromJson<String>(json['scope']),
+      board: serializer.fromJson<String>(json['board']),
+      rank: serializer.fromJson<int>(json['rank']),
+      userId: serializer.fromJson<String?>(json['userId']),
+      name: serializer.fromJson<String>(json['name']),
+      avatarUrl: serializer.fromJson<String?>(json['avatarUrl']),
+      volume: serializer.fromJson<double>(json['volume']),
+      composite: serializer.fromJson<double>(json['composite']),
+      isMe: serializer.fromJson<bool>(json['isMe']),
+      fetchedAt: serializer.fromJson<DateTime>(json['fetchedAt']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'localId': serializer.toJson<int>(localId),
+      'scope': serializer.toJson<String>(scope),
+      'board': serializer.toJson<String>(board),
+      'rank': serializer.toJson<int>(rank),
+      'userId': serializer.toJson<String?>(userId),
+      'name': serializer.toJson<String>(name),
+      'avatarUrl': serializer.toJson<String?>(avatarUrl),
+      'volume': serializer.toJson<double>(volume),
+      'composite': serializer.toJson<double>(composite),
+      'isMe': serializer.toJson<bool>(isMe),
+      'fetchedAt': serializer.toJson<DateTime>(fetchedAt),
+    };
+  }
+
+  LeaderboardCacheData copyWith({
+    int? localId,
+    String? scope,
+    String? board,
+    int? rank,
+    Value<String?> userId = const Value.absent(),
+    String? name,
+    Value<String?> avatarUrl = const Value.absent(),
+    double? volume,
+    double? composite,
+    bool? isMe,
+    DateTime? fetchedAt,
+  }) => LeaderboardCacheData(
+    localId: localId ?? this.localId,
+    scope: scope ?? this.scope,
+    board: board ?? this.board,
+    rank: rank ?? this.rank,
+    userId: userId.present ? userId.value : this.userId,
+    name: name ?? this.name,
+    avatarUrl: avatarUrl.present ? avatarUrl.value : this.avatarUrl,
+    volume: volume ?? this.volume,
+    composite: composite ?? this.composite,
+    isMe: isMe ?? this.isMe,
+    fetchedAt: fetchedAt ?? this.fetchedAt,
+  );
+  LeaderboardCacheData copyWithCompanion(LeaderboardCacheCompanion data) {
+    return LeaderboardCacheData(
+      localId: data.localId.present ? data.localId.value : this.localId,
+      scope: data.scope.present ? data.scope.value : this.scope,
+      board: data.board.present ? data.board.value : this.board,
+      rank: data.rank.present ? data.rank.value : this.rank,
+      userId: data.userId.present ? data.userId.value : this.userId,
+      name: data.name.present ? data.name.value : this.name,
+      avatarUrl: data.avatarUrl.present ? data.avatarUrl.value : this.avatarUrl,
+      volume: data.volume.present ? data.volume.value : this.volume,
+      composite: data.composite.present ? data.composite.value : this.composite,
+      isMe: data.isMe.present ? data.isMe.value : this.isMe,
+      fetchedAt: data.fetchedAt.present ? data.fetchedAt.value : this.fetchedAt,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('LeaderboardCacheData(')
+          ..write('localId: $localId, ')
+          ..write('scope: $scope, ')
+          ..write('board: $board, ')
+          ..write('rank: $rank, ')
+          ..write('userId: $userId, ')
+          ..write('name: $name, ')
+          ..write('avatarUrl: $avatarUrl, ')
+          ..write('volume: $volume, ')
+          ..write('composite: $composite, ')
+          ..write('isMe: $isMe, ')
+          ..write('fetchedAt: $fetchedAt')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(
+    localId,
+    scope,
+    board,
+    rank,
+    userId,
+    name,
+    avatarUrl,
+    volume,
+    composite,
+    isMe,
+    fetchedAt,
+  );
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is LeaderboardCacheData &&
+          other.localId == this.localId &&
+          other.scope == this.scope &&
+          other.board == this.board &&
+          other.rank == this.rank &&
+          other.userId == this.userId &&
+          other.name == this.name &&
+          other.avatarUrl == this.avatarUrl &&
+          other.volume == this.volume &&
+          other.composite == this.composite &&
+          other.isMe == this.isMe &&
+          other.fetchedAt == this.fetchedAt);
+}
+
+class LeaderboardCacheCompanion extends UpdateCompanion<LeaderboardCacheData> {
+  final Value<int> localId;
+  final Value<String> scope;
+  final Value<String> board;
+  final Value<int> rank;
+  final Value<String?> userId;
+  final Value<String> name;
+  final Value<String?> avatarUrl;
+  final Value<double> volume;
+  final Value<double> composite;
+  final Value<bool> isMe;
+  final Value<DateTime> fetchedAt;
+  const LeaderboardCacheCompanion({
+    this.localId = const Value.absent(),
+    this.scope = const Value.absent(),
+    this.board = const Value.absent(),
+    this.rank = const Value.absent(),
+    this.userId = const Value.absent(),
+    this.name = const Value.absent(),
+    this.avatarUrl = const Value.absent(),
+    this.volume = const Value.absent(),
+    this.composite = const Value.absent(),
+    this.isMe = const Value.absent(),
+    this.fetchedAt = const Value.absent(),
+  });
+  LeaderboardCacheCompanion.insert({
+    this.localId = const Value.absent(),
+    required String scope,
+    required String board,
+    required int rank,
+    this.userId = const Value.absent(),
+    required String name,
+    this.avatarUrl = const Value.absent(),
+    this.volume = const Value.absent(),
+    this.composite = const Value.absent(),
+    this.isMe = const Value.absent(),
+    required DateTime fetchedAt,
+  }) : scope = Value(scope),
+       board = Value(board),
+       rank = Value(rank),
+       name = Value(name),
+       fetchedAt = Value(fetchedAt);
+  static Insertable<LeaderboardCacheData> custom({
+    Expression<int>? localId,
+    Expression<String>? scope,
+    Expression<String>? board,
+    Expression<int>? rank,
+    Expression<String>? userId,
+    Expression<String>? name,
+    Expression<String>? avatarUrl,
+    Expression<double>? volume,
+    Expression<double>? composite,
+    Expression<bool>? isMe,
+    Expression<DateTime>? fetchedAt,
+  }) {
+    return RawValuesInsertable({
+      if (localId != null) 'local_id': localId,
+      if (scope != null) 'scope': scope,
+      if (board != null) 'board': board,
+      if (rank != null) 'rank': rank,
+      if (userId != null) 'user_id': userId,
+      if (name != null) 'name': name,
+      if (avatarUrl != null) 'avatar_url': avatarUrl,
+      if (volume != null) 'volume': volume,
+      if (composite != null) 'composite': composite,
+      if (isMe != null) 'is_me': isMe,
+      if (fetchedAt != null) 'fetched_at': fetchedAt,
+    });
+  }
+
+  LeaderboardCacheCompanion copyWith({
+    Value<int>? localId,
+    Value<String>? scope,
+    Value<String>? board,
+    Value<int>? rank,
+    Value<String?>? userId,
+    Value<String>? name,
+    Value<String?>? avatarUrl,
+    Value<double>? volume,
+    Value<double>? composite,
+    Value<bool>? isMe,
+    Value<DateTime>? fetchedAt,
+  }) {
+    return LeaderboardCacheCompanion(
+      localId: localId ?? this.localId,
+      scope: scope ?? this.scope,
+      board: board ?? this.board,
+      rank: rank ?? this.rank,
+      userId: userId ?? this.userId,
+      name: name ?? this.name,
+      avatarUrl: avatarUrl ?? this.avatarUrl,
+      volume: volume ?? this.volume,
+      composite: composite ?? this.composite,
+      isMe: isMe ?? this.isMe,
+      fetchedAt: fetchedAt ?? this.fetchedAt,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (localId.present) {
+      map['local_id'] = Variable<int>(localId.value);
+    }
+    if (scope.present) {
+      map['scope'] = Variable<String>(scope.value);
+    }
+    if (board.present) {
+      map['board'] = Variable<String>(board.value);
+    }
+    if (rank.present) {
+      map['rank'] = Variable<int>(rank.value);
+    }
+    if (userId.present) {
+      map['user_id'] = Variable<String>(userId.value);
+    }
+    if (name.present) {
+      map['name'] = Variable<String>(name.value);
+    }
+    if (avatarUrl.present) {
+      map['avatar_url'] = Variable<String>(avatarUrl.value);
+    }
+    if (volume.present) {
+      map['volume'] = Variable<double>(volume.value);
+    }
+    if (composite.present) {
+      map['composite'] = Variable<double>(composite.value);
+    }
+    if (isMe.present) {
+      map['is_me'] = Variable<bool>(isMe.value);
+    }
+    if (fetchedAt.present) {
+      map['fetched_at'] = Variable<DateTime>(fetchedAt.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('LeaderboardCacheCompanion(')
+          ..write('localId: $localId, ')
+          ..write('scope: $scope, ')
+          ..write('board: $board, ')
+          ..write('rank: $rank, ')
+          ..write('userId: $userId, ')
+          ..write('name: $name, ')
+          ..write('avatarUrl: $avatarUrl, ')
+          ..write('volume: $volume, ')
+          ..write('composite: $composite, ')
+          ..write('isMe: $isMe, ')
+          ..write('fetchedAt: $fetchedAt')
+          ..write(')'))
+        .toString();
+  }
+}
+
+class $SeasonWinnerCacheTable extends SeasonWinnerCache
+    with TableInfo<$SeasonWinnerCacheTable, SeasonWinnerCacheData> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $SeasonWinnerCacheTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _localIdMeta = const VerificationMeta(
+    'localId',
+  );
+  @override
+  late final GeneratedColumn<int> localId = GeneratedColumn<int>(
+    'local_id',
+    aliasedName,
+    false,
+    hasAutoIncrement: true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'PRIMARY KEY AUTOINCREMENT',
+    ),
+  );
+  static const VerificationMeta _scopeMeta = const VerificationMeta('scope');
+  @override
+  late final GeneratedColumn<String> scope = GeneratedColumn<String>(
+    'scope',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _boardMeta = const VerificationMeta('board');
+  @override
+  late final GeneratedColumn<String> board = GeneratedColumn<String>(
+    'board',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _userIdMeta = const VerificationMeta('userId');
+  @override
+  late final GeneratedColumn<String> userId = GeneratedColumn<String>(
+    'user_id',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _nameMeta = const VerificationMeta('name');
+  @override
+  late final GeneratedColumn<String> name = GeneratedColumn<String>(
+    'name',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _avatarUrlMeta = const VerificationMeta(
+    'avatarUrl',
+  );
+  @override
+  late final GeneratedColumn<String> avatarUrl = GeneratedColumn<String>(
+    'avatar_url',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _seasonStartMeta = const VerificationMeta(
+    'seasonStart',
+  );
+  @override
+  late final GeneratedColumn<DateTime> seasonStart = GeneratedColumn<DateTime>(
+    'season_start',
+    aliasedName,
+    true,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _fetchedAtMeta = const VerificationMeta(
+    'fetchedAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> fetchedAt = GeneratedColumn<DateTime>(
+    'fetched_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: true,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    localId,
+    scope,
+    board,
+    userId,
+    name,
+    avatarUrl,
+    seasonStart,
+    fetchedAt,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'season_winner_cache';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<SeasonWinnerCacheData> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('local_id')) {
+      context.handle(
+        _localIdMeta,
+        localId.isAcceptableOrUnknown(data['local_id']!, _localIdMeta),
+      );
+    }
+    if (data.containsKey('scope')) {
+      context.handle(
+        _scopeMeta,
+        scope.isAcceptableOrUnknown(data['scope']!, _scopeMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_scopeMeta);
+    }
+    if (data.containsKey('board')) {
+      context.handle(
+        _boardMeta,
+        board.isAcceptableOrUnknown(data['board']!, _boardMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_boardMeta);
+    }
+    if (data.containsKey('user_id')) {
+      context.handle(
+        _userIdMeta,
+        userId.isAcceptableOrUnknown(data['user_id']!, _userIdMeta),
+      );
+    }
+    if (data.containsKey('name')) {
+      context.handle(
+        _nameMeta,
+        name.isAcceptableOrUnknown(data['name']!, _nameMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_nameMeta);
+    }
+    if (data.containsKey('avatar_url')) {
+      context.handle(
+        _avatarUrlMeta,
+        avatarUrl.isAcceptableOrUnknown(data['avatar_url']!, _avatarUrlMeta),
+      );
+    }
+    if (data.containsKey('season_start')) {
+      context.handle(
+        _seasonStartMeta,
+        seasonStart.isAcceptableOrUnknown(
+          data['season_start']!,
+          _seasonStartMeta,
+        ),
+      );
+    }
+    if (data.containsKey('fetched_at')) {
+      context.handle(
+        _fetchedAtMeta,
+        fetchedAt.isAcceptableOrUnknown(data['fetched_at']!, _fetchedAtMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_fetchedAtMeta);
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {localId};
+  @override
+  List<Set<GeneratedColumn>> get uniqueKeys => [
+    {scope, board},
+  ];
+  @override
+  SeasonWinnerCacheData map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return SeasonWinnerCacheData(
+      localId: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}local_id'],
+      )!,
+      scope: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}scope'],
+      )!,
+      board: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}board'],
+      )!,
+      userId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}user_id'],
+      ),
+      name: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}name'],
+      )!,
+      avatarUrl: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}avatar_url'],
+      ),
+      seasonStart: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}season_start'],
+      ),
+      fetchedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}fetched_at'],
+      )!,
+    );
+  }
+
+  @override
+  $SeasonWinnerCacheTable createAlias(String alias) {
+    return $SeasonWinnerCacheTable(attachedDatabase, alias);
+  }
+}
+
+class SeasonWinnerCacheData extends DataClass
+    implements Insertable<SeasonWinnerCacheData> {
+  final int localId;
+  final String scope;
+  final String board;
+  final String? userId;
+  final String name;
+  final String? avatarUrl;
+  final DateTime? seasonStart;
+  final DateTime fetchedAt;
+  const SeasonWinnerCacheData({
+    required this.localId,
+    required this.scope,
+    required this.board,
+    this.userId,
+    required this.name,
+    this.avatarUrl,
+    this.seasonStart,
+    required this.fetchedAt,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['local_id'] = Variable<int>(localId);
+    map['scope'] = Variable<String>(scope);
+    map['board'] = Variable<String>(board);
+    if (!nullToAbsent || userId != null) {
+      map['user_id'] = Variable<String>(userId);
+    }
+    map['name'] = Variable<String>(name);
+    if (!nullToAbsent || avatarUrl != null) {
+      map['avatar_url'] = Variable<String>(avatarUrl);
+    }
+    if (!nullToAbsent || seasonStart != null) {
+      map['season_start'] = Variable<DateTime>(seasonStart);
+    }
+    map['fetched_at'] = Variable<DateTime>(fetchedAt);
+    return map;
+  }
+
+  SeasonWinnerCacheCompanion toCompanion(bool nullToAbsent) {
+    return SeasonWinnerCacheCompanion(
+      localId: Value(localId),
+      scope: Value(scope),
+      board: Value(board),
+      userId: userId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(userId),
+      name: Value(name),
+      avatarUrl: avatarUrl == null && nullToAbsent
+          ? const Value.absent()
+          : Value(avatarUrl),
+      seasonStart: seasonStart == null && nullToAbsent
+          ? const Value.absent()
+          : Value(seasonStart),
+      fetchedAt: Value(fetchedAt),
+    );
+  }
+
+  factory SeasonWinnerCacheData.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return SeasonWinnerCacheData(
+      localId: serializer.fromJson<int>(json['localId']),
+      scope: serializer.fromJson<String>(json['scope']),
+      board: serializer.fromJson<String>(json['board']),
+      userId: serializer.fromJson<String?>(json['userId']),
+      name: serializer.fromJson<String>(json['name']),
+      avatarUrl: serializer.fromJson<String?>(json['avatarUrl']),
+      seasonStart: serializer.fromJson<DateTime?>(json['seasonStart']),
+      fetchedAt: serializer.fromJson<DateTime>(json['fetchedAt']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'localId': serializer.toJson<int>(localId),
+      'scope': serializer.toJson<String>(scope),
+      'board': serializer.toJson<String>(board),
+      'userId': serializer.toJson<String?>(userId),
+      'name': serializer.toJson<String>(name),
+      'avatarUrl': serializer.toJson<String?>(avatarUrl),
+      'seasonStart': serializer.toJson<DateTime?>(seasonStart),
+      'fetchedAt': serializer.toJson<DateTime>(fetchedAt),
+    };
+  }
+
+  SeasonWinnerCacheData copyWith({
+    int? localId,
+    String? scope,
+    String? board,
+    Value<String?> userId = const Value.absent(),
+    String? name,
+    Value<String?> avatarUrl = const Value.absent(),
+    Value<DateTime?> seasonStart = const Value.absent(),
+    DateTime? fetchedAt,
+  }) => SeasonWinnerCacheData(
+    localId: localId ?? this.localId,
+    scope: scope ?? this.scope,
+    board: board ?? this.board,
+    userId: userId.present ? userId.value : this.userId,
+    name: name ?? this.name,
+    avatarUrl: avatarUrl.present ? avatarUrl.value : this.avatarUrl,
+    seasonStart: seasonStart.present ? seasonStart.value : this.seasonStart,
+    fetchedAt: fetchedAt ?? this.fetchedAt,
+  );
+  SeasonWinnerCacheData copyWithCompanion(SeasonWinnerCacheCompanion data) {
+    return SeasonWinnerCacheData(
+      localId: data.localId.present ? data.localId.value : this.localId,
+      scope: data.scope.present ? data.scope.value : this.scope,
+      board: data.board.present ? data.board.value : this.board,
+      userId: data.userId.present ? data.userId.value : this.userId,
+      name: data.name.present ? data.name.value : this.name,
+      avatarUrl: data.avatarUrl.present ? data.avatarUrl.value : this.avatarUrl,
+      seasonStart: data.seasonStart.present
+          ? data.seasonStart.value
+          : this.seasonStart,
+      fetchedAt: data.fetchedAt.present ? data.fetchedAt.value : this.fetchedAt,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('SeasonWinnerCacheData(')
+          ..write('localId: $localId, ')
+          ..write('scope: $scope, ')
+          ..write('board: $board, ')
+          ..write('userId: $userId, ')
+          ..write('name: $name, ')
+          ..write('avatarUrl: $avatarUrl, ')
+          ..write('seasonStart: $seasonStart, ')
+          ..write('fetchedAt: $fetchedAt')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(
+    localId,
+    scope,
+    board,
+    userId,
+    name,
+    avatarUrl,
+    seasonStart,
+    fetchedAt,
+  );
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is SeasonWinnerCacheData &&
+          other.localId == this.localId &&
+          other.scope == this.scope &&
+          other.board == this.board &&
+          other.userId == this.userId &&
+          other.name == this.name &&
+          other.avatarUrl == this.avatarUrl &&
+          other.seasonStart == this.seasonStart &&
+          other.fetchedAt == this.fetchedAt);
+}
+
+class SeasonWinnerCacheCompanion
+    extends UpdateCompanion<SeasonWinnerCacheData> {
+  final Value<int> localId;
+  final Value<String> scope;
+  final Value<String> board;
+  final Value<String?> userId;
+  final Value<String> name;
+  final Value<String?> avatarUrl;
+  final Value<DateTime?> seasonStart;
+  final Value<DateTime> fetchedAt;
+  const SeasonWinnerCacheCompanion({
+    this.localId = const Value.absent(),
+    this.scope = const Value.absent(),
+    this.board = const Value.absent(),
+    this.userId = const Value.absent(),
+    this.name = const Value.absent(),
+    this.avatarUrl = const Value.absent(),
+    this.seasonStart = const Value.absent(),
+    this.fetchedAt = const Value.absent(),
+  });
+  SeasonWinnerCacheCompanion.insert({
+    this.localId = const Value.absent(),
+    required String scope,
+    required String board,
+    this.userId = const Value.absent(),
+    required String name,
+    this.avatarUrl = const Value.absent(),
+    this.seasonStart = const Value.absent(),
+    required DateTime fetchedAt,
+  }) : scope = Value(scope),
+       board = Value(board),
+       name = Value(name),
+       fetchedAt = Value(fetchedAt);
+  static Insertable<SeasonWinnerCacheData> custom({
+    Expression<int>? localId,
+    Expression<String>? scope,
+    Expression<String>? board,
+    Expression<String>? userId,
+    Expression<String>? name,
+    Expression<String>? avatarUrl,
+    Expression<DateTime>? seasonStart,
+    Expression<DateTime>? fetchedAt,
+  }) {
+    return RawValuesInsertable({
+      if (localId != null) 'local_id': localId,
+      if (scope != null) 'scope': scope,
+      if (board != null) 'board': board,
+      if (userId != null) 'user_id': userId,
+      if (name != null) 'name': name,
+      if (avatarUrl != null) 'avatar_url': avatarUrl,
+      if (seasonStart != null) 'season_start': seasonStart,
+      if (fetchedAt != null) 'fetched_at': fetchedAt,
+    });
+  }
+
+  SeasonWinnerCacheCompanion copyWith({
+    Value<int>? localId,
+    Value<String>? scope,
+    Value<String>? board,
+    Value<String?>? userId,
+    Value<String>? name,
+    Value<String?>? avatarUrl,
+    Value<DateTime?>? seasonStart,
+    Value<DateTime>? fetchedAt,
+  }) {
+    return SeasonWinnerCacheCompanion(
+      localId: localId ?? this.localId,
+      scope: scope ?? this.scope,
+      board: board ?? this.board,
+      userId: userId ?? this.userId,
+      name: name ?? this.name,
+      avatarUrl: avatarUrl ?? this.avatarUrl,
+      seasonStart: seasonStart ?? this.seasonStart,
+      fetchedAt: fetchedAt ?? this.fetchedAt,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (localId.present) {
+      map['local_id'] = Variable<int>(localId.value);
+    }
+    if (scope.present) {
+      map['scope'] = Variable<String>(scope.value);
+    }
+    if (board.present) {
+      map['board'] = Variable<String>(board.value);
+    }
+    if (userId.present) {
+      map['user_id'] = Variable<String>(userId.value);
+    }
+    if (name.present) {
+      map['name'] = Variable<String>(name.value);
+    }
+    if (avatarUrl.present) {
+      map['avatar_url'] = Variable<String>(avatarUrl.value);
+    }
+    if (seasonStart.present) {
+      map['season_start'] = Variable<DateTime>(seasonStart.value);
+    }
+    if (fetchedAt.present) {
+      map['fetched_at'] = Variable<DateTime>(fetchedAt.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('SeasonWinnerCacheCompanion(')
+          ..write('localId: $localId, ')
+          ..write('scope: $scope, ')
+          ..write('board: $board, ')
+          ..write('userId: $userId, ')
+          ..write('name: $name, ')
+          ..write('avatarUrl: $avatarUrl, ')
+          ..write('seasonStart: $seasonStart, ')
+          ..write('fetchedAt: $fetchedAt')
+          ..write(')'))
+        .toString();
+  }
+}
+
 abstract class _$AppDatabase extends GeneratedDatabase {
   _$AppDatabase(QueryExecutor e) : super(e);
   $AppDatabaseManager get managers => $AppDatabaseManager(this);
@@ -9538,6 +10692,11 @@ abstract class _$AppDatabase extends GeneratedDatabase {
   late final $ChallengesTable challenges = $ChallengesTable(this);
   late final $ChallengeParticipantsTable challengeParticipants =
       $ChallengeParticipantsTable(this);
+  late final $LeaderboardCacheTable leaderboardCache = $LeaderboardCacheTable(
+    this,
+  );
+  late final $SeasonWinnerCacheTable seasonWinnerCache =
+      $SeasonWinnerCacheTable(this);
   @override
   Iterable<TableInfo<Table, Object?>> get allTables =>
       allSchemaEntities.whereType<TableInfo<Table, Object?>>();
@@ -9555,6 +10714,8 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     friendships,
     challenges,
     challengeParticipants,
+    leaderboardCache,
+    seasonWinnerCache,
   ];
 }
 
@@ -15054,6 +16215,590 @@ typedef $$ChallengeParticipantsTableProcessedTableManager =
       ChallengeParticipant,
       PrefetchHooks Function()
     >;
+typedef $$LeaderboardCacheTableCreateCompanionBuilder =
+    LeaderboardCacheCompanion Function({
+      Value<int> localId,
+      required String scope,
+      required String board,
+      required int rank,
+      Value<String?> userId,
+      required String name,
+      Value<String?> avatarUrl,
+      Value<double> volume,
+      Value<double> composite,
+      Value<bool> isMe,
+      required DateTime fetchedAt,
+    });
+typedef $$LeaderboardCacheTableUpdateCompanionBuilder =
+    LeaderboardCacheCompanion Function({
+      Value<int> localId,
+      Value<String> scope,
+      Value<String> board,
+      Value<int> rank,
+      Value<String?> userId,
+      Value<String> name,
+      Value<String?> avatarUrl,
+      Value<double> volume,
+      Value<double> composite,
+      Value<bool> isMe,
+      Value<DateTime> fetchedAt,
+    });
+
+class $$LeaderboardCacheTableFilterComposer
+    extends Composer<_$AppDatabase, $LeaderboardCacheTable> {
+  $$LeaderboardCacheTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<int> get localId => $composableBuilder(
+    column: $table.localId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get scope => $composableBuilder(
+    column: $table.scope,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get board => $composableBuilder(
+    column: $table.board,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get rank => $composableBuilder(
+    column: $table.rank,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get userId => $composableBuilder(
+    column: $table.userId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get name => $composableBuilder(
+    column: $table.name,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get avatarUrl => $composableBuilder(
+    column: $table.avatarUrl,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get volume => $composableBuilder(
+    column: $table.volume,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get composite => $composableBuilder(
+    column: $table.composite,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get isMe => $composableBuilder(
+    column: $table.isMe,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get fetchedAt => $composableBuilder(
+    column: $table.fetchedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+}
+
+class $$LeaderboardCacheTableOrderingComposer
+    extends Composer<_$AppDatabase, $LeaderboardCacheTable> {
+  $$LeaderboardCacheTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<int> get localId => $composableBuilder(
+    column: $table.localId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get scope => $composableBuilder(
+    column: $table.scope,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get board => $composableBuilder(
+    column: $table.board,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get rank => $composableBuilder(
+    column: $table.rank,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get userId => $composableBuilder(
+    column: $table.userId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get name => $composableBuilder(
+    column: $table.name,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get avatarUrl => $composableBuilder(
+    column: $table.avatarUrl,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<double> get volume => $composableBuilder(
+    column: $table.volume,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<double> get composite => $composableBuilder(
+    column: $table.composite,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<bool> get isMe => $composableBuilder(
+    column: $table.isMe,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get fetchedAt => $composableBuilder(
+    column: $table.fetchedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+}
+
+class $$LeaderboardCacheTableAnnotationComposer
+    extends Composer<_$AppDatabase, $LeaderboardCacheTable> {
+  $$LeaderboardCacheTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<int> get localId =>
+      $composableBuilder(column: $table.localId, builder: (column) => column);
+
+  GeneratedColumn<String> get scope =>
+      $composableBuilder(column: $table.scope, builder: (column) => column);
+
+  GeneratedColumn<String> get board =>
+      $composableBuilder(column: $table.board, builder: (column) => column);
+
+  GeneratedColumn<int> get rank =>
+      $composableBuilder(column: $table.rank, builder: (column) => column);
+
+  GeneratedColumn<String> get userId =>
+      $composableBuilder(column: $table.userId, builder: (column) => column);
+
+  GeneratedColumn<String> get name =>
+      $composableBuilder(column: $table.name, builder: (column) => column);
+
+  GeneratedColumn<String> get avatarUrl =>
+      $composableBuilder(column: $table.avatarUrl, builder: (column) => column);
+
+  GeneratedColumn<double> get volume =>
+      $composableBuilder(column: $table.volume, builder: (column) => column);
+
+  GeneratedColumn<double> get composite =>
+      $composableBuilder(column: $table.composite, builder: (column) => column);
+
+  GeneratedColumn<bool> get isMe =>
+      $composableBuilder(column: $table.isMe, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get fetchedAt =>
+      $composableBuilder(column: $table.fetchedAt, builder: (column) => column);
+}
+
+class $$LeaderboardCacheTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $LeaderboardCacheTable,
+          LeaderboardCacheData,
+          $$LeaderboardCacheTableFilterComposer,
+          $$LeaderboardCacheTableOrderingComposer,
+          $$LeaderboardCacheTableAnnotationComposer,
+          $$LeaderboardCacheTableCreateCompanionBuilder,
+          $$LeaderboardCacheTableUpdateCompanionBuilder,
+          (
+            LeaderboardCacheData,
+            BaseReferences<
+              _$AppDatabase,
+              $LeaderboardCacheTable,
+              LeaderboardCacheData
+            >,
+          ),
+          LeaderboardCacheData,
+          PrefetchHooks Function()
+        > {
+  $$LeaderboardCacheTableTableManager(
+    _$AppDatabase db,
+    $LeaderboardCacheTable table,
+  ) : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$LeaderboardCacheTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$LeaderboardCacheTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$LeaderboardCacheTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<int> localId = const Value.absent(),
+                Value<String> scope = const Value.absent(),
+                Value<String> board = const Value.absent(),
+                Value<int> rank = const Value.absent(),
+                Value<String?> userId = const Value.absent(),
+                Value<String> name = const Value.absent(),
+                Value<String?> avatarUrl = const Value.absent(),
+                Value<double> volume = const Value.absent(),
+                Value<double> composite = const Value.absent(),
+                Value<bool> isMe = const Value.absent(),
+                Value<DateTime> fetchedAt = const Value.absent(),
+              }) => LeaderboardCacheCompanion(
+                localId: localId,
+                scope: scope,
+                board: board,
+                rank: rank,
+                userId: userId,
+                name: name,
+                avatarUrl: avatarUrl,
+                volume: volume,
+                composite: composite,
+                isMe: isMe,
+                fetchedAt: fetchedAt,
+              ),
+          createCompanionCallback:
+              ({
+                Value<int> localId = const Value.absent(),
+                required String scope,
+                required String board,
+                required int rank,
+                Value<String?> userId = const Value.absent(),
+                required String name,
+                Value<String?> avatarUrl = const Value.absent(),
+                Value<double> volume = const Value.absent(),
+                Value<double> composite = const Value.absent(),
+                Value<bool> isMe = const Value.absent(),
+                required DateTime fetchedAt,
+              }) => LeaderboardCacheCompanion.insert(
+                localId: localId,
+                scope: scope,
+                board: board,
+                rank: rank,
+                userId: userId,
+                name: name,
+                avatarUrl: avatarUrl,
+                volume: volume,
+                composite: composite,
+                isMe: isMe,
+                fetchedAt: fetchedAt,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
+              .toList(),
+          prefetchHooksCallback: null,
+        ),
+      );
+}
+
+typedef $$LeaderboardCacheTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $LeaderboardCacheTable,
+      LeaderboardCacheData,
+      $$LeaderboardCacheTableFilterComposer,
+      $$LeaderboardCacheTableOrderingComposer,
+      $$LeaderboardCacheTableAnnotationComposer,
+      $$LeaderboardCacheTableCreateCompanionBuilder,
+      $$LeaderboardCacheTableUpdateCompanionBuilder,
+      (
+        LeaderboardCacheData,
+        BaseReferences<
+          _$AppDatabase,
+          $LeaderboardCacheTable,
+          LeaderboardCacheData
+        >,
+      ),
+      LeaderboardCacheData,
+      PrefetchHooks Function()
+    >;
+typedef $$SeasonWinnerCacheTableCreateCompanionBuilder =
+    SeasonWinnerCacheCompanion Function({
+      Value<int> localId,
+      required String scope,
+      required String board,
+      Value<String?> userId,
+      required String name,
+      Value<String?> avatarUrl,
+      Value<DateTime?> seasonStart,
+      required DateTime fetchedAt,
+    });
+typedef $$SeasonWinnerCacheTableUpdateCompanionBuilder =
+    SeasonWinnerCacheCompanion Function({
+      Value<int> localId,
+      Value<String> scope,
+      Value<String> board,
+      Value<String?> userId,
+      Value<String> name,
+      Value<String?> avatarUrl,
+      Value<DateTime?> seasonStart,
+      Value<DateTime> fetchedAt,
+    });
+
+class $$SeasonWinnerCacheTableFilterComposer
+    extends Composer<_$AppDatabase, $SeasonWinnerCacheTable> {
+  $$SeasonWinnerCacheTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<int> get localId => $composableBuilder(
+    column: $table.localId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get scope => $composableBuilder(
+    column: $table.scope,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get board => $composableBuilder(
+    column: $table.board,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get userId => $composableBuilder(
+    column: $table.userId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get name => $composableBuilder(
+    column: $table.name,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get avatarUrl => $composableBuilder(
+    column: $table.avatarUrl,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get seasonStart => $composableBuilder(
+    column: $table.seasonStart,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get fetchedAt => $composableBuilder(
+    column: $table.fetchedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+}
+
+class $$SeasonWinnerCacheTableOrderingComposer
+    extends Composer<_$AppDatabase, $SeasonWinnerCacheTable> {
+  $$SeasonWinnerCacheTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<int> get localId => $composableBuilder(
+    column: $table.localId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get scope => $composableBuilder(
+    column: $table.scope,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get board => $composableBuilder(
+    column: $table.board,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get userId => $composableBuilder(
+    column: $table.userId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get name => $composableBuilder(
+    column: $table.name,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get avatarUrl => $composableBuilder(
+    column: $table.avatarUrl,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get seasonStart => $composableBuilder(
+    column: $table.seasonStart,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get fetchedAt => $composableBuilder(
+    column: $table.fetchedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+}
+
+class $$SeasonWinnerCacheTableAnnotationComposer
+    extends Composer<_$AppDatabase, $SeasonWinnerCacheTable> {
+  $$SeasonWinnerCacheTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<int> get localId =>
+      $composableBuilder(column: $table.localId, builder: (column) => column);
+
+  GeneratedColumn<String> get scope =>
+      $composableBuilder(column: $table.scope, builder: (column) => column);
+
+  GeneratedColumn<String> get board =>
+      $composableBuilder(column: $table.board, builder: (column) => column);
+
+  GeneratedColumn<String> get userId =>
+      $composableBuilder(column: $table.userId, builder: (column) => column);
+
+  GeneratedColumn<String> get name =>
+      $composableBuilder(column: $table.name, builder: (column) => column);
+
+  GeneratedColumn<String> get avatarUrl =>
+      $composableBuilder(column: $table.avatarUrl, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get seasonStart => $composableBuilder(
+    column: $table.seasonStart,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<DateTime> get fetchedAt =>
+      $composableBuilder(column: $table.fetchedAt, builder: (column) => column);
+}
+
+class $$SeasonWinnerCacheTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $SeasonWinnerCacheTable,
+          SeasonWinnerCacheData,
+          $$SeasonWinnerCacheTableFilterComposer,
+          $$SeasonWinnerCacheTableOrderingComposer,
+          $$SeasonWinnerCacheTableAnnotationComposer,
+          $$SeasonWinnerCacheTableCreateCompanionBuilder,
+          $$SeasonWinnerCacheTableUpdateCompanionBuilder,
+          (
+            SeasonWinnerCacheData,
+            BaseReferences<
+              _$AppDatabase,
+              $SeasonWinnerCacheTable,
+              SeasonWinnerCacheData
+            >,
+          ),
+          SeasonWinnerCacheData,
+          PrefetchHooks Function()
+        > {
+  $$SeasonWinnerCacheTableTableManager(
+    _$AppDatabase db,
+    $SeasonWinnerCacheTable table,
+  ) : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$SeasonWinnerCacheTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$SeasonWinnerCacheTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$SeasonWinnerCacheTableAnnotationComposer(
+                $db: db,
+                $table: table,
+              ),
+          updateCompanionCallback:
+              ({
+                Value<int> localId = const Value.absent(),
+                Value<String> scope = const Value.absent(),
+                Value<String> board = const Value.absent(),
+                Value<String?> userId = const Value.absent(),
+                Value<String> name = const Value.absent(),
+                Value<String?> avatarUrl = const Value.absent(),
+                Value<DateTime?> seasonStart = const Value.absent(),
+                Value<DateTime> fetchedAt = const Value.absent(),
+              }) => SeasonWinnerCacheCompanion(
+                localId: localId,
+                scope: scope,
+                board: board,
+                userId: userId,
+                name: name,
+                avatarUrl: avatarUrl,
+                seasonStart: seasonStart,
+                fetchedAt: fetchedAt,
+              ),
+          createCompanionCallback:
+              ({
+                Value<int> localId = const Value.absent(),
+                required String scope,
+                required String board,
+                Value<String?> userId = const Value.absent(),
+                required String name,
+                Value<String?> avatarUrl = const Value.absent(),
+                Value<DateTime?> seasonStart = const Value.absent(),
+                required DateTime fetchedAt,
+              }) => SeasonWinnerCacheCompanion.insert(
+                localId: localId,
+                scope: scope,
+                board: board,
+                userId: userId,
+                name: name,
+                avatarUrl: avatarUrl,
+                seasonStart: seasonStart,
+                fetchedAt: fetchedAt,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
+              .toList(),
+          prefetchHooksCallback: null,
+        ),
+      );
+}
+
+typedef $$SeasonWinnerCacheTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $SeasonWinnerCacheTable,
+      SeasonWinnerCacheData,
+      $$SeasonWinnerCacheTableFilterComposer,
+      $$SeasonWinnerCacheTableOrderingComposer,
+      $$SeasonWinnerCacheTableAnnotationComposer,
+      $$SeasonWinnerCacheTableCreateCompanionBuilder,
+      $$SeasonWinnerCacheTableUpdateCompanionBuilder,
+      (
+        SeasonWinnerCacheData,
+        BaseReferences<
+          _$AppDatabase,
+          $SeasonWinnerCacheTable,
+          SeasonWinnerCacheData
+        >,
+      ),
+      SeasonWinnerCacheData,
+      PrefetchHooks Function()
+    >;
 
 class $AppDatabaseManager {
   final _$AppDatabase _db;
@@ -15082,4 +16827,8 @@ class $AppDatabaseManager {
       $$ChallengesTableTableManager(_db, _db.challenges);
   $$ChallengeParticipantsTableTableManager get challengeParticipants =>
       $$ChallengeParticipantsTableTableManager(_db, _db.challengeParticipants);
+  $$LeaderboardCacheTableTableManager get leaderboardCache =>
+      $$LeaderboardCacheTableTableManager(_db, _db.leaderboardCache);
+  $$SeasonWinnerCacheTableTableManager get seasonWinnerCache =>
+      $$SeasonWinnerCacheTableTableManager(_db, _db.seasonWinnerCache);
 }

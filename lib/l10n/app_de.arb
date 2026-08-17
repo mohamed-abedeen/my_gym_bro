@@ -766,5 +766,10 @@
   "tplDailySets12Title": "12 Arbeitssätze",
   "tplDailySets12Desc": "Schaffe heute 12 Arbeitssätze (Aufwärmsätze zählen nicht).",
   "tplDailySets20Title": "20 Arbeitssätze",
-  "tplDailySets20Desc": "Schaffe heute 20 Arbeitssätze (Aufwärmsätze zählen nicht)."
+  "tplDailySets20Desc": "Schaffe heute 20 Arbeitssätze (Aufwärmsätze zählen nicht).",
+  "boardWeekly": "Woche",
+  "boardMonthly": "Monat",
+  "boardAllTime": "Gesamt",
+  "resetsIn": "Reset in {time}",
+  "lastWinnerLabel": "Letzter Sieg: {name}"
 }

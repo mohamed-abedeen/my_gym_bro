@@ -86,7 +86,7 @@ The cloud project serves auth + data for beta builds, but repo state has NOT bee
 pushed. As of the last check the following were pending — **verify with
 `supabase migration list` before relying on cloud state**:
 
-- `supabase db push` — repo migrations go up to `014_challenges.sql`
+- `supabase db push` — repo migrations go up to `015_leaderboard_seasons.sql`
   (012 = Bros Phase B friendships, 013 = feed/bucket drop + `delete_account_data`
   rewrite, 014 = Phase 4 challenges + leaderboard points wiring +
   another `delete_account_data` rewrite; authored 2026-08-15/16, **never run
@@ -106,6 +106,15 @@ pushed. As of the last check the following were pending — **verify with
   curated challenge immediately. Post-deploy check: curated card appears in
   the app, join → complete → `points_awarded` set by the trigger, hourly
   `compute-leaderboard` picks points up in the composite.
+- **Seasons (015) deploy notes:** schedules `finalize-season-weekly` (Wed
+  00:02 UTC), `finalize-season-monthly` (3rd 00:02) — 48 h after each
+  boundary so offline late-syncs still count — plus `assign-rivals-weekly`
+  (Mon 00:10), and runs `assign_rivals()` once at deploy so pods exist
+  immediately. Season pushes go through `send-push-notification`
+  (`kind: season_ended`, tone-resolved) — same Vault secrets as 010.
+  Post-deploy check: rivals scope shows a pod; after the first Monday,
+  `season_results` has rows, the winner banner renders, and top-3 got the
+  push.
 - **Bros invite deep link** — `https://mygymbro.app/bro/<username>` is generated/QR-encoded
   by the client and the in-app `/bro/:username` route exists, but the universal-link
   platform config (Apple AASA, Android assetlinks, and the web fallback page with the App

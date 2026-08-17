@@ -92,8 +92,8 @@ void main() {
 
   tearDown(() => tmp.delete(recursive: true));
 
-  test('upgrade from v11 reaches v18 with columns, social tables and '
-      'catalogue wipe keeping referenced rows', () async {
+  test('upgrade from v11 reaches the current version with columns, social '
+      'tables and catalogue wipe keeping referenced rows', () async {
     final file = File('${tmp.path}${Platform.pathSeparator}old.db');
 
     // ── Build the old (v11) database by hand ──
@@ -132,7 +132,7 @@ void main() {
 
     // Migration completed and stamped the current version.
     final version = await query('PRAGMA user_version');
-    expect(version.single.read<int>('user_version'), 18);
+    expect(version.single.read<int>('user_version'), 19);
 
     // v12/v17 _addColumnIfMissing columns were added to user_profiles.
     final profileCols = (await query('PRAGMA table_info(user_profiles)'))
@@ -206,7 +206,7 @@ void main() {
     Future<List<QueryRow>> query(String sql) => db.customSelect(sql).get();
 
     final version = await query('PRAGMA user_version');
-    expect(version.single.read<int>('user_version'), 18);
+    expect(version.single.read<int>('user_version'), 19);
 
     final tables = (await query(
       "SELECT name FROM sqlite_master WHERE type = 'table'",
@@ -241,7 +241,7 @@ void main() {
     final db = AppDatabase(NativeDatabase(file));
     addTearDown(db.close);
     final version = await db.customSelect('PRAGMA user_version').get();
-    expect(version.single.read<int>('user_version'), 18);
+    expect(version.single.read<int>('user_version'), 19);
   });
 
   test('fresh createAll builds every table', () async {
@@ -252,6 +252,6 @@ void main() {
     for (final table in db.allTables) {
       await db.select(table).get();
     }
-    expect(db.allTables.length, 12);
+    expect(db.allTables.length, 14);
   });
 }

@@ -2214,4 +2214,23 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get tplDailySets20Desc =>
       'Complete 20 working sets today (warm-ups don\'t count).';
+
+  @override
+  String get boardWeekly => 'Weekly';
+
+  @override
+  String get boardMonthly => 'Monthly';
+
+  @override
+  String get boardAllTime => 'All-time';
+
+  @override
+  String resetsIn(Object time) {
+    return 'Resets in $time';
+  }
+
+  @override
+  String lastWinnerLabel(Object name) {
+    return 'Last winner: $name';
+  }
 }

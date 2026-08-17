@@ -766,5 +766,10 @@
   "tplDailySets12Title": "12 séries effectives",
   "tplDailySets12Desc": "Termine 12 séries effectives aujourd'hui (l'échauffement ne compte pas).",
   "tplDailySets20Title": "20 séries effectives",
-  "tplDailySets20Desc": "Termine 20 séries effectives aujourd'hui (l'échauffement ne compte pas)."
+  "tplDailySets20Desc": "Termine 20 séries effectives aujourd'hui (l'échauffement ne compte pas).",
+  "boardWeekly": "Hebdo",
+  "boardMonthly": "Mensuel",
+  "boardAllTime": "Historique",
+  "resetsIn": "Réinitialisation dans {time}",
+  "lastWinnerLabel": "Dernier vainqueur : {name}"
 }

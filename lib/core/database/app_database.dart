@@ -299,6 +299,45 @@ class ChallengeParticipants extends Table {
       ];
 }
 
+/// Offline cache of leaderboard rows, one snapshot per (scope, board).
+/// Read-only mirror of the `leaderboard_*` RPC results — no sync queue; a
+/// fresh fetch replaces the (scope, board) slice wholesale.
+class LeaderboardCache extends Table {
+  IntColumn get localId => integer().autoIncrement()();
+
+  /// 'rivals' | 'global' | 'friends'
+  TextColumn get scope => text()();
+
+  /// 'weekly' | 'monthly' | 'all_time'
+  TextColumn get board => text()();
+  IntColumn get rank => integer()();
+  TextColumn get userId => text().nullable()();
+  TextColumn get name => text()();
+  TextColumn get avatarUrl => text().nullable()();
+  RealColumn get volume => real().withDefault(const Constant(0))();
+  RealColumn get composite => real().withDefault(const Constant(0))();
+  BoolColumn get isMe => boolean().withDefault(const Constant(false))();
+  DateTimeColumn get fetchedAt => dateTime()();
+}
+
+/// Offline cache of the last season winner per (scope, board) — feeds the
+/// winner banner. One row per (scope, board), replaced on refresh.
+class SeasonWinnerCache extends Table {
+  IntColumn get localId => integer().autoIncrement()();
+  TextColumn get scope => text()();
+  TextColumn get board => text()();
+  TextColumn get userId => text().nullable()();
+  TextColumn get name => text()();
+  TextColumn get avatarUrl => text().nullable()();
+  DateTimeColumn get seasonStart => dateTime().nullable()();
+  DateTimeColumn get fetchedAt => dateTime()();
+
+  @override
+  List<Set<Column>> get uniqueKeys => [
+        {scope, board},
+      ];
+}
+
 // ─────────────────────────────────────────────
 // D A T A B A S E
 // ─────────────────────────────────────────────
@@ -317,6 +356,8 @@ class ChallengeParticipants extends Table {
     Friendships,
     Challenges,
     ChallengeParticipants,
+    LeaderboardCache,
+    SeasonWinnerCache,
   ],
 )
 class AppDatabase extends _$AppDatabase {
@@ -329,7 +370,7 @@ class AppDatabase extends _$AppDatabase {
   }
 
   @override
-  int get schemaVersion => 18;
+  int get schemaVersion => 19;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -445,6 +486,17 @@ class AppDatabase extends _$AppDatabase {
         }
         if (!await _hasTable('challenge_participants')) {
           await m.createTable(challengeParticipants);
+        }
+      }
+      if (from < 19) {
+        // Phase 5 — leaderboard offline caches (PRD §5.11): ranked rows per
+        // scope×board plus the last season winner, so the Bros tab's
+        // leaderboard renders offline instead of an empty state.
+        if (!await _hasTable('leaderboard_cache')) {
+          await m.createTable(leaderboardCache);
+        }
+        if (!await _hasTable('season_winner_cache')) {
+          await m.createTable(seasonWinnerCache);
         }
       }
     },

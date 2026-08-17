@@ -4097,6 +4097,36 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Complete 20 working sets today (warm-ups don\'t count).'**
   String get tplDailySets20Desc;
+
+  /// No description provided for @boardWeekly.
+  ///
+  /// In en, this message translates to:
+  /// **'Weekly'**
+  String get boardWeekly;
+
+  /// No description provided for @boardMonthly.
+  ///
+  /// In en, this message translates to:
+  /// **'Monthly'**
+  String get boardMonthly;
+
+  /// No description provided for @boardAllTime.
+  ///
+  /// In en, this message translates to:
+  /// **'All-time'**
+  String get boardAllTime;
+
+  /// No description provided for @resetsIn.
+  ///
+  /// In en, this message translates to:
+  /// **'Resets in {time}'**
+  String resetsIn(Object time);
+
+  /// No description provided for @lastWinnerLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Last winner: {name}'**
+  String lastWinnerLabel(Object name);
 }
 
 class _AppLocalizationsDelegate

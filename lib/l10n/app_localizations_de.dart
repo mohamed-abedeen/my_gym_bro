@@ -2233,4 +2233,23 @@ class AppLocalizationsDe extends AppLocalizations {
   @override
   String get tplDailySets20Desc =>
       'Schaffe heute 20 Arbeitssätze (Aufwärmsätze zählen nicht).';
+
+  @override
+  String get boardWeekly => 'Woche';
+
+  @override
+  String get boardMonthly => 'Monat';
+
+  @override
+  String get boardAllTime => 'Gesamt';
+
+  @override
+  String resetsIn(Object time) {
+    return 'Reset in $time';
+  }
+
+  @override
+  String lastWinnerLabel(Object name) {
+    return 'Letzter Sieg: $name';
+  }
 }

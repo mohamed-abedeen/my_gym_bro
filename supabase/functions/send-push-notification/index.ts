@@ -4,6 +4,13 @@
 // previously unauthenticated, which let anyone push arbitrary notifications to
 // any user.
 //
+// Two payload shapes:
+//   • { userIds, title, body, data? } — verbatim send (legacy callers).
+//   • { user_ids | userIds, kind: "season_ended", board, placement } — from
+//     finalize_season (migration 015). The copy is composed HERE, per
+//     recipient, resolved against user_profiles.notification_tone — SQL
+//     can't tone-resolve, and every notification must carry a tone.
+//
 // Uses the shared FCM v1 sender (../_shared/fcm.ts). The legacy topic branch
 // was removed — no caller used it; add v1 topic support to _shared/fcm.ts if a
 // future feature needs it.
@@ -19,6 +26,35 @@ function jsonResponse(body: Record<string, unknown>, status = 200) {
   });
 }
 
+type Tone = "supportive" | "balanced" | "bold" | "savage";
+const TONES: Tone[] = ["supportive", "balanced", "bold", "savage"];
+
+// {place} = "1st"/"2nd"/"3rd", {period} = "weekly"/"monthly". Index 0 is the
+// winner variant, index 1 the placed variant.
+const SEASON_MESSAGES: Record<Tone, [string, string]> = {
+  supportive: [
+    "You WON the {period} leaderboard! Incredible work 🎉",
+    "You finished {place} on the {period} leaderboard — be proud!",
+  ],
+  balanced: [
+    "You won the {period} leaderboard. New season starts now.",
+    "Season over: you placed {place} on the {period} board.",
+  ],
+  bold: [
+    "Winner. The {period} board is yours. Defend it.",
+    "{place} on the {period} board. Next season: take the top.",
+  ],
+  savage: [
+    "You own the {period} board. Everyone else was warming up.",
+    "{place}. Decent. Now do it again.",
+  ],
+};
+
+function ordinal(n: number): string {
+  if (n % 100 >= 11 && n % 100 <= 13) return `${n}th`;
+  return `${n}${["th", "st", "nd", "rd"][n % 10] ?? "th"}`;
+}
+
 serve(async (req: Request) => {
   // Auth: shared secret, same gate as compute-leaderboard. Never client-callable.
   const cronSecret = Deno.env.get("CRON_SECRET");
@@ -27,21 +63,18 @@ serve(async (req: Request) => {
   }
 
   try {
-    const {
-      userIds,
-      title,
-      body,
-      data,
-    }: {
+    const raw: {
       userIds?: string[];
-      title: string;
-      body: string;
+      user_ids?: string[];
+      title?: string;
+      body?: string;
       data?: Record<string, string>;
+      kind?: string;
+      board?: string;
+      placement?: number;
     } = await req.json();
 
-    if (!title || !body) {
-      return jsonResponse({ error: "title and body are required" }, 400);
-    }
+    const userIds = raw.userIds ?? raw.user_ids;
     if (!userIds || userIds.length === 0) {
       return jsonResponse({ error: "userIds is required" }, 400);
     }
@@ -51,36 +84,86 @@ serve(async (req: Request) => {
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
     );
 
-    const { data: profiles, error: fetchError } = await supabaseAdmin
-      .from("user_profiles")
-      .select("fcm_token")
-      .in("user_id", userIds)
-      .not("fcm_token", "is", null);
+    let sent = 0;
+    let failed = 0;
+    const staleTokens: string[] = [];
 
-    if (fetchError) {
-      console.error("Error fetching tokens:", fetchError);
-      return jsonResponse({ error: "Failed to fetch tokens" }, 500);
+    if (raw.kind === "season_ended") {
+      const board = raw.board === "monthly" ? "monthly" : "weekly";
+      const placement = Math.max(1, Math.trunc(raw.placement ?? 1));
+
+      const { data: profiles, error: fetchError } = await supabaseAdmin
+        .from("user_profiles")
+        .select("fcm_token, notification_tone")
+        .in("user_id", userIds)
+        .not("fcm_token", "is", null);
+      if (fetchError) {
+        console.error("Error fetching tokens:", fetchError);
+        return jsonResponse({ error: "Failed to fetch tokens" }, 500);
+      }
+
+      // Tone-resolved per recipient (04-BACKEND §3.7).
+      const byTone = new Map<Tone, string[]>();
+      for (const p of profiles ?? []) {
+        const token = (p.fcm_token ?? "").trim();
+        if (!token) continue;
+        const tone: Tone = TONES.includes(p.notification_tone as Tone)
+          ? (p.notification_tone as Tone)
+          : "balanced";
+        byTone.set(tone, [...(byTone.get(tone) ?? []), token]);
+      }
+
+      for (const [tone, tokens] of byTone) {
+        const message = SEASON_MESSAGES[tone][placement === 1 ? 0 : 1]
+          .replace(/\{place\}/g, ordinal(placement))
+          .replace(/\{period\}/g, board);
+        const result = await sendPush(
+          tokens,
+          { title: "Season ended!", body: message },
+          { type: "season_ended", board, placement: `${placement}`, tone },
+        );
+        sent += result.sent;
+        failed += result.failed;
+        staleTokens.push(...result.staleTokens);
+      }
+    } else {
+      const { title, body, data } = raw;
+      if (!title || !body) {
+        return jsonResponse({ error: "title and body are required" }, 400);
+      }
+
+      const { data: profiles, error: fetchError } = await supabaseAdmin
+        .from("user_profiles")
+        .select("fcm_token")
+        .in("user_id", userIds)
+        .not("fcm_token", "is", null);
+      if (fetchError) {
+        console.error("Error fetching tokens:", fetchError);
+        return jsonResponse({ error: "Failed to fetch tokens" }, 500);
+      }
+
+      const tokens: string[] = (profiles ?? [])
+        .map((p: { fcm_token: string | null }) => p.fcm_token)
+        .filter((t): t is string => !!t && t.trim().length > 0);
+      if (tokens.length === 0) {
+        return jsonResponse({ sent: 0, failed: 0 });
+      }
+
+      const result = await sendPush(tokens, { title, body }, data);
+      sent = result.sent;
+      failed = result.failed;
+      staleTokens.push(...result.staleTokens);
     }
-
-    const tokens: string[] = (profiles ?? [])
-      .map((p: { fcm_token: string | null }) => p.fcm_token)
-      .filter((t): t is string => !!t && t.trim().length > 0);
-
-    if (tokens.length === 0) {
-      return jsonResponse({ sent: 0, failed: 0 });
-    }
-
-    const result = await sendPush(tokens, { title, body }, data);
 
     // Prune dead tokens so we stop pushing to uninstalled apps.
-    if (result.staleTokens.length > 0) {
+    if (staleTokens.length > 0) {
       await supabaseAdmin
         .from("user_profiles")
         .update({ fcm_token: null })
-        .in("fcm_token", result.staleTokens);
+        .in("fcm_token", staleTokens);
     }
 
-    return jsonResponse({ sent: result.sent, failed: result.failed });
+    return jsonResponse({ sent, failed });
   } catch (err) {
     console.error("send-push-notification error:", err);
     return jsonResponse({ error: "Internal server error" }, 500);
