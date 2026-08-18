@@ -22,6 +22,7 @@ import 'package:my_gym_bro/shared/constants.dart';
 import 'package:my_gym_bro/shared/responsive.dart';
 import 'package:my_gym_bro/shared/widgets/anatomy_body.dart';
 import 'package:my_gym_bro/shared/widgets/confirm_sheet.dart';
+import 'package:my_gym_bro/shared/widgets/fire_icon.dart';
 import 'package:my_gym_bro/shared/widgets/glass_surface.dart';
 import 'package:my_gym_bro/shared/widgets/liquid_glass_button.dart';
 
@@ -294,8 +295,8 @@ class _Header extends ConsumerWidget {
 
           const Spacer(),
 
-          // Fire streak (🔥 emoji) + count — right side, same as Home
-          Text('🔥', style: TextStyle(fontSize: 22.sp)),
+          // Fire streak (brand SVG icon) + count — right side, same as Home
+          FireIcon(size: 24.sp),
           SizedBox(width: 4.w),
           Text(
             '$streak',

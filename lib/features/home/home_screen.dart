@@ -20,6 +20,7 @@ import 'package:my_gym_bro/shared/constants.dart';
 import 'package:my_gym_bro/shared/responsive.dart';
 import 'package:my_gym_bro/shared/widgets/anatomy_body.dart';
 import 'package:my_gym_bro/shared/widgets/bottom_nav_pill.dart';
+import 'package:my_gym_bro/shared/widgets/fire_icon.dart';
 import 'package:my_gym_bro/shared/widgets/glass_surface.dart';
 import 'package:my_gym_bro/shared/widgets/liquid_glass_button.dart';
 import 'package:my_gym_bro/shared/widgets/shimmer_box.dart';
@@ -169,8 +170,8 @@ class _Header extends ConsumerWidget {
             ),
           ),
           const Spacer(),
-          // Fire streak (🔥 emoji) — matches the Workout header
-          Text('🔥', style: TextStyle(fontSize: 22.sp)),
+          // Fire streak (brand SVG icon) — matches the Workout header
+          FireIcon(size: 24.sp),
           SizedBox(width: 4.w),
           // Streak count — 24px w700
           Text(
@@ -228,10 +229,12 @@ class _LeaderboardCard extends ConsumerWidget {
     final bros = [
       for (final e
           in ref
-                  .watch(leaderboardProvider((
-                    scope: LeaderboardScope.global,
-                    board: LeaderboardBoard.weekly,
-                  )))
+                  .watch(
+                    leaderboardProvider((
+                      scope: LeaderboardScope.global,
+                      board: LeaderboardBoard.weekly,
+                    )),
+                  )
                   .valueOrNull ??
               const <LeaderboardEntry>[])
         if (!e.isMe) e,
@@ -411,7 +414,7 @@ class _HomeWeeklyStrip extends ConsumerWidget {
                   child: Center(
                     child: Opacity(
                       opacity: day.hasSession ? 1.0 : 0.25,
-                      child: Text('🔥', style: TextStyle(fontSize: 12.sp)),
+                      child: FireIcon(size: 13.sp),
                     ),
                   ),
                 ),
@@ -558,16 +561,20 @@ class _StatusSection extends ConsumerWidget {
   ) {
     final schedule = ref.watch(activeScheduleProvider).valueOrNull;
     if (schedule == null) return '--';
-    return ref.watch(nextSessionHoursProvider(schedule.localId)).when(
+    return ref
+        .watch(nextSessionHoursProvider(schedule.localId))
+        .when(
           loading: () => '--',
           error: (_, __) => '--',
           data: (hours) {
             if (hours == null || hours <= 0) return l10n.today;
             final now = DateTime.now();
             final due = now.add(Duration(hours: hours));
-            final calendarDays = DateTime(due.year, due.month, due.day)
-                .difference(DateTime(now.year, now.month, now.day))
-                .inDays;
+            final calendarDays = DateTime(
+              due.year,
+              due.month,
+              due.day,
+            ).difference(DateTime(now.year, now.month, now.day)).inDays;
             if (calendarDays <= 0) return l10n.today;
             if (calendarDays == 1) return l10n.tomorrow;
             return DateFormat.EEEE(
@@ -653,8 +660,9 @@ class _HealingCard extends ConsumerWidget {
     final muscleStates = ref.watch(muscleRecoveryProvider);
     // "Healing..." only while something is actually recovering; untrained
     // or fully recovered bodies are ready to train.
-    final anyHealing = (muscleStates.valueOrNull ?? const [])
-        .any((m) => m.state == MuscleState.recovering);
+    final anyHealing = (muscleStates.valueOrNull ?? const []).any(
+      (m) => m.state == MuscleState.recovering,
+    );
 
     return GestureDetector(
       onTap: () => showMuscleDetailSheet(context),

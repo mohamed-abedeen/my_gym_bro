@@ -1413,13 +1413,13 @@ class _ExerciseImageArea extends StatelessWidget {
               child: CachedNetworkImage(
                 cacheManager: ExerciseGifCache.instance,
                 imageUrl: ex!.gifUrl!,
-                width: 430.w,
-                height: 430.h,
+                width: 341.w,
+                height: 341.h,
                 fit: BoxFit.contain,
                 filterQuality: FilterQuality.medium,
-                memCacheWidth: (430.w * MediaQuery.devicePixelRatioOf(context))
+                memCacheWidth: (341.w * MediaQuery.devicePixelRatioOf(context))
                     .toInt(),
-                memCacheHeight: (430.h * MediaQuery.devicePixelRatioOf(context))
+                memCacheHeight: (341.h * MediaQuery.devicePixelRatioOf(context))
                     .toInt(),
                 placeholder: (_, __) => const SizedBox.shrink(),
                 errorWidget: (_, __, ___) => Icon(
@@ -1444,7 +1444,7 @@ class _ExerciseImageArea extends StatelessWidget {
         borderRadius: BorderRadius.vertical(bottom: Radius.circular(62.r)),
         child: Container(
           width: double.infinity,
-          height: 530.h,
+          height: 430.h,
           color: AppColors.of(context).white,
           // Only the GIF slides inside the static white card, so the card
           // itself never moves against the app background.

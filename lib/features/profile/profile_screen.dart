@@ -21,6 +21,7 @@ import 'package:my_gym_bro/shared/constants.dart';
 import 'package:my_gym_bro/shared/responsive.dart';
 import 'package:my_gym_bro/shared/widgets/anatomy_body.dart';
 import 'package:my_gym_bro/shared/widgets/confirm_sheet.dart';
+import 'package:my_gym_bro/shared/widgets/fire_icon.dart';
 import 'package:my_gym_bro/shared/widgets/liquid_glass_button.dart';
 import 'package:my_gym_bro/shared/widgets/user_avatar.dart';
 import 'package:path_provider/path_provider.dart';
@@ -44,8 +45,9 @@ class ProfileScreen extends ConsumerWidget {
     final avatarUrl = profile.whenOrNull(data: (p) => p?.avatarUrl);
     final bannerUrl = profile.whenOrNull(data: (p) => p?.bannerUrl);
     final streakCount = streak.whenOrNull(data: (s) => s) ?? 0;
-    final anatomyGender =
-        gender == 'female' ? AnatomyGender.female : AnatomyGender.male;
+    final anatomyGender = gender == 'female'
+        ? AnatomyGender.female
+        : AnatomyGender.male;
 
     return Scaffold(
       backgroundColor: colors.background,
@@ -229,8 +231,7 @@ class _BannerSectionState extends ConsumerState<_BannerSection> {
   @override
   void didUpdateWidget(_BannerSection old) {
     super.didUpdateWidget(old);
-    if (_localBannerPath != null &&
-        widget.bannerUrl == _localBannerPath) {
+    if (_localBannerPath != null && widget.bannerUrl == _localBannerPath) {
       // DB stream has caught up — drop optimistic override
       _localBannerPath = null;
     }
@@ -411,10 +412,7 @@ class _BannerSectionState extends ConsumerState<_BannerSection> {
                 shape: BoxShape.circle,
               ),
               child: Center(
-                child: UserAvatar(
-                  size: avatarSize,
-                  url: widget.avatarUrl,
-                ),
+                child: UserAvatar(size: avatarSize, url: widget.avatarUrl),
               ),
             ),
           ),
@@ -424,7 +422,10 @@ class _BannerSectionState extends ConsumerState<_BannerSection> {
             left: 130.w,
             right: 16.w,
             top: (avatarTop + 30).h,
-            child: _StatsRow(streakCount: widget.streakCount, l10n: widget.l10n),
+            child: _StatsRow(
+              streakCount: widget.streakCount,
+              l10n: widget.l10n,
+            ),
           ),
         ],
       ),
@@ -475,16 +476,12 @@ class _StatsRow extends ConsumerWidget {
       mainAxisAlignment: MainAxisAlignment.spaceEvenly,
       children: [
         _StatColumn(value: '$brosCount', label: l10n.statBros),
-        Container(
-          width: 1,
-          height: 22.h,
-          color: const Color(0xFF282828),
-        ),
+        Container(width: 1, height: 22.h, color: const Color(0xFF282828)),
         // Streak with fire icon
         Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Text('🔥', style: TextStyle(fontSize: 12.sp)),
+            FireIcon(size: 13.sp),
             SizedBox(width: 2.w),
             Column(
               mainAxisSize: MainAxisSize.min,
@@ -572,25 +569,20 @@ class _TabPills extends ConsumerWidget {
           child: Padding(
             padding: EdgeInsets.only(right: isLast ? 0 : 8.w),
             child: GestureDetector(
-              onTap: () =>
-                  ref.read(profileTabProvider.notifier).state = i,
+              onTap: () => ref.read(profileTabProvider.notifier).state = i,
               child: AnimatedContainer(
                 duration: const Duration(milliseconds: 250),
                 curve: Curves.easeInOut,
                 padding: EdgeInsets.symmetric(vertical: 13.h),
                 decoration: BoxDecoration(
-                  color: isSelected
-                      ? colors.accent
-                      : colors.panelBackground,
+                  color: isSelected ? colors.accent : colors.panelBackground,
                   borderRadius: BorderRadius.circular(14.r),
                 ),
                 child: Text(
                   tabs[i],
                   textAlign: TextAlign.center,
                   style: TextStyle(
-                    color: isSelected
-                        ? colors.background
-                        : colors.textPrimary,
+                    color: isSelected ? colors.background : colors.textPrimary,
                     fontSize: 14.sp,
                     fontWeight: FontWeight.w700,
                     letterSpacing: -0.2,
@@ -722,8 +714,9 @@ class _ProfileSessionCardState extends ConsumerState<_ProfileSessionCard>
     final durationMin = (s.durationSeconds ?? 0) ~/ 60;
     final durationH = durationMin ~/ 60;
     final durationM = durationMin % 60;
-    final durationStr =
-        durationH > 0 ? '${durationH}h ${durationM}m' : '${durationM}m';
+    final durationStr = durationH > 0
+        ? '${durationH}h ${durationM}m'
+        : '${durationM}m';
     final unit = ref.watch(weightUnitProvider);
     final volume = convertFromKg(s.totalVolume ?? 0, unit).round();
     final weightUnit = weightUnitLabel(unit);
@@ -751,11 +744,7 @@ class _ProfileSessionCardState extends ConsumerState<_ProfileSessionCard>
             final t = _expandAnim.value;
             return Container(
               decoration: BoxDecoration(
-                color: Color.lerp(
-                  colors.cardElevated,
-                  colors.background,
-                  t,
-                ),
+                color: Color.lerp(colors.cardElevated, colors.background, t),
                 borderRadius: BorderRadius.circular(25.r),
               ),
               clipBehavior: Clip.hardEdge,
@@ -778,8 +767,7 @@ class _ProfileSessionCardState extends ConsumerState<_ProfileSessionCard>
                             animation: _expandAnim,
                             builder: (context, _) {
                               final t = _expandAnim.value;
-                              final fontSize =
-                                  lerpDouble(20.sp, 24.sp, t)!;
+                              final fontSize = lerpDouble(20.sp, 24.sp, t)!;
                               return Text(
                                 t > 0.5
                                     ? widget.l10n.lastSession
@@ -841,8 +829,7 @@ class _ProfileSessionCardState extends ConsumerState<_ProfileSessionCard>
                       // ── Anatomy body ──
                       Center(
                         child: AnatomyBody(
-                          muscleStates:
-                              muscleStatesForSession(widget.enriched),
+                          muscleStates: muscleStatesForSession(widget.enriched),
                           height: 340.h,
                           gender: widget.anatomyGender,
                           basePngPath: ref.watch(activeSkinPathProvider),
@@ -859,8 +846,7 @@ class _ProfileSessionCardState extends ConsumerState<_ProfileSessionCard>
                           volume: volume,
                           weightUnit: weightUnit,
                           durationStr: durationStr,
-                          exerciseCount:
-                              widget.enriched.exercises.length,
+                          exerciseCount: widget.enriched.exercises.length,
                         ),
                       ),
                       SizedBox(height: 16.h),
@@ -868,9 +854,9 @@ class _ProfileSessionCardState extends ConsumerState<_ProfileSessionCard>
                       // ── Exercise list ──
                       ...widget.enriched.exercises.map((ex) {
                         final timeStr = ex.startedAt != null
-                            ? DateFormat.jm(locale)
-                                .format(ex.startedAt!)
-                                .toLowerCase()
+                            ? DateFormat.jm(
+                                locale,
+                              ).format(ex.startedAt!).toLowerCase()
                             : l10n.setsCount(ex.sets);
 
                         return GestureDetector(
@@ -880,8 +866,7 @@ class _ProfileSessionCardState extends ConsumerState<_ProfileSessionCard>
                             session: widget.enriched.session,
                           ),
                           child: Padding(
-                            padding: EdgeInsets.fromLTRB(
-                                20.w, 0, 16.w, 12.h),
+                            padding: EdgeInsets.fromLTRB(20.w, 0, 16.w, 12.h),
                             child: Row(
                               children: [
                                 ClipRRect(
@@ -890,20 +875,19 @@ class _ProfileSessionCardState extends ConsumerState<_ProfileSessionCard>
                                   ),
                                   child: ex.gifUrl != null
                                       ? CachedNetworkImage(
-                                          cacheManager: ExerciseGifCache.instance,
+                                          cacheManager:
+                                              ExerciseGifCache.instance,
                                           imageUrl: ex.gifUrl!,
                                           width: 58.w,
                                           height: 58.h,
                                           fit: BoxFit.cover,
-                                          placeholder: (_, __) =>
-                                              Container(
+                                          placeholder: (_, __) => Container(
                                             width: 58.w,
                                             height: 58.h,
                                             color: colors.separator,
                                           ),
-                                          errorWidget:
-                                              (_, __, ___) =>
-                                                  _ExercisePlaceholder(),
+                                          errorWidget: (_, __, ___) =>
+                                              _ExercisePlaceholder(),
                                         )
                                       : _ExercisePlaceholder(),
                                 ),
@@ -920,8 +904,7 @@ class _ProfileSessionCardState extends ConsumerState<_ProfileSessionCard>
                                           fontSize: 16.sp,
                                           fontWeight: FontWeight.w700,
                                         ),
-                                        overflow:
-                                            TextOverflow.ellipsis,
+                                        overflow: TextOverflow.ellipsis,
                                       ),
                                       SizedBox(height: 2.h),
                                       Text(
@@ -950,13 +933,11 @@ class _ProfileSessionCardState extends ConsumerState<_ProfileSessionCard>
 
                       // ── Footer ──
                       Padding(
-                        padding:
-                            EdgeInsets.fromLTRB(20.w, 0, 16.w, 16.h),
+                        padding: EdgeInsets.fromLTRB(20.w, 0, 16.w, 16.h),
                         child: Row(
                           children: [
                             Column(
-                              crossAxisAlignment:
-                                  CrossAxisAlignment.start,
+                              crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 Text(
                                   '${widget.l10n.totalVolume} $volume$weightUnit',
@@ -1004,24 +985,25 @@ class _ProfileSessionCardState extends ConsumerState<_ProfileSessionCard>
                               onTap: () {
                                 // The list this card renders from is already
                                 // loaded, so the sync read is safe.
-                                final sessions = ref
+                                final sessions =
+                                    ref
                                         .read(enrichedAllSessionsProvider)
                                         .valueOrNull ??
                                     const <EnrichedSession>[];
-                                final profile =
-                                    ref.read(userProfileProvider).valueOrNull;
+                                final profile = ref
+                                    .read(userProfileProvider)
+                                    .valueOrNull;
                                 context.push(
                                   AppRoutes.shareCard,
                                   extra: ShareCardData.fromEnrichedSession(
                                     widget.enriched,
-                                    hasPr: prSessionIds(sessions).contains(
-                                      widget.enriched.session.localId,
-                                    ),
+                                    hasPr: prSessionIds(
+                                      sessions,
+                                    ).contains(widget.enriched.session.localId),
                                     bodyWeightKg: profile?.bodyWeightKg,
                                     gender: profile?.gender,
-                                    streakDays: ref
-                                            .read(streakProvider)
-                                            .valueOrNull ??
+                                    streakDays:
+                                        ref.read(streakProvider).valueOrNull ??
                                         0,
                                   ),
                                 );
@@ -1047,8 +1029,7 @@ class _ProfileSessionCardState extends ConsumerState<_ProfileSessionCard>
                 child: FadeTransition(
                   opacity: ReverseAnimation(_fadeAnim),
                   child: Padding(
-                    padding:
-                        EdgeInsets.fromLTRB(20.w, 4.h, 16.w, 16.h),
+                    padding: EdgeInsets.fromLTRB(20.w, 4.h, 16.w, 16.h),
                     child: Text(
                       DateFormat('d / M / yyyy', locale).format(s.startedAt),
                       style: TextStyle(
@@ -1184,9 +1165,7 @@ class _StatCell extends StatelessWidget {
           Text(
             trendValue!,
             style: TextStyle(
-              color: isPositive
-                  ? colors.trendPositive
-                  : colors.trendNegative,
+              color: isPositive ? colors.trendPositive : colors.trendNegative,
               fontSize: 10.sp,
               fontWeight: FontWeight.w400,
             ),
@@ -1198,9 +1177,7 @@ class _StatCell extends StatelessWidget {
                 : AppAngles.quarterTurnCw,
             child: Icon(
               Icons.arrow_forward_rounded,
-              color: isPositive
-                  ? colors.trendPositive
-                  : colors.trendNegative,
+              color: isPositive ? colors.trendPositive : colors.trendNegative,
               size: 24.sp,
             ),
           ),

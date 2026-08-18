@@ -13,6 +13,7 @@ import 'package:my_gym_bro/l10n/app_localizations.dart';
 import 'package:my_gym_bro/shared/constants.dart';
 import 'package:my_gym_bro/shared/responsive.dart';
 import 'package:my_gym_bro/shared/widgets/confirm_sheet.dart';
+import 'package:my_gym_bro/shared/widgets/fire_icon.dart';
 import 'package:my_gym_bro/shared/widgets/liquid_glass_button.dart';
 
 /// Show the Log bottom sheet — stats-forward session cards plus a month
@@ -128,9 +129,11 @@ class _LogSheetState extends ConsumerState<_LogSheet> {
                           Navigator.of(context).pop();
                         }
                       },
-                      child: Icon(Icons.close_rounded,
-                          color: colors.textPrimary,
-                          size: AppSizes.headerActionIcon.sp),
+                      child: Icon(
+                        Icons.close_rounded,
+                        color: colors.textPrimary,
+                        size: AppSizes.headerActionIcon.sp,
+                      ),
                     ),
                     Expanded(
                       child: Center(
@@ -146,31 +149,37 @@ class _LogSheetState extends ConsumerState<_LogSheet> {
                     ),
                     // Search: toggles the heatmap date picker. Accent-tinted
                     // while the calendar is open.
-                    if (_showCalendar) GestureDetector(
-                            onTap: () =>
-                                setState(() => _showCalendar = false),
-                            behavior: HitTestBehavior.opaque,
-                            child: Container(
-                              width: 48.w,
-                              height: 48.h,
-                              decoration: BoxDecoration(
-                                color: colors.accent.withValues(alpha: 0.15),
-                                borderRadius: BorderRadius.circular(24.r),
-                              ),
-                              child: Icon(Icons.search_rounded,
-                                  color: colors.accent, size: 22.sp),
-                            ),
-                          ) else LiquidGlassButton(
-                            width: AppSizes.headerActionBtn.w,
-                            height: AppSizes.headerActionBtn.w,
-                            opacity: 0.15,
-                            radius: (AppSizes.headerActionBtn / 2).r,
-                            onTap: () =>
-                                setState(() => _showCalendar = true),
-                            child: Icon(Icons.search_rounded,
-                                color: colors.textPrimary,
-                                size: AppSizes.headerActionIcon.sp),
+                    if (_showCalendar)
+                      GestureDetector(
+                        onTap: () => setState(() => _showCalendar = false),
+                        behavior: HitTestBehavior.opaque,
+                        child: Container(
+                          width: 48.w,
+                          height: 48.h,
+                          decoration: BoxDecoration(
+                            color: colors.accent.withValues(alpha: 0.15),
+                            borderRadius: BorderRadius.circular(24.r),
                           ),
+                          child: Icon(
+                            Icons.search_rounded,
+                            color: colors.accent,
+                            size: 22.sp,
+                          ),
+                        ),
+                      )
+                    else
+                      LiquidGlassButton(
+                        width: AppSizes.headerActionBtn.w,
+                        height: AppSizes.headerActionBtn.w,
+                        opacity: 0.15,
+                        radius: (AppSizes.headerActionBtn / 2).r,
+                        onTap: () => setState(() => _showCalendar = true),
+                        child: Icon(
+                          Icons.search_rounded,
+                          color: colors.textPrimary,
+                          size: AppSizes.headerActionIcon.sp,
+                        ),
+                      ),
                     SizedBox(width: 10.w),
                     // Checkmark (accent glass circle)
                     LiquidGlassButton(
@@ -179,9 +188,11 @@ class _LogSheetState extends ConsumerState<_LogSheet> {
                       opacity: 0.25,
                       radius: (AppSizes.headerActionBtn / 2).r,
                       onTap: () => Navigator.of(context).pop(),
-                      child: Icon(Icons.check_rounded,
-                          color: colors.accent,
-                          size: AppSizes.headerActionIcon.sp),
+                      child: Icon(
+                        Icons.check_rounded,
+                        color: colors.accent,
+                        size: AppSizes.headerActionIcon.sp,
+                      ),
                     ),
                   ],
                 ),
@@ -216,10 +227,7 @@ class _LogSheetState extends ConsumerState<_LogSheet> {
           return Center(
             child: Text(
               l10n.noRecordsYet,
-              style: TextStyle(
-                color: colors.textSecondary,
-                fontSize: 14.sp,
-              ),
+              style: TextStyle(color: colors.textSecondary, fontSize: 14.sp),
             ),
           );
         }
@@ -234,14 +242,17 @@ class _LogSheetState extends ConsumerState<_LogSheet> {
         final sel = _selectedDay;
         if (sel != null) {
           final endOfDay = DateTime(sel.year, sel.month, sel.day + 1);
-          var idx = sessions.indexWhere((e) =>
-              e.session.startedAt.year == sel.year &&
-              e.session.startedAt.month == sel.month &&
-              e.session.startedAt.day == sel.day);
+          var idx = sessions.indexWhere(
+            (e) =>
+                e.session.startedAt.year == sel.year &&
+                e.session.startedAt.month == sel.month &&
+                e.session.startedAt.day == sel.day,
+          );
           if (idx == -1) {
             // Fall back to the nearest earlier session (list is newest-first).
-            idx = sessions
-                .indexWhere((e) => e.session.startedAt.isBefore(endOfDay));
+            idx = sessions.indexWhere(
+              (e) => e.session.startedAt.isBefore(endOfDay),
+            );
           }
           if (idx != -1) {
             final picked = sessions.removeAt(idx);
@@ -289,10 +300,7 @@ class _LogSheetState extends ConsumerState<_LogSheet> {
         );
       },
       loading: () => Center(
-        child: CircularProgressIndicator(
-          color: colors.accent,
-          strokeWidth: 2,
-        ),
+        child: CircularProgressIndicator(color: colors.accent, strokeWidth: 2),
       ),
       error: (_, __) => const SizedBox.shrink(),
     );
@@ -312,10 +320,10 @@ class _LogSheetState extends ConsumerState<_LogSheet> {
     final streakText = streak == null
         ? null
         : streak <= 0
-            ? l10n.widgetStreakStart
-            : streak == 1
-                ? l10n.widgetStreakOneDay
-                : l10n.widgetStreakDays(streak);
+        ? l10n.widgetStreakStart
+        : streak == 1
+        ? l10n.widgetStreakOneDay
+        : l10n.widgetStreakDays(streak);
 
     // Volume per day of the visible month, normalized to its max.
     final sessions = enriched.valueOrNull ?? const <EnrichedSession>[];
@@ -334,17 +342,19 @@ class _LogSheetState extends ConsumerState<_LogSheet> {
 
     final firstOfMonth = _visibleMonth;
     final leadingBlanks = firstOfMonth.weekday % 7; // Sunday-first grid
-    final daysInMonth =
-        DateTime(_visibleMonth.year, _visibleMonth.month + 1, 0).day;
+    final daysInMonth = DateTime(
+      _visibleMonth.year,
+      _visibleMonth.month + 1,
+      0,
+    ).day;
 
     // Localized one-letter weekday labels, Sunday-first.
     // 2023-01-01 is a Sunday.
     final weekdayLabels = [
       for (var i = 0; i < 7; i++)
-        DateFormat.E(locale)
-            .format(DateTime(2023, 1, 1 + i))
-            .substring(0, 1)
-            .toUpperCase(),
+        DateFormat.E(
+          locale,
+        ).format(DateTime(2023, 1, 1 + i)).substring(0, 1).toUpperCase(),
     ];
 
     final noSessionCell = colors.cardElevated;
@@ -363,7 +373,7 @@ class _LogSheetState extends ConsumerState<_LogSheet> {
                 : Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      Text('🔥', style: TextStyle(fontSize: 14.sp)),
+                      FireIcon(size: 16.sp),
                       SizedBox(width: 8.w),
                       Text(
                         streakText,
@@ -393,8 +403,11 @@ class _LogSheetState extends ConsumerState<_LogSheet> {
                   behavior: HitTestBehavior.opaque,
                   child: Padding(
                     padding: EdgeInsets.all(8.w),
-                    child: Icon(Icons.chevron_left_rounded,
-                        color: colors.textSecondary, size: 24.sp),
+                    child: Icon(
+                      Icons.chevron_left_rounded,
+                      color: colors.textSecondary,
+                      size: 24.sp,
+                    ),
                   ),
                 ),
                 Text(
@@ -415,8 +428,11 @@ class _LogSheetState extends ConsumerState<_LogSheet> {
                   behavior: HitTestBehavior.opaque,
                   child: Padding(
                     padding: EdgeInsets.all(8.w),
-                    child: Icon(Icons.chevron_right_rounded,
-                        color: colors.textSecondary, size: 24.sp),
+                    child: Icon(
+                      Icons.chevron_right_rounded,
+                      color: colors.textSecondary,
+                      size: 24.sp,
+                    ),
                   ),
                 ),
               ],
@@ -459,8 +475,11 @@ class _LogSheetState extends ConsumerState<_LogSheet> {
             itemBuilder: (_, i) {
               if (i < leadingBlanks) return const SizedBox.shrink();
               final day = i - leadingBlanks + 1;
-              final date =
-                  DateTime(_visibleMonth.year, _visibleMonth.month, day);
+              final date = DateTime(
+                _visibleMonth.year,
+                _visibleMonth.month,
+                day,
+              );
               final volume = dayVolumes[day] ?? 0;
               final trained = volume > 0;
 
@@ -480,7 +499,8 @@ class _LogSheetState extends ConsumerState<_LogSheet> {
                 textColor = colors.textSecondary;
               }
 
-              final selected = _selectedDay != null &&
+              final selected =
+                  _selectedDay != null &&
                   _selectedDay!.year == date.year &&
                   _selectedDay!.month == date.month &&
                   _selectedDay!.day == date.day;
@@ -662,8 +682,12 @@ class _SessionCardState extends ConsumerState<_SessionCard> {
     final dateStr = DateFormat.MMMEd(locale).format(s.startedAt);
     final muscles = widget.enriched.targetedMuscleGroups.take(3).join(' · ');
     final subtitle = muscles.isEmpty ? dateStr : '$dateStr · $muscles';
-    final volumeStr =
-        formatWeight(s.totalVolume, widget.unit, decimals: 0, withUnit: true);
+    final volumeStr = formatWeight(
+      s.totalVolume,
+      widget.unit,
+      decimals: 0,
+      withUnit: true,
+    );
     final durationStr = _formatDuration(s.durationSeconds ?? 0);
     final onAccent = isDark ? colors.black : colors.white;
 
@@ -740,14 +764,16 @@ class _SessionCardState extends ConsumerState<_SessionCard> {
                       ),
                       decoration: BoxDecoration(
                         color: colors.accent,
-                        borderRadius:
-                            BorderRadius.circular(AppRadius.button.r),
+                        borderRadius: BorderRadius.circular(AppRadius.button.r),
                       ),
                       child: Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          Icon(Icons.emoji_events,
-                              color: onAccent, size: 11.sp),
+                          Icon(
+                            Icons.emoji_events,
+                            color: onAccent,
+                            size: 11.sp,
+                          ),
                           SizedBox(width: 4.w),
                           Text(
                             'PR',
@@ -774,11 +800,11 @@ class _SessionCardState extends ConsumerState<_SessionCard> {
                       for (final v in setVolumes)
                         Expanded(
                           child: Container(
-                            height: 44.h *
+                            height:
+                                44.h *
                                 (maxSetVolume > 0
-                                        ? (v / maxSetVolume).clamp(0.12, 1.0)
-                                        : 0.12)
-                                    ,
+                                    ? (v / maxSetVolume).clamp(0.12, 1.0)
+                                    : 0.12),
                             margin: EdgeInsets.symmetric(horizontal: 2.w),
                             decoration: BoxDecoration(
                               color: v >= maxSetVolume
@@ -838,9 +864,9 @@ class _SessionCardState extends ConsumerState<_SessionCard> {
                 SizedBox(height: 16.h),
                 ...widget.enriched.exercises.map((ex) {
                   final timeStr = ex.startedAt != null
-                      ? DateFormat.jm(locale)
-                          .format(ex.startedAt!)
-                          .toLowerCase()
+                      ? DateFormat.jm(
+                          locale,
+                        ).format(ex.startedAt!).toLowerCase()
                       : AppLocalizations.of(context).setsCount(ex.sets);
 
                   return GestureDetector(
@@ -929,8 +955,11 @@ class _SessionCardState extends ConsumerState<_SessionCard> {
                       onTap: () => _confirmDeleteSession(
                         widget.enriched.session.localId,
                       ),
-                      child: Icon(Icons.delete_outline_rounded,
-                          color: Colors.redAccent, size: 20.sp),
+                      child: Icon(
+                        Icons.delete_outline_rounded,
+                        color: Colors.redAccent,
+                        size: 20.sp,
+                      ),
                     ),
                     SizedBox(width: 8.w),
                     LiquidGlassButton(
@@ -939,8 +968,9 @@ class _SessionCardState extends ConsumerState<_SessionCard> {
                       opacity: 0.15,
                       radius: 24.r,
                       onTap: () {
-                        final profile =
-                            ref.read(userProfileProvider).valueOrNull;
+                        final profile = ref
+                            .read(userProfileProvider)
+                            .valueOrNull;
                         context.push(
                           AppRoutes.shareCard,
                           extra: ShareCardData.fromEnrichedSession(
@@ -953,8 +983,11 @@ class _SessionCardState extends ConsumerState<_SessionCard> {
                           ),
                         );
                       },
-                      child: Icon(Icons.ios_share_rounded,
-                          color: colors.textPrimary, size: 20.sp),
+                      child: Icon(
+                        Icons.ios_share_rounded,
+                        color: colors.textPrimary,
+                        size: 20.sp,
+                      ),
                     ),
                   ],
                 ),
