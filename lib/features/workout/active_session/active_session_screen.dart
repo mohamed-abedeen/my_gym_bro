@@ -1413,13 +1413,13 @@ class _ExerciseImageArea extends StatelessWidget {
               child: CachedNetworkImage(
                 cacheManager: ExerciseGifCache.instance,
                 imageUrl: ex!.gifUrl!,
-                width: 341.w,
-                height: 341.h,
+                width: 430.w,
+                height: 430.h,
                 fit: BoxFit.contain,
                 filterQuality: FilterQuality.medium,
-                memCacheWidth: (341.w * MediaQuery.devicePixelRatioOf(context))
+                memCacheWidth: (430.w * MediaQuery.devicePixelRatioOf(context))
                     .toInt(),
-                memCacheHeight: (341.h * MediaQuery.devicePixelRatioOf(context))
+                memCacheHeight: (430.h * MediaQuery.devicePixelRatioOf(context))
                     .toInt(),
                 placeholder: (_, __) => const SizedBox.shrink(),
                 errorWidget: (_, __, ___) => Icon(
