@@ -74,6 +74,12 @@ class AppLocalizationsEn extends AppLocalizations {
   String get healingSubtitle => 'Your body needs some rest';
 
   @override
+  String get readyTitle => 'Ready';
+
+  @override
+  String get readySubtitle => 'Your body is ready to train';
+
+  @override
   String get sets => 'Sets';
 
   @override
@@ -1964,6 +1970,12 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get discoverEquipment => 'Equipment';
+
+  @override
+  String get discoverCategory => 'Category';
+
+  @override
+  String get discoverNoMatches => 'No programs match your filters, Bro!';
 
   @override
   String discoverRoutinesCount(int count) {

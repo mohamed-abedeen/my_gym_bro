@@ -363,8 +363,7 @@ class _LogSheetState extends ConsumerState<_LogSheet> {
                 : Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      Icon(Icons.local_fire_department,
-                          color: colors.amber, size: 17.sp),
+                      Text('🔥', style: TextStyle(fontSize: 14.sp)),
                       SizedBox(width: 8.w),
                       Text(
                         streakText,

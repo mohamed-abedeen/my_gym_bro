@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:my_gym_bro/core/providers/providers.dart';
 import 'package:my_gym_bro/core/security/secure_storage.dart';
 import 'package:my_gym_bro/core/services/program_seeder.dart';
+import 'package:my_gym_bro/features/schedule/premade_program_card.dart';
 import 'package:my_gym_bro/features/schedule/premade_programs.dart';
 import 'package:my_gym_bro/features/workout/workout_providers.dart';
 import 'package:my_gym_bro/l10n/app_localizations.dart';
@@ -111,7 +112,7 @@ class _PremadeProgramsScreenState extends ConsumerState<PremadeProgramsScreen> {
                 padding: EdgeInsets.fromLTRB(16.w, 14.h, 16.w, 48.h),
                 itemCount: programs.length,
                 separatorBuilder: (_, __) => SizedBox(height: 12.h),
-                itemBuilder: (context, i) => _ProgramCard(
+                itemBuilder: (context, i) => PremadeProgramCard(
                   program: programs[i],
                   l10n: l10n,
                   onTap: () => _showProgramDetail(context, programs[i]),
@@ -209,98 +210,6 @@ class _CategoryChip extends StatelessWidget {
             fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
             color: selected ? colors.todayPillText : colors.textSecondary,
           ),
-        ),
-      ),
-    );
-  }
-}
-
-class _ProgramCard extends StatelessWidget {
-  const _ProgramCard({
-    required this.program,
-    required this.l10n,
-    required this.onTap,
-  });
-
-  final PremadeProgram program;
-  final AppLocalizations l10n;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    final colors = AppColors.of(context);
-    final meta = [
-      premadeLevelLabel(l10n, program.level),
-      l10n.premadeMinutes(program.minutes),
-      l10n.premadeDaysCount(program.days.length),
-      l10n.premadeExercisesCount(program.exerciseCount),
-    ].join(' · ');
-
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        padding: EdgeInsets.all(14.w),
-        decoration: BoxDecoration(
-          color: colors.card,
-          borderRadius: BorderRadius.circular(20.r),
-        ),
-        child: Row(
-          children: [
-            Container(
-              width: 44.w,
-              height: 44.w,
-              decoration: BoxDecoration(
-                color: program.color.withValues(alpha: 0.16),
-                borderRadius: BorderRadius.circular(13.r),
-              ),
-              child: Icon(program.icon, color: program.color, size: 24.sp),
-            ),
-            SizedBox(width: 13.w),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    program.name(l10n),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: TextStyle(
-                      fontSize: 16.sp,
-                      fontWeight: FontWeight.w700,
-                      color: colors.textPrimary,
-                    ),
-                  ),
-                  SizedBox(height: 2.h),
-                  Text(
-                    program.tagline(l10n),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: TextStyle(
-                      fontSize: 12.sp,
-                      color: colors.subtitleText,
-                    ),
-                  ),
-                  SizedBox(height: 5.h),
-                  Text(
-                    meta,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: TextStyle(
-                      fontSize: 11.sp,
-                      fontWeight: FontWeight.w600,
-                      color: colors.textSecondary,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            SizedBox(width: 4.w),
-            Icon(
-              Icons.chevron_right_rounded,
-              color: colors.textSecondary.withValues(alpha: 0.7),
-              size: 20.sp,
-            ),
-          ],
         ),
       ),
     );

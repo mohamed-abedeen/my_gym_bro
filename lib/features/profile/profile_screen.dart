@@ -484,11 +484,7 @@ class _StatsRow extends ConsumerWidget {
         Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(
-              Icons.local_fire_department_rounded,
-              color: colors.amber,
-              size: 14.sp,
-            ),
+            Text('🔥', style: TextStyle(fontSize: 12.sp)),
             SizedBox(width: 2.w),
             Column(
               mainAxisSize: MainAxisSize.min,

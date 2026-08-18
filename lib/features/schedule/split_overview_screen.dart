@@ -5,6 +5,7 @@ import 'package:my_gym_bro/core/database/app_database.dart';
 import 'package:my_gym_bro/core/router/app_router.dart';
 import 'package:my_gym_bro/features/schedule/split_providers.dart';
 import 'package:my_gym_bro/features/schedule/split_widgets.dart';
+import 'package:my_gym_bro/features/workout/status_bottom_sheet.dart';
 import 'package:my_gym_bro/features/workout/workout_providers.dart';
 import 'package:my_gym_bro/l10n/app_localizations.dart';
 import 'package:my_gym_bro/shared/constants.dart';
@@ -645,7 +646,7 @@ class _QuickLinks extends StatelessWidget {
                 icon: Icons.bar_chart_rounded,
                 title: l10n.splitQuickProgress,
                 subtitle: l10n.splitQuickProgressSub,
-                onTap: () => context.push(AppRoutes.profile),
+                onTap: () => showStatusBottomSheet(context),
               ),
             ),
             SizedBox(width: 12.w),

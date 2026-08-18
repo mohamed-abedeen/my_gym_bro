@@ -151,7 +151,7 @@ class _ScheduleBuilderScreenState
         _days
           ..clear()
           ..addAll(dayModels);
-        _expandedDay = _days.isNotEmpty ? 0 : -1;
+        _expandedDay = -1;
       });
     }
   }

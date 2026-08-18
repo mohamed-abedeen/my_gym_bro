@@ -12,6 +12,7 @@ import 'package:my_gym_bro/features/leaderboard/rank.dart';
 import 'package:my_gym_bro/features/settings/settings_screen.dart';
 import 'package:my_gym_bro/features/settings/skin_provider.dart';
 import 'package:my_gym_bro/features/workout/muscle_detail_sheet.dart';
+import 'package:my_gym_bro/features/workout/muscle_recovery_service.dart';
 import 'package:my_gym_bro/features/workout/reports_screen.dart';
 import 'package:my_gym_bro/features/workout/workout_providers.dart';
 import 'package:my_gym_bro/l10n/app_localizations.dart';
@@ -168,12 +169,8 @@ class _Header extends ConsumerWidget {
             ),
           ),
           const Spacer(),
-          // Flame icon — 26x26, orange per Figma
-          Icon(
-            Icons.local_fire_department_rounded,
-            color: colors.amber,
-            size: 26.sp,
-          ),
+          // Fire streak (🔥 emoji) — matches the Workout header
+          Text('🔥', style: TextStyle(fontSize: 22.sp)),
           SizedBox(width: 4.w),
           // Streak count — 24px w700
           Text(
@@ -389,9 +386,6 @@ class _HomeWeeklyStrip extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final colors = AppColors.of(context);
-    final isDark = ref.watch(themeModeProvider) == ThemeMode.dark;
-    final flameColor = isDark ? colors.accent : colors.amber;
     final weekData = ref.watch(weekStripProvider(locale));
 
     return weekData.when(
@@ -408,19 +402,16 @@ class _HomeWeeklyStrip extends ConsumerWidget {
             }).toList(),
           ),
           SizedBox(height: 6.h),
-          // Flame icons under each day
+          // Flame emoji under each day — dimmed when no session
           Row(
             children: days.map((day) {
               return Expanded(
                 child: SizedBox(
                   height: 15.h,
                   child: Center(
-                    child: Icon(
-                      Icons.local_fire_department_rounded,
-                      color: day.hasSession
-                          ? flameColor
-                          : flameColor.withValues(alpha: 0.25),
-                      size: 15.sp,
+                    child: Opacity(
+                      opacity: day.hasSession ? 1.0 : 0.25,
+                      child: Text('🔥', style: TextStyle(fontSize: 12.sp)),
                     ),
                   ),
                 ),
@@ -660,6 +651,10 @@ class _HealingCard extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final colors = AppColors.of(context);
     final muscleStates = ref.watch(muscleRecoveryProvider);
+    // "Healing..." only while something is actually recovering; untrained
+    // or fully recovered bodies are ready to train.
+    final anyHealing = (muscleStates.valueOrNull ?? const [])
+        .any((m) => m.state == MuscleState.recovering);
 
     return GestureDetector(
       onTap: () => showMuscleDetailSheet(context),
@@ -716,11 +711,11 @@ class _HealingCard extends ConsumerWidget {
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  // "Healing..." — scales down to stay on one line
+                  // "Healing..." / "Ready" — scales down to stay on one line
                   FittedBox(
                     fit: BoxFit.scaleDown,
                     child: Text(
-                      l10n.healingTitle,
+                      anyHealing ? l10n.healingTitle : l10n.readyTitle,
                       textAlign: TextAlign.center,
                       maxLines: 1,
                       style: TextStyle(
@@ -730,9 +725,9 @@ class _HealingCard extends ConsumerWidget {
                       ),
                     ),
                   ),
-                  // "Your body needs some rest" — max 2 lines before ellipsis
+                  // Subtitle — max 2 lines before ellipsis
                   Text(
-                    l10n.healingSubtitle,
+                    anyHealing ? l10n.healingSubtitle : l10n.readySubtitle,
                     textAlign: TextAlign.center,
                     maxLines: 2,
                     overflow: TextOverflow.ellipsis,

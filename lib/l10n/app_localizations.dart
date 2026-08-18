@@ -228,6 +228,18 @@ abstract class AppLocalizations {
   /// **'Your body needs some rest'**
   String get healingSubtitle;
 
+  /// No description provided for @readyTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Ready'**
+  String get readyTitle;
+
+  /// No description provided for @readySubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Your body is ready to train'**
+  String get readySubtitle;
+
   /// No description provided for @sets.
   ///
   /// In en, this message translates to:
@@ -3659,6 +3671,18 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Equipment'**
   String get discoverEquipment;
+
+  /// No description provided for @discoverCategory.
+  ///
+  /// In en, this message translates to:
+  /// **'Category'**
+  String get discoverCategory;
+
+  /// No description provided for @discoverNoMatches.
+  ///
+  /// In en, this message translates to:
+  /// **'No programs match your filters, Bro!'**
+  String get discoverNoMatches;
 
   /// No description provided for @discoverRoutinesCount.
   ///

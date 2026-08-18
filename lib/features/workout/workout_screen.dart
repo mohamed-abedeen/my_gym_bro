@@ -291,11 +291,12 @@ class _Header extends ConsumerWidget {
               fontWeight: FontWeight.w700,
             ),
           ),
-          SizedBox(width: 8.w),
 
-          // Fire streak icon + count
-          Icon(Icons.local_fire_department, color: colors.amber, size: 26.sp),
-          SizedBox(width: 2.w),
+          const Spacer(),
+
+          // Fire streak (🔥 emoji) + count — right side, same as Home
+          Text('🔥', style: TextStyle(fontSize: 22.sp)),
+          SizedBox(width: 4.w),
           Text(
             '$streak',
             style: TextStyle(
@@ -304,8 +305,7 @@ class _Header extends ConsumerWidget {
               fontWeight: FontWeight.w700,
             ),
           ),
-
-          const Spacer(),
+          SizedBox(width: 12.w),
 
           // Glass menu button (header spec, 0.25 opacity)
           LiquidGlassButton(
@@ -942,13 +942,11 @@ class _AddDayCard extends StatelessWidget {
                   extra: schedule?.localId,
                 ),
                 child: Container(
-                  width: 69.w,
-                  height: 68.h,
+                  width: 69.r,
+                  height: 69.r,
                   decoration: BoxDecoration(
                     color: colors.accent,
-                    borderRadius: BorderRadius.circular(
-                      AppRadius.scheduleCircle.r,
-                    ),
+                    shape: BoxShape.circle,
                   ),
                   child: Icon(
                     Icons.add,
@@ -967,13 +965,11 @@ class _AddDayCard extends StatelessWidget {
                       )
                     : context.push(AppRoutes.discoverPrograms),
                 child: Container(
-                  width: 69.w,
-                  height: 64.h,
+                  width: 64.r,
+                  height: 64.r,
                   decoration: BoxDecoration(
                     color: AppColors.of(context).white,
-                    borderRadius: BorderRadius.circular(
-                      AppRadius.scheduleCircle.r,
-                    ),
+                    shape: BoxShape.circle,
                   ),
                   child: Icon(
                     Icons.grid_view_rounded,
@@ -1036,7 +1032,6 @@ class _DayCard extends ConsumerWidget {
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 // Day name as big title + next session subtitle
                 Text(
@@ -1068,13 +1063,11 @@ class _DayCard extends ConsumerWidget {
                 onTap: () =>
                     context.push(AppRoutes.activeSession, extra: day.localId),
                 child: Container(
-                  width: 69.w,
-                  height: 68.h,
+                  width: 69.r,
+                  height: 69.r,
                   decoration: BoxDecoration(
                     color: colors.accent,
-                    borderRadius: BorderRadius.circular(
-                      AppRadius.scheduleCircle.r,
-                    ),
+                    shape: BoxShape.circle,
                   ),
                   child: Icon(
                     Icons.play_arrow_rounded,
@@ -1091,13 +1084,11 @@ class _DayCard extends ConsumerWidget {
                   extra: schedule.localId,
                 ),
                 child: Container(
-                  width: 69.w,
-                  height: 64.h,
+                  width: 64.r,
+                  height: 64.r,
                   decoration: BoxDecoration(
                     color: AppColors.of(context).white,
-                    borderRadius: BorderRadius.circular(
-                      AppRadius.scheduleCircle.r,
-                    ),
+                    shape: BoxShape.circle,
                   ),
                   child: Icon(
                     Icons.grid_view_rounded,

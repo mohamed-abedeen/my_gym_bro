@@ -26,6 +26,8 @@
   "undertrained": "Undertrained",
   "healingTitle": "Healing...",
   "healingSubtitle": "Your body needs some rest",
+  "readyTitle": "Ready",
+  "readySubtitle": "Your body is ready to train",
   "sets": "Sets",
   "reps": "Reps",
   "weight": "Weight",
@@ -889,6 +891,8 @@
   "discoverLevel": "Level",
   "discoverGoal": "Goal",
   "discoverEquipment": "Equipment",
+  "discoverCategory": "Category",
+  "discoverNoMatches": "No programs match your filters, Bro!",
   "discoverRoutinesCount": "{count, plural, =1{1 routine} other{{count} routines}}",
   "@discoverRoutinesCount": {
     "placeholders": {
