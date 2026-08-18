@@ -20,6 +20,21 @@ The app does **not** call custom CRUD endpoints — it uses the Supabase SDK aga
 
 **Rules for new tables (follows, challenge_participants, skin_ownership):** they ride the same outbox. Server-authoritative tables (`leaderboard_scores`, purchased `skin_ownership`) are **read-only to the client** and never enter the outbox.
 
+> **2026-08-18 additions:** (a) a fourth operation, **`rpc`** — `syncTableName`
+> holds a SQL function name, the payload is its single `p` jsonb arg. Used by
+> **workout upload** (`push_workout`, migration 019): one atomic item per
+> finished session (summary + performed exercises + completed sets), with
+> client-generated uuids persisted in local `remoteId` columns for idempotent
+> re-push — per-table INSERT items would risk children being permanently
+> dropped on FK errors while their parent retries. `WorkoutPushService` claims
+> uuids atomically inside a transaction (concurrent backfills can't
+> double-push) and backfills any never-pushed finished session on sign-in.
+> Deleting a logged workout enqueues a server soft-delete before the local
+> hard delete. (b) The sync pass **parks while signed out** — anon writes
+> would land in the permanent-drop codes and destroy queued work. (c)
+> `user_profiles` updates PATCH by `user_id` (the profile's remote key), not
+> `id`. Permanent-drop codes now include `P0001` + `22xxx` casts.
+
 ---
 
 ## 2. Current Edge Functions *(built)*

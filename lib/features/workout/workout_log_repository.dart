@@ -6,6 +6,7 @@ import 'package:my_gym_bro/core/database/daos/schedule_dao.dart';
 import 'package:my_gym_bro/core/database/daos/session_dao.dart';
 import 'package:my_gym_bro/core/services/crash_reporter.dart';
 import 'package:my_gym_bro/core/services/sync_service.dart';
+import 'package:my_gym_bro/core/services/workout_push_service.dart';
 
 // ── Data-transfer objects ──────────────────────────────────────────────────
 // These lightweight classes decouple the UI layer from Drift's generated
@@ -291,7 +292,11 @@ class WorkoutLogRepository {
     return day?.scheduleId;
   }
 
-  /// Finish a session, persist summary data, and enqueue for sync.
+  /// Finish a session, persist summary data, and enqueue the whole workout
+  /// (session + performed exercises + completed sets) for upload as ONE
+  /// atomic `push_workout` RPC item (migration 019). This replaced the old
+  /// summary-UPDATE enqueue, which was keyed on a remote id nothing ever
+  /// assigned — workout data never actually reached the server before this.
   Future<void> finishSession(FinishSessionParams params) async {
     await _sessionDao.finishSession(
       params.sessionId,
@@ -300,27 +305,11 @@ class WorkoutLogRepository {
       params.totalVolume,
     );
 
-    // Queue for sync — sync_service reads payload['remote_id'] to target the
-    // row on Supabase; without it every update is silently dropped.
-    final session = await _sessionDao.getById(params.sessionId);
-    final remoteId = session?.remoteId;
-    if (remoteId != null) {
-      try {
-        await _syncService.enqueue(
-          table: 'sessions',
-          rowId: params.sessionId,
-          operation: 'update',
-          payload: {
-            'remote_id': remoteId,
-            'finished_at': params.finishedAt.toIso8601String(),
-            'duration_seconds': params.durationSeconds,
-            // Supabase column is total_volume_kg (see 001_initial_schema).
-            'total_volume_kg': params.totalVolume,
-          },
-        );
-      } on Exception catch (e) {
-        CrashReporter.recordError(e, reason: 'Session sync failed');
-      }
+    try {
+      await WorkoutPushService(_sessionDao.attachedDatabase, _syncService)
+          .enqueuePush(params.sessionId);
+    } on Exception catch (e) {
+      CrashReporter.recordError(e, reason: 'Session sync failed');
     }
   }
 
@@ -348,7 +337,30 @@ class WorkoutLogRepository {
   }
 
   /// Delete an entire session and cascade to its exercises and sets.
-  Future<void> deleteSession(int sessionId) {
+  ///
+  /// A previously-pushed session (remoteId set) gets a server soft-delete
+  /// enqueued FIRST — the local hard delete destroys the uuid pointer, so
+  /// skipping this would leave an orphaned cloud copy inflating the
+  /// leaderboard/reports forever. Server consumers all filter
+  /// `sessions.deleted_at IS NULL`, so soft-deleting the parent suffices.
+  Future<void> deleteSession(int sessionId) async {
+    final session = await _sessionDao.getById(sessionId);
+    final remoteId = session?.remoteId;
+    if (remoteId != null) {
+      try {
+        await _syncService.enqueue(
+          table: 'sessions',
+          rowId: sessionId,
+          operation: 'update',
+          payload: {
+            'remote_id': remoteId,
+            'deleted_at': DateTime.now().toUtc().toIso8601String(),
+          },
+        );
+      } on Exception catch (e) {
+        CrashReporter.recordError(e, reason: 'Session delete sync failed');
+      }
+    }
     return _sessionDao.deleteSession(sessionId);
   }
 

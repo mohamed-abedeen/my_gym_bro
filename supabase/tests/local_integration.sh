@@ -175,6 +175,32 @@ check "reports rerun is idempotent" "0" "$(q "SELECT generate_progress_reports('
 RPT2=$(curl -s "$API/rest/v1/progress_reports?select=user_id" -H "apikey: $ANON" -H "Authorization: Bearer $T2")
 check "RLS: u2 sees only own reports" "1" "$(echo "$RPT2" | jget ".length")"
 
+echo "== workout push (019) =="
+WSID=$(node -pe "require('crypto').randomUUID()")
+WEXID=$(node -pe "require('crypto').randomUUID()")
+WSETID=$(node -pe "require('crypto').randomUUID()")
+PUSH() { curl -s -o /dev/null -w "%{http_code}" -X POST "$API/rest/v1/rpc/push_workout" \
+  -H "apikey: $ANON" -H "Authorization: Bearer $1" -H "Content-Type: application/json" -d "$2"; }
+WPAYLOAD() { echo "{\"p\":{\"session\":{\"id\":\"$WSID\",\"started_at\":\"2026-08-18T09:00:00Z\",\"finished_at\":\"2026-08-18T10:00:00Z\",\"duration_seconds\":3600,\"total_volume_kg\":$1},\"exercises\":[{\"id\":\"$WEXID\",\"exercise_id\":\"bench_press\",\"order_index\":0,\"sets\":[{\"id\":\"$WSETID\",\"set_index\":0,\"weight_kg\":$2,\"reps\":5,\"is_warmup\":false,\"completed_at\":\"2026-08-18T10:00:00Z\"}]}]}}"; }
+check "push_workout uploads a session" "204" "$(PUSH "$T5" "$(WPAYLOAD 500 100)")"
+check "pushed rows land under the caller" "t" \
+  "$(q "SELECT (SELECT count(*)=1 FROM sessions WHERE id='$WSID' AND user_id='$U5') AND (SELECT count(*)=1 FROM sets WHERE id='$WSETID' AND user_id='$U5')")"
+check "re-push heals edited set values" "204" "$(PUSH "$T5" "$(WPAYLOAD 550 110)")"
+check "set updated in place, no duplicates" "110|1" \
+  "$(q "SELECT (SELECT weight_kg FROM sets WHERE id='$WSETID') || '|' || (SELECT count(*) FROM sets WHERE session_exercise_id='$WEXID')")"
+# Depending on server version the hijack dies on the function's P0001
+# ownership guard (400) or RLS's conflict check (42501 → 403) — both are
+# permanent-drop codes client-side, and nothing is written either way.
+HJ=$(PUSH "$T2" "$(WPAYLOAD 500 100)")
+if [ "$HJ" = "400" ] || [ "$HJ" = "403" ]; then
+  check "hijack: pushing another user's session id fails" "$HJ" "$HJ"
+else
+  check "hijack: pushing another user's session id fails" "400-or-403" "$HJ"
+fi
+check "hijack changed nothing" "$U5" "$(q "SELECT user_id FROM sessions WHERE id='$WSID'")"
+check "anon cannot execute push_workout" "401" \
+  "$(curl -s -o /dev/null -w "%{http_code}" -X POST "$API/rest/v1/rpc/push_workout" -H "apikey: $ANON" -H "Content-Type: application/json" -d "$(WPAYLOAD 1 1)")"
+
 echo "== account deletion =="
 q "SELECT delete_account_data('$U3')" >/dev/null
 check "delete_account_data wipes every u3 row" "0" \

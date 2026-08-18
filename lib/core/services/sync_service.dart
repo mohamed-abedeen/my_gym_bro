@@ -21,13 +21,19 @@ class SyncService {
   static const _maxRetries = 3;
 
   /// Postgres/PostgREST error codes that can never succeed on retry: unique
-  /// violation, FK violation, CHECK violation, RLS/privilege denial. Retrying
-  /// these forever would poison the queue — every later pass would pay the
-  /// full retry+backoff cost for an op the server will always reject (easy to
-  /// hit with time-windowed RLS, e.g. a challenge join synced after the
-  /// window's grace period). The op is dropped; the local row stays until the
-  /// owning feature's server snapshot reconciles it.
-  static const _permanentPgCodes = {'23505', '23503', '23514', '42501'};
+  /// violation, FK violation, CHECK violation, RLS/privilege denial, plus
+  /// P0001 (an explicit RAISE from a server function — push_workout's bounds
+  /// and ownership guards) and the 22xxx cast/format errors a malformed
+  /// payload produces. Retrying these forever would poison the queue — every
+  /// later pass would pay the full retry+backoff cost for an op the server
+  /// will always reject (easy to hit with time-windowed RLS, e.g. a
+  /// challenge join synced after the window's grace period). The op is
+  /// dropped; the local row stays until the owning feature's server snapshot
+  /// reconciles it.
+  static const _permanentPgCodes = {
+    '23505', '23503', '23514', '42501',
+    'P0001', '22P02', '22007', '22008',
+  };
 
   /// A raw SQL identifier is interpolated into [_resolveRemoteId]. Every real
   /// sync table is lowercase snake_case; reject anything else so the table name
@@ -68,6 +74,12 @@ class SyncService {
     final hasConnection = connectivityResults.isNotEmpty &&
         !connectivityResults.contains(ConnectivityResult.none);
     if (!hasConnection) return;
+
+    // Signed out → every op would run as anon and be rejected with codes in
+    // [_permanentPgCodes], permanently DESTROYING queued work (e.g. a
+    // workout finished while signed out). Park the queue until a session
+    // exists; the sign-in listener kicks a drain.
+    if (_supabase!.auth.currentSession == null) return;
 
     // Keep draining while items enqueued mid-pass keep arriving; stop when a
     // sweep makes no progress (only deferred/transiently-failing items left)
@@ -180,6 +192,20 @@ class SyncService {
             .delete()
             .eq(remoteKeyColumn(table), remoteId);
         return _SyncResult.synced;
+      case 'rpc':
+        // Atomic multi-table push: `table` is the SQL function name, the
+        // payload is its single `p` jsonb argument (e.g. push_workout —
+        // one item per finished session, so a transiently-failing parent
+        // can never get its children permanently dropped on FK errors).
+        if (!_safeTableName.hasMatch(table)) {
+          CrashReporter.recordError(
+            'Unsafe rpc name: "$table"',
+            reason: 'Sync: dropped rpc item ${item.localId}',
+          );
+          return _SyncResult.synced; // discard, never retry
+        }
+        await _supabase!.rpc<void>(table, params: {'p': payload});
+        return _SyncResult.synced;
       default:
         CrashReporter.recordError(
           'Unknown sync operation: "${item.operation}"',
@@ -225,11 +251,16 @@ class SyncService {
   }
 
   /// Enqueue a change for later sync.
+  ///
+  /// [kickSync]: pass false when enqueuing inside a Drift transaction — the
+  /// fire-and-forget drain would otherwise run in the transaction zone and
+  /// race the commit. The caller kicks [syncAll] itself after committing.
   Future<void> enqueue({
     required String table,
     required int rowId,
     required String operation,
     required Map<String, dynamic> payload,
+    bool kickSync = true,
   }) async {
     await _dao.enqueue(SyncQueueCompanion(
       syncTableName: Value(table),
@@ -242,7 +273,7 @@ class SyncService {
     // Fire-and-forget: callers await enqueue only to persist the queue row.
     // Blocking on syncAll here would make UI flows (e.g. finishSession) wait
     // on a network round-trip before the "Workout complete" screen appears.
-    unawaited(syncAll());
+    if (kickSync) unawaited(syncAll());
   }
 }
 

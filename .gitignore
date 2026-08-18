@@ -61,3 +61,7 @@ app.*.map.json
 
 # Kotlin build/session cache
 android/.kotlin/
+
+# Front/back body-split assets - generated but NOT final (skins being redone with a new pose); untrack until the split work lands
+assets/anatomy_split/
+assets/skins_split/

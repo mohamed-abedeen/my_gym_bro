@@ -140,16 +140,18 @@ pushed. As of the last check the following were pending — **verify with
   the cloud row). Also note: 013's storage cleanup was rewritten 2026-08-17 (current
   Storage API forbids direct DML on storage tables; the DO block downgrades it to a
   NOTICE) — if the cloud bucket ever had objects, empty it via the Storage API.
-- ⚠️ **BLOCKER for every server-side workout feature — the client never pushes
-  workout data (found 2026-08-18, predates Phase 6):** the only workout sync op is
-  `finishSession`'s `sessions` UPDATE, gated on a `remoteId` that nothing ever
-  assigns — no `sessions`/`session_exercises`/`sets` INSERT is ever enqueued, so
-  the cloud workout tables stay empty for real users. Everything that reads them
-  server-side is inert until this is built: leaderboard volume scoring (008/015),
-  challenge validation (014), the bros activity strip (012's session read grants),
-  earned-skin session rules (016), and progress reports (017). Needs its own task:
-  outbox INSERTs for session + children on finish (with remote-id assignment),
-  then backfill semantics for existing local history.
+- ✅ **Workout-data push RESOLVED (2026-08-18, was the blocker for every
+  server-side workout feature):** `push_workout` RPC (migration 019) + a new
+  `rpc` outbox op — one atomic item per finished session, client-generated
+  uuids for idempotent re-push, sign-in backfill for all pre-019 history
+  (stateless: any finished session without a remoteId), server soft-delete on
+  history deletion, sync parked while signed out. Adversarially reviewed
+  (a reproduced concurrent-backfill double-push bug was fixed with atomic
+  in-transaction uuid claims) and validated end-to-end on the local stack.
+  Post-deploy: existing beta users' full history uploads on their next
+  sign-in (capped 200 sessions/scan), after which leaderboard volume,
+  challenge validation, the bros strip, earned skins, and reports all have
+  real data.
 - **Reports (017) deploy notes (2026-08-18):** schedules `generate-reports-weekly`
   (Wed 00:15 UTC) + `generate-reports-monthly` (3rd 00:15) — 48 h after each period
   boundary (015's late-sync grace precedent) — pure SQL, same Vault secrets as 010
@@ -216,8 +218,9 @@ bundled fallback. History in `08-WORKOUTX-MIGRATION.md` (superseded WorkoutX era
 against a **local** Supabase stack, not cloud; large parts of the app have never had an
 on-device pass with real keys (cloud auth, paywall purchase/restore, sync).
 
-**2026-08-18 local validation:** migrations 001→018 replay cleanly on a current stack,
-and `supabase/tests/local_integration.sh` (37 assertions; needs the stack +
+**2026-08-18 local validation:** migrations 001→019 replay cleanly on a current stack,
+and `supabase/tests/local_integration.sh` (44 assertions, incl. workout push/heal/
+hijack; needs the stack +
 `supabase functions serve` with CRON_SECRET/REVENUECAT_WEBHOOK_SECRET test env) passes
 end-to-end: RevenueCat webhook purchase/expiration → gate flips, verify-subscription,
 challenge join/award/moderation RLS + triggers, leaderboard scoring + friends/rivals/

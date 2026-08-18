@@ -701,7 +701,9 @@ class _ProfileSessionCardState extends ConsumerState<_ProfileSessionCard>
 
     if (!confirmed || !mounted) return;
 
-    await ref.read(sessionDaoProvider).deleteSession(sessionId);
+    // Through the repository: a pushed session needs its server soft-delete
+    // enqueued before the local hard delete destroys the uuid pointer.
+    await ref.read(workoutLogRepositoryProvider).deleteSession(sessionId);
     ref
       ..invalidate(enrichedAllSessionsProvider)
       ..invalidate(enrichedRecentSessionsProvider)

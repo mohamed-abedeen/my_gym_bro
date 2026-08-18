@@ -15,6 +15,7 @@ import 'package:my_gym_bro/core/security/secure_storage.dart';
 import 'package:my_gym_bro/core/services/crash_reporter.dart';
 import 'package:my_gym_bro/core/services/subscription_sync_service.dart';
 import 'package:my_gym_bro/core/services/sync_service.dart';
+import 'package:my_gym_bro/core/services/workout_push_service.dart';
 import 'package:my_gym_bro/shared/app_constants.dart';
 import 'package:purchases_flutter/purchases_flutter.dart';
 import 'package:sign_in_with_apple/sign_in_with_apple.dart';
@@ -70,7 +71,19 @@ class AuthNotifier extends StateNotifier<AppAuthState> {
               await _ensureLocalProfile(user);
               // RevenueCat login — fire-and-forget; don't block auth state.
               unawaited(_revenueCatLogin(user.id));
-              unawaited(_syncService.syncAll());
+              // Backfill any never-pushed finished workouts (pre-019 history,
+              // signed-out stretches), then drain the outbox.
+              unawaited(
+                WorkoutPushService(_db, _syncService)
+                    .pushPending()
+                    .catchError((Object e) {
+                      CrashReporter.recordError(
+                        e,
+                        reason: 'Workout push backfill failed',
+                      );
+                    })
+                    .whenComplete(_syncService.syncAll),
+              );
               if (!mounted) return;
               state = state.copyWith(
                 status: AuthStatus.authenticated,

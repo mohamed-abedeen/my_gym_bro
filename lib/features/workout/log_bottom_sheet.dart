@@ -614,7 +614,9 @@ class _SessionCardState extends ConsumerState<_SessionCard> {
 
     if (!confirmed || !mounted) return;
 
-    await ref.read(sessionDaoProvider).deleteSession(sessionId);
+    // Through the repository: a pushed session needs its server soft-delete
+    // enqueued before the local hard delete destroys the uuid pointer.
+    await ref.read(workoutLogRepositoryProvider).deleteSession(sessionId);
     // Refresh every downstream view that derives from session history.
     // Without these the Status card, streak, weekly stats, and home
     // dashboards keep showing the deleted session's contribution.
