@@ -240,16 +240,6 @@ class _ActiveSessionScreenState extends ConsumerState<ActiveSessionScreen>
             90) >
         0;
 
-    // Pop the rest countdown sheet open the moment completing a set starts
-    // a rest timer. With the duration set to Off the timer never starts, so
-    // this stays quiet.
-    ref.listen(activeSessionProvider.select((s) => s.showRestTimer), (
-      prev,
-      next,
-    ) {
-      if (next && !(prev ?? false)) _showRestSheet();
-    });
-
     // "NEW PR!" banner — fires when completeSet detects a new record.
     ref.listen(activeSessionProvider.select((s) => s.prEvent), (prev, next) {
       if (next == null || identical(next, prev)) return;
@@ -352,11 +342,10 @@ class _ActiveSessionScreenState extends ConsumerState<ActiveSessionScreen>
                         button: true,
                         label: l10n.restTimer,
                         child: GestureDetector(
-                          // Live countdown sheet while resting, duration picker
-                          // otherwise (the floating rest pill is gone).
-                          onTap: session.showRestTimer
-                              ? _showRestSheet
-                              : _showRestPickerSheet,
+                          // Opens the default-duration wheel. The live
+                          // countdown itself docks at the bottom of the
+                          // screen while resting (see _RestPanel).
+                          onTap: _showRestPickerSheet,
                           behavior: HitTestBehavior.opaque,
                           child: Icon(
                             Icons.alarm_rounded,
@@ -481,57 +470,70 @@ class _ActiveSessionScreenState extends ConsumerState<ActiveSessionScreen>
             ),
           ),
 
-          // ── Finish / Discard + swipe-up actions drawer handle ──
-          Positioned(
-            left: 20.w,
-            right: 20.w,
-            bottom: bottomPad + 12.h,
-            child: GestureDetector(
-              behavior: HitTestBehavior.translucent,
-              onVerticalDragEnd: (details) {
-                if ((details.primaryVelocity ?? 0) < -200) {
-                  _showActionsSheet();
-                }
-              },
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  // Drag handle — swipe up (or tap) to open the drawer.
-                  // Labeled: it's the only route to Add/Edit Exercises for
-                  // screen-reader users (the swipe gesture is invisible to them).
-                  Semantics(
-                    button: true,
-                    label: l10n.moreOptions,
-                    child: GestureDetector(
-                      onTap: _showActionsSheet,
-                      behavior: HitTestBehavior.opaque,
-                      child: Padding(
-                        padding: EdgeInsets.symmetric(
-                          horizontal: 40.w,
-                          vertical: 6.h,
-                        ),
-                        child: Container(
-                          width: 48.w,
-                          height: 4.h,
-                          decoration: BoxDecoration(
-                            color: colors.textSecondary.withValues(alpha: 0.55),
-                            borderRadius: BorderRadius.circular(2.r),
+          // ── Bottom dock: rest countdown while resting, otherwise the
+          // Finish / Discard row + swipe-up actions drawer handle. The rest
+          // panel is NOT a modal sheet, so the sets above stay editable; it
+          // leaves only when the countdown ends or Skip is pressed. ──
+          if (session.showRestTimer)
+            Positioned(
+              left: 10.w,
+              right: 10.w,
+              bottom: bottomPad + 12.h,
+              child: _RestPanel(notifier: notifier),
+            )
+          else
+            Positioned(
+              left: 20.w,
+              right: 20.w,
+              bottom: bottomPad + 12.h,
+              child: GestureDetector(
+                behavior: HitTestBehavior.translucent,
+                onVerticalDragEnd: (details) {
+                  if ((details.primaryVelocity ?? 0) < -200) {
+                    _showActionsSheet();
+                  }
+                },
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    // Drag handle — swipe up (or tap) to open the drawer.
+                    // Labeled: it's the only route to Add/Edit Exercises for
+                    // screen-reader users (the swipe gesture is invisible to them).
+                    Semantics(
+                      button: true,
+                      label: l10n.moreOptions,
+                      child: GestureDetector(
+                        onTap: _showActionsSheet,
+                        behavior: HitTestBehavior.opaque,
+                        child: Padding(
+                          padding: EdgeInsets.symmetric(
+                            horizontal: 40.w,
+                            vertical: 6.h,
+                          ),
+                          child: Container(
+                            width: 48.w,
+                            height: 4.h,
+                            decoration: BoxDecoration(
+                              color: colors.textSecondary.withValues(
+                                alpha: 0.55,
+                              ),
+                              borderRadius: BorderRadius.circular(2.r),
+                            ),
                           ),
                         ),
                       ),
                     ),
-                  ),
-                  SizedBox(height: 4.h),
-                  // Frosted capsule behind the pills — matches the Figma mock.
-                  GlassSurface(
-                    radius: 34.r,
-                    padding: EdgeInsets.all(6.w),
-                    child: _finishDiscardRow(colors, l10n),
-                  ),
-                ],
+                    SizedBox(height: 4.h),
+                    // Frosted capsule behind the pills — matches the Figma mock.
+                    GlassSurface(
+                      radius: 34.r,
+                      padding: EdgeInsets.all(6.w),
+                      child: _finishDiscardRow(colors, l10n),
+                    ),
+                  ],
+                ),
               ),
             ),
-          ),
         ],
       ),
     );
@@ -737,22 +739,7 @@ class _ActiveSessionScreenState extends ConsumerState<ActiveSessionScreen>
     if (mounted) context.pop();
   }
 
-  void _showRestSheet() {
-    final notifier = ref.read(activeSessionProvider.notifier);
-    showModalBottomSheet<void>(
-      context: context,
-      backgroundColor: Colors.transparent,
-      // No drag-away / barrier-tap dismissal: the sheet leaves only when
-      // the countdown finishes or the user presses Done (the _RestSheet
-      // listener pops it on either).
-      isDismissible: false,
-      enableDrag: false,
-      builder: (_) => _RestSheet(notifier: notifier),
-    );
-  }
-
-  /// Wheel picker for the default rest duration (clock icon). The running
-  /// countdown pill still opens [_RestSheet].
+  /// Wheel picker for the default rest duration (clock icon).
   void _showRestPickerSheet() {
     final exercise = ref.read(activeSessionProvider).currentExercise;
     showModalBottomSheet<void>(
@@ -1426,13 +1413,13 @@ class _ExerciseImageArea extends StatelessWidget {
               child: CachedNetworkImage(
                 cacheManager: ExerciseGifCache.instance,
                 imageUrl: ex!.gifUrl!,
-                width: 260.w,
-                height: 250.h,
+                width: 341.w,
+                height: 341.h,
                 fit: BoxFit.contain,
                 filterQuality: FilterQuality.medium,
-                memCacheWidth: (260.w * MediaQuery.devicePixelRatioOf(context))
+                memCacheWidth: (341.w * MediaQuery.devicePixelRatioOf(context))
                     .toInt(),
-                memCacheHeight: (250.h * MediaQuery.devicePixelRatioOf(context))
+                memCacheHeight: (341.h * MediaQuery.devicePixelRatioOf(context))
                     .toInt(),
                 placeholder: (_, __) => const SizedBox.shrink(),
                 errorWidget: (_, __, ___) => Icon(
@@ -1454,10 +1441,10 @@ class _ExerciseImageArea extends StatelessWidget {
     return GestureDetector(
       onTap: onTap,
       child: ClipRRect(
-        borderRadius: BorderRadius.vertical(bottom: Radius.circular(36.r)),
+        borderRadius: BorderRadius.vertical(bottom: Radius.circular(62.r)),
         child: Container(
           width: double.infinity,
-          height: 330.h,
+          height: 530.h,
           color: AppColors.of(context).white,
           // Only the GIF slides inside the static white card, so the card
           // itself never moves against the app background.
@@ -2598,141 +2585,110 @@ class _SetRowState extends State<_SetRow> {
 }
 
 // ═══════════════════════════════════════════════════════════════
-// REST SHEET — dark countdown panel with -15 / +15 / Skip pills
-// (built to the Figma mock: #1C1C1E card, 48pt time, colored pills)
+// REST PANEL — dark countdown card docked at the bottom of the
+// screen while resting (replaces the Finish/Discard row). Not a
+// modal: the sets above stay editable; it leaves only when the
+// countdown ends or Skip is pressed.
 // ═══════════════════════════════════════════════════════════════
 
-class _RestSheet extends ConsumerWidget {
-  const _RestSheet({required this.notifier});
+class _RestPanel extends StatelessWidget {
+  const _RestPanel({required this.notifier});
   final ActiveSessionNotifier notifier;
 
-  /// Figma palette: dark panel, dark-red −15 pill, dark-green +15/Skip pills.
+  /// Figma panel color; the pills reuse the app's standard button tints.
   static const _panelColor = Color(0xFF1C1C1E);
-  static const _minusBg = Color(0xFF511414);
-  static const _minusFg = Color(0xFFFF6B6B);
-  static const _plusBg = Color(0xFF26662F);
-  static const _plusFg = Color(0xFF2BD958);
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  Widget build(BuildContext context) {
+    final colors = AppColors.of(context);
     final l10n = AppLocalizations.of(context);
-    final running = ref.watch(
-      activeSessionProvider.select((s) => s.showRestTimer),
-    );
 
-    // Close the sheet the moment the rest ends — countdown ran out, "Done"
-    // tapped, or the timer was cancelled elsewhere.
-    ref.listen(activeSessionProvider.select((s) => s.showRestTimer), (
-      prev,
-      next,
-    ) {
-      if ((prev ?? false) && !next && Navigator.of(context).canPop()) {
-        Navigator.of(context).pop();
-      }
-    });
-
-    return Padding(
-      padding: EdgeInsets.fromLTRB(10.w, 0, 10.w, 12.h),
-      child: SafeArea(
-        top: false,
-        child: Container(
-          decoration: BoxDecoration(
-            color: _panelColor,
-            borderRadius: BorderRadius.circular(58.r),
+    return Container(
+      decoration: BoxDecoration(
+        color: _panelColor,
+        borderRadius: BorderRadius.circular(58.r),
+      ),
+      padding: EdgeInsets.fromLTRB(14.w, 14.h, 14.w, 16.h),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          StreamBuilder<int>(
+            stream: notifier.restTimerService.stream,
+            initialData: notifier.restTimerService.remaining,
+            builder: (_, snapshot) {
+              final remaining = snapshot.data ?? 0;
+              final m = remaining ~/ 60;
+              final s = remaining % 60;
+              final timeStr =
+                  '${m.toString().padLeft(2, '0')}:${s.toString().padLeft(2, '0')}';
+              // One meaningful announcement ("Rest timer, 1:30 remaining")
+              // instead of the raw digits. Not a live region — that would
+              // re-announce every second.
+              return Semantics(
+                label: l10n.restTimerRemaining(timeStr),
+                excludeSemantics: true,
+                child: Text(
+                  timeStr,
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 48.sp,
+                    fontWeight: FontWeight.w700,
+                    fontFeatures: const [FontFeature('ss15')],
+                  ),
+                ),
+              );
+            },
           ),
-          padding: EdgeInsets.fromLTRB(14.w, 14.h, 14.w, 16.h),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
+          SizedBox(height: 10.h),
+          Row(
             children: [
-              StreamBuilder<int>(
-                stream: notifier.restTimerService.stream,
-                initialData: notifier.restTimerService.remaining,
-                builder: (_, snapshot) {
-                  final remaining = snapshot.data ?? 0;
-                  final m = remaining ~/ 60;
-                  final s = remaining % 60;
-                  final timeStr = running
-                      ? '${m.toString().padLeft(2, '0')}:${s.toString().padLeft(2, '0')}'
-                      : '--:--';
-                  // One meaningful announcement ("Rest timer, 1:30 remaining")
-                  // instead of the raw digits. Not a live region — that
-                  // would re-announce every second.
-                  return Semantics(
-                    label: running
-                        ? l10n.restTimerRemaining(timeStr)
-                        : l10n.restTimer,
-                    excludeSemantics: true,
-                    child: Text(
-                      timeStr,
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 48.sp,
-                        fontWeight: FontWeight.w700,
-                        fontFeatures: const [FontFeature('ss15')],
-                      ),
-                    ),
-                  );
-                },
+              _pill(
+                '-15',
+                colors: colors,
+                onTap: () => notifier.restTimerService.addTime(-15),
               ),
-              SizedBox(height: 10.h),
-              Row(
-                children: [
-                  _pill(
-                    '-15',
-                    background: _minusBg,
-                    foreground: _minusFg,
-                    onTap: running
-                        ? () => notifier.restTimerService.addTime(-15)
-                        : null,
-                  ),
-                  SizedBox(width: 12.w),
-                  _pill(
-                    '+15',
-                    background: _plusBg,
-                    foreground: _plusFg,
-                    onTap: running
-                        ? () => notifier.restTimerService.addTime(15)
-                        : null,
-                  ),
-                  SizedBox(width: 12.w),
-                  _pill(
-                    l10n.skipRest,
-                    background: _plusBg,
-                    foreground: _plusFg,
-                    // hideRestTimer flips showRestTimer, which the listener
-                    // above turns into the sheet's pop — no explicit pop
-                    // here or the screen route would pop too.
-                    onTap: running ? notifier.hideRestTimer : null,
-                  ),
-                ],
+              SizedBox(width: 12.w),
+              _pill(
+                '+15',
+                colors: colors,
+                onTap: () => notifier.restTimerService.addTime(15),
+              ),
+              SizedBox(width: 12.w),
+              _pill(
+                l10n.skipRest,
+                colors: colors,
+                accent: true,
+                onTap: notifier.hideRestTimer,
               ),
             ],
           ),
-        ),
+        ],
       ),
     );
   }
 
-  /// One of the three equal-width action pills under the countdown.
+  /// One of the three equal-width pills under the countdown — same tints as
+  /// the app's standard buttons (neutral white frost; accent for Skip). The
+  /// panel is dark in both themes, so the neutral text is plain white.
   Widget _pill(
     String label, {
-    required Color background,
-    required Color foreground,
-    VoidCallback? onTap,
+    required AppColorsTheme colors,
+    required VoidCallback onTap,
+    bool accent = false,
   }) {
-    final enabled = onTap != null;
     return Expanded(
-      // button + enabled traits; the visible text supplies the label.
+      // button trait only — the visible text supplies the label.
       child: Semantics(
         button: true,
-        enabled: enabled,
         child: GestureDetector(
           onTap: onTap,
           behavior: HitTestBehavior.opaque,
           child: Container(
             height: 51.h,
             decoration: BoxDecoration(
-              color: background.withValues(alpha: enabled ? 1 : 0.45),
+              color: accent
+                  ? colors.accent.withValues(alpha: 0.16)
+                  : Colors.white.withValues(alpha: 0.12),
               borderRadius: BorderRadius.circular(58.r),
             ),
             child: Center(
@@ -2741,7 +2697,7 @@ class _RestSheet extends ConsumerWidget {
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
                 style: TextStyle(
-                  color: foreground.withValues(alpha: enabled ? 1 : 0.4),
+                  color: accent ? colors.accent : Colors.white,
                   fontSize: 24.sp,
                   fontWeight: FontWeight.w600,
                 ),
