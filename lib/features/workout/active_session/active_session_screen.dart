@@ -49,30 +49,9 @@ Color setTypeColor(SetType type) => switch (type) {
   SetType.failure => const Color(0xFFFF453A),
 };
 
-/// One shared duration for the exercise-switch slide/fade so the GIF, the
-/// title and the sets table move as a single unit.
-const _kExerciseSwitchDuration = Duration(milliseconds: 260);
-
-/// Direction-aware slide+fade for switching exercises. [currentKey] is the
-/// incoming child's key; [dir] is +1 when moving to a later exercise
-/// (content slides in from the right), -1 for an earlier one.
-AnimatedSwitcherTransitionBuilder _exerciseSwitchTransition(
-  Key currentKey,
-  int dir,
-) => (child, animation) {
-  final incoming = child.key == currentKey;
-  final dx = (incoming ? dir : -dir) * 0.25;
-  return FadeTransition(
-    opacity: animation,
-    child: SlideTransition(
-      position: Tween<Offset>(
-        begin: Offset(dx, 0),
-        end: Offset.zero,
-      ).chain(CurveTween(curve: Curves.easeOutCubic)).animate(animation),
-      child: child,
-    ),
-  );
-};
+/// How long the pager takes to settle after the finger lifts (or after a
+/// pill-tap slide-in).
+const _kPagerSettleDuration = Duration(milliseconds: 240);
 
 /// Previous-session sets for an exercise — the set rows' "previous" hint.
 /// Delegates to the notifier so it shares the per-session auto-fill cache.
@@ -93,7 +72,8 @@ class ActiveSessionScreen extends ConsumerStatefulWidget {
       _ActiveSessionScreenState();
 }
 
-class _ActiveSessionScreenState extends ConsumerState<ActiveSessionScreen> {
+class _ActiveSessionScreenState extends ConsumerState<ActiveSessionScreen>
+    with SingleTickerProviderStateMixin {
   Timer? _durationTimer;
   // Elapsed-seconds as a ValueNotifier so only the duration text rebuilds
   // every tick — not the whole _SetsTable / GIF / rest-timer subtree.
@@ -104,15 +84,35 @@ class _ActiveSessionScreenState extends ConsumerState<ActiveSessionScreen> {
   /// anatomy recovery panel; tapping again (or the panel) swaps back.
   bool _showAnatomy = false;
 
-  /// Direction of the exercise-switch slide: +1 = moved to a later exercise
-  /// (content slides in from the right), -1 = earlier. Updated in build by
-  /// comparing the index against [_lastExerciseIndex].
-  int _slideDir = 1;
-  int _lastExerciseIndex = 0;
+  // ── Exercise pager (finger-tracking swipe between exercises) ──
+  //
+  // The GIF, title and sets regions all translate by [_dragX] pixels while
+  // the finger is down, with the adjacent exercise rendered one screen-width
+  // away on the side being revealed. On release [_settle] animates _dragX to
+  // a full page (commit) or back to 0 (abort).
+
+  /// Drives the post-release settle of [_dragX].
+  late final AnimationController _settle;
+
+  /// Current horizontal shift of the paged regions, in pixels.
+  double _dragX = 0;
+
+  /// Whether the adjacent exercise should render beside the current one —
+  /// true during a swipe + its settle; false for pill-tap slide-ins (where
+  /// there is no meaningful "outgoing" neighbor to show).
+  bool _showNeighbor = false;
+
+  /// Set just before the pager itself calls selectExercise, so the
+  /// index-change listener doesn't layer a slide-in on top of the settle.
+  bool _pagerDrove = false;
 
   @override
   void initState() {
     super.initState();
+    _settle = AnimationController.unbounded(vsync: this)
+      ..addListener(() {
+        if (mounted) setState(() => _dragX = _settle.value);
+      });
     WakelockPlus.enable();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       // If a session is already live (the user got here by tapping the
@@ -172,6 +172,7 @@ class _ActiveSessionScreenState extends ConsumerState<ActiveSessionScreen> {
   void dispose() {
     _durationTimer?.cancel();
     _elapsed.dispose();
+    _settle.dispose();
     WakelockPlus.disable();
     // Invalidate providers so the workout/home screens refresh after session ends
     if (_container != null) {
@@ -196,13 +197,38 @@ class _ActiveSessionScreenState extends ConsumerState<ActiveSessionScreen> {
     final notifier = ref.read(activeSessionProvider.notifier);
     final exercise = session.currentExercise;
 
-    // Track which way the user moved so the switch animation slides the
-    // right way (works for swipes, pill taps and the edit-exercises sheet).
-    if (session.currentExerciseIndex != _lastExerciseIndex) {
-      _slideDir = session.currentExerciseIndex > _lastExerciseIndex ? 1 : -1;
-      _lastExerciseIndex = session.currentExerciseIndex;
+    // Adjacent exercise rendered beside the current one while a swipe (or
+    // its settle) is in flight — on the side the drag is revealing.
+    ActiveExercise? neighbor;
+    if (_showNeighbor && _dragX != 0) {
+      final i = session.currentExerciseIndex;
+      if (_dragX < 0 && i < session.exercises.length - 1) {
+        neighbor = session.exercises[i + 1];
+      } else if (_dragX > 0 && i > 0) {
+        neighbor = session.exercises[i - 1];
+      }
     }
-    final exerciseId = exercise?.sessionExerciseId ?? -1;
+
+    // Non-swipe switches (progress pills, edit-exercises sheet) get a quick
+    // slide-in of the new content from its side. Swipe-driven switches are
+    // flagged by the pager so the settle isn't doubled up.
+    ref.listen(activeSessionProvider.select((s) => s.currentExerciseIndex), (
+      prev,
+      next,
+    ) {
+      if (_pagerDrove) {
+        _pagerDrove = false;
+        return;
+      }
+      if (prev == null || prev == next) return;
+      final w = MediaQuery.sizeOf(context).width;
+      _settle.stop();
+      setState(() {
+        _showNeighbor = false;
+        _dragX = next > prev ? w * 0.3 : -w * 0.3;
+      });
+      _settlePager(0);
+    });
 
     // Rest-timer feature state: accent icon = a rest duration is set (the
     // countdown runs after each set); plain = the user picked "Off".
@@ -270,30 +296,23 @@ class _ActiveSessionScreenState extends ConsumerState<ActiveSessionScreen> {
       backgroundColor: colors.background,
       body: Stack(
         children: [
-          // ── Main content — horizontal swipe anywhere switches exercise
-          // (set rows absorb their own horizontal drags, see _SetRow) ──
+          // ── Main content — horizontal drag anywhere pages between
+          // exercises, tracking the finger (set rows absorb their own
+          // horizontal drags, see _SetRow) ──
           GestureDetector(
             behavior: HitTestBehavior.translucent,
-            onHorizontalDragEnd: _handleExerciseSwipe,
+            onHorizontalDragStart: _onPagerDragStart,
+            onHorizontalDragUpdate: _onPagerDragUpdate,
+            onHorizontalDragEnd: _onPagerDragEnd,
+            onHorizontalDragCancel: () => _settlePager(0),
             child: Column(
               children: [
                 // Exercise image card
                 _ExerciseImageArea(
                   exercise: exercise,
-                  slideDir: _slideDir,
+                  neighbor: neighbor,
+                  offsetX: _dragX,
                   onTap: () => _openExerciseDetail(exercise),
-                  onSwipeLeft:
-                      session.currentExerciseIndex <
-                          session.exercises.length - 1
-                      ? () => notifier.selectExercise(
-                          session.currentExerciseIndex + 1,
-                        )
-                      : null,
-                  onSwipeRight: session.currentExerciseIndex > 0
-                      ? () => notifier.selectExercise(
-                          session.currentExerciseIndex - 1,
-                        )
-                      : null,
                 ),
 
                 // Progress pills
@@ -311,31 +330,22 @@ class _ActiveSessionScreenState extends ConsumerState<ActiveSessionScreen> {
                   child: Row(
                     children: [
                       Expanded(
-                        child: AnimatedSwitcher(
-                          duration: _kExerciseSwitchDuration,
-                          transitionBuilder: _exerciseSwitchTransition(
-                            ValueKey('title_$exerciseId'),
-                            _slideDir,
-                          ),
-                          layoutBuilder: (currentChild, previousChildren) =>
-                              Stack(
-                                alignment: AlignmentDirectional.centerStart,
-                                children: [
-                                  ...previousChildren,
-                                  if (currentChild != null) currentChild,
-                                ],
-                              ),
-                          child: Text(
+                        child: _PagedRegion(
+                          offsetX: _dragX,
+                          current: Text(
                             exercise?.name ?? l10n.addExercise,
-                            key: ValueKey('title_$exerciseId'),
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
-                            style: TextStyle(
-                              color: colors.textPrimary,
-                              fontSize: 22.sp,
-                              fontWeight: FontWeight.w800,
-                            ),
+                            style: _titleStyle(colors),
                           ),
+                          neighbor: neighbor == null
+                              ? null
+                              : Text(
+                                  neighbor.name,
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: _titleStyle(colors),
+                                ),
                         ),
                       ),
                       SizedBox(width: 12.w),
@@ -383,41 +393,41 @@ class _ActiveSessionScreenState extends ConsumerState<ActiveSessionScreen> {
 
                 // Sets list
                 Expanded(
-                  child: AnimatedSwitcher(
-                    duration: _kExerciseSwitchDuration,
-                    transitionBuilder: _exerciseSwitchTransition(
-                      ValueKey('sets_$exerciseId'),
-                      _slideDir,
-                    ),
-                    child: KeyedSubtree(
-                      key: ValueKey('sets_$exerciseId'),
-                      child: exercise != null
-                          ? _SetsTable(
-                              exercise: exercise,
-                              notifier: notifier,
-                              l10n: l10n,
-                            )
-                          : Center(
-                              child: Column(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  Icon(
-                                    Icons.fitness_center_rounded,
+                  child: _PagedRegion(
+                    offsetX: _dragX,
+                    neighbor: neighbor == null
+                        ? null
+                        : _SetsTable(
+                            exercise: neighbor,
+                            notifier: notifier,
+                            l10n: l10n,
+                          ),
+                    current: exercise != null
+                        ? _SetsTable(
+                            exercise: exercise,
+                            notifier: notifier,
+                            l10n: l10n,
+                          )
+                        : Center(
+                            child: Column(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Icon(
+                                  Icons.fitness_center_rounded,
+                                  color: colors.textSecondary,
+                                  size: 48.sp,
+                                ),
+                                SizedBox(height: 16.h),
+                                Text(
+                                  l10n.addExercise,
+                                  style: TextStyle(
                                     color: colors.textSecondary,
-                                    size: 48.sp,
+                                    fontSize: 16.sp,
                                   ),
-                                  SizedBox(height: 16.h),
-                                  Text(
-                                    l10n.addExercise,
-                                    style: TextStyle(
-                                      color: colors.textSecondary,
-                                      fontSize: 16.sp,
-                                    ),
-                                  ),
-                                ],
-                              ),
+                                ),
+                              ],
                             ),
-                    ),
+                          ),
                   ),
                 ),
               ],
@@ -733,6 +743,11 @@ class _ActiveSessionScreenState extends ConsumerState<ActiveSessionScreen> {
     showModalBottomSheet<void>(
       context: context,
       backgroundColor: Colors.transparent,
+      // No drag-away / barrier-tap dismissal: the sheet leaves only when
+      // the countdown finishes or the user presses Done (the _RestSheet
+      // listener pops it on either).
+      isDismissible: false,
+      enableDrag: false,
       builder: (_) => _RestSheet(notifier: notifier),
     );
   }
@@ -1090,18 +1105,87 @@ class _ActiveSessionScreenState extends ConsumerState<ActiveSessionScreen> {
     await notifier.reorderExercises(lastIndex, oldIndex);
   }
 
-  /// Swipe anywhere on the screen body to switch exercise — same velocity
-  /// rule as swiping the GIF card.
-  void _handleExerciseSwipe(DragEndDetails details) {
+  TextStyle _titleStyle(AppColorsTheme colors) => TextStyle(
+    color: colors.textPrimary,
+    fontSize: 22.sp,
+    fontWeight: FontWeight.w800,
+  );
+
+  // ── Exercise pager gestures ──
+
+  void _onPagerDragStart(DragStartDetails _) {
+    if (ref.read(activeSessionProvider).exercises.isEmpty) return;
+    _settle.stop();
+    setState(() => _showNeighbor = true);
+  }
+
+  void _onPagerDragUpdate(DragUpdateDetails details) {
     final session = ref.read(activeSessionProvider);
-    final notifier = ref.read(activeSessionProvider.notifier);
-    final v = details.primaryVelocity ?? 0;
-    if (v < -200 &&
-        session.currentExerciseIndex < session.exercises.length - 1) {
-      notifier.selectExercise(session.currentExerciseIndex + 1);
-    } else if (v > 200 && session.currentExerciseIndex > 0) {
-      notifier.selectExercise(session.currentExerciseIndex - 1);
+    if (session.exercises.isEmpty) return;
+    var delta = details.delta.dx;
+    // Rubber-band when there's no exercise on the side being revealed.
+    final i = session.currentExerciseIndex;
+    final heading = _dragX + delta;
+    final noNext = i >= session.exercises.length - 1;
+    final noPrev = i <= 0;
+    if ((heading < 0 && noNext) || (heading > 0 && noPrev)) delta *= 0.25;
+    // Never further than one full page in either direction.
+    final w = MediaQuery.sizeOf(context).width;
+    setState(() => _dragX = (_dragX + delta).clamp(-w, w));
+  }
+
+  void _onPagerDragEnd(DragEndDetails details) {
+    final session = ref.read(activeSessionProvider);
+    if (session.exercises.isEmpty) {
+      _settlePager(0);
+      return;
     }
+    final w = MediaQuery.sizeOf(context).width;
+    final v = details.primaryVelocity ?? 0;
+    final i = session.currentExerciseIndex;
+    final canNext = i < session.exercises.length - 1;
+    final canPrev = i > 0;
+    // Commit on a fling or past a third of the screen, in the drag's own
+    // direction; otherwise spring back.
+    if (_dragX < 0 && canNext && (v <= -500 || _dragX <= -w / 3)) {
+      _settlePager(-w, thenSelect: i + 1);
+    } else if (_dragX > 0 && canPrev && (v >= 500 || _dragX >= w / 3)) {
+      _settlePager(w, thenSelect: i - 1);
+    } else {
+      _settlePager(0);
+    }
+  }
+
+  /// Animate [_dragX] to [target]; when [thenSelect] is set, switch to that
+  /// exercise at the end of the run and snap the pager back to rest (the
+  /// incoming page is exactly at 0 at that moment, so the swap is seamless).
+  /// A new drag mid-settle stops the controller, which also abandons the
+  /// pending select (the TickerFuture never completes).
+  void _settlePager(double target, {int? thenSelect}) {
+    _settle
+      ..stop()
+      ..value = _dragX;
+    unawaited(
+      _settle
+          .animateTo(
+            target,
+            duration: _kPagerSettleDuration,
+            curve: Curves.easeOutCubic,
+          )
+          .whenComplete(() {
+            if (!mounted) return;
+            setState(() {
+              if (thenSelect != null) {
+                _pagerDrove = true;
+                ref
+                    .read(activeSessionProvider.notifier)
+                    .selectExercise(thenSelect);
+              }
+              _dragX = 0;
+              _showNeighbor = false;
+            });
+          }),
+    );
   }
 
   /// Open the full exercise detail screen (summary, history, how-to) for
@@ -1316,94 +1400,116 @@ class _StatColumn extends StatelessWidget {
 class _ExerciseImageArea extends StatelessWidget {
   const _ExerciseImageArea({
     required this.exercise,
-    required this.slideDir,
+    required this.neighbor,
+    required this.offsetX,
     this.onTap,
-    this.onSwipeLeft,
-    this.onSwipeRight,
   });
   final ActiveExercise? exercise;
 
-  /// Slide direction for the exercise-switch animation (+1 = from the right).
-  final int slideDir;
+  /// Adjacent exercise revealed by the in-flight swipe (see _PagedRegion).
+  final ActiveExercise? neighbor;
+
+  /// Pager shift in pixels — the GIF slides inside the static white card.
+  final double offsetX;
 
   /// Called when the GIF is tapped — opens the exercise detail (how-to + info).
   final VoidCallback? onTap;
-
-  /// Called when the user swipes left (→ next exercise). Null when already at last.
-  final VoidCallback? onSwipeLeft;
-
-  /// Called when the user swipes right (→ previous exercise). Null when already at first.
-  final VoidCallback? onSwipeRight;
-
-  static const double _kVelocityThreshold = 200;
 
   @override
   Widget build(BuildContext context) {
     final topPad = MediaQuery.of(context).padding.top;
 
+    Widget content(ActiveExercise? ex) => ex?.gifUrl != null
+        ? Center(
+            child: Padding(
+              // Keep the GIF clear of the floating stats capsule.
+              padding: EdgeInsets.only(top: topPad + 30.h),
+              child: CachedNetworkImage(
+                cacheManager: ExerciseGifCache.instance,
+                imageUrl: ex!.gifUrl!,
+                width: 260.w,
+                height: 250.h,
+                fit: BoxFit.contain,
+                filterQuality: FilterQuality.medium,
+                memCacheWidth: (260.w * MediaQuery.devicePixelRatioOf(context))
+                    .toInt(),
+                memCacheHeight: (250.h * MediaQuery.devicePixelRatioOf(context))
+                    .toInt(),
+                placeholder: (_, __) => const SizedBox.shrink(),
+                errorWidget: (_, __, ___) => Icon(
+                  Icons.fitness_center_rounded,
+                  color: AppColors.of(context).textSecondary,
+                  size: 60.sp,
+                ),
+              ),
+            ),
+          )
+        : Center(
+            child: Icon(
+              Icons.fitness_center_rounded,
+              color: AppColors.of(context).textSecondary,
+              size: 60.sp,
+            ),
+          );
+
     return GestureDetector(
       onTap: onTap,
-      onHorizontalDragEnd: (details) {
-        final v = details.primaryVelocity ?? 0;
-        if (v < -_kVelocityThreshold) {
-          onSwipeLeft?.call();
-        } else if (v > _kVelocityThreshold) {
-          onSwipeRight?.call();
-        }
-      },
       child: ClipRRect(
         borderRadius: BorderRadius.vertical(bottom: Radius.circular(36.r)),
         child: Container(
           width: double.infinity,
           height: 330.h,
           color: AppColors.of(context).white,
-          // Animate only the GIF over the static white card so the card
-          // itself never fades against the app background.
-          child: AnimatedSwitcher(
-            duration: _kExerciseSwitchDuration,
-            transitionBuilder: _exerciseSwitchTransition(
-              ValueKey('gif_${exercise?.sessionExerciseId ?? -1}'),
-              slideDir,
-            ),
-            child: KeyedSubtree(
-              key: ValueKey('gif_${exercise?.sessionExerciseId ?? -1}'),
-              child: exercise?.gifUrl != null
-                  ? Center(
-                      child: Padding(
-                        // Keep the GIF clear of the floating stats capsule.
-                        padding: EdgeInsets.only(top: topPad + 30.h),
-                        child: CachedNetworkImage(
-                          cacheManager: ExerciseGifCache.instance,
-                          imageUrl: exercise!.gifUrl!,
-                          width: 260.w,
-                          height: 250.h,
-                          fit: BoxFit.contain,
-                          filterQuality: FilterQuality.medium,
-                          memCacheWidth:
-                              (260.w * MediaQuery.devicePixelRatioOf(context))
-                                  .toInt(),
-                          memCacheHeight:
-                              (250.h * MediaQuery.devicePixelRatioOf(context))
-                                  .toInt(),
-                          placeholder: (_, __) => const SizedBox.shrink(),
-                          errorWidget: (_, __, ___) => Icon(
-                            Icons.fitness_center_rounded,
-                            color: AppColors.of(context).textSecondary,
-                            size: 60.sp,
-                          ),
-                        ),
-                      ),
-                    )
-                  : Center(
-                      child: Icon(
-                        Icons.fitness_center_rounded,
-                        color: AppColors.of(context).textSecondary,
-                        size: 60.sp,
-                      ),
-                    ),
-            ),
+          // Only the GIF slides inside the static white card, so the card
+          // itself never moves against the app background.
+          child: _PagedRegion(
+            offsetX: offsetX,
+            current: content(exercise),
+            neighbor: neighbor == null ? null : content(neighbor),
           ),
         ),
+      ),
+    );
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════
+// PAGED REGION — one horizontally-paged slice of the screen
+// ═══════════════════════════════════════════════════════════════
+
+/// Renders [current] shifted by [offsetX] pixels with [neighbor] one
+/// screen-width away on the side being revealed, clipped to the region's own
+/// bounds. All regions use the *screen* width for neighbor placement so they
+/// line up at exactly the same moment when the pager settles on a full page.
+class _PagedRegion extends StatelessWidget {
+  const _PagedRegion({
+    required this.offsetX,
+    required this.current,
+    this.neighbor,
+  });
+  final double offsetX;
+  final Widget current;
+  final Widget? neighbor;
+
+  @override
+  Widget build(BuildContext context) {
+    if (offsetX == 0) return current;
+    final shifted = Transform.translate(
+      offset: Offset(offsetX, 0),
+      child: current,
+    );
+    if (neighbor == null) return ClipRect(child: shifted);
+    final w = MediaQuery.sizeOf(context).width;
+    return ClipRect(
+      child: Stack(
+        fit: StackFit.passthrough,
+        children: [
+          shifted,
+          Transform.translate(
+            offset: Offset(offsetX + (offsetX < 0 ? w : -w), 0),
+            child: neighbor,
+          ),
+        ],
       ),
     );
   }
