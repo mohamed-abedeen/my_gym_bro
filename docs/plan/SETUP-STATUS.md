@@ -126,12 +126,14 @@ pushed. As of the last check the following were pending — **verify with
   `SELECT evaluate_earned_skins();` once after push so existing users get their
   session-based grants immediately. Deploy the `purchase-skin` function (verify_jwt stays
   ON — no config change) and set `REVENUECAT_SECRET_KEY` (RevenueCat section above).
-  ⚠️ **Grants audit before the first push:** projects created after 2026-05-30 don't
-  auto-grant table privileges to the API roles — 016's tables carry explicit
-  `GRANT SELECT`, but the 012/014/015 tables (`friendships`, `user_reports`,
-  `challenges`, `challenge_participants`, `challenge_reports`, `season_results`,
-  `rival_pods`, `rival_pod_members`) rely on the old default and may need the same
-  grants on a fresh cloud project. Post-deploy check: gallery shows owned skins after
+  ✅ **Grants audit resolved by `018_api_role_grants.sql` (2026-08-18):** confirmed
+  empirically on a fresh local stack — WITHOUT 018, every table from 001–015 had no
+  DML grants for `authenticated` OR `service_role` (challenge joins/friend requests/
+  profile PATCHes 403'd; the RevenueCat webhook 500'd on "permission denied for table
+  subscriptions"). 018 backfills grants for both roles per the RLS policy surface
+  (user_profiles keeps 009's column-scoped write lockdown; anon gets nothing). The
+  existing cloud project predates the 2026-05-30 default flip, so 018 is a no-op
+  there — it protects fresh projects, preview branches, and local stacks. Post-deploy check: gallery shows owned skins after
   a `skin_ownership` grant; profile-field sync verified (a 2026-08-17 client fix — 
   `user_profiles` PATCHes were silently matching zero rows by keying on `id` instead of
   `user_id`, which also broke tone/username sync; verify tone + skin selection land in
@@ -212,7 +214,18 @@ bundled fallback. History in `08-WORKOUTX-MIGRATION.md` (superseded WorkoutX era
 
 `TESTING.md` is the authoritative checklist. Big picture: the backend phases were verified
 against a **local** Supabase stack, not cloud; large parts of the app have never had an
-on-device pass with real keys (cloud auth, paywall purchase/restore, sync). A plain
+on-device pass with real keys (cloud auth, paywall purchase/restore, sync).
+
+**2026-08-18 local validation:** migrations 001→018 replay cleanly on a current stack,
+and `supabase/tests/local_integration.sh` (37 assertions; needs the stack +
+`supabase functions serve` with CRON_SECRET/REVENUECAT_WEBHOOK_SECRET test env) passes
+end-to-end: RevenueCat webhook purchase/expiration → gate flips, verify-subscription,
+challenge join/award/moderation RLS + triggers, leaderboard scoring + friends/rivals/
+season RPCs + winner, earned-skin grants (sessions + season-win rules, idempotent),
+skin anti-spoof + selection sync + public profile, purchase-skin auth/fail-soft,
+weekly report metrics/deltas/PR-count + RLS, delete_account_data full wipe. NOT
+covered (impossible without a device + finished RevenueCat setup): real StoreKit/Play
+purchases, purchase-skin's happy path against live RevenueCat, push delivery via FCM. A plain
 `flutter run` with no `--dart-define`s runs fully offline (Supabase/RevenueCat inert) —
 that's the safe default for UI work.
 
