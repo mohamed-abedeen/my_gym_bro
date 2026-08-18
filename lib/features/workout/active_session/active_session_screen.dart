@@ -26,6 +26,8 @@ import 'package:my_gym_bro/features/workout/muscle_recovery_service.dart';
 import 'package:my_gym_bro/features/workout/plate_calculator_sheet.dart';
 import 'package:my_gym_bro/features/workout/share/share_card_data.dart';
 import 'package:my_gym_bro/features/workout/share/share_helpers.dart';
+import 'package:my_gym_bro/features/workout/workout_log_repository.dart'
+    show LastLoggedSetInfo;
 import 'package:my_gym_bro/features/workout/workout_providers.dart';
 import 'package:my_gym_bro/l10n/app_localizations.dart';
 import 'package:my_gym_bro/shared/constants.dart';
@@ -46,6 +48,39 @@ Color setTypeColor(SetType type) => switch (type) {
   SetType.dropset => const Color(0xFFFF9F0A),
   SetType.failure => const Color(0xFFFF453A),
 };
+
+/// One shared duration for the exercise-switch slide/fade so the GIF, the
+/// title and the sets table move as a single unit.
+const _kExerciseSwitchDuration = Duration(milliseconds: 260);
+
+/// Direction-aware slide+fade for switching exercises. [currentKey] is the
+/// incoming child's key; [dir] is +1 when moving to a later exercise
+/// (content slides in from the right), -1 for an earlier one.
+AnimatedSwitcherTransitionBuilder _exerciseSwitchTransition(
+  Key currentKey,
+  int dir,
+) => (child, animation) {
+  final incoming = child.key == currentKey;
+  final dx = (incoming ? dir : -dir) * 0.25;
+  return FadeTransition(
+    opacity: animation,
+    child: SlideTransition(
+      position: Tween<Offset>(
+        begin: Offset(dx, 0),
+        end: Offset.zero,
+      ).chain(CurveTween(curve: Curves.easeOutCubic)).animate(animation),
+      child: child,
+    ),
+  );
+};
+
+/// Previous-session sets for an exercise — the set rows' "previous" hint.
+/// Delegates to the notifier so it shares the per-session auto-fill cache.
+final _lastLoggedSetsProvider = FutureProvider.autoDispose
+    .family<List<LastLoggedSetInfo>, String>(
+      (ref, exerciseId) =>
+          ref.watch(activeSessionProvider.notifier).lastLoggedSets(exerciseId),
+    );
 
 class ActiveSessionScreen extends ConsumerStatefulWidget {
   const ActiveSessionScreen({super.key, this.scheduleDayId});
@@ -68,6 +103,12 @@ class _ActiveSessionScreenState extends ConsumerState<ActiveSessionScreen> {
   /// Tapping the mini body in the top bar swaps the GIF card for the
   /// anatomy recovery panel; tapping again (or the panel) swaps back.
   bool _showAnatomy = false;
+
+  /// Direction of the exercise-switch slide: +1 = moved to a later exercise
+  /// (content slides in from the right), -1 = earlier. Updated in build by
+  /// comparing the index against [_lastExerciseIndex].
+  int _slideDir = 1;
+  int _lastExerciseIndex = 0;
 
   @override
   void initState() {
@@ -155,6 +196,35 @@ class _ActiveSessionScreenState extends ConsumerState<ActiveSessionScreen> {
     final notifier = ref.read(activeSessionProvider.notifier);
     final exercise = session.currentExercise;
 
+    // Track which way the user moved so the switch animation slides the
+    // right way (works for swipes, pill taps and the edit-exercises sheet).
+    if (session.currentExerciseIndex != _lastExerciseIndex) {
+      _slideDir = session.currentExerciseIndex > _lastExerciseIndex ? 1 : -1;
+      _lastExerciseIndex = session.currentExerciseIndex;
+    }
+    final exerciseId = exercise?.sessionExerciseId ?? -1;
+
+    // Rest-timer feature state: accent icon = a rest duration is set (the
+    // countdown runs after each set); plain = the user picked "Off".
+    final restEnabled =
+        (ref.watch(
+              userProfileProvider.select(
+                (p) => p.valueOrNull?.defaultRestSeconds,
+              ),
+            ) ??
+            90) >
+        0;
+
+    // Pop the rest countdown sheet open the moment completing a set starts
+    // a rest timer. With the duration set to Off the timer never starts, so
+    // this stays quiet.
+    ref.listen(activeSessionProvider.select((s) => s.showRestTimer), (
+      prev,
+      next,
+    ) {
+      if (next && !(prev ?? false)) _showRestSheet();
+    });
+
     // "NEW PR!" banner — fires when completeSet detects a new record.
     ref.listen(activeSessionProvider.select((s) => s.prEvent), (prev, next) {
       if (next == null || identical(next, prev)) return;
@@ -210,6 +280,7 @@ class _ActiveSessionScreenState extends ConsumerState<ActiveSessionScreen> {
                 // Exercise image card
                 _ExerciseImageArea(
                   exercise: exercise,
+                  slideDir: _slideDir,
                   onTap: () => _openExerciseDetail(exercise),
                   onSwipeLeft:
                       session.currentExerciseIndex <
@@ -240,14 +311,30 @@ class _ActiveSessionScreenState extends ConsumerState<ActiveSessionScreen> {
                   child: Row(
                     children: [
                       Expanded(
-                        child: Text(
-                          exercise?.name ?? l10n.addExercise,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: TextStyle(
-                            color: colors.textPrimary,
-                            fontSize: 22.sp,
-                            fontWeight: FontWeight.w800,
+                        child: AnimatedSwitcher(
+                          duration: _kExerciseSwitchDuration,
+                          transitionBuilder: _exerciseSwitchTransition(
+                            ValueKey('title_$exerciseId'),
+                            _slideDir,
+                          ),
+                          layoutBuilder: (currentChild, previousChildren) =>
+                              Stack(
+                                alignment: AlignmentDirectional.centerStart,
+                                children: [
+                                  ...previousChildren,
+                                  if (currentChild != null) currentChild,
+                                ],
+                              ),
+                          child: Text(
+                            exercise?.name ?? l10n.addExercise,
+                            key: ValueKey('title_$exerciseId'),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: TextStyle(
+                              color: colors.textPrimary,
+                              fontSize: 22.sp,
+                              fontWeight: FontWeight.w800,
+                            ),
                           ),
                         ),
                       ),
@@ -264,7 +351,9 @@ class _ActiveSessionScreenState extends ConsumerState<ActiveSessionScreen> {
                           behavior: HitTestBehavior.opaque,
                           child: Icon(
                             Icons.alarm_rounded,
-                            color: colors.textPrimary,
+                            color: restEnabled
+                                ? colors.accent
+                                : colors.textPrimary,
                             size: 22.sp,
                           ),
                         ),
@@ -294,32 +383,42 @@ class _ActiveSessionScreenState extends ConsumerState<ActiveSessionScreen> {
 
                 // Sets list
                 Expanded(
-                  child: exercise != null
-                      ? _SetsTable(
-                          exercise: exercise,
-                          notifier: notifier,
-                          l10n: l10n,
-                        )
-                      : Center(
-                          child: Column(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Icon(
-                                Icons.fitness_center_rounded,
-                                color: colors.textSecondary,
-                                size: 48.sp,
+                  child: AnimatedSwitcher(
+                    duration: _kExerciseSwitchDuration,
+                    transitionBuilder: _exerciseSwitchTransition(
+                      ValueKey('sets_$exerciseId'),
+                      _slideDir,
+                    ),
+                    child: KeyedSubtree(
+                      key: ValueKey('sets_$exerciseId'),
+                      child: exercise != null
+                          ? _SetsTable(
+                              exercise: exercise,
+                              notifier: notifier,
+                              l10n: l10n,
+                            )
+                          : Center(
+                              child: Column(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Icon(
+                                    Icons.fitness_center_rounded,
+                                    color: colors.textSecondary,
+                                    size: 48.sp,
+                                  ),
+                                  SizedBox(height: 16.h),
+                                  Text(
+                                    l10n.addExercise,
+                                    style: TextStyle(
+                                      color: colors.textSecondary,
+                                      fontSize: 16.sp,
+                                    ),
+                                  ),
+                                ],
                               ),
-                              SizedBox(height: 16.h),
-                              Text(
-                                l10n.addExercise,
-                                style: TextStyle(
-                                  color: colors.textSecondary,
-                                  fontSize: 16.sp,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
+                            ),
+                    ),
+                  ),
                 ),
               ],
             ),
@@ -1217,11 +1316,15 @@ class _StatColumn extends StatelessWidget {
 class _ExerciseImageArea extends StatelessWidget {
   const _ExerciseImageArea({
     required this.exercise,
+    required this.slideDir,
     this.onTap,
     this.onSwipeLeft,
     this.onSwipeRight,
   });
   final ActiveExercise? exercise;
+
+  /// Slide direction for the exercise-switch animation (+1 = from the right).
+  final int slideDir;
 
   /// Called when the GIF is tapped — opens the exercise detail (how-to + info).
   final VoidCallback? onTap;
@@ -1254,40 +1357,52 @@ class _ExerciseImageArea extends StatelessWidget {
           width: double.infinity,
           height: 330.h,
           color: AppColors.of(context).white,
-          child: exercise?.gifUrl != null
-              ? Center(
-                  child: Padding(
-                    // Keep the GIF clear of the floating stats capsule.
-                    padding: EdgeInsets.only(top: topPad + 30.h),
-                    child: CachedNetworkImage(
-                      cacheManager: ExerciseGifCache.instance,
-                      imageUrl: exercise!.gifUrl!,
-                      width: 260.w,
-                      height: 250.h,
-                      fit: BoxFit.contain,
-                      filterQuality: FilterQuality.medium,
-                      memCacheWidth:
-                          (260.w * MediaQuery.devicePixelRatioOf(context))
-                              .toInt(),
-                      memCacheHeight:
-                          (250.h * MediaQuery.devicePixelRatioOf(context))
-                              .toInt(),
-                      placeholder: (_, __) => const SizedBox.shrink(),
-                      errorWidget: (_, __, ___) => Icon(
+          // Animate only the GIF over the static white card so the card
+          // itself never fades against the app background.
+          child: AnimatedSwitcher(
+            duration: _kExerciseSwitchDuration,
+            transitionBuilder: _exerciseSwitchTransition(
+              ValueKey('gif_${exercise?.sessionExerciseId ?? -1}'),
+              slideDir,
+            ),
+            child: KeyedSubtree(
+              key: ValueKey('gif_${exercise?.sessionExerciseId ?? -1}'),
+              child: exercise?.gifUrl != null
+                  ? Center(
+                      child: Padding(
+                        // Keep the GIF clear of the floating stats capsule.
+                        padding: EdgeInsets.only(top: topPad + 30.h),
+                        child: CachedNetworkImage(
+                          cacheManager: ExerciseGifCache.instance,
+                          imageUrl: exercise!.gifUrl!,
+                          width: 260.w,
+                          height: 250.h,
+                          fit: BoxFit.contain,
+                          filterQuality: FilterQuality.medium,
+                          memCacheWidth:
+                              (260.w * MediaQuery.devicePixelRatioOf(context))
+                                  .toInt(),
+                          memCacheHeight:
+                              (250.h * MediaQuery.devicePixelRatioOf(context))
+                                  .toInt(),
+                          placeholder: (_, __) => const SizedBox.shrink(),
+                          errorWidget: (_, __, ___) => Icon(
+                            Icons.fitness_center_rounded,
+                            color: AppColors.of(context).textSecondary,
+                            size: 60.sp,
+                          ),
+                        ),
+                      ),
+                    )
+                  : Center(
+                      child: Icon(
                         Icons.fitness_center_rounded,
                         color: AppColors.of(context).textSecondary,
                         size: 60.sp,
                       ),
                     ),
-                  ),
-                )
-              : Center(
-                  child: Icon(
-                    Icons.fitness_center_rounded,
-                    color: AppColors.of(context).textSecondary,
-                    size: 60.sp,
-                  ),
-                ),
+            ),
+          ),
         ),
       ),
     );
@@ -1569,7 +1684,7 @@ class _ProgressPills extends StatelessWidget {
 // SETS TABLE — non-scrolling column of glassy set-row pills
 // ═══════════════════════════════════════════════════════════════
 
-class _SetsTable extends StatelessWidget {
+class _SetsTable extends ConsumerWidget {
   const _SetsTable({
     required this.exercise,
     required this.notifier,
@@ -1580,7 +1695,12 @@ class _SetsTable extends StatelessWidget {
   final AppLocalizations l10n;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    // Last-time sets for the "previous" hint on each row (position-matched).
+    final previous =
+        ref.watch(_lastLoggedSetsProvider(exercise.exerciseId)).valueOrNull ??
+        const <LastLoggedSetInfo>[];
+
     // ponytail: plain Column, no scroll — realistic workouts stay well under
     // ~7 sets per exercise. Rows past the screen bottom clip behind the
     // floating chrome; bring back a scrollable if that ever bites.
@@ -1593,6 +1713,9 @@ class _SetsTable extends StatelessWidget {
             exercise: exercise,
             notifier: notifier,
             unit: notifier.weightUnit,
+            previous: s.setIndex < previous.length
+                ? previous[s.setIndex]
+                : null,
           ),
         Padding(
           padding: EdgeInsets.only(top: 8.h),
@@ -1651,12 +1774,17 @@ class _SetRow extends StatefulWidget {
     required this.exercise,
     required this.notifier,
     required this.unit,
+    this.previous,
     super.key,
   });
   final ActiveSet set;
   final ActiveExercise exercise;
   final ActiveSessionNotifier notifier;
   final String unit;
+
+  /// The same-numbered set from the previous session (for the dim
+  /// "20kg × 10" hint), or null when there's no history for this index.
+  final LastLoggedSetInfo? previous;
 
   @override
   State<_SetRow> createState() => _SetRowState();
@@ -1827,6 +1955,24 @@ class _SetRowState extends State<_SetRow> {
     return Row(
       children: [
         _setLabel(colors, l10n, type, typeColor, completed),
+        // Last time's numbers for this set — dim, like the "previous"
+        // column in the classic logbook layout.
+        SizedBox(
+          width: 60.w,
+          child: FittedBox(
+            fit: BoxFit.scaleDown,
+            alignment: AlignmentDirectional.centerStart,
+            child: Text(
+              _previousLabel(),
+              maxLines: 1,
+              style: TextStyle(
+                color: secondary,
+                fontSize: 9.5.sp,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ),
+        ),
         Expanded(
           child: Center(
             child: Row(
@@ -1886,6 +2032,8 @@ class _SetRowState extends State<_SetRow> {
         Row(
           mainAxisSize: MainAxisSize.min,
           children: [
+            // Same editable-hint arrows as the weight field.
+            Icon(Icons.unfold_more, color: primary, size: 14.sp),
             InlineEditableField(
               value: widget.set.reps?.toString() ?? '0',
               allowDecimal: false,
@@ -1994,6 +2142,17 @@ class _SetRowState extends State<_SetRow> {
         ),
       ],
     );
+  }
+
+  /// "20kg × 10" from the previous session's same-numbered set, or "—"
+  /// when there's no matching history.
+  String _previousLabel() {
+    final p = widget.previous;
+    final w = p?.weight;
+    final r = p?.reps;
+    if (w == null || r == null) return '—';
+    final unit = widget.unit == 'lbs' ? 'lbs' : 'kg';
+    return '${widget.notifier.displayWeight(w)}$unit × $r';
   }
 
   TextStyle _fieldStyle(Color color) => TextStyle(
@@ -2349,6 +2508,17 @@ class _RestSheet extends ConsumerWidget {
       activeSessionProvider.select((s) => s.showRestTimer),
     );
 
+    // Close the sheet the moment the rest ends — countdown ran out, "Done"
+    // tapped, or the timer was cancelled elsewhere.
+    ref.listen(activeSessionProvider.select((s) => s.showRestTimer), (
+      prev,
+      next,
+    ) {
+      if ((prev ?? false) && !next && Navigator.of(context).canPop()) {
+        Navigator.of(context).pop();
+      }
+    });
+
     return Padding(
       padding: EdgeInsets.fromLTRB(10.w, 0, 10.w, 12.h),
       child: SafeArea(
@@ -2449,12 +2619,10 @@ class _RestSheet extends ConsumerWidget {
                   _chip(
                     context,
                     l10n.done,
-                    running
-                        ? () {
-                            notifier.hideRestTimer();
-                            Navigator.of(context).pop();
-                          }
-                        : null,
+                    // hideRestTimer flips showRestTimer, which the listener
+                    // above turns into the sheet's pop — no explicit pop
+                    // here or the screen route would pop too.
+                    running ? notifier.hideRestTimer : null,
                     accent: true,
                   ),
                 ],

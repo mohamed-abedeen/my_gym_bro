@@ -31,7 +31,6 @@ enum SetType { normal, warmUp, failure, dropset, superset }
 // ── Models ────────────────────────────────────
 
 class ActiveExercise {
-
   ActiveExercise({
     required this.sessionExerciseId,
     required this.exerciseId,
@@ -50,17 +49,16 @@ class ActiveExercise {
   bool get isCardio => muscleGroup?.toLowerCase() == 'cardio';
 
   ActiveExercise copyWith({List<ActiveSet>? sets}) => ActiveExercise(
-        sessionExerciseId: sessionExerciseId,
-        exerciseId: exerciseId,
-        name: name,
-        gifUrl: gifUrl,
-        muscleGroup: muscleGroup,
-        sets: sets ?? this.sets,
-      );
+    sessionExerciseId: sessionExerciseId,
+    exerciseId: exerciseId,
+    name: name,
+    gifUrl: gifUrl,
+    muscleGroup: muscleGroup,
+    sets: sets ?? this.sets,
+  );
 }
 
 class ActiveSet {
-
   const ActiveSet({
     required this.localId,
     required this.setIndex,
@@ -107,21 +105,20 @@ class ActiveSet {
     double? distance,
     double? speed,
     double? incline,
-  }) =>
-      ActiveSet(
-        localId: localId,
-        setIndex: setIndex,
-        weight: weight ?? this.weight,
-        reps: reps ?? this.reps,
-        isWarmup: isWarmup ?? this.isWarmup,
-        isDropset: isDropset ?? this.isDropset,
-        isFailure: isFailure ?? this.isFailure,
-        isCompleted: isCompleted ?? this.isCompleted,
-        durationSeconds: durationSeconds ?? this.durationSeconds,
-        distance: distance ?? this.distance,
-        speed: speed ?? this.speed,
-        incline: incline ?? this.incline,
-      );
+  }) => ActiveSet(
+    localId: localId,
+    setIndex: setIndex,
+    weight: weight ?? this.weight,
+    reps: reps ?? this.reps,
+    isWarmup: isWarmup ?? this.isWarmup,
+    isDropset: isDropset ?? this.isDropset,
+    isFailure: isFailure ?? this.isFailure,
+    isCompleted: isCompleted ?? this.isCompleted,
+    durationSeconds: durationSeconds ?? this.durationSeconds,
+    distance: distance ?? this.distance,
+    speed: speed ?? this.speed,
+    incline: incline ?? this.incline,
+  );
 }
 
 // ── Personal records ──────────────────────────
@@ -174,7 +171,6 @@ class LiftRankUpEvent {
 }
 
 class ActiveSessionState {
-
   const ActiveSessionState({
     this.sessionId,
     this.exercises = const [],
@@ -226,26 +222,24 @@ class ActiveSessionState {
     bool clearPausedAt = false,
     PrEvent? prEvent,
     LiftRankUpEvent? rankUpEvent,
-  }) =>
-      ActiveSessionState(
-        sessionId: sessionId ?? this.sessionId,
-        exercises: exercises ?? this.exercises,
-        currentExerciseIndex:
-            currentExerciseIndex ?? this.currentExerciseIndex,
-        startedAt: startedAt ?? this.startedAt,
-        showRestTimer: showRestTimer ?? this.showRestTimer,
-        isFinishing: isFinishing ?? this.isFinishing,
-        pausedAt: clearPausedAt ? null : (pausedAt ?? this.pausedAt),
-        accumulatedPausedSeconds:
-            accumulatedPausedSeconds ?? this.accumulatedPausedSeconds,
-        prEvent: prEvent ?? this.prEvent,
-        rankUpEvent: rankUpEvent ?? this.rankUpEvent,
-      );
+  }) => ActiveSessionState(
+    sessionId: sessionId ?? this.sessionId,
+    exercises: exercises ?? this.exercises,
+    currentExerciseIndex: currentExerciseIndex ?? this.currentExerciseIndex,
+    startedAt: startedAt ?? this.startedAt,
+    showRestTimer: showRestTimer ?? this.showRestTimer,
+    isFinishing: isFinishing ?? this.isFinishing,
+    pausedAt: clearPausedAt ? null : (pausedAt ?? this.pausedAt),
+    accumulatedPausedSeconds:
+        accumulatedPausedSeconds ?? this.accumulatedPausedSeconds,
+    prEvent: prEvent ?? this.prEvent,
+    rankUpEvent: rankUpEvent ?? this.rankUpEvent,
+  );
 
   ActiveExercise? get currentExercise =>
       exercises.isNotEmpty && currentExerciseIndex < exercises.length
-          ? exercises[currentExerciseIndex]
-          : null;
+      ? exercises[currentExerciseIndex]
+      : null;
 
   /// Session time excluding pauses — wall clock minus accumulated paused
   /// time minus any in-flight pause. Matches what finishSession persists.
@@ -254,10 +248,13 @@ class ActiveSessionState {
     if (started == null) return 0;
     final now = DateTime.now();
     final wallClock = now.difference(started).inSeconds;
-    final inFlightPause =
-        pausedAt == null ? 0 : now.difference(pausedAt!).inSeconds;
-    return (wallClock - accumulatedPausedSeconds - inFlightPause)
-        .clamp(0, wallClock);
+    final inFlightPause = pausedAt == null
+        ? 0
+        : now.difference(pausedAt!).inSeconds;
+    return (wallClock - accumulatedPausedSeconds - inFlightPause).clamp(
+      0,
+      wallClock,
+    );
   }
 
   double get totalVolume {
@@ -284,7 +281,6 @@ class ActiveSessionState {
 // ── Notifier ──────────────────────────────────
 
 class ActiveSessionNotifier extends StateNotifier<ActiveSessionState> {
-
   ActiveSessionNotifier({
     required WorkoutLogRepository repository,
     ExerciseRepository? exerciseRepository,
@@ -299,26 +295,27 @@ class ActiveSessionNotifier extends StateNotifier<ActiveSessionState> {
     String? userName,
     double? bodyWeightKg,
     String? gender,
-  })  : _bodyWeightKg = bodyWeightKg,
-        _gender = gender,
-        _repository = repository,
-        _exerciseRepo = exerciseRepository,
-        _defaultRestSeconds = defaultRestSeconds,
-        _weightUnit = weightUnit,
-        _restSoundEnabled = restSoundEnabled,
-        _restVibrationEnabled = restVibrationEnabled,
-        _restNotificationTitle = restNotificationTitle,
-        _restNotificationBody = restNotificationBody,
-        _getStreak = getStreak,
-        _tone = tone,
-        _userName = userName,
-        super(const ActiveSessionState());
+  }) : _bodyWeightKg = bodyWeightKg,
+       _gender = gender,
+       _repository = repository,
+       _exerciseRepo = exerciseRepository,
+       _defaultRestSeconds = defaultRestSeconds,
+       _weightUnit = weightUnit,
+       _restSoundEnabled = restSoundEnabled,
+       _restVibrationEnabled = restVibrationEnabled,
+       _restNotificationTitle = restNotificationTitle,
+       _restNotificationBody = restNotificationBody,
+       _getStreak = getStreak,
+       _tone = tone,
+       _userName = userName,
+       super(const ActiveSessionState());
   static const double _kLbsPerKg = 2.20462;
   final WorkoutLogRepository _repository;
 
   /// Optional API-backed cache. When present, logging an exercise ensures
   /// it is cached locally (cache-on-log) so history/recovery resolve offline.
   final ExerciseRepository? _exerciseRepo;
+
   /// Refresh-and-read the streak. Invalidates the cached value first so the
   /// just-finished session is included. Provided by the provider builder.
   final Future<int> Function()? _getStreak;
@@ -343,10 +340,15 @@ class ActiveSessionNotifier extends StateNotifier<ActiveSessionState> {
   void _cancelRestTick() {
     final cancelled = _restTickSub?.cancel();
     _restTickSub = null;
-    unawaited(cancelled?.catchError((Object e, StackTrace s) {
-      CrashReporter.recordError(e,
-          stackTrace: s, reason: 'Rest tick cancel failed');
-    }));
+    unawaited(
+      cancelled?.catchError((Object e, StackTrace s) {
+        CrashReporter.recordError(
+          e,
+          stackTrace: s,
+          reason: 'Rest tick cancel failed',
+        );
+      }),
+    );
   }
 
   /// Per-session cache so we only hit the DB once per exercise.
@@ -465,8 +467,9 @@ class ActiveSessionNotifier extends StateNotifier<ActiveSessionState> {
 
     // Subscribe to the tick stream so the notification updates every second.
     _cancelRestTick();
-    _restTickSub =
-        restTimerService.stream?.listen(_updateRestTimerNotification);
+    _restTickSub = restTimerService.stream?.listen(
+      _updateRestTimerNotification,
+    );
 
     // The previous app instance owned a now-orphaned ongoing notification
     // whose +15s / Skip / Complete buttons point at a dead isolate. Tear
@@ -570,8 +573,9 @@ class ActiveSessionNotifier extends StateNotifier<ActiveSessionState> {
     ];
 
     // Resume on the first exercise that still has work to do.
-    var currentIndex =
-        exercises.indexWhere((ex) => ex.sets.any((s) => !s.isCompleted));
+    var currentIndex = exercises.indexWhere(
+      (ex) => ex.sets.any((s) => !s.isCompleted),
+    );
     if (currentIndex < 0) {
       currentIndex = exercises.isEmpty ? 0 : exercises.length - 1;
     }
@@ -611,31 +615,31 @@ class ActiveSessionNotifier extends StateNotifier<ActiveSessionState> {
       CreateSessionParams(startedAt: now, scheduleId: scheduleId),
     );
 
-    state = state.copyWith(
-      sessionId: id,
-      startedAt: now,
-      exercises: [],
-    );
+    state = state.copyWith(sessionId: id, startedAt: now, exercises: []);
 
     // Show a persistent ongoing notification in the status bar so the user
     // can see the elapsed workout time even when the app is backgrounded.
     // This is the *generic* state — _loadScheduleExercises (or addExercise)
     // will replace it with the named-exercise notification once content
     // lands. Tone-aware body so the voice is consistent app-wide.
-    unawaited(NotificationService.showActiveWorkout(
-      title: 'MyGymBro · Session live',
-      body: workoutInProgressBodyForTone(_notificationTone),
-      startedAt: now,
-    ));
+    unawaited(
+      NotificationService.showActiveWorkout(
+        title: 'MyGymBro · Session live',
+        body: workoutInProgressBodyForTone(_notificationTone),
+        startedAt: now,
+      ),
+    );
 
     // iOS Live Activity — lock-screen + Dynamic Island. No-op everywhere
     // else (Android, simulator without widget target, Live Activities
     // disabled in Settings).
-    unawaited(LiveActivityService.start(
-      exerciseName: _liveActivityExerciseName(),
-      setProgress: _setProgressLabel(),
-      sessionStartedAt: now,
-    ));
+    unawaited(
+      LiveActivityService.start(
+        exerciseName: _liveActivityExerciseName(),
+        setProgress: _setProgressLabel(),
+        sessionStartedAt: now,
+      ),
+    );
 
     // Allow the notification "Complete Set" action to call completeNextSet()
     // without needing a Riverpod ref. Register the instance for the whole
@@ -653,12 +657,12 @@ class ActiveSessionNotifier extends StateNotifier<ActiveSessionState> {
   Future<void> _loadScheduleExercises(int scheduleDayId) async {
     if (state.sessionId == null) return;
 
-    final scheduledExercises =
-        await _repository.getScheduledExercises(scheduleDayId);
+    final scheduledExercises = await _repository.getScheduledExercises(
+      scheduleDayId,
+    );
 
     // Batch-fetch all exercises in one query instead of N individual queries.
-    final exerciseIds =
-        scheduledExercises.map((se) => se.exerciseId).toList();
+    final exerciseIds = scheduledExercises.map((se) => se.exerciseId).toList();
     final exerciseMap = await _repository.findExercisesByIds(exerciseIds);
 
     for (final scheduled in scheduledExercises) {
@@ -682,31 +686,36 @@ class ActiveSessionNotifier extends StateNotifier<ActiveSessionState> {
       // The last completed session drives how many sets to create — if the
       // user did 2 sets last time, they get 2 sets again, even when the
       // template says 3. targetSets/targetReps only seed the first run.
-      final setCount =
-          history.isNotEmpty ? history.length : scheduled.targetSets;
+      final setCount = history.isNotEmpty
+          ? history.length
+          : scheduled.targetSets;
       final sets = <ActiveSet>[];
       for (var s = 0; s < setCount; s++) {
         final histSet = s < history.length ? history[s] : null;
-        final setId = await _repository.addSet(AddSetParams(
-          sessionExerciseId: seId,
-          setIndex: s,
-          weight: histSet?.weight,
-          reps: histSet?.reps ?? scheduled.targetReps,
-          durationSeconds: histSet?.durationSeconds,
-          distance: histSet?.distance,
-          speed: histSet?.speed,
-          incline: histSet?.incline,
-        ));
-        sets.add(ActiveSet(
-          localId: setId,
-          setIndex: s,
-          weight: histSet?.weight,
-          reps: histSet?.reps ?? scheduled.targetReps,
-          durationSeconds: histSet?.durationSeconds,
-          distance: histSet?.distance,
-          speed: histSet?.speed,
-          incline: histSet?.incline,
-        ));
+        final setId = await _repository.addSet(
+          AddSetParams(
+            sessionExerciseId: seId,
+            setIndex: s,
+            weight: histSet?.weight,
+            reps: histSet?.reps ?? scheduled.targetReps,
+            durationSeconds: histSet?.durationSeconds,
+            distance: histSet?.distance,
+            speed: histSet?.speed,
+            incline: histSet?.incline,
+          ),
+        );
+        sets.add(
+          ActiveSet(
+            localId: setId,
+            setIndex: s,
+            weight: histSet?.weight,
+            reps: histSet?.reps ?? scheduled.targetReps,
+            durationSeconds: histSet?.durationSeconds,
+            distance: histSet?.distance,
+            speed: histSet?.speed,
+            incline: histSet?.incline,
+          ),
+        );
       }
 
       final activeExercise = ActiveExercise(
@@ -718,9 +727,7 @@ class ActiveSessionNotifier extends StateNotifier<ActiveSessionState> {
         sets: sets,
       );
 
-      state = state.copyWith(
-        exercises: [...state.exercises, activeExercise],
-      );
+      state = state.copyWith(exercises: [...state.exercises, activeExercise]);
     }
 
     // Select the first exercise
@@ -769,33 +776,36 @@ class ActiveSessionNotifier extends StateNotifier<ActiveSessionState> {
       // Recreate the same number of sets with their weights/reps pre-filled.
       for (var i = 0; i < history.length; i++) {
         final h = history[i];
-        final setId = await _repository.addSet(AddSetParams(
-          sessionExerciseId: seId,
-          setIndex: i,
-          weight: h.weight,
-          reps: h.reps,
-          durationSeconds: h.durationSeconds,
-          distance: h.distance,
-          speed: h.speed,
-          incline: h.incline,
-        ));
-        sets.add(ActiveSet(
-          localId: setId,
-          setIndex: i,
-          weight: h.weight,
-          reps: h.reps,
-          durationSeconds: h.durationSeconds,
-          distance: h.distance,
-          speed: h.speed,
-          incline: h.incline,
-        ));
+        final setId = await _repository.addSet(
+          AddSetParams(
+            sessionExerciseId: seId,
+            setIndex: i,
+            weight: h.weight,
+            reps: h.reps,
+            durationSeconds: h.durationSeconds,
+            distance: h.distance,
+            speed: h.speed,
+            incline: h.incline,
+          ),
+        );
+        sets.add(
+          ActiveSet(
+            localId: setId,
+            setIndex: i,
+            weight: h.weight,
+            reps: h.reps,
+            durationSeconds: h.durationSeconds,
+            distance: h.distance,
+            speed: h.speed,
+            incline: h.incline,
+          ),
+        );
       }
     } else {
       // No history — add one empty set.
-      final setId = await _repository.addSet(AddSetParams(
-        sessionExerciseId: seId,
-        setIndex: 0,
-      ));
+      final setId = await _repository.addSet(
+        AddSetParams(sessionExerciseId: seId, setIndex: 0),
+      );
       sets.add(ActiveSet(localId: setId, setIndex: 0));
     }
 
@@ -850,8 +860,8 @@ class ActiveSessionNotifier extends StateNotifier<ActiveSessionState> {
     final newCurrent = currentId == null
         ? 0
         : exercises
-            .indexWhere((e) => e.sessionExerciseId == currentId)
-            .clamp(0, exercises.length - 1);
+              .indexWhere((e) => e.sessionExerciseId == currentId)
+              .clamp(0, exercises.length - 1);
 
     state = state.copyWith(
       exercises: exercises,
@@ -919,16 +929,18 @@ class ActiveSessionNotifier extends StateNotifier<ActiveSessionState> {
     final setIndex = ex.sets.length;
     final prevSet = ex.sets.isNotEmpty ? ex.sets.last : null;
 
-    final setId = await _repository.addSet(AddSetParams(
-      sessionExerciseId: ex.sessionExerciseId,
-      setIndex: setIndex,
-      weight: prevSet?.weight,
-      reps: prevSet?.reps,
-      durationSeconds: prevSet?.durationSeconds,
-      distance: prevSet?.distance,
-      speed: prevSet?.speed,
-      incline: prevSet?.incline,
-    ));
+    final setId = await _repository.addSet(
+      AddSetParams(
+        sessionExerciseId: ex.sessionExerciseId,
+        setIndex: setIndex,
+        weight: prevSet?.weight,
+        reps: prevSet?.reps,
+        durationSeconds: prevSet?.durationSeconds,
+        distance: prevSet?.distance,
+        speed: prevSet?.speed,
+        incline: prevSet?.incline,
+      ),
+    );
 
     final newSet = ActiveSet(
       localId: setId,
@@ -983,8 +995,9 @@ class ActiveSessionNotifier extends StateNotifier<ActiveSessionState> {
       reps = Patch.set(InputSanitiser.parseReps(repsStr));
     }
     if (durationStr != null) {
-      final minutes =
-          double.tryParse(durationStr.replaceAll(RegExp('[^0-9.]'), ''));
+      final minutes = double.tryParse(
+        durationStr.replaceAll(RegExp('[^0-9.]'), ''),
+      );
       durationSeconds = Patch.set(
         (minutes != null && minutes >= 0 && minutes <= 999)
             ? (minutes * 60).round()
@@ -1021,8 +1034,9 @@ class ActiveSessionNotifier extends StateNotifier<ActiveSessionState> {
         isCompleted: s.isCompleted,
         weight: weight.present ? weight.value : s.weight,
         reps: reps.present ? reps.value : s.reps,
-        durationSeconds:
-            durationSeconds.present ? durationSeconds.value : s.durationSeconds,
+        durationSeconds: durationSeconds.present
+            ? durationSeconds.value
+            : s.durationSeconds,
         distance: distance.present ? distance.value : s.distance,
         speed: speed.present ? speed.value : s.speed,
         incline: incline.present ? incline.value : s.incline,
@@ -1031,20 +1045,21 @@ class ActiveSessionNotifier extends StateNotifier<ActiveSessionState> {
 
     _updateExercise(ex.copyWith(sets: updatedSets));
 
-    await _repository.updateSet(UpdateSetParams(
-      sessionExerciseId: ex.sessionExerciseId,
-      setLocalId: setLocalId,
-      weight: weight,
-      reps: reps,
-      durationSeconds: durationSeconds,
-      distance: distance,
-      speed: speed,
-      incline: incline,
-    ));
+    await _repository.updateSet(
+      UpdateSetParams(
+        sessionExerciseId: ex.sessionExerciseId,
+        setLocalId: setLocalId,
+        weight: weight,
+        reps: reps,
+        durationSeconds: durationSeconds,
+        distance: distance,
+        speed: speed,
+        incline: incline,
+      ),
+    );
     // If the user edited the next-active set's weight/reps, the ongoing
     // notification's "Xkg · Y reps" line is now stale.
-    if (!state.showRestTimer &&
-        (weight.present || reps.present)) {
+    if (!state.showRestTimer && (weight.present || reps.present)) {
       _updateActiveSetNotification();
     }
   }
@@ -1068,13 +1083,15 @@ class ActiveSessionNotifier extends StateNotifier<ActiveSessionState> {
       }).toList();
       _updateExercise(ex.copyWith(sets: updatedSets));
 
-      await _repository.updateSetType(UpdateSetTypeParams(
-        sessionExerciseId: ex.sessionExerciseId,
-        setLocalId: setLocalId,
-        isWarmup: type == SetType.warmUp,
-        isDropset: asDropset,
-        isFailure: asFailure,
-      ));
+      await _repository.updateSetType(
+        UpdateSetTypeParams(
+          sessionExerciseId: ex.sessionExerciseId,
+          setLocalId: setLocalId,
+          isWarmup: type == SetType.warmUp,
+          isDropset: asDropset,
+          isFailure: asFailure,
+        ),
+      );
       return;
     }
   }
@@ -1095,16 +1112,20 @@ class ActiveSessionNotifier extends StateNotifier<ActiveSessionState> {
     _updateExercise(updatedEx);
 
     // Persist completion so a process kill mid-session doesn't lose ticks.
-    unawaited(_repository.setCompletion(
-      sessionExerciseId: ex.sessionExerciseId,
-      setLocalId: setLocalId,
-      isCompleted: true,
-    ));
+    unawaited(
+      _repository.setCompletion(
+        sessionExerciseId: ex.sessionExerciseId,
+        setLocalId: setLocalId,
+        isCompleted: true,
+      ),
+    );
 
-    unawaited(_maybeCelebratePr(
-      updatedEx,
-      updatedSets.firstWhere((s) => s.localId == setLocalId),
-    ));
+    unawaited(
+      _maybeCelebratePr(
+        updatedEx,
+        updatedSets.firstWhere((s) => s.localId == setLocalId),
+      ),
+    );
 
     // Haptic
     unawaited(HapticFeedback.mediumImpact());
@@ -1129,15 +1150,19 @@ class ActiveSessionNotifier extends StateNotifier<ActiveSessionState> {
     // Push the iOS Live Activity into "resting" mode with a countdown that
     // expires at the same moment the rest timer does. SwiftUI ticks the
     // countdown on-device so we don't need per-second updates here.
-    unawaited(LiveActivityService.updateRest(
-      exerciseName: _liveActivityExerciseName(),
-      setProgress: _setProgressLabel(),
-      restEndsAt: DateTime.now().add(Duration(seconds: _defaultRestSeconds)),
-    ));
+    unawaited(
+      LiveActivityService.updateRest(
+        exerciseName: _liveActivityExerciseName(),
+        setProgress: _setProgressLabel(),
+        restEndsAt: DateTime.now().add(Duration(seconds: _defaultRestSeconds)),
+      ),
+    );
 
     // Subscribe to the tick stream so the notification updates every second.
     _cancelRestTick();
-    _restTickSub = restTimerService.stream?.listen(_updateRestTimerNotification);
+    _restTickSub = restTimerService.stream?.listen(
+      _updateRestTimerNotification,
+    );
   }
 
   /// Best already-celebrated set per exercise this session, so one workout
@@ -1263,11 +1288,13 @@ class ActiveSessionNotifier extends StateNotifier<ActiveSessionState> {
     }).toList();
     _updateExercise(ex.copyWith(sets: updatedSets));
 
-    unawaited(_repository.setCompletion(
-      sessionExerciseId: ex.sessionExerciseId,
-      setLocalId: setLocalId,
-      isCompleted: false,
-    ));
+    unawaited(
+      _repository.setCompletion(
+        sessionExerciseId: ex.sessionExerciseId,
+        setLocalId: setLocalId,
+        isCompleted: false,
+      ),
+    );
     if (!state.showRestTimer) _updateActiveSetNotification();
   }
 
@@ -1278,10 +1305,12 @@ class ActiveSessionNotifier extends StateNotifier<ActiveSessionState> {
     _updateActiveSetNotification();
     // Flip the Live Activity back to "active" so the lock screen stops
     // counting down and shows session elapsed time again.
-    unawaited(LiveActivityService.updateActive(
-      exerciseName: _liveActivityExerciseName(),
-      setProgress: _setProgressLabel(),
-    ));
+    unawaited(
+      LiveActivityService.updateActive(
+        exerciseName: _liveActivityExerciseName(),
+        setProgress: _setProgressLabel(),
+      ),
+    );
   }
 
   /// Pause the entire session. Halts the rest timer (if running), tracks
@@ -1304,12 +1333,13 @@ class ActiveSessionNotifier extends StateNotifier<ActiveSessionState> {
   void resume() {
     final pausedAt = state.pausedAt;
     if (pausedAt == null) return;
-    final pausedSeconds =
-        DateTime.now().difference(pausedAt).inSeconds.clamp(0, 1 << 30);
+    final pausedSeconds = DateTime.now()
+        .difference(pausedAt)
+        .inSeconds
+        .clamp(0, 1 << 30);
     state = state.copyWith(
       clearPausedAt: true,
-      accumulatedPausedSeconds:
-          state.accumulatedPausedSeconds + pausedSeconds,
+      accumulatedPausedSeconds: state.accumulatedPausedSeconds + pausedSeconds,
     );
     if (restTimerService.isPaused) {
       restTimerService.resume();
@@ -1323,11 +1353,13 @@ class ActiveSessionNotifier extends StateNotifier<ActiveSessionState> {
     }
     final startedAt = state.startedAt;
     if (startedAt != null) {
-      unawaited(LiveActivityService.start(
-        exerciseName: _liveActivityExerciseName(),
-        setProgress: _setProgressLabel(),
-        sessionStartedAt: startedAt,
-      ));
+      unawaited(
+        LiveActivityService.start(
+          exerciseName: _liveActivityExerciseName(),
+          setProgress: _setProgressLabel(),
+          sessionStartedAt: startedAt,
+        ),
+      );
     }
   }
 
@@ -1337,10 +1369,12 @@ class ActiveSessionNotifier extends StateNotifier<ActiveSessionState> {
     state = state.copyWith(showRestTimer: false);
     // Switch the notification back to the "active set" state.
     _updateActiveSetNotification();
-    unawaited(LiveActivityService.updateActive(
-      exerciseName: _liveActivityExerciseName(),
-      setProgress: _setProgressLabel(),
-    ));
+    unawaited(
+      LiveActivityService.updateActive(
+        exerciseName: _liveActivityExerciseName(),
+        setProgress: _setProgressLabel(),
+      ),
+    );
   }
 
   /// Switch to a different exercise.
@@ -1354,10 +1388,12 @@ class ActiveSessionNotifier extends StateNotifier<ActiveSessionState> {
       // it completes.
       if (!state.showRestTimer) {
         _updateActiveSetNotification();
-        unawaited(LiveActivityService.updateActive(
-          exerciseName: _liveActivityExerciseName(),
-          setProgress: _setProgressLabel(),
-        ));
+        unawaited(
+          LiveActivityService.updateActive(
+            exerciseName: _liveActivityExerciseName(),
+            setProgress: _setProgressLabel(),
+          ),
+        );
       }
     }
   }
@@ -1375,17 +1411,20 @@ class ActiveSessionNotifier extends StateNotifier<ActiveSessionState> {
     final inFlightPause = state.pausedAt == null
         ? 0
         : now.difference(state.pausedAt!).inSeconds;
-    final durationSecs = (wallClock -
-            state.accumulatedPausedSeconds -
-            inFlightPause)
-        .clamp(0, wallClock);
+    final durationSecs =
+        (wallClock - state.accumulatedPausedSeconds - inFlightPause).clamp(
+          0,
+          wallClock,
+        );
 
-    await _repository.finishSession(FinishSessionParams(
-      sessionId: state.sessionId!,
-      finishedAt: now,
-      durationSeconds: durationSecs,
-      totalVolume: state.totalVolume,
-    ));
+    await _repository.finishSession(
+      FinishSessionParams(
+        sessionId: state.sessionId!,
+        finishedAt: now,
+        durationSeconds: durationSecs,
+        totalVolume: state.totalVolume,
+      ),
+    );
 
     _cancelRestTick();
     restTimerService.dispose();
@@ -1397,10 +1436,12 @@ class ActiveSessionNotifier extends StateNotifier<ActiveSessionState> {
     unawaited(LiveActivityService.end());
 
     // Schedule a daily workout reminder for tomorrow using rest-day-aware copy.
-    unawaited(NotificationService.scheduleWorkoutReminder(
-      title: _workoutReminderTitle,
-      body: _workoutReminderBody,
-    ));
+    unawaited(
+      NotificationService.scheduleWorkoutReminder(
+        title: _workoutReminderTitle,
+        body: _workoutReminderBody,
+      ),
+    );
 
     // Nudge the home-screen widget so today's session shows up
     // immediately rather than waiting for the next provider refresh.
@@ -1415,10 +1456,12 @@ class ActiveSessionNotifier extends StateNotifier<ActiveSessionState> {
         // overwrite once Drift re-reads.
       }
     }
-    unawaited(WidgetSyncService.pushAll(
-      streakDays: streakDays,
-      nextCta: 'Workout logged. See you next session.',
-    ));
+    unawaited(
+      WidgetSyncService.pushAll(
+        streakDays: streakDays,
+        nextCta: 'Workout logged. See you next session.',
+      ),
+    );
 
     // Post-workout kudos + streak alert (Strava-style, tone-voiced).
     // Only for sessions with actual work in them.
@@ -1427,22 +1470,27 @@ class ActiveSessionNotifier extends StateNotifier<ActiveSessionState> {
       final vol = _weightUnit == 'lbs'
           ? state.totalVolume * _kLbsPerKg
           : state.totalVolume;
-      final stats = '$completedSets sets · ${groupDigits('${vol.round()}')} '
+      final stats =
+          '$completedSets sets · ${groupDigits('${vol.round()}')} '
           '$_weightUnit · ${(durationSecs / 60).round().clamp(1, 9999)} min';
       final prSuffix = _sessionPrCount > 0
           ? kudosPrSuffixForTone(_tone, _sessionPrCount)
           : '';
-      unawaited(NotificationService.showAchievement(
-        id: NotificationService.kudosNotificationId,
-        title: workoutKudosTitleForTone(_tone, _userName),
-        body: '${workoutKudosBodyForTone(_tone, stats)}$prSuffix',
-      ));
+      unawaited(
+        NotificationService.showAchievement(
+          id: NotificationService.kudosNotificationId,
+          title: workoutKudosTitleForTone(_tone, _userName),
+          body: '${workoutKudosBodyForTone(_tone, stats)}$prSuffix',
+        ),
+      );
       if (isStreakMilestone(streakDays)) {
-        unawaited(NotificationService.showAchievement(
-          id: NotificationService.streakNotificationId,
-          title: streakTitleForTone(_tone, streakDays),
-          body: streakBodyForTone(_tone, streakDays),
-        ));
+        unawaited(
+          NotificationService.showAchievement(
+            id: NotificationService.streakNotificationId,
+            title: streakTitleForTone(_tone, streakDays),
+            body: streakBodyForTone(_tone, streakDays),
+          ),
+        );
       }
       unawaited(_maybeCelebrateMilestone(state.totalVolume));
     }
@@ -1466,10 +1514,13 @@ class ActiveSessionNotifier extends StateNotifier<ActiveSessionState> {
         sessionVolume: sessionVolume,
       );
       if (crossed == null) return;
-      final display =
-          _weightUnit == 'lbs' ? (crossed * _kLbsPerKg).round() : crossed;
+      final display = _weightUnit == 'lbs'
+          ? (crossed * _kLbsPerKg).round()
+          : crossed;
       body = milestoneVolumeBodyForTone(
-          _tone, '${groupDigits('$display')} $_weightUnit');
+        _tone,
+        '${groupDigits('$display')} $_weightUnit',
+      );
     }
     await NotificationService.showAchievement(
       id: NotificationService.milestoneNotificationId,
@@ -1497,6 +1548,11 @@ class ActiveSessionNotifier extends StateNotifier<ActiveSessionState> {
     unawaited(LiveActivityService.end());
     state = const ActiveSessionState();
   }
+
+  /// Last-time sets for [exerciseId] (from the previous finished session) —
+  /// powers the set rows' "previous" hint. Shares the auto-fill cache.
+  Future<List<LastLoggedSetInfo>> lastLoggedSets(String exerciseId) =>
+      _getLastLoggedSets(exerciseId);
 
   /// Retrieve the user's last logged sets for [exerciseId], using a
   /// per-session in-memory cache to avoid redundant DB hits.
@@ -1557,15 +1613,14 @@ class ActiveSessionNotifier extends StateNotifier<ActiveSessionState> {
   /// Display a nullable double field, defaulting to '0'.
   String displayDouble(double? value) {
     if (value == null || value == 0) return '0';
-    return value % 1 == 0
-        ? value.toStringAsFixed(0)
-        : value.toStringAsFixed(1);
+    return value % 1 == 0 ? value.toStringAsFixed(0) : value.toStringAsFixed(1);
   }
 
   void _updateExercise(ActiveExercise updated) {
     final exercises = [...state.exercises];
-    final idx =
-        exercises.indexWhere((e) => e.sessionExerciseId == updated.sessionExerciseId);
+    final idx = exercises.indexWhere(
+      (e) => e.sessionExerciseId == updated.sessionExerciseId,
+    );
     if (idx >= 0) {
       exercises[idx] = updated;
       state = state.copyWith(exercises: exercises);
@@ -1603,19 +1658,21 @@ class ActiveSessionNotifier extends StateNotifier<ActiveSessionState> {
     final unit = _weightUnit;
     final reps = nextSet.reps ?? 0;
 
-    unawaited(NotificationService.showActiveSet(
-      exerciseName: ex.name,
-      currentSet: currentNum,
-      totalSets: totalSets,
-      weight: '$weight$unit',
-      reps: reps,
-      sessionStartedAt: startedAt,
-      completedSets: ex.sets.where((s) => s.isCompleted).length,
-      muscleGroup: ex.muscleGroup,
-      sessionSummary: _sessionSummaryLine,
-      tagline: activeSetTaglineForTone(_notificationTone),
-      exerciseImagePath: _currentExerciseImagePath,
-    ));
+    unawaited(
+      NotificationService.showActiveSet(
+        exerciseName: ex.name,
+        currentSet: currentNum,
+        totalSets: totalSets,
+        weight: '$weight$unit',
+        reps: reps,
+        sessionStartedAt: startedAt,
+        completedSets: ex.sets.where((s) => s.isCompleted).length,
+        muscleGroup: ex.muscleGroup,
+        sessionSummary: _sessionSummaryLine,
+        tagline: activeSetTaglineForTone(_notificationTone),
+        exerciseImagePath: _currentExerciseImagePath,
+      ),
+    );
   }
 
   /// Push the "rest timer" notification (State B) with a progress bar.
@@ -1635,21 +1692,23 @@ class ActiveSessionNotifier extends StateNotifier<ActiveSessionState> {
     final unit = _weightUnit;
     final reps = nextSet?.reps ?? 0;
 
-    unawaited(NotificationService.updateRestTimer(
-      exerciseName: ex.name,
-      nextSet: nextNum,
-      totalSets: totalSets,
-      weight: '$weight$unit',
-      reps: reps,
-      remaining: remaining,
-      totalSeconds: restTimerService.total,
-      sessionStartedAt: startedAt,
-      completedSets: ex.sets.where((s) => s.isCompleted).length,
-      muscleGroup: ex.muscleGroup,
-      sessionSummary: _sessionSummaryLine,
-      tagline: restCountdownTaglineForTone(_notificationTone),
-      exerciseImagePath: _currentExerciseImagePath,
-    ));
+    unawaited(
+      NotificationService.updateRestTimer(
+        exerciseName: ex.name,
+        nextSet: nextNum,
+        totalSets: totalSets,
+        weight: '$weight$unit',
+        reps: reps,
+        remaining: remaining,
+        totalSeconds: restTimerService.total,
+        sessionStartedAt: startedAt,
+        completedSets: ex.sets.where((s) => s.isCompleted).length,
+        muscleGroup: ex.muscleGroup,
+        sessionSummary: _sessionSummaryLine,
+        tagline: restCountdownTaglineForTone(_notificationTone),
+        exerciseImagePath: _currentExerciseImagePath,
+      ),
+    );
   }
 
   @override
@@ -1664,54 +1723,54 @@ class ActiveSessionNotifier extends StateNotifier<ActiveSessionState> {
 
 final activeSessionProvider =
     StateNotifierProvider<ActiveSessionNotifier, ActiveSessionState>((ref) {
-  final repository = ref.watch(workoutLogRepositoryProvider);
+      final repository = ref.watch(workoutLogRepositoryProvider);
 
-  // Use ref.read so that profile changes don't recreate (and wipe) the
-  // notifier mid-session. Settings are pushed reactively via ref.listen below.
-  final profile = ref.read(userProfileProvider).valueOrNull;
+      // Use ref.read so that profile changes don't recreate (and wipe) the
+      // notifier mid-session. Settings are pushed reactively via ref.listen below.
+      final profile = ref.read(userProfileProvider).valueOrNull;
 
-  final notifier = ActiveSessionNotifier(
-    repository: repository,
-    exerciseRepository: ref.read(exerciseRepositoryProvider),
-    defaultRestSeconds: profile?.defaultRestSeconds ?? 90,
-    weightUnit: profile?.weightUnit ?? 'kg',
-    restSoundEnabled: ref.read(restTimerSoundEnabledProvider),
-    restVibrationEnabled: ref.read(restTimerVibrationEnabledProvider),
-    getStreak: () {
-      // Invalidate the cached streak so the just-finished session counts,
-      // then read the fresh value.
-      ref.invalidate(streakProvider);
-      return ref.read(streakProvider.future);
-    },
-    tone: notificationToneFromString(profile?.notificationTone),
-    userName: profile?.displayName,
-    bodyWeightKg: profile?.bodyWeightKg,
-    gender: profile?.gender,
-  );
-
-  // Keep rest-time / weight-unit in sync without recreating the notifier.
-  ref.listen(userProfileProvider, (_, next) {
-    final p = next.valueOrNull;
-    if (p != null) {
-      notifier.updateSettings(
-        restSeconds: p.defaultRestSeconds,
-        weightUnit: p.weightUnit,
-        notificationTone: p.notificationTone,
-        userName: p.displayName,
-        bodyWeightKg: p.bodyWeightKg,
-        gender: p.gender,
+      final notifier = ActiveSessionNotifier(
+        repository: repository,
+        exerciseRepository: ref.read(exerciseRepositoryProvider),
+        defaultRestSeconds: profile?.defaultRestSeconds ?? 90,
+        weightUnit: profile?.weightUnit ?? 'kg',
+        restSoundEnabled: ref.read(restTimerSoundEnabledProvider),
+        restVibrationEnabled: ref.read(restTimerVibrationEnabledProvider),
+        getStreak: () {
+          // Invalidate the cached streak so the just-finished session counts,
+          // then read the fresh value.
+          ref.invalidate(streakProvider);
+          return ref.read(streakProvider.future);
+        },
+        tone: notificationToneFromString(profile?.notificationTone),
+        userName: profile?.displayName,
+        bodyWeightKg: profile?.bodyWeightKg,
+        gender: profile?.gender,
       );
-    }
-  });
 
-  // Keep the rest-timer sound/vibration toggles in sync mid-session.
-  ref
-    ..listen(restTimerSoundEnabledProvider, (_, enabled) {
-      notifier.updateSettings(restSoundEnabled: enabled);
-    })
-    ..listen(restTimerVibrationEnabledProvider, (_, enabled) {
-      notifier.updateSettings(restVibrationEnabled: enabled);
+      // Keep rest-time / weight-unit in sync without recreating the notifier.
+      ref.listen(userProfileProvider, (_, next) {
+        final p = next.valueOrNull;
+        if (p != null) {
+          notifier.updateSettings(
+            restSeconds: p.defaultRestSeconds,
+            weightUnit: p.weightUnit,
+            notificationTone: p.notificationTone,
+            userName: p.displayName,
+            bodyWeightKg: p.bodyWeightKg,
+            gender: p.gender,
+          );
+        }
+      });
+
+      // Keep the rest-timer sound/vibration toggles in sync mid-session.
+      ref
+        ..listen(restTimerSoundEnabledProvider, (_, enabled) {
+          notifier.updateSettings(restSoundEnabled: enabled);
+        })
+        ..listen(restTimerVibrationEnabledProvider, (_, enabled) {
+          notifier.updateSettings(restVibrationEnabled: enabled);
+        });
+
+      return notifier;
     });
-
-  return notifier;
-});
