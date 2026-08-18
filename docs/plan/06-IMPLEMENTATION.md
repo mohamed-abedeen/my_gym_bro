@@ -242,9 +242,20 @@ The photo/text feed is cut (PRD §5.8). The client feed UI was deleted in Bros P
 - [x] On session completion, render a shareable summary image (volume/duration/PRs/streak); share ~~+ optional post to feed~~ *(feed removed 2026-08-15)*.
 
 ### 6.4a Periodic Reports
-- [ ] `user_reports` table + `generate-reports` scheduled function (weekly + monthly, metrics + deltas vs. prior period).
-- [ ] Tone-aware push when a report is ready.
-- [ ] Reports window reachable from **Workout → Status sheet → Reports**; lists past reports with ▲/▼ deltas; offline via `UserReports` cache.
+> **Status (2026-08-18): built offline, not deployed.** Migration
+> `017_progress_reports.sql` (table renamed from the planned `user_reports`
+> — that name was taken by 012's abuse reports; SQL+pg_cron generation
+> Wed/3rd 00:15 UTC — 48 h post-boundary for late syncs, per review —
+> metrics + deltas vs prior period, idempotent, pushes
+> only new rows) + `report_ready` tone kind in send-push-notification +
+> Drift v21 `ProgressReports` mirror + cache-first `periodReportsProvider`
+> + `PeriodicReportsScreen` (Weekly|Monthly toggle, ▲/▼ delta rows,
+> unit-converted volume, offline via the mirror) reached from the Status
+> sheet's new header Reports button.
+
+- [x] ~~`user_reports`~~ `progress_reports` table + `generate_progress_reports` scheduled SQL (weekly + monthly, metrics + deltas vs. prior period).
+- [x] Tone-aware push when a report is ready.
+- [x] Reports window reachable from **Workout → Status sheet → Reports**; lists past reports with ▲/▼ deltas; offline via the Drift `ProgressReports` cache.
 
 ### 6.4b Training Calendar
 - [ ] Home day-strip tap opens a month calendar marking worked days (from local `Sessions`).

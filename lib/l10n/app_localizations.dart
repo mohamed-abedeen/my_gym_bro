@@ -1902,6 +1902,36 @@ abstract class AppLocalizations {
   /// **'{sets} sets/week over the last 4 weeks'**
   String volumeSetsPerWeek(String sets);
 
+  /// No description provided for @reportsEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'No reports yet — your first weekly report lands on Monday after a week of training.'**
+  String get reportsEmpty;
+
+  /// No description provided for @reportSessions.
+  ///
+  /// In en, this message translates to:
+  /// **'Sessions'**
+  String get reportSessions;
+
+  /// No description provided for @reportTrainingDays.
+  ///
+  /// In en, this message translates to:
+  /// **'Training days'**
+  String get reportTrainingDays;
+
+  /// No description provided for @reportPrs.
+  ///
+  /// In en, this message translates to:
+  /// **'PRs'**
+  String get reportPrs;
+
+  /// No description provided for @reportChallengePoints.
+  ///
+  /// In en, this message translates to:
+  /// **'Challenge points'**
+  String get reportChallengePoints;
+
   /// No description provided for @shareStreakDays.
   ///
   /// In en, this message translates to:

@@ -11091,6 +11091,485 @@ class SkinOwnershipsCompanion extends UpdateCompanion<SkinOwnership> {
   }
 }
 
+class $ProgressReportsTable extends ProgressReports
+    with TableInfo<$ProgressReportsTable, ProgressReport> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $ProgressReportsTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _localIdMeta = const VerificationMeta(
+    'localId',
+  );
+  @override
+  late final GeneratedColumn<int> localId = GeneratedColumn<int>(
+    'local_id',
+    aliasedName,
+    false,
+    hasAutoIncrement: true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'PRIMARY KEY AUTOINCREMENT',
+    ),
+  );
+  static const VerificationMeta _periodTypeMeta = const VerificationMeta(
+    'periodType',
+  );
+  @override
+  late final GeneratedColumn<String> periodType = GeneratedColumn<String>(
+    'period_type',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _periodStartMeta = const VerificationMeta(
+    'periodStart',
+  );
+  @override
+  late final GeneratedColumn<DateTime> periodStart = GeneratedColumn<DateTime>(
+    'period_start',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _periodEndMeta = const VerificationMeta(
+    'periodEnd',
+  );
+  @override
+  late final GeneratedColumn<DateTime> periodEnd = GeneratedColumn<DateTime>(
+    'period_end',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _metricsJsonMeta = const VerificationMeta(
+    'metricsJson',
+  );
+  @override
+  late final GeneratedColumn<String> metricsJson = GeneratedColumn<String>(
+    'metrics_json',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _deltasJsonMeta = const VerificationMeta(
+    'deltasJson',
+  );
+  @override
+  late final GeneratedColumn<String> deltasJson = GeneratedColumn<String>(
+    'deltas_json',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _fetchedAtMeta = const VerificationMeta(
+    'fetchedAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> fetchedAt = GeneratedColumn<DateTime>(
+    'fetched_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: true,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    localId,
+    periodType,
+    periodStart,
+    periodEnd,
+    metricsJson,
+    deltasJson,
+    fetchedAt,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'progress_reports';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<ProgressReport> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('local_id')) {
+      context.handle(
+        _localIdMeta,
+        localId.isAcceptableOrUnknown(data['local_id']!, _localIdMeta),
+      );
+    }
+    if (data.containsKey('period_type')) {
+      context.handle(
+        _periodTypeMeta,
+        periodType.isAcceptableOrUnknown(data['period_type']!, _periodTypeMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_periodTypeMeta);
+    }
+    if (data.containsKey('period_start')) {
+      context.handle(
+        _periodStartMeta,
+        periodStart.isAcceptableOrUnknown(
+          data['period_start']!,
+          _periodStartMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_periodStartMeta);
+    }
+    if (data.containsKey('period_end')) {
+      context.handle(
+        _periodEndMeta,
+        periodEnd.isAcceptableOrUnknown(data['period_end']!, _periodEndMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_periodEndMeta);
+    }
+    if (data.containsKey('metrics_json')) {
+      context.handle(
+        _metricsJsonMeta,
+        metricsJson.isAcceptableOrUnknown(
+          data['metrics_json']!,
+          _metricsJsonMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_metricsJsonMeta);
+    }
+    if (data.containsKey('deltas_json')) {
+      context.handle(
+        _deltasJsonMeta,
+        deltasJson.isAcceptableOrUnknown(data['deltas_json']!, _deltasJsonMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_deltasJsonMeta);
+    }
+    if (data.containsKey('fetched_at')) {
+      context.handle(
+        _fetchedAtMeta,
+        fetchedAt.isAcceptableOrUnknown(data['fetched_at']!, _fetchedAtMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_fetchedAtMeta);
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {localId};
+  @override
+  List<Set<GeneratedColumn>> get uniqueKeys => [
+    {periodType, periodStart},
+  ];
+  @override
+  ProgressReport map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return ProgressReport(
+      localId: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}local_id'],
+      )!,
+      periodType: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}period_type'],
+      )!,
+      periodStart: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}period_start'],
+      )!,
+      periodEnd: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}period_end'],
+      )!,
+      metricsJson: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}metrics_json'],
+      )!,
+      deltasJson: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}deltas_json'],
+      )!,
+      fetchedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}fetched_at'],
+      )!,
+    );
+  }
+
+  @override
+  $ProgressReportsTable createAlias(String alias) {
+    return $ProgressReportsTable(attachedDatabase, alias);
+  }
+}
+
+class ProgressReport extends DataClass implements Insertable<ProgressReport> {
+  final int localId;
+
+  /// 'weekly' | 'monthly'
+  final String periodType;
+  final DateTime periodStart;
+  final DateTime periodEnd;
+  final String metricsJson;
+  final String deltasJson;
+  final DateTime fetchedAt;
+  const ProgressReport({
+    required this.localId,
+    required this.periodType,
+    required this.periodStart,
+    required this.periodEnd,
+    required this.metricsJson,
+    required this.deltasJson,
+    required this.fetchedAt,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['local_id'] = Variable<int>(localId);
+    map['period_type'] = Variable<String>(periodType);
+    map['period_start'] = Variable<DateTime>(periodStart);
+    map['period_end'] = Variable<DateTime>(periodEnd);
+    map['metrics_json'] = Variable<String>(metricsJson);
+    map['deltas_json'] = Variable<String>(deltasJson);
+    map['fetched_at'] = Variable<DateTime>(fetchedAt);
+    return map;
+  }
+
+  ProgressReportsCompanion toCompanion(bool nullToAbsent) {
+    return ProgressReportsCompanion(
+      localId: Value(localId),
+      periodType: Value(periodType),
+      periodStart: Value(periodStart),
+      periodEnd: Value(periodEnd),
+      metricsJson: Value(metricsJson),
+      deltasJson: Value(deltasJson),
+      fetchedAt: Value(fetchedAt),
+    );
+  }
+
+  factory ProgressReport.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return ProgressReport(
+      localId: serializer.fromJson<int>(json['localId']),
+      periodType: serializer.fromJson<String>(json['periodType']),
+      periodStart: serializer.fromJson<DateTime>(json['periodStart']),
+      periodEnd: serializer.fromJson<DateTime>(json['periodEnd']),
+      metricsJson: serializer.fromJson<String>(json['metricsJson']),
+      deltasJson: serializer.fromJson<String>(json['deltasJson']),
+      fetchedAt: serializer.fromJson<DateTime>(json['fetchedAt']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'localId': serializer.toJson<int>(localId),
+      'periodType': serializer.toJson<String>(periodType),
+      'periodStart': serializer.toJson<DateTime>(periodStart),
+      'periodEnd': serializer.toJson<DateTime>(periodEnd),
+      'metricsJson': serializer.toJson<String>(metricsJson),
+      'deltasJson': serializer.toJson<String>(deltasJson),
+      'fetchedAt': serializer.toJson<DateTime>(fetchedAt),
+    };
+  }
+
+  ProgressReport copyWith({
+    int? localId,
+    String? periodType,
+    DateTime? periodStart,
+    DateTime? periodEnd,
+    String? metricsJson,
+    String? deltasJson,
+    DateTime? fetchedAt,
+  }) => ProgressReport(
+    localId: localId ?? this.localId,
+    periodType: periodType ?? this.periodType,
+    periodStart: periodStart ?? this.periodStart,
+    periodEnd: periodEnd ?? this.periodEnd,
+    metricsJson: metricsJson ?? this.metricsJson,
+    deltasJson: deltasJson ?? this.deltasJson,
+    fetchedAt: fetchedAt ?? this.fetchedAt,
+  );
+  ProgressReport copyWithCompanion(ProgressReportsCompanion data) {
+    return ProgressReport(
+      localId: data.localId.present ? data.localId.value : this.localId,
+      periodType: data.periodType.present
+          ? data.periodType.value
+          : this.periodType,
+      periodStart: data.periodStart.present
+          ? data.periodStart.value
+          : this.periodStart,
+      periodEnd: data.periodEnd.present ? data.periodEnd.value : this.periodEnd,
+      metricsJson: data.metricsJson.present
+          ? data.metricsJson.value
+          : this.metricsJson,
+      deltasJson: data.deltasJson.present
+          ? data.deltasJson.value
+          : this.deltasJson,
+      fetchedAt: data.fetchedAt.present ? data.fetchedAt.value : this.fetchedAt,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('ProgressReport(')
+          ..write('localId: $localId, ')
+          ..write('periodType: $periodType, ')
+          ..write('periodStart: $periodStart, ')
+          ..write('periodEnd: $periodEnd, ')
+          ..write('metricsJson: $metricsJson, ')
+          ..write('deltasJson: $deltasJson, ')
+          ..write('fetchedAt: $fetchedAt')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(
+    localId,
+    periodType,
+    periodStart,
+    periodEnd,
+    metricsJson,
+    deltasJson,
+    fetchedAt,
+  );
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is ProgressReport &&
+          other.localId == this.localId &&
+          other.periodType == this.periodType &&
+          other.periodStart == this.periodStart &&
+          other.periodEnd == this.periodEnd &&
+          other.metricsJson == this.metricsJson &&
+          other.deltasJson == this.deltasJson &&
+          other.fetchedAt == this.fetchedAt);
+}
+
+class ProgressReportsCompanion extends UpdateCompanion<ProgressReport> {
+  final Value<int> localId;
+  final Value<String> periodType;
+  final Value<DateTime> periodStart;
+  final Value<DateTime> periodEnd;
+  final Value<String> metricsJson;
+  final Value<String> deltasJson;
+  final Value<DateTime> fetchedAt;
+  const ProgressReportsCompanion({
+    this.localId = const Value.absent(),
+    this.periodType = const Value.absent(),
+    this.periodStart = const Value.absent(),
+    this.periodEnd = const Value.absent(),
+    this.metricsJson = const Value.absent(),
+    this.deltasJson = const Value.absent(),
+    this.fetchedAt = const Value.absent(),
+  });
+  ProgressReportsCompanion.insert({
+    this.localId = const Value.absent(),
+    required String periodType,
+    required DateTime periodStart,
+    required DateTime periodEnd,
+    required String metricsJson,
+    required String deltasJson,
+    required DateTime fetchedAt,
+  }) : periodType = Value(periodType),
+       periodStart = Value(periodStart),
+       periodEnd = Value(periodEnd),
+       metricsJson = Value(metricsJson),
+       deltasJson = Value(deltasJson),
+       fetchedAt = Value(fetchedAt);
+  static Insertable<ProgressReport> custom({
+    Expression<int>? localId,
+    Expression<String>? periodType,
+    Expression<DateTime>? periodStart,
+    Expression<DateTime>? periodEnd,
+    Expression<String>? metricsJson,
+    Expression<String>? deltasJson,
+    Expression<DateTime>? fetchedAt,
+  }) {
+    return RawValuesInsertable({
+      if (localId != null) 'local_id': localId,
+      if (periodType != null) 'period_type': periodType,
+      if (periodStart != null) 'period_start': periodStart,
+      if (periodEnd != null) 'period_end': periodEnd,
+      if (metricsJson != null) 'metrics_json': metricsJson,
+      if (deltasJson != null) 'deltas_json': deltasJson,
+      if (fetchedAt != null) 'fetched_at': fetchedAt,
+    });
+  }
+
+  ProgressReportsCompanion copyWith({
+    Value<int>? localId,
+    Value<String>? periodType,
+    Value<DateTime>? periodStart,
+    Value<DateTime>? periodEnd,
+    Value<String>? metricsJson,
+    Value<String>? deltasJson,
+    Value<DateTime>? fetchedAt,
+  }) {
+    return ProgressReportsCompanion(
+      localId: localId ?? this.localId,
+      periodType: periodType ?? this.periodType,
+      periodStart: periodStart ?? this.periodStart,
+      periodEnd: periodEnd ?? this.periodEnd,
+      metricsJson: metricsJson ?? this.metricsJson,
+      deltasJson: deltasJson ?? this.deltasJson,
+      fetchedAt: fetchedAt ?? this.fetchedAt,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (localId.present) {
+      map['local_id'] = Variable<int>(localId.value);
+    }
+    if (periodType.present) {
+      map['period_type'] = Variable<String>(periodType.value);
+    }
+    if (periodStart.present) {
+      map['period_start'] = Variable<DateTime>(periodStart.value);
+    }
+    if (periodEnd.present) {
+      map['period_end'] = Variable<DateTime>(periodEnd.value);
+    }
+    if (metricsJson.present) {
+      map['metrics_json'] = Variable<String>(metricsJson.value);
+    }
+    if (deltasJson.present) {
+      map['deltas_json'] = Variable<String>(deltasJson.value);
+    }
+    if (fetchedAt.present) {
+      map['fetched_at'] = Variable<DateTime>(fetchedAt.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('ProgressReportsCompanion(')
+          ..write('localId: $localId, ')
+          ..write('periodType: $periodType, ')
+          ..write('periodStart: $periodStart, ')
+          ..write('periodEnd: $periodEnd, ')
+          ..write('metricsJson: $metricsJson, ')
+          ..write('deltasJson: $deltasJson, ')
+          ..write('fetchedAt: $fetchedAt')
+          ..write(')'))
+        .toString();
+  }
+}
+
 abstract class _$AppDatabase extends GeneratedDatabase {
   _$AppDatabase(QueryExecutor e) : super(e);
   $AppDatabaseManager get managers => $AppDatabaseManager(this);
@@ -11116,6 +11595,9 @@ abstract class _$AppDatabase extends GeneratedDatabase {
   late final $SeasonWinnerCacheTable seasonWinnerCache =
       $SeasonWinnerCacheTable(this);
   late final $SkinOwnershipsTable skinOwnerships = $SkinOwnershipsTable(this);
+  late final $ProgressReportsTable progressReports = $ProgressReportsTable(
+    this,
+  );
   @override
   Iterable<TableInfo<Table, Object?>> get allTables =>
       allSchemaEntities.whereType<TableInfo<Table, Object?>>();
@@ -11136,6 +11618,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     leaderboardCache,
     seasonWinnerCache,
     skinOwnerships,
+    progressReports,
   ];
 }
 
@@ -17438,6 +17921,252 @@ typedef $$SkinOwnershipsTableProcessedTableManager =
       SkinOwnership,
       PrefetchHooks Function()
     >;
+typedef $$ProgressReportsTableCreateCompanionBuilder =
+    ProgressReportsCompanion Function({
+      Value<int> localId,
+      required String periodType,
+      required DateTime periodStart,
+      required DateTime periodEnd,
+      required String metricsJson,
+      required String deltasJson,
+      required DateTime fetchedAt,
+    });
+typedef $$ProgressReportsTableUpdateCompanionBuilder =
+    ProgressReportsCompanion Function({
+      Value<int> localId,
+      Value<String> periodType,
+      Value<DateTime> periodStart,
+      Value<DateTime> periodEnd,
+      Value<String> metricsJson,
+      Value<String> deltasJson,
+      Value<DateTime> fetchedAt,
+    });
+
+class $$ProgressReportsTableFilterComposer
+    extends Composer<_$AppDatabase, $ProgressReportsTable> {
+  $$ProgressReportsTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<int> get localId => $composableBuilder(
+    column: $table.localId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get periodType => $composableBuilder(
+    column: $table.periodType,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get periodStart => $composableBuilder(
+    column: $table.periodStart,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get periodEnd => $composableBuilder(
+    column: $table.periodEnd,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get metricsJson => $composableBuilder(
+    column: $table.metricsJson,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get deltasJson => $composableBuilder(
+    column: $table.deltasJson,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get fetchedAt => $composableBuilder(
+    column: $table.fetchedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+}
+
+class $$ProgressReportsTableOrderingComposer
+    extends Composer<_$AppDatabase, $ProgressReportsTable> {
+  $$ProgressReportsTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<int> get localId => $composableBuilder(
+    column: $table.localId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get periodType => $composableBuilder(
+    column: $table.periodType,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get periodStart => $composableBuilder(
+    column: $table.periodStart,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get periodEnd => $composableBuilder(
+    column: $table.periodEnd,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get metricsJson => $composableBuilder(
+    column: $table.metricsJson,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get deltasJson => $composableBuilder(
+    column: $table.deltasJson,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get fetchedAt => $composableBuilder(
+    column: $table.fetchedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+}
+
+class $$ProgressReportsTableAnnotationComposer
+    extends Composer<_$AppDatabase, $ProgressReportsTable> {
+  $$ProgressReportsTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<int> get localId =>
+      $composableBuilder(column: $table.localId, builder: (column) => column);
+
+  GeneratedColumn<String> get periodType => $composableBuilder(
+    column: $table.periodType,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<DateTime> get periodStart => $composableBuilder(
+    column: $table.periodStart,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<DateTime> get periodEnd =>
+      $composableBuilder(column: $table.periodEnd, builder: (column) => column);
+
+  GeneratedColumn<String> get metricsJson => $composableBuilder(
+    column: $table.metricsJson,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get deltasJson => $composableBuilder(
+    column: $table.deltasJson,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<DateTime> get fetchedAt =>
+      $composableBuilder(column: $table.fetchedAt, builder: (column) => column);
+}
+
+class $$ProgressReportsTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $ProgressReportsTable,
+          ProgressReport,
+          $$ProgressReportsTableFilterComposer,
+          $$ProgressReportsTableOrderingComposer,
+          $$ProgressReportsTableAnnotationComposer,
+          $$ProgressReportsTableCreateCompanionBuilder,
+          $$ProgressReportsTableUpdateCompanionBuilder,
+          (
+            ProgressReport,
+            BaseReferences<
+              _$AppDatabase,
+              $ProgressReportsTable,
+              ProgressReport
+            >,
+          ),
+          ProgressReport,
+          PrefetchHooks Function()
+        > {
+  $$ProgressReportsTableTableManager(
+    _$AppDatabase db,
+    $ProgressReportsTable table,
+  ) : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$ProgressReportsTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$ProgressReportsTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$ProgressReportsTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<int> localId = const Value.absent(),
+                Value<String> periodType = const Value.absent(),
+                Value<DateTime> periodStart = const Value.absent(),
+                Value<DateTime> periodEnd = const Value.absent(),
+                Value<String> metricsJson = const Value.absent(),
+                Value<String> deltasJson = const Value.absent(),
+                Value<DateTime> fetchedAt = const Value.absent(),
+              }) => ProgressReportsCompanion(
+                localId: localId,
+                periodType: periodType,
+                periodStart: periodStart,
+                periodEnd: periodEnd,
+                metricsJson: metricsJson,
+                deltasJson: deltasJson,
+                fetchedAt: fetchedAt,
+              ),
+          createCompanionCallback:
+              ({
+                Value<int> localId = const Value.absent(),
+                required String periodType,
+                required DateTime periodStart,
+                required DateTime periodEnd,
+                required String metricsJson,
+                required String deltasJson,
+                required DateTime fetchedAt,
+              }) => ProgressReportsCompanion.insert(
+                localId: localId,
+                periodType: periodType,
+                periodStart: periodStart,
+                periodEnd: periodEnd,
+                metricsJson: metricsJson,
+                deltasJson: deltasJson,
+                fetchedAt: fetchedAt,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
+              .toList(),
+          prefetchHooksCallback: null,
+        ),
+      );
+}
+
+typedef $$ProgressReportsTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $ProgressReportsTable,
+      ProgressReport,
+      $$ProgressReportsTableFilterComposer,
+      $$ProgressReportsTableOrderingComposer,
+      $$ProgressReportsTableAnnotationComposer,
+      $$ProgressReportsTableCreateCompanionBuilder,
+      $$ProgressReportsTableUpdateCompanionBuilder,
+      (
+        ProgressReport,
+        BaseReferences<_$AppDatabase, $ProgressReportsTable, ProgressReport>,
+      ),
+      ProgressReport,
+      PrefetchHooks Function()
+    >;
 
 class $AppDatabaseManager {
   final _$AppDatabase _db;
@@ -17472,4 +18201,6 @@ class $AppDatabaseManager {
       $$SeasonWinnerCacheTableTableManager(_db, _db.seasonWinnerCache);
   $$SkinOwnershipsTableTableManager get skinOwnerships =>
       $$SkinOwnershipsTableTableManager(_db, _db.skinOwnerships);
+  $$ProgressReportsTableTableManager get progressReports =>
+      $$ProgressReportsTableTableManager(_db, _db.progressReports);
 }

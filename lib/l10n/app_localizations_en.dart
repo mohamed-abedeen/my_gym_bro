@@ -987,6 +987,22 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String get reportsEmpty =>
+      'No reports yet — your first weekly report lands on Monday after a week of training.';
+
+  @override
+  String get reportSessions => 'Sessions';
+
+  @override
+  String get reportTrainingDays => 'Training days';
+
+  @override
+  String get reportPrs => 'PRs';
+
+  @override
+  String get reportChallengePoints => 'Challenge points';
+
+  @override
   String shareStreakDays(int days) {
     return '$days-day streak';
   }

@@ -184,6 +184,16 @@ Counts `challenge_reports` per challenge; flips to `hidden` past a threshold; su
 > `challenge_review_queue` view, service-role only.
 
 ### 3.6 `generate-reports` (scheduled)
+
+> ✅ **Shipped as SQL + pg_cron in 017** (2026-08-18, the 014–016 precedent —
+> no edge function): `generate_progress_reports()` weekly (Wed 00:15 UTC) +
+> monthly (3rd 00:15) — 48 h after the boundary for offline late-syncs —
+> table named `progress_reports` (see 03-DATABASE §3.5 status note),
+> subscriber-gated, skips users with no sessions in the window, pushes
+> `kind: report_ready` through `send-push-notification` (tone-resolved) for
+> new rows only. ⚠️ Inert until the client pushes workout data at all — see
+> the blocker in SETUP-STATUS (sessions/sets never sync up today).
+
 Generates weekly + monthly progress reports.
 - **Weekly:** runs on a fixed weekday; aggregates the user's last 7 days vs. the prior 7.
 - **Monthly:** runs at month end; aggregates the month vs. the prior month.

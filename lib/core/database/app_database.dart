@@ -356,6 +356,27 @@ class SkinOwnerships extends Table {
   DateTimeColumn get fetchedAt => dateTime()();
 }
 
+/// Offline mirror of server `progress_reports` — weekly/monthly period
+/// summaries with deltas, generated server-side (migration 017). Read-only
+/// cache (LeaderboardCache doctrine): no sync queue; a refresh replaces the
+/// whole set. metrics/deltas are the server's jsonb, stored verbatim.
+class ProgressReports extends Table {
+  IntColumn get localId => integer().autoIncrement()();
+
+  /// 'weekly' | 'monthly'
+  TextColumn get periodType => text()();
+  DateTimeColumn get periodStart => dateTime()();
+  DateTimeColumn get periodEnd => dateTime()();
+  TextColumn get metricsJson => text()();
+  TextColumn get deltasJson => text()();
+  DateTimeColumn get fetchedAt => dateTime()();
+
+  @override
+  List<Set<Column>> get uniqueKeys => [
+        {periodType, periodStart},
+      ];
+}
+
 // ─────────────────────────────────────────────
 // D A T A B A S E
 // ─────────────────────────────────────────────
@@ -377,6 +398,7 @@ class SkinOwnerships extends Table {
     LeaderboardCache,
     SeasonWinnerCache,
     SkinOwnerships,
+    ProgressReports,
   ],
 )
 class AppDatabase extends _$AppDatabase {
@@ -389,7 +411,7 @@ class AppDatabase extends _$AppDatabase {
   }
 
   @override
-  int get schemaVersion => 20;
+  int get schemaVersion => 21;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -525,6 +547,14 @@ class AppDatabase extends _$AppDatabase {
         await _addColumnIfMissing('user_profiles', 'active_skin_id', 'TEXT');
         if (!await _hasTable('skin_ownerships')) {
           await m.createTable(skinOwnerships);
+        }
+      }
+      if (from < 21) {
+        // Phase 6.4a — periodic reports (PRD §5.17): local mirror of the
+        // server-generated weekly/monthly summaries so the Reports window
+        // renders offline.
+        if (!await _hasTable('progress_reports')) {
+          await m.createTable(progressReports);
         }
       }
     },

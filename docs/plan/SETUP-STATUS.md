@@ -138,6 +138,23 @@ pushed. As of the last check the following were pending — **verify with
   the cloud row). Also note: 013's storage cleanup was rewritten 2026-08-17 (current
   Storage API forbids direct DML on storage tables; the DO block downgrades it to a
   NOTICE) — if the cloud bucket ever had objects, empty it via the Storage API.
+- ⚠️ **BLOCKER for every server-side workout feature — the client never pushes
+  workout data (found 2026-08-18, predates Phase 6):** the only workout sync op is
+  `finishSession`'s `sessions` UPDATE, gated on a `remoteId` that nothing ever
+  assigns — no `sessions`/`session_exercises`/`sets` INSERT is ever enqueued, so
+  the cloud workout tables stay empty for real users. Everything that reads them
+  server-side is inert until this is built: leaderboard volume scoring (008/015),
+  challenge validation (014), the bros activity strip (012's session read grants),
+  earned-skin session rules (016), and progress reports (017). Needs its own task:
+  outbox INSERTs for session + children on finish (with remote-id assignment),
+  then backfill semantics for existing local history.
+- **Reports (017) deploy notes (2026-08-18):** schedules `generate-reports-weekly`
+  (Wed 00:15 UTC) + `generate-reports-monthly` (3rd 00:15) — 48 h after each period
+  boundary (015's late-sync grace precedent) — pure SQL, same Vault secrets as 010
+  for the `report_ready` pushes. Nothing to run at deploy: the first reports
+  generate at the next Wednesday/3rd. Post-deploy check: `progress_reports` has
+  rows, the Reports window lists them, and users with sessions got the
+  tone-resolved push. (Depends on the workout-data sync blocker above.)
 - **Seasons (015) deploy notes:** schedules `finalize-season-weekly` (Wed
   00:02 UTC), `finalize-season-monthly` (3rd 00:02) — 48 h after each
   boundary so offline late-syncs still count — plus `assign-rivals-weekly`

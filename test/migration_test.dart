@@ -132,7 +132,7 @@ void main() {
 
     // Migration completed and stamped the current version.
     final version = await query('PRAGMA user_version');
-    expect(version.single.read<int>('user_version'), 20);
+    expect(version.single.read<int>('user_version'), 21);
 
     // v12/v17 _addColumnIfMissing columns were added to user_profiles.
     final profileCols = (await query('PRAGMA table_info(user_profiles)'))
@@ -154,8 +154,9 @@ void main() {
     expect(tables, contains('friendships'));
     expect(tables, isNot(contains('follows')));
     expect(tables, containsAll(['challenges', 'challenge_participants']));
-    // v20 created the skin-ownership mirror.
+    // v20 created the skin-ownership mirror; v21 the reports mirror.
     expect(tables, contains('skin_ownerships'));
+    expect(tables, contains('progress_reports'));
 
     // v14/v16 catalogue wipe: referenced + custom rows survive, the
     // unreferenced catalogue row is deleted.
@@ -210,7 +211,7 @@ void main() {
     Future<List<QueryRow>> query(String sql) => db.customSelect(sql).get();
 
     final version = await query('PRAGMA user_version');
-    expect(version.single.read<int>('user_version'), 20);
+    expect(version.single.read<int>('user_version'), 21);
 
     final tables = (await query(
       "SELECT name FROM sqlite_master WHERE type = 'table'",
@@ -245,7 +246,7 @@ void main() {
     final db = AppDatabase(NativeDatabase(file));
     addTearDown(db.close);
     final version = await db.customSelect('PRAGMA user_version').get();
-    expect(version.single.read<int>('user_version'), 20);
+    expect(version.single.read<int>('user_version'), 21);
   });
 
   test('fresh createAll builds every table', () async {
@@ -256,6 +257,6 @@ void main() {
     for (final table in db.allTables) {
       await db.select(table).get();
     }
-    expect(db.allTables.length, 15);
+    expect(db.allTables.length, 16);
   });
 }

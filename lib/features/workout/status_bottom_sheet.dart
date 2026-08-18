@@ -6,6 +6,7 @@ import 'package:intl/intl.dart' hide TextDirection;
 import 'package:my_gym_bro/core/services/units.dart';
 import 'package:my_gym_bro/features/settings/app_settings_provider.dart';
 import 'package:my_gym_bro/features/workout/exercise_progress.dart';
+import 'package:my_gym_bro/features/workout/periodic_reports_screen.dart';
 import 'package:my_gym_bro/features/workout/reports_screen.dart';
 import 'package:my_gym_bro/features/workout/workout_providers.dart';
 import 'package:my_gym_bro/l10n/app_localizations.dart';
@@ -109,6 +110,25 @@ class _StatusSheetState extends State<_StatusSheet> {
                       ),
                     ),
                     const Spacer(),
+                    // Reports window (PRD §5.17): Workout → Status → Reports.
+                    LiquidGlassButton(
+                      width: AppSizes.headerActionBtn.w,
+                      height: AppSizes.headerActionBtn.w,
+                      opacity: 0.25,
+                      radius: (AppSizes.headerActionBtn / 2).r,
+                      onTap: () =>
+                          Navigator.of(context, rootNavigator: true).push(
+                        MaterialPageRoute<void>(
+                          builder: (_) => const PeriodicReportsScreen(),
+                        ),
+                      ),
+                      child: Icon(
+                        Icons.insert_chart_outlined_rounded,
+                        color: colors.textPrimary,
+                        size: AppSizes.headerActionIcon.sp,
+                      ),
+                    ),
+                    SizedBox(width: 10.w),
                     LiquidGlassButton(
                       width: AppSizes.headerActionBtn.w,
                       height: AppSizes.headerActionBtn.w,

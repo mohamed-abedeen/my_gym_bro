@@ -98,7 +98,7 @@ Legend: ✅ done · 🟡 partial · 🔴 not built · ⚠️ remove · `[new]` b
 - ✅ `[new]` Skins economy: `skins` catalog + `skin_ownership` + `user_profiles.active_skin_id`; selection persists to the synced profile *(2026-08-17, built offline — deploy pending)*.
 - ✅ `[new]` Skins gallery (owned/earnable/buyable) + preview; purchasable via RevenueCat one-time → `purchase-skin` verify; earned via `evaluate_earned_skins()` cron *(2026-08-17; RevenueCat live-test pending setup)*.
 - ✅ `[new]` Progress charts (compare identical past sessions: volume/top set/est-1RM) *(2026-08-18)*.
-- 🔴 `[new]` Periodic reports: `user_reports` + `generate-reports` (weekly+monthly, metrics+deltas); tone push; **Reports window** from Workout→Status→Reports; Drift `UserReports` cache.
+- ✅ `[new]` Periodic reports: `progress_reports` (renamed — `user_reports` was taken by 012) + `generate_progress_reports` cron (weekly+monthly, metrics+deltas); tone push; **Reports window** from Workout→Status→Reports; Drift `ProgressReports` cache *(2026-08-18, deploy pending)*.
 - 🔴 `[new]` Training calendar: Home day-strip tap → month calendar of worked days (local `Sessions`) → day detail.
 - ✅ `[new]` Share cards on session completion (image; external share — feed post void) *(v2 was already built; streak stat added 2026-08-18)*.
 - 🔴 `[fix]` Light-mode **orange** accent: make `accent` brightness-resolved in `constants.dart` (light ≠ lime); apply to accent text, selected nav icon, Start Workout button, streak icon.

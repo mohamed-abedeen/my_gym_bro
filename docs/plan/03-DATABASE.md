@@ -277,8 +277,25 @@ rival_pod_members (
 ---
 
 ### 3.5 Periodic Reports
+
+> **Status (2026-08-18, `017_progress_reports.sql` — authored, NOT
+> deployed):** shipped with one deliberate deviation: the table is named
+> **`progress_reports`** — the `user_reports` name below was already taken
+> by 012's abuse-report table (block+report flow). Generation is SQL +
+> pg_cron (no edge function): `generate_progress_reports('weekly'|'monthly')`
+> Wednesday/3rd 00:15 UTC — 48 h after the period boundary, the 015
+> late-sync grace precedent; per-user metrics from
+> `progress_report_metrics()` (volume_kg, sets, sessions, training_days,
+> pr_count, challenge_points — streak and muscle_balance are deliberately
+> absent: no server parity with computeStreak, and the exercise→muscle map
+> is client-only), deltas = current − previous, idempotent on
+> (user_id, period_type, period_start), tone-resolved `report_ready` push
+> only for genuinely-new rows. RLS owner-read + explicit GRANT;
+> delete_account_data extended. Client mirror: Drift v21 `ProgressReports`
+> (replace-wholesale cache) + cache-first `periodReportsProvider`.
+
 ```
-user_reports (
+user_reports (          -- ⚠ shipped as `progress_reports` (name collision, see status note)
   id uuid pk default gen_random_uuid(),
   user_id uuid references auth.users,
   period_type text check (period_type in ('weekly','monthly')),

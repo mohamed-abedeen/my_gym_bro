@@ -7,6 +7,7 @@ import 'package:drift/drift.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:my_gym_bro/core/database/app_database.dart';
+import 'package:my_gym_bro/core/database/daos/progress_report_dao.dart';
 import 'package:my_gym_bro/core/database/daos/skin_dao.dart';
 import 'package:my_gym_bro/core/database/daos/user_profile_dao.dart';
 import 'package:my_gym_bro/core/security/input_sanitiser.dart';
@@ -422,6 +423,14 @@ class AuthNotifier extends StateNotifier<AppAuthState> {
         await SecureStorage().delete('setting_selected_skin');
       } on Exception catch (e) {
         CrashReporter.recordError(e, reason: 'Local skin wipe failed');
+      }
+
+      // And the periodic-reports mirror — a new sign-up on this device must
+      // not see the deleted account's training history.
+      try {
+        await ProgressReportDao(_db).clearAll();
+      } on Exception catch (e) {
+        CrashReporter.recordError(e, reason: 'Local reports wipe failed');
       }
 
       try {

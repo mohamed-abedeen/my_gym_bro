@@ -998,6 +998,22 @@ class AppLocalizationsFr extends AppLocalizations {
   }
 
   @override
+  String get reportsEmpty =>
+      'Pas encore de rapport — votre premier rapport hebdomadaire arrive le lundi après une semaine d\'entraînement.';
+
+  @override
+  String get reportSessions => 'Séances';
+
+  @override
+  String get reportTrainingDays => 'Jours d\'entraînement';
+
+  @override
+  String get reportPrs => 'RP';
+
+  @override
+  String get reportChallengePoints => 'Points de défis';
+
+  @override
   String shareStreakDays(int days) {
     return 'Série de $days jours';
   }

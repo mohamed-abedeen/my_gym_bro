@@ -443,6 +443,11 @@
       "sets": { "type": "String" }
     }
   },
+  "reportsEmpty": "No reports yet — your first weekly report lands on Monday after a week of training.",
+  "reportSessions": "Sessions",
+  "reportTrainingDays": "Training days",
+  "reportPrs": "PRs",
+  "reportChallengePoints": "Challenge points",
   "shareStreakDays": "{days}-day streak",
   "@shareStreakDays": {
     "placeholders": {

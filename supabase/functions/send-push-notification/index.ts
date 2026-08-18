@@ -59,6 +59,15 @@ const SKIN_MESSAGES: Record<Tone, string> = {
   savage: "{skin} unlocked. You've earned the flex.",
 };
 
+// {period} = "weekly"/"monthly". Sent by generate_progress_reports
+// (migration 017) when a new report lands.
+const REPORT_MESSAGES: Record<Tone, string> = {
+  supportive: "Your {period} report is ready — go see how far you've come!",
+  balanced: "Your {period} report is ready.",
+  bold: "{period} report's in. Read it, then beat it.",
+  savage: "{period} report dropped. The numbers don't lie.",
+};
+
 function ordinal(n: number): string {
   if (n % 100 >= 11 && n % 100 <= 13) return `${n}th`;
   return `${n}${["th", "st", "nd", "rd"][n % 10] ?? "th"}`;
@@ -83,6 +92,7 @@ serve(async (req: Request) => {
       placement?: number;
       skin_id?: string;
       skin_name?: string;
+      period?: string;
     } = await req.json();
 
     const userIds = raw.userIds ?? raw.user_ids;
@@ -168,6 +178,42 @@ serve(async (req: Request) => {
           tokens,
           { title: "Skin unlocked!", body: message },
           { type: "skin_unlocked", skin_id: raw.skin_id ?? "", tone },
+        );
+        sent += result.sent;
+        failed += result.failed;
+        staleTokens.push(...result.staleTokens);
+      }
+    } else if (raw.kind === "report_ready") {
+      const period = raw.period === "monthly" ? "monthly" : "weekly";
+
+      const { data: profiles, error: fetchError } = await supabaseAdmin
+        .from("user_profiles")
+        .select("fcm_token, notification_tone")
+        .in("user_id", userIds)
+        .not("fcm_token", "is", null);
+      if (fetchError) {
+        console.error("Error fetching tokens:", fetchError);
+        return jsonResponse({ error: "Failed to fetch tokens" }, 500);
+      }
+
+      const byTone = new Map<Tone, string[]>();
+      for (const p of profiles ?? []) {
+        const token = (p.fcm_token ?? "").trim();
+        if (!token) continue;
+        const tone: Tone = TONES.includes(p.notification_tone as Tone)
+          ? (p.notification_tone as Tone)
+          : "balanced";
+        byTone.set(tone, [...(byTone.get(tone) ?? []), token]);
+      }
+
+      for (const [tone, tokens] of byTone) {
+        const message = REPORT_MESSAGES[tone].replace(/\{period\}/g, period)
+          // Bold/savage templates open with the placeholder.
+          .replace(/^(weekly|monthly)/, (m) => m[0].toUpperCase() + m.slice(1));
+        const result = await sendPush(
+          tokens,
+          { title: "Report ready", body: message },
+          { type: "report_ready", period, tone },
         );
         sent += result.sent;
         failed += result.failed;
