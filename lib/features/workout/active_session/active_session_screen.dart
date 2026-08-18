@@ -1773,7 +1773,7 @@ class _ProgressPills extends StatelessWidget {
 }
 
 // ═══════════════════════════════════════════════════════════════
-// SETS TABLE — non-scrolling column of glassy set-row pills
+// SETS TABLE — scrollable column of glassy set-row pills
 // ═══════════════════════════════════════════════════════════════
 
 class _SetsTable extends ConsumerWidget {
@@ -1793,27 +1793,33 @@ class _SetsTable extends ConsumerWidget {
         ref.watch(_lastLoggedSetsProvider(exercise.exerciseId)).valueOrNull ??
         const <LastLoggedSetInfo>[];
 
-    // ponytail: plain Column, no scroll — realistic workouts stay well under
-    // ~7 sets per exercise. Rows past the screen bottom clip behind the
-    // floating chrome; bring back a scrollable if that ever bites.
-    return Column(
-      children: [
-        for (final s in exercise.sets)
-          _SetRow(
-            key: ValueKey('set_row_${s.localId}'),
-            set: s,
-            exercise: exercise,
-            notifier: notifier,
-            unit: notifier.weightUnit,
-            previous: s.setIndex < previous.length
-                ? previous[s.setIndex]
-                : null,
+    // Scrollable since the 430-tall GIF card: with less vertical room, a
+    // long set list clips behind the floating bottom chrome — scrolling
+    // plus the clearance box below keeps every row reachable.
+    return SingleChildScrollView(
+      child: Column(
+        children: [
+          for (final s in exercise.sets)
+            _SetRow(
+              key: ValueKey('set_row_${s.localId}'),
+              set: s,
+              exercise: exercise,
+              notifier: notifier,
+              unit: notifier.weightUnit,
+              previous: s.setIndex < previous.length
+                  ? previous[s.setIndex]
+                  : null,
+            ),
+          Padding(
+            padding: EdgeInsets.only(top: 8.h),
+            child: _buildAddSetButton(context),
           ),
-        Padding(
-          padding: EdgeInsets.only(top: 8.h),
-          child: _buildAddSetButton(context),
-        ),
-      ],
+          // Safe clearance so the last row / Add Set can scroll above the
+          // floating bottom chrome — sized for the tallest occupant (the
+          // docked rest panel) plus the home-indicator inset.
+          SizedBox(height: 180.h + MediaQuery.of(context).padding.bottom),
+        ],
+      ),
     );
   }
 
