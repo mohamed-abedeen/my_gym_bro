@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'dart:math' as math;
 import 'dart:ui' show ImageFilter;
 
 import 'package:cached_network_image/cached_network_image.dart';
@@ -2599,16 +2598,23 @@ class _SetRowState extends State<_SetRow> {
 }
 
 // ═══════════════════════════════════════════════════════════════
-// REST SHEET — full rest-timer ring with ±15s / skip
+// REST SHEET — dark countdown panel with -15 / +15 / Skip pills
+// (built to the Figma mock: #1C1C1E card, 48pt time, colored pills)
 // ═══════════════════════════════════════════════════════════════
 
 class _RestSheet extends ConsumerWidget {
   const _RestSheet({required this.notifier});
   final ActiveSessionNotifier notifier;
 
+  /// Figma palette: dark panel, dark-red −15 pill, dark-green +15/Skip pills.
+  static const _panelColor = Color(0xFF1C1C1E);
+  static const _minusBg = Color(0xFF511414);
+  static const _minusFg = Color(0xFFFF6B6B);
+  static const _plusBg = Color(0xFF26662F);
+  static const _plusFg = Color(0xFF2BD958);
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final colors = AppColors.of(context);
     final l10n = AppLocalizations.of(context);
     final running = ref.watch(
       activeSessionProvider.select((s) => s.showRestTimer),
@@ -2629,22 +2635,15 @@ class _RestSheet extends ConsumerWidget {
       padding: EdgeInsets.fromLTRB(10.w, 0, 10.w, 12.h),
       child: SafeArea(
         top: false,
-        child: GlassSurface(
-          radius: 32.r,
-          tint: colors.panelBackground.withValues(alpha: 0.78),
-          padding: EdgeInsets.fromLTRB(20.w, 12.h, 20.w, 20.h),
+        child: Container(
+          decoration: BoxDecoration(
+            color: _panelColor,
+            borderRadius: BorderRadius.circular(58.r),
+          ),
+          padding: EdgeInsets.fromLTRB(14.w, 14.h, 14.w, 16.h),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Container(
-                width: 38.w,
-                height: 4.h,
-                decoration: BoxDecoration(
-                  color: colors.textSecondary.withValues(alpha: 0.35),
-                  borderRadius: BorderRadius.circular(2.r),
-                ),
-              ),
-              SizedBox(height: 18.h),
               StreamBuilder<int>(
                 stream: notifier.restTimerService.stream,
                 initialData: notifier.restTimerService.remaining,
@@ -2656,80 +2655,54 @@ class _RestSheet extends ConsumerWidget {
                       ? '${m.toString().padLeft(2, '0')}:${s.toString().padLeft(2, '0')}'
                       : '--:--';
                   // One meaningful announcement ("Rest timer, 1:30 remaining")
-                  // instead of the two raw texts. Not a live region — that
+                  // instead of the raw digits. Not a live region — that
                   // would re-announce every second.
                   return Semantics(
                     label: running
                         ? l10n.restTimerRemaining(timeStr)
                         : l10n.restTimer,
                     excludeSemantics: true,
-                    child: SizedBox(
-                      width: 150.w,
-                      height: 150.w,
-                      child: CustomPaint(
-                        painter: _TimerRingPainter(
-                          progress: running
-                              ? notifier.restTimerService.progress
-                              : 0,
-                          strokeWidth: 12.w,
-                          accentColor: colors.accent,
-                        ),
-                        child: Center(
-                          child: Column(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Text(
-                                l10n.restTime,
-                                style: TextStyle(
-                                  color: colors.textPrimary,
-                                  fontSize: 13.sp,
-                                  fontWeight: FontWeight.w700,
-                                ),
-                              ),
-                              Text(
-                                timeStr,
-                                style: TextStyle(
-                                  color: colors.textPrimary,
-                                  fontSize: 30.sp,
-                                  fontWeight: FontWeight.w800,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
+                    child: Text(
+                      timeStr,
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 48.sp,
+                        fontWeight: FontWeight.w700,
+                        fontFeatures: const [FontFeature('ss15')],
                       ),
                     ),
                   );
                 },
               ),
-              SizedBox(height: 18.h),
+              SizedBox(height: 10.h),
               Row(
-                mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  _chip(
-                    context,
-                    '-15s',
-                    running
+                  _pill(
+                    '-15',
+                    background: _minusBg,
+                    foreground: _minusFg,
+                    onTap: running
                         ? () => notifier.restTimerService.addTime(-15)
                         : null,
                   ),
                   SizedBox(width: 12.w),
-                  _chip(
-                    context,
-                    '+15s',
-                    running
+                  _pill(
+                    '+15',
+                    background: _plusBg,
+                    foreground: _plusFg,
+                    onTap: running
                         ? () => notifier.restTimerService.addTime(15)
                         : null,
                   ),
                   SizedBox(width: 12.w),
-                  _chip(
-                    context,
-                    l10n.done,
+                  _pill(
+                    l10n.skipRest,
+                    background: _plusBg,
+                    foreground: _plusFg,
                     // hideRestTimer flips showRestTimer, which the listener
                     // above turns into the sheet's pop — no explicit pop
                     // here or the screen route would pop too.
-                    running ? notifier.hideRestTimer : null,
-                    accent: true,
+                    onTap: running ? notifier.hideRestTimer : null,
                   ),
                 ],
               ),
@@ -2740,88 +2713,45 @@ class _RestSheet extends ConsumerWidget {
     );
   }
 
-  Widget _chip(
-    BuildContext context,
-    String label,
-    VoidCallback? onTap, {
-    bool accent = false,
+  /// One of the three equal-width action pills under the countdown.
+  Widget _pill(
+    String label, {
+    required Color background,
+    required Color foreground,
+    VoidCallback? onTap,
   }) {
-    final colors = AppColors.of(context);
     final enabled = onTap != null;
-    // button + enabled traits; the visible text supplies the label.
-    return Semantics(
-      button: true,
-      enabled: enabled,
-      child: GestureDetector(
-        onTap: onTap,
-        behavior: HitTestBehavior.opaque,
-        child: Container(
-          padding: EdgeInsets.symmetric(horizontal: 20.w, vertical: 10.h),
-          decoration: BoxDecoration(
-            color: accent
-                ? colors.accent.withValues(alpha: enabled ? 0.16 : 0.06)
-                : Colors.white.withValues(alpha: enabled ? 0.12 : 0.05),
-            borderRadius: BorderRadius.circular(100.r),
-          ),
-          child: Text(
-            label,
-            style: TextStyle(
-              color: accent
-                  ? colors.accent.withValues(alpha: enabled ? 1 : 0.4)
-                  : colors.textPrimary.withValues(alpha: enabled ? 1 : 0.4),
-              fontSize: 13.sp,
-              fontWeight: FontWeight.w700,
+    return Expanded(
+      // button + enabled traits; the visible text supplies the label.
+      child: Semantics(
+        button: true,
+        enabled: enabled,
+        child: GestureDetector(
+          onTap: onTap,
+          behavior: HitTestBehavior.opaque,
+          child: Container(
+            height: 51.h,
+            decoration: BoxDecoration(
+              color: background.withValues(alpha: enabled ? 1 : 0.45),
+              borderRadius: BorderRadius.circular(58.r),
+            ),
+            child: Center(
+              child: Text(
+                label,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(
+                  color: foreground.withValues(alpha: enabled ? 1 : 0.4),
+                  fontSize: 24.sp,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
             ),
           ),
         ),
       ),
     );
   }
-}
-
-class _TimerRingPainter extends CustomPainter {
-  _TimerRingPainter({
-    required this.progress,
-    required this.strokeWidth,
-    required this.accentColor,
-  });
-  final double progress; // 1.0 = full, 0.0 = empty
-  final double strokeWidth;
-  final Color accentColor;
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    final center = Offset(size.width / 2, size.height / 2);
-    final radius = size.width / 2 - strokeWidth / 2;
-
-    // Background track
-    final bgPaint = Paint()
-      ..color = const Color(0xFF2F3206)
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = strokeWidth
-      ..strokeCap = StrokeCap.round;
-    canvas.drawCircle(center, radius, bgPaint);
-
-    // Progress arc
-    if (progress > 0) {
-      final fgPaint = Paint()
-        ..color = accentColor
-        ..style = PaintingStyle.stroke
-        ..strokeWidth = strokeWidth
-        ..strokeCap = StrokeCap.round;
-      canvas.drawArc(
-        Rect.fromCircle(center: center, radius: radius),
-        -math.pi / 2,
-        2 * math.pi * progress,
-        false,
-        fgPaint,
-      );
-    }
-  }
-
-  @override
-  bool shouldRepaint(_TimerRingPainter old) =>
-      old.progress != progress || old.accentColor != accentColor;
 }
 
 // ═══════════════════════════════════════════════════════════════
