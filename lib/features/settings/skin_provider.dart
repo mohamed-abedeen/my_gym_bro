@@ -6,8 +6,8 @@ import 'package:my_gym_bro/features/workout/workout_providers.dart';
 import 'package:my_gym_bro/shared/widgets/anatomy_body.dart';
 
 // ── Default base PNGs (already in assets/anatomy/) ──
-const _defaultMale = 'assets/anatomy/male_black.png';
-const _defaultFemale = 'assets/anatomy/Female Black.png';
+const _defaultMale = 'assets/anatomy/male_base.png';
+const _defaultFemale = 'assets/anatomy/female_base.png';
 
 /// How a skin is unlocked.
 enum SkinUnlock {
@@ -63,10 +63,14 @@ class Skin {
       pathForGender(isFemale: isFemale) != null;
 }
 
-/// All available skins.
+/// All available skins (2026-08 art set — new pose, back-left/front-right).
 ///
 /// Asset file names must match exactly what is in `assets/skins/`.
 /// Add a new [Skin] here whenever a new image pair is dropped in.
+///
+/// TODO(skins): every skin is temporarily [SkinUnlock.free] so the whole set
+/// can be reviewed in-app (2026-08-18). Restore the progress/paid tiers
+/// (and keep the productIds below in sync with migration 016) before release.
 const availableSkins = <Skin>[
   Skin(
     id: 'default',
@@ -75,100 +79,73 @@ const availableSkins = <Skin>[
     femalePath: _defaultFemale,
   ),
   Skin(
-    id: 'carbone',
-    name: 'Carbone',
-    malePath: 'assets/skins/male carbone.png',
-    femalePath: 'assets/skins/Female carbone.png',
-  ),
-  Skin(
-    id: 'smoke',
-    name: 'Smoke',
-    malePath: 'assets/skins/male smoke.png',
-    femalePath: 'assets/skins/Female smoke.png',
-  ),
-  Skin(
-    id: 'white',
-    name: 'White',
-    malePath: 'assets/skins/male white.png',
-    // no female white skin — femalePath intentionally omitted
-  ),
-  Skin(
-    id: 'light',
-    name: 'Light',
-    // no male light skin — malePath intentionally omitted
-    femalePath: 'assets/skins/Female Light.png',
-  ),
-  Skin(
     id: 'carbon',
     name: 'Carbon',
-    malePath: 'assets/skins/male carbon.png',
-    femalePath: 'assets/skins/Female carbon.png',
-    unlock: SkinUnlock.progress,
-    requiredSessions: 10,
+    malePath: 'assets/skins/male_carbon.png',
+    femalePath: 'assets/skins/female_carbon.png',
   ),
   Skin(
-    id: 'gold',
-    name: 'Gold',
-    malePath: 'assets/skins/male gold.png',
-    femalePath: 'assets/skins/Female gold.png',
-    unlock: SkinUnlock.paid,
-    productId: 'mgb_skin_gold',
+    id: 'chrome',
+    name: 'Chrome',
+    malePath: 'assets/skins/male_chrome.png',
+    femalePath: 'assets/skins/female_chrome.png',
   ),
   Skin(
-    id: 'metal',
-    name: 'Metal',
-    malePath: 'assets/skins/male metal.png',
-    femalePath: 'assets/skins/Female metal.png',
-    unlock: SkinUnlock.progress,
-    requiredSessions: 25,
-  ),
-  Skin(
-    id: 'liquid',
-    name: 'Liquid',
-    malePath: 'assets/skins/male liquid.png',
-    femalePath: 'assets/skins/Female liquid.png',
-    unlock: SkinUnlock.progress,
-    requiredSessions: 50,
-  ),
-  Skin(
-    id: 'atack',
-    name: 'Attack',
-    malePath: 'assets/skins/male atack.png',
-    femalePath: 'assets/skins/Female atack.png',
-    unlock: SkinUnlock.progress,
-    requiredSessions: 75,
+    id: 'crystal',
+    name: 'Crystal',
+    malePath: 'assets/skins/male_crystal.png',
+    femalePath: 'assets/skins/female_crystal.png',
   ),
   Skin(
     id: 'galaxy',
     name: 'Galaxy',
-    // no male galaxy skin — malePath intentionally omitted
-    femalePath: 'assets/skins/Female galaxy.png',
-    unlock: SkinUnlock.paid,
+    malePath: 'assets/skins/male_galaxy.png',
+    femalePath: 'assets/skins/female_galaxy.png',
     productId: 'mgb_skin_galaxy',
+  ),
+  Skin(
+    id: 'gold',
+    name: 'Gold',
+    malePath: 'assets/skins/male_gold.png',
+    femalePath: 'assets/skins/female_gold.png',
+    productId: 'mgb_skin_gold',
+  ),
+  Skin(
+    id: 'liquid_metal',
+    name: 'Liquid Metal',
+    malePath: 'assets/skins/male_liquid_metal.png',
+    femalePath: 'assets/skins/female_liquid_metal.png',
+  ),
+  Skin(
+    id: 'oil',
+    name: 'Oil',
+    malePath: 'assets/skins/male_oil.png',
+    femalePath: 'assets/skins/female_oil.png',
+  ),
+  Skin(
+    id: 'rock',
+    name: 'Rock',
+    malePath: 'assets/skins/male_rock.png',
+    // no female rock skin — femalePath intentionally omitted
+  ),
+  Skin(
+    id: 'smoke',
+    name: 'Smoke',
+    malePath: 'assets/skins/male_smoke.png',
+    femalePath: 'assets/skins/female_smoke.png',
   ),
   Skin(
     id: 'teddy_bear',
     name: 'Teddy Bear',
     // no male teddy bear skin — malePath intentionally omitted
-    femalePath: 'assets/skins/Female Teddy Bear.png',
-    unlock: SkinUnlock.paid,
+    femalePath: 'assets/skins/female_teddy_bear.png',
     productId: 'mgb_skin_teddy_bear',
   ),
   Skin(
-    id: 'gren_guy',
-    name: 'Green Guy',
-    malePath: 'assets/skins/male gren guy.png',
-    // no female green guy skin — femalePath intentionally omitted
-    unlock: SkinUnlock.progress,
-    requiredSessions: 120,
-  ),
-  Skin(
-    id: 'volkano',
-    name: 'Volcano',
-    malePath: 'assets/skins/male volkano.png',
-    // no female volcano skin — femalePath intentionally omitted
-    unlock: SkinUnlock.progress,
-    requiredSessions: 200,
+    id: 'white_marble',
+    name: 'White Marble',
+    malePath: 'assets/skins/male_white_marble.png',
+    femalePath: 'assets/skins/female_white_marble.png',
   ),
 ];
 
@@ -211,9 +188,10 @@ final ownedSkinsProvider =
 Set<String> computeUnlockedSkinIds({
   required int sessions,
   required Set<String> owned,
+  List<Skin> skins = availableSkins,
 }) {
   return {
-    for (final s in availableSkins)
+    for (final s in skins)
       if (switch (s.unlock) {
         SkinUnlock.free => true,
         SkinUnlock.progress =>

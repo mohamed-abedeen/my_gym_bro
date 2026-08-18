@@ -18,27 +18,24 @@ const _outFile = 'build/muscle_geometry.dart.txt';
 
 // Mirror of anatomy_body.dart's group → SVG-base mapping (private there).
 const _groups = <String, List<String>>{
-  'Chest': ['chest', 'serratus'],
-  'Lats': ['lats', 'teres_major'],
-  'Upper Back': ['lats', 'teres_major'],
-  'Lower Back': ['lowerback'],
+  'Chest': ['chest'],
+  'Lats': ['upper_lats', 'lower_lats'],
+  'Upper Back': ['upper_back', 'mid_back'],
+  'Lower Back': ['lower_back'],
   'Traps': ['traps'],
-  'Shoulders': ['front_shoulder', 'side_shoulder', 'rear_shoulder'],
-  'Front Delt': ['front_shoulder'],
-  'Side Delt': ['side_shoulder'],
-  'Rear Delt': ['rear_shoulder'],
-  'Biceps': ['biceps'],
+  'Shoulders': ['front_delt', 'side_delt', 'rear_delt'],
+  'Front Delt': ['front_delt'],
+  'Side Delt': ['side_delt'],
+  'Rear Delt': ['rear_delt'],
+  'Biceps': ['biceps', 'brachialis'],
   'Triceps': ['triceps'],
-  'Forearms': ['forearms'],
-  'Quads': ['quadriceps', 'adductor'],
-  'Hamstrings': ['hamstings'],
-  'Glutes': ['glutes', 'abductors'],
-  'Calves': ['calves', 'tibialis_anterior'],
-  'Core': ['abs', 'obliques'],
-  'Neck': ['nick'],
-};
-const _maleExtras = <String, List<String>>{
-  'Core': ['obliques2'],
+  'Forearms': ['forearm_flexors', 'forearm_extensors'],
+  'Quads': ['quads', 'adductors'],
+  'Hamstrings': ['hamstrings'],
+  'Glutes': ['glutes', 'glute_medius', 'abductors'],
+  'Calves': ['calves'],
+  'Core': ['abs', 'obliques', 'external_obliques'],
+  'Neck': ['neck'],
 };
 
 void main() {
@@ -58,10 +55,7 @@ void main() {
         '<String, MuscleGeometry>{',
       );
       for (final entry in _groups.entries) {
-        final bases = [
-          ...entry.value,
-          if (gender == 'male') ...?_maleExtras[entry.key],
-        ];
+        final bases = entry.value;
         final key = GlobalKey();
         await tester.pumpWidget(
           MaterialApp(
@@ -80,6 +74,15 @@ void main() {
                           SvgPicture.asset(
                             'assets/anatomy/${gender}_$b.svg',
                             height: 1140,
+                            // The 2026-08 vectors carry fills in a <style>
+                            // block flutter_svg doesn't parse, so bare paths
+                            // paint black — invisible on the black probe bg.
+                            // The app always tints via ColorFilter (srcIn),
+                            // so do the same here to measure coverage.
+                            colorFilter: const ColorFilter.mode(
+                              Colors.white,
+                              BlendMode.srcIn,
+                            ),
                           ),
                       ],
                     ),
@@ -122,10 +125,12 @@ void main() {
           return buf[o] + buf[o + 1] + buf[o + 2] >= 24;
         }
 
+        // 2026-08 art set: BACK view on the left half (x < 450), FRONT on
+        // the right half — inverted from the original sheets.
         for (var y = 0; y < 1140; y++) {
           for (var x = 0; x < 900; x++) {
             if (!covered(x, y)) continue;
-            if (x < 450) {
+            if (x >= 450) {
               frontN++;
               if (x < fl) fl = x;
               if (x > fr) fr = x;
@@ -167,8 +172,8 @@ void main() {
 
         out.writeln(
           "  '${entry.key}': "
-          '(front: ${centroid(fl, fr, 0, 450, frontN)}, '
-          'back: ${centroid(bl, br, 450, 900, backN)}, '
+          '(front: ${centroid(fl, fr, 450, 900, frontN)}, '
+          'back: ${centroid(bl, br, 0, 450, backN)}, '
           'frontShare: ${frontShare.toStringAsFixed(3)}),',
         );
       }

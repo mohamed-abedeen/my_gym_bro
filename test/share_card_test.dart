@@ -59,7 +59,7 @@ void main() {
         ),
         weightUnitProvider.overrideWith((ref) => WeightUnit.kg),
         activeSkinPathProvider.overrideWith(
-          (ref) => 'assets/anatomy/male_black.png',
+          (ref) => 'assets/anatomy/male_base.png',
         ),
         myRankProvider.overrideWith((ref) => null),
       ];

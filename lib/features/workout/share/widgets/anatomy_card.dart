@@ -30,10 +30,10 @@ const _singleSheetHeight = 700.0;
 const _singleSheetTop = 130.0 - 0.019 * _singleSheetHeight;
 const _singleRightEdge = 405.0 + 38;
 
-/// Each view occupies ~47.5% of the sheet width (front left, back right).
-/// Clipping the composited [AnatomyBody] (base PNG + muscle SVGs share one
-/// canvas) keeps the highlights aligned for every skin without shipping
-/// cropped asset copies.
+/// Each view occupies ~47.5% of the sheet width (2026-08 art set: BACK view
+/// on the left half, FRONT view on the right half). Clipping the composited
+/// [AnatomyBody] (base PNG + muscle SVGs share one canvas) keeps the
+/// highlights aligned for every skin without shipping cropped asset copies.
 const _viewWidthFactor = 0.475;
 
 // Both-views mode: the whole sheet, smaller, sitting between the title and a
@@ -100,7 +100,9 @@ class AnatomyShareCard extends ConsumerWidget {
     }
     const sheetW = _singleSheetHeight * _sheetAspect;
     const winW = _viewWidthFactor * sheetW;
-    final winStart = view == AnatomyFigureView.back ? 1 - _viewWidthFactor : 0.0;
+    // Front view lives on the RIGHT half of the sheet, back on the left.
+    final winStart =
+        view == AnatomyFigureView.front ? 1 - _viewWidthFactor : 0.0;
     return Offset(
       _singleRightEdge - winW + (frac.dx - winStart) * sheetW,
       _singleSheetTop + frac.dy * _singleSheetHeight,
@@ -314,9 +316,10 @@ class _AnatomyFigure extends ConsumerWidget {
     if (view == AnatomyFigureView.both) return body;
     return ClipRect(
       child: Align(
+        // Back view = left half of the sheet, front view = right half.
         alignment: view == AnatomyFigureView.back
-            ? Alignment.centerRight
-            : Alignment.centerLeft,
+            ? Alignment.centerLeft
+            : Alignment.centerRight,
         widthFactor: _viewWidthFactor,
         child: body,
       ),

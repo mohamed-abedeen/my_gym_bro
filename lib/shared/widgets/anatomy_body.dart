@@ -13,50 +13,45 @@ enum AnatomyGender { female, male }
 /// `assets/anatomy/{female,male}_<base>.svg`. Use [_svgPath] to resolve.
 const _muscleGroupToSvgs = <String, List<String>>{
   // ── Chest ──
-  'Chest': ['chest', 'serratus'],
+  'Chest': ['chest'],
 
   // ── Back ──
-  'Lats': ['lats', 'teres_major'],
-  // No dedicated rhomboid/mid-trap SVG exists; traps + teres major is the
-  // closest region. Must NOT reuse the lats overlay — an overhead press
-  // crediting 'upper back' would paint the entire lats red on a push day.
-  'Upper Back': ['traps', 'teres_major'],
-  'Lower Back': ['lowerback'],
+  'Lats': ['upper_lats', 'lower_lats'],
+  // Dedicated upper/mid-back artwork (2026-08 vector set). Must NOT reuse the
+  // lats overlay — an overhead press crediting 'upper back' would paint the
+  // entire lats red on a push day.
+  'Upper Back': ['upper_back', 'mid_back'],
+  'Lower Back': ['lower_back'],
   'Traps': ['traps'],
 
   // ── Shoulders ──
-  'Shoulders':   ['front_shoulder', 'side_shoulder', 'rear_shoulder'], // all 3 heads
-  'Front Delt':  ['front_shoulder'],
-  'Side Delt':   ['side_shoulder'],
-  'Rear Delt':   ['rear_shoulder'],
+  'Shoulders':   ['front_delt', 'side_delt', 'rear_delt'], // all 3 heads
+  'Front Delt':  ['front_delt'],
+  'Side Delt':   ['side_delt'],
+  'Rear Delt':   ['rear_delt'],
 
   // ── Arms ──
-  'Biceps': ['biceps'],
+  'Biceps': ['biceps', 'brachialis'],
   'Triceps': ['triceps'],
-  'Forearms': ['forearms'],
+  'Forearms': ['forearm_flexors', 'forearm_extensors'],
 
   // ── Legs ──
-  'Quads': ['quadriceps', 'adductor'],
-  'Hamstrings': ['hamstings'],
-  'Glutes': ['glutes', 'abductors'],
-  'Calves': ['calves', 'tibialis_anterior'],
+  'Quads': ['quads', 'adductors'],
+  'Hamstrings': ['hamstrings'],
+  'Glutes': ['glutes', 'glute_medius', 'abductors'],
+  'Calves': ['calves'],
 
   // ── Core ──
-  'Core': ['abs', 'obliques'],
+  'Core': ['abs', 'obliques', 'external_obliques'],
 
   // ── Neck ──
-  'Neck': ['nick'],
+  'Neck': ['neck'],
 
   // 'Cardio' has no anatomy SVG
 };
 
 String _svgPath(AnatomyGender gender, String base) =>
     'assets/anatomy/${gender == AnatomyGender.male ? 'male' : 'female'}_$base.svg';
-
-/// Extra SVG bases that only exist for the male body.
-const _maleExtraSvgBases = <String, List<String>>{
-  'Core': ['obliques2'],
-};
 
 /// Renders the anatomy body with colored muscle overlays.
 ///
@@ -103,8 +98,8 @@ class AnatomyBody extends StatelessWidget {
     final isMale = gender == AnatomyGender.male;
     final resolvedBasePng = basePngPath ??
         (isMale
-            ? 'assets/anatomy/male_black.png'
-            : 'assets/anatomy/Female Black.png');
+            ? 'assets/anatomy/male_base.png'
+            : 'assets/anatomy/female_base.png');
 
     return SizedBox(
       height: height,
@@ -126,12 +121,6 @@ class AnatomyBody extends StatelessWidget {
     final bases = _muscleGroupToSvgs[muscle.muscleGroup];
     if (bases == null || bases.isEmpty) return [];
 
-    final isMale = gender == AnatomyGender.male;
-    final allBases = <String>[
-      ...bases,
-      if (isMale) ...?_maleExtraSvgBases[muscle.muscleGroup],
-    ];
-
     final color = tintFor?.call(muscle) ?? highlightColor ?? muscle.color;
     final opacity = focusedMuscle == null
         ? 0.85
@@ -141,7 +130,7 @@ class AnatomyBody extends StatelessWidget {
     // BlendMode.color the alpha must scale the *blend*, letting the skin's
     // shading show through. A full-alpha blend + widget Opacity over-saturates.
     return [
-      for (final base in allBases)
+      for (final base in bases)
         BlendMask(
           blendMode: BlendMode.color,
           child: SvgPicture.asset(

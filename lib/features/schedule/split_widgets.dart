@@ -28,9 +28,9 @@ class SplitHeaderButton extends StatelessWidget {
   }
 }
 
-/// The anatomy base renders front and back bodies side by side; the source
-/// PNG is 900×1140, so the front body's vertical axis sits at 25% of the
-/// rendered width.
+/// The anatomy base renders back and front bodies side by side (2026-08 art
+/// set: back left, front right); the source PNG is 900×1140, so the front
+/// body's vertical axis sits at 75% of the rendered width.
 const _bodyAspect = 900 / 1140;
 
 /// Cropped anatomy hero anchored top-right behind the title block: a
@@ -47,9 +47,9 @@ class SplitHeroBody extends ConsumerWidget {
     final windowW = 240.w;
     final windowH = 340.h;
     final bodyH = 620.h;
-    // Center the front body (left half of the render) in the window.
+    // Center the front body (right half of the render) in the window.
     final bodyW = bodyH * _bodyAspect;
-    final dx = windowW / 2 - bodyW * 0.25;
+    final dx = windowW / 2 - bodyW * 0.75;
 
     return IgnorePointer(
       child: SizedBox(
