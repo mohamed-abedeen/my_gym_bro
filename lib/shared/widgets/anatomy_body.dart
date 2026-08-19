@@ -129,8 +129,22 @@ class AnatomyBody extends StatelessWidget {
     // Bake opacity into the srcIn alpha (NOT a wrapping Opacity widget): for
     // BlendMode.color the alpha must scale the *blend*, letting the skin's
     // shading show through. A full-alpha blend + widget Opacity over-saturates.
+    //
+    // The 2026-08 art is glossy near-black: BlendMode.color keeps the skin's
+    // luminance, so on dark muscle sweeps the tint vanishes and highlights
+    // read smaller than the muscle. The flat low-alpha underlay guarantees a
+    // visible tint floor on every highlighted pixel; the color blend on top
+    // still carries the skin's shading.
     return [
-      for (final base in bases)
+      for (final base in bases) ...[
+        SvgPicture.asset(
+          _svgPath(gender, base),
+          height: height,
+          colorFilter: ColorFilter.mode(
+            color.withValues(alpha: opacity * 0.30),
+            BlendMode.srcIn,
+          ),
+        ),
         BlendMask(
           blendMode: BlendMode.color,
           child: SvgPicture.asset(
@@ -142,6 +156,7 @@ class AnatomyBody extends StatelessWidget {
             ),
           ),
         ),
+      ],
     ];
   }
 }
