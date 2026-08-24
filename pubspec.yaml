@@ -38,6 +38,7 @@ dependencies:
   http: ^1.2.0
   image_picker: ^1.1.2
   intl: ^0.20.2
+  meta: ^1.16.0
   oc_liquid_glass: ^0.2.1
   package_info_plus: ^8.0.0
   path: ^1.9.0

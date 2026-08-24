@@ -1,6 +1,7 @@
 import 'package:drift/drift.dart';
 
 import 'package:my_gym_bro/core/database/app_database.dart';
+import 'package:my_gym_bro/core/services/exercise_mapping.dart';
 
 part 'exercise_dao.g.dart';
 
@@ -102,6 +103,49 @@ class ExerciseDao extends DatabaseAccessor<AppDatabase>
   Future<void> updateMuscleGroup(String exerciseId, String muscleGroup) =>
       (update(exercises)..where((t) => t.exerciseId.equals(exerciseId)))
           .write(ExercisesCompanion(muscleGroup: Value(muscleGroup)));
+
+  /// Re-resolves `muscleGroup` for every catalogue (non-custom) exercise from
+  /// its stored raw fields via [ExerciseMapping.resolveGymMuscleGroup].
+  ///
+  /// Rows are classified once at fetch/seed time, so taxonomy improvements
+  /// (delt heads, Upper Back/Traps split) never reach already-cached rows —
+  /// their stale group names stop matching the anatomy overlays and the
+  /// muscles silently stop colouring. Call after a mapping change (gated on
+  /// [ExerciseMapping.version]).
+  ///
+  /// Custom rows are skipped: they carry no target/bodyPart data and their
+  /// group was chosen deliberately — recomputing would clobber it with
+  /// 'Other'. Returns the number of rows updated.
+  Future<int> remapMuscleGroups() async {
+    final rows =
+        await (select(exercises)..where((t) => t.isCustom.equals(false)))
+            .get();
+
+    final updates = <(String, String)>[];
+    for (final e in rows) {
+      final targets = ExerciseMapping.decodeJsonList(e.targetMuscles);
+      final parts = ExerciseMapping.decodeJsonList(e.bodyParts);
+      if (targets.isEmpty && parts.isEmpty) continue; // nothing to derive from
+      final group = ExerciseMapping.resolveGymMuscleGroup(
+        target: targets.isNotEmpty ? targets.first : null,
+        bodyPart: parts.isNotEmpty ? parts.first : null,
+        exerciseName: e.name,
+      );
+      if (group != e.muscleGroup) updates.add((e.exerciseId, group));
+    }
+    if (updates.isEmpty) return 0;
+
+    await batch((b) {
+      for (final (id, group) in updates) {
+        b.update(
+          exercises,
+          ExercisesCompanion(muscleGroup: Value(group)),
+          where: (t) => t.exerciseId.equals(id),
+        );
+      }
+    });
+    return updates.length;
+  }
 
   /// Insert or update a single exercise.
   Future<int> upsert(ExercisesCompanion companion) =>

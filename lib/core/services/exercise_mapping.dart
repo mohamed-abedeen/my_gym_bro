@@ -1,5 +1,7 @@
 import 'dart:convert';
 
+import 'package:meta/meta.dart';
+
 import 'package:my_gym_bro/core/services/api_exercise.dart' show ApiExercise;
 
 /// Pure, dependency-free heuristics for classifying exercises into the app's
@@ -15,6 +17,13 @@ import 'package:my_gym_bro/core/services/api_exercise.dart' show ApiExercise;
 /// called from isolates without a database or network.
 class ExerciseMapping {
   const ExerciseMapping._();
+
+  /// Version of the muscle-group resolution rules. Cached exercise rows store
+  /// `muscleGroup` computed at fetch time, so mapping improvements never reach
+  /// already-cached rows on their own. Bump this whenever the resolution
+  /// tables/heuristics below change — `ExerciseDao.remapMuscleGroups` re-runs
+  /// on existing installs when the stored version differs.
+  static const int version = 2;
 
   // ── Muscle group resolution ────────────────────────────────────────────
 
@@ -215,6 +224,17 @@ class ExerciseMapping {
     // Neck
     'levator scapulae': 'Neck',
   };
+
+  /// Every canonical group the resolvers above can emit from known
+  /// vocabulary (not counting the title-cased bodyPart fallback). Exposed so
+  /// the anatomy wiring test can assert each one is paintable.
+  @visibleForTesting
+  static Set<String> get resolvableGroups => {
+        ..._targetToMuscleGroup.values,
+        ..._secondaryToMuscleGroup.values,
+        // _resolveShoulderSubGroup outcomes
+        'Front Delt', 'Side Delt', 'Rear Delt', 'Shoulders',
+      };
 
   static String _titleCase(String s) => s
       .split(' ')

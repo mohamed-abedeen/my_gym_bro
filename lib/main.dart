@@ -15,6 +15,7 @@ import 'package:my_gym_bro/core/providers/providers.dart';
 import 'package:my_gym_bro/core/security/secure_storage.dart';
 import 'package:my_gym_bro/core/services/crash_reporter.dart';
 import 'package:my_gym_bro/core/services/exercise_api_service.dart';
+import 'package:my_gym_bro/core/services/exercise_mapping.dart';
 import 'package:my_gym_bro/core/services/exercise_repository.dart';
 import 'package:my_gym_bro/core/services/notification_service.dart';
 import 'package:my_gym_bro/core/services/program_seeder.dart';
@@ -236,6 +237,20 @@ Future<void> _backgroundDbInit(AppDatabase db) async {
     final programSeeder = ProgramSeeder(db, exerciseRepo);
     await programSeeder.ensureStarterCached();
     await programSeeder.seedIfNeeded();
+
+    // Cached exercises store `muscleGroup` computed at fetch time, so
+    // mapping/taxonomy improvements (delt heads, Upper Back/Traps split)
+    // never reach rows already in the DB — their stale group names stop
+    // matching the anatomy overlays and those muscles silently stop
+    // colouring. Re-resolve once per mapping version.
+    const mappingVersionKey = 'muscle_group_mapping_version';
+    final storage = SecureStorage();
+    final storedVersion =
+        int.tryParse(await storage.read(mappingVersionKey) ?? '');
+    if (storedVersion != ExerciseMapping.version) {
+      await ExerciseDao(db).remapMuscleGroups();
+      await storage.write(mappingVersionKey, '${ExerciseMapping.version}');
+    }
   } on Exception catch (e, stack) {
     CrashReporter.recordError(
       e,
