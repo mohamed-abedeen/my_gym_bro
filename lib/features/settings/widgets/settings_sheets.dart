@@ -14,6 +14,7 @@ import 'package:my_gym_bro/l10n/app_localizations.dart';
 import 'package:my_gym_bro/shared/constants.dart';
 import 'package:my_gym_bro/shared/responsive.dart';
 import 'package:my_gym_bro/shared/widgets/glass_surface.dart';
+import 'package:my_gym_bro/shared/widgets/inline_editable_field.dart';
 
 /// Floating frosted bottom sheets for the redesigned settings screen.
 ///
@@ -299,147 +300,57 @@ class RestTimeSheet extends ConsumerWidget {
 // Body weight — numeric input, respects the user's weight unit
 // ─────────────────────────────────────────────────────────────────────────────
 
-class BodyWeightSheet extends ConsumerStatefulWidget {
-  const BodyWeightSheet({super.key});
+/// Edits body weight through the shared calculator-style numpad sheet — the
+/// same entry surface as the workout set fields.
+Future<void> showBodyWeightSheet(BuildContext context, WidgetRef ref) async {
+  final l10n = AppLocalizations.of(context);
+  final profile = ref.read(userProfileProvider).valueOrNull;
+  final kg = profile?.bodyWeightKg;
+  final unit = profile?.weightUnit ?? 'kg';
+  final initial = kg == null
+      ? '0'
+      : (unit == 'lbs'
+          ? (kg * 2.20462).round().toString()
+          : kg.round().toString());
 
-  static void show(BuildContext context) {
-    _showGlassSheet(context, (_) => const BodyWeightSheet());
+  final raw = await showNumpadSheet(
+    context,
+    title: l10n.bodyWeight,
+    initial: initial,
+    suffix: unit,
+  );
+  if (raw == null) return;
+
+  // Clamp to plausible adult range to avoid garbage input poisoning the
+  // calorie estimator. Anything outside this clamp is treated as "clear"
+  // (null) — the next save attempt can correct it.
+  double? newKg;
+  final parsed = double.tryParse(raw);
+  if (parsed != null && parsed > 0) {
+    final asKg = unit == 'lbs' ? parsed / 2.20462 : parsed;
+    if (asKg >= 20 && asKg <= 300) newKg = asKg;
   }
 
-  @override
-  ConsumerState<BodyWeightSheet> createState() => _BodyWeightSheetState();
-}
-
-class _BodyWeightSheetState extends ConsumerState<BodyWeightSheet> {
-  late final TextEditingController _ctrl;
-
-  @override
-  void initState() {
-    super.initState();
-    final profile = ref.read(userProfileProvider).valueOrNull;
-    final kg = profile?.bodyWeightKg;
-    final unit = profile?.weightUnit ?? 'kg';
-    final initial = kg == null
-        ? ''
-        : (unit == 'lbs'
-            ? (kg * 2.20462).round().toString()
-            : kg.round().toString());
-    _ctrl = TextEditingController(text: initial);
+  final dao = ref.read(userProfileDaoProvider);
+  if (profile == null) {
+    await dao.upsert(UserProfilesCompanion(bodyWeightKg: Value(newKg)));
+  } else {
+    await dao.updateBodyWeight(profile.localId, newKg);
   }
-
-  @override
-  void dispose() {
-    _ctrl.dispose();
-    super.dispose();
-  }
-
-  Future<void> _save() async {
-    final raw = _ctrl.text.trim();
-    final profile = ref.read(userProfileProvider).valueOrNull;
-    final dao = ref.read(userProfileDaoProvider);
-    final unit = profile?.weightUnit ?? 'kg';
-
-    double? kg;
-    if (raw.isNotEmpty) {
-      final parsed = double.tryParse(raw.replaceAll(',', '.'));
-      // Clamp to plausible adult range to avoid garbage input poisoning
-      // the calorie estimator. Anything outside this clamp is treated as
-      // "clear" (null) — the next save attempt can correct it.
-      if (parsed != null && parsed > 0) {
-        final asKg = unit == 'lbs' ? parsed / 2.20462 : parsed;
-        if (asKg >= 20 && asKg <= 300) kg = asKg;
-      }
-    }
-
-    if (profile == null) {
-      await dao.upsert(UserProfilesCompanion(bodyWeightKg: Value(kg)));
-    } else {
-      await dao.updateBodyWeight(profile.localId, kg);
-    }
-    ref
-      ..invalidate(userProfileProvider)
-      ..invalidate(activityStatsProvider);
-    if (mounted) Navigator.of(context).pop();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final colors = AppColors.of(context);
-    final l10n = AppLocalizations.of(context);
-    final profile = ref.watch(userProfileProvider).valueOrNull;
-    final unit = profile?.weightUnit ?? 'kg';
-
-    return _SheetShell(
-      title: l10n.bodyWeight,
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          TextField(
-            controller: _ctrl,
-            autofocus: true,
-            keyboardType:
-                const TextInputType.numberWithOptions(decimal: true),
-            style: TextStyle(
-              color: colors.textPrimary,
-              fontSize: 18.sp,
-              fontWeight: FontWeight.w700,
-            ),
-            decoration: InputDecoration(
-              suffixText: unit,
-              suffixStyle: TextStyle(
-                color: colors.textSecondary,
-                fontSize: 14.sp,
-              ),
-              enabledBorder: UnderlineInputBorder(
-                borderSide: BorderSide(color: colors.divider),
-              ),
-              focusedBorder: UnderlineInputBorder(
-                borderSide: BorderSide(color: colors.accent, width: 2),
-              ),
-            ),
-            onSubmitted: (_) => _save(),
-          ),
-          SizedBox(height: 18.h),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.end,
-            children: [
-              TextButton(
-                onPressed: () => Navigator.of(context).pop(),
-                child: Text(
-                  l10n.cancel,
-                  style: TextStyle(color: colors.textSecondary),
-                ),
-              ),
-              SizedBox(width: 8.w),
-              TextButton(
-                onPressed: _save,
-                child: Text(
-                  l10n.save,
-                  style: TextStyle(
-                    color: colors.accent,
-                    fontWeight: FontWeight.w700,
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
+  ref
+    ..invalidate(userProfileProvider)
+    ..invalidate(activityStatsProvider);
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Calorie goal + body fat — plain numeric prefs (SecureStorage-backed)
 // ─────────────────────────────────────────────────────────────────────────────
 
-void showCalorieGoalSheet(BuildContext context, WidgetRef ref) {
-  final l10n = AppLocalizations.of(context);
-  _showGlassSheet(
-    context,
-    (_) => _NumberSheet(
-      title: l10n.calorieGoal,
+Future<void> showCalorieGoalSheet(BuildContext context, WidgetRef ref) =>
+    _showNumberSheet(
+      context,
+      ref,
+      title: AppLocalizations.of(context).calorieGoal,
       suffix: 'kcal',
       initial: ref.read(weeklyCalorieGoalProvider),
       min: 100,
@@ -447,16 +358,13 @@ void showCalorieGoalSheet(BuildContext context, WidgetRef ref) {
       decimals: 0,
       onSave: (ref, value) =>
           ref.read(weeklyCalorieGoalProvider.notifier).set(value),
-    ),
-  );
-}
+    );
 
-void showBodyFatSheet(BuildContext context, WidgetRef ref) {
-  final l10n = AppLocalizations.of(context);
-  _showGlassSheet(
-    context,
-    (_) => _NumberSheet(
-      title: l10n.bodyFat,
+Future<void> showBodyFatSheet(BuildContext context, WidgetRef ref) =>
+    _showNumberSheet(
+      context,
+      ref,
+      title: AppLocalizations.of(context).bodyFat,
       suffix: '%',
       initial: ref.read(bodyFatPctProvider),
       min: 3,
@@ -470,135 +378,40 @@ void showBodyFatSheet(BuildContext context, WidgetRef ref) {
           await ref.read(bodyFatStartPctProvider.notifier).set(value);
         }
       },
-    ),
+    );
+
+/// Numeric setting editor shared by the calorie-goal and body-fat settings —
+/// the calculator-style numpad sheet, with values outside [min]..[max]
+/// treated as "clear" (null), mirroring [showBodyWeightSheet]'s
+/// garbage-input handling.
+Future<void> _showNumberSheet(
+  BuildContext context,
+  WidgetRef ref, {
+  required String title,
+  required String suffix,
+  required double? initial,
+  required double min,
+  required double max,
+  required int decimals,
+  required Future<void> Function(WidgetRef ref, double? value) onSave,
+}) async {
+  final raw = await showNumpadSheet(
+    context,
+    title: title,
+    suffix: suffix,
+    allowDecimal: decimals > 0,
+    initial: initial == null
+        ? '0'
+        : (decimals == 0 || initial == initial.roundToDouble()
+            ? initial.round().toString()
+            : initial.toStringAsFixed(decimals)),
   );
-}
+  if (raw == null) return;
 
-/// Numeric-input sheet shared by the calorie-goal and body-fat settings.
-/// Values outside [min]..[max] are treated as "clear" (null), mirroring
-/// [BodyWeightSheet]'s garbage-input handling.
-class _NumberSheet extends ConsumerStatefulWidget {
-  const _NumberSheet({
-    required this.title,
-    required this.suffix,
-    required this.initial,
-    required this.min,
-    required this.max,
-    required this.decimals,
-    required this.onSave,
-  });
-
-  final String title;
-  final String suffix;
-  final double? initial;
-  final double min;
-  final double max;
-  final int decimals;
-  final Future<void> Function(WidgetRef ref, double? value) onSave;
-
-  @override
-  ConsumerState<_NumberSheet> createState() => _NumberSheetState();
-}
-
-class _NumberSheetState extends ConsumerState<_NumberSheet> {
-  late final TextEditingController _ctrl;
-
-  @override
-  void initState() {
-    super.initState();
-    final v = widget.initial;
-    _ctrl = TextEditingController(
-      text: v == null
-          ? ''
-          : (widget.decimals == 0 || v == v.roundToDouble()
-              ? v.round().toString()
-              : v.toStringAsFixed(widget.decimals)),
-    );
-  }
-
-  @override
-  void dispose() {
-    _ctrl.dispose();
-    super.dispose();
-  }
-
-  Future<void> _save() async {
-    final raw = _ctrl.text.trim();
-    double? value;
-    if (raw.isNotEmpty) {
-      final parsed = double.tryParse(raw.replaceAll(',', '.'));
-      if (parsed != null && parsed >= widget.min && parsed <= widget.max) {
-        value = parsed;
-      }
-    }
-    await widget.onSave(ref, value);
-    if (mounted) Navigator.of(context).pop();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final colors = AppColors.of(context);
-    final l10n = AppLocalizations.of(context);
-
-    return _SheetShell(
-      title: widget.title,
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          TextField(
-            controller: _ctrl,
-            autofocus: true,
-            keyboardType:
-                const TextInputType.numberWithOptions(decimal: true),
-            style: TextStyle(
-              color: colors.textPrimary,
-              fontSize: 18.sp,
-              fontWeight: FontWeight.w700,
-            ),
-            decoration: InputDecoration(
-              suffixText: widget.suffix,
-              suffixStyle: TextStyle(
-                color: colors.textSecondary,
-                fontSize: 14.sp,
-              ),
-              enabledBorder: UnderlineInputBorder(
-                borderSide: BorderSide(color: colors.divider),
-              ),
-              focusedBorder: UnderlineInputBorder(
-                borderSide: BorderSide(color: colors.accent, width: 2),
-              ),
-            ),
-            onSubmitted: (_) => _save(),
-          ),
-          SizedBox(height: 18.h),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.end,
-            children: [
-              TextButton(
-                onPressed: () => Navigator.of(context).pop(),
-                child: Text(
-                  l10n.cancel,
-                  style: TextStyle(color: colors.textSecondary),
-                ),
-              ),
-              SizedBox(width: 8.w),
-              TextButton(
-                onPressed: _save,
-                child: Text(
-                  l10n.save,
-                  style: TextStyle(
-                    color: colors.accent,
-                    fontWeight: FontWeight.w700,
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
+  double? value;
+  final parsed = double.tryParse(raw);
+  if (parsed != null && parsed >= min && parsed <= max) value = parsed;
+  await onSave(ref, value);
 }
 
 // ─────────────────────────────────────────────────────────────────────────────

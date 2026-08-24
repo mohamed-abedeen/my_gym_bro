@@ -175,7 +175,7 @@ class SettingsScreen extends ConsumerWidget {
                     iconColor: SettingsBadgeColors.green,
                     label: l10n.bodyWeight,
                     value: _bodyWeightLabel(profile.valueOrNull, l10n),
-                    onTap: () => BodyWeightSheet.show(context),
+                    onTap: () => showBodyWeightSheet(context, ref),
                   ),
                   SettingsNavRow(
                     icon: Icons.local_fire_department_rounded,

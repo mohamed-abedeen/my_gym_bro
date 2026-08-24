@@ -18,6 +18,7 @@ import 'package:my_gym_bro/l10n/app_localizations.dart';
 import 'package:my_gym_bro/shared/constants.dart';
 import 'package:my_gym_bro/shared/responsive.dart';
 import 'package:my_gym_bro/shared/widgets/confirm_sheet.dart';
+import 'package:my_gym_bro/shared/widgets/inline_editable_field.dart';
 import 'package:my_gym_bro/shared/widgets/liquid_glass_button.dart';
 import 'package:my_gym_bro/shared/widgets/oc_glass_btn.dart';
 
@@ -997,77 +998,26 @@ class _ScheduleBuilderScreenState
     );
   }
 
-  void _showNumberPicker({
+  /// Target weight / reps entry through the shared calculator-style numpad
+  /// sheet (same surface as the workout set fields). Values are clamped to
+  /// [min]..[max]; dismissing the sheet keeps the current value.
+  Future<void> _showNumberPicker({
     required String title,
     required int initial,
     required int min,
     required int max,
     required ValueChanged<int> onDone,
-  }) {
-    final colors = AppColors.of(context);
-    final l10n = AppLocalizations.of(context);
-    var selected = initial;
-    showCupertinoModalPopup<void>(
-      context: context,
-      builder: (_) => Container(
-        height: 250.h,
-        color: colors.panelBackground,
-        child: Column(
-          children: [
-            Container(
-              padding: EdgeInsets.symmetric(horizontal: 16.w),
-              height: 44.h,
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  CupertinoButton(
-                    padding: EdgeInsets.zero,
-                    child: Text(l10n.cancel,
-                        style: TextStyle(
-                            color: colors.textSecondary, fontSize: 14.sp)),
-                    onPressed: () => Navigator.pop(context),
-                  ),
-                  Text(title,
-                      style: TextStyle(
-                          color: colors.textPrimary,
-                          fontSize: 16.sp,
-                          fontWeight: FontWeight.w600)),
-                  CupertinoButton(
-                    padding: EdgeInsets.zero,
-                    child: Text(l10n.done,
-                        style: TextStyle(
-                            color: colors.accent, fontSize: 14.sp)),
-                    onPressed: () {
-                      onDone(selected);
-                      Navigator.pop(context);
-                    },
-                  ),
-                ],
-              ),
-            ),
-            Expanded(
-              child: CupertinoPicker(
-                backgroundColor: colors.panelBackground,
-                itemExtent: 36.h,
-                scrollController:
-                    FixedExtentScrollController(initialItem: initial - min),
-                onSelectedItemChanged: (idx) => selected = min + idx,
-                children: List.generate(
-                  max - min + 1,
-                  (i) => Center(
-                    child: Text(
-                      '${min + i}',
-                      style: TextStyle(
-                          color: colors.textPrimary, fontSize: 18.sp),
-                    ),
-                  ),
-                ),
-              ),
-            ),
-          ],
-        ),
-      ),
+  }) async {
+    final raw = await showNumpadSheet(
+      context,
+      title: title,
+      initial: '$initial',
+      allowDecimal: false,
     );
+    if (raw == null) return;
+    final parsed = int.tryParse(raw);
+    if (parsed == null) return;
+    onDone(parsed.clamp(min, max));
   }
 
   Future<void> _pickExercise(int dayIndex) async {

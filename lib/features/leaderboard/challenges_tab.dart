@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import 'package:my_gym_bro/core/database/app_database.dart';
@@ -10,6 +9,7 @@ import 'package:my_gym_bro/l10n/app_localizations.dart';
 import 'package:my_gym_bro/shared/constants.dart';
 import 'package:my_gym_bro/shared/responsive.dart';
 import 'package:my_gym_bro/shared/widgets/glass_surface.dart';
+import 'package:my_gym_bro/shared/widgets/inline_editable_field.dart';
 
 /// Challenges tab of the Bros screen (Phase 4 — PRD §5.9).
 ///
@@ -917,14 +917,30 @@ class _CreateChallengeSheetState extends ConsumerState<_CreateChallengeSheet> {
               ],
             ),
             SizedBox(height: 12.h),
+            // Opens the shared calculator-style numpad sheet (same entry
+            // surface as the workout set fields) instead of the OS keyboard.
             TextField(
               controller: _targetController,
-              keyboardType: TextInputType.number,
-              inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+              readOnly: true,
+              showCursor: false,
               style: TextStyle(color: colors.textPrimary, fontSize: 14.sp),
               decoration: InputDecoration(
                 labelText: l10n.challengeTargetLabel,
               ),
+              onTap: () async {
+                final raw = await showNumpadSheet(
+                  context,
+                  title: l10n.challengeTargetLabel,
+                  initial: _targetController.text.isEmpty
+                      ? '0'
+                      : _targetController.text,
+                  allowDecimal: false,
+                );
+                if (raw == null) return;
+                setState(
+                  () => _targetController.text = raw == '0' ? '' : raw,
+                );
+              },
             ),
             SizedBox(height: 16.h),
             _SectionLabel(text: l10n.challengeDurationLabel),

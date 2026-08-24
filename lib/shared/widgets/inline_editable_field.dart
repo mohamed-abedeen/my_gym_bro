@@ -36,7 +36,15 @@ class InlineEditableField extends StatelessWidget {
   Widget build(BuildContext context) {
     final colors = AppColors.of(context);
     return GestureDetector(
-      onTap: () => _showNumpad(context),
+      onTap: () async {
+        final result = await showNumpadSheet(
+          context,
+          initial: value,
+          allowDecimal: allowDecimal,
+          suffix: suffix,
+        );
+        if (result != null) onChanged(result);
+      },
       behavior: HitTestBehavior.opaque,
       child: ConstrainedBox(
         constraints:
@@ -62,28 +70,54 @@ class InlineEditableField extends StatelessWidget {
     );
   }
 
-  void _showNumpad(BuildContext context) {
-    var current = value;
-    final l10n = AppLocalizations.of(context);
-    final colors = AppColors.of(context);
+}
 
-    showModalBottomSheet<void>(
-      context: context,
-      backgroundColor: colors.card,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(24.r)),
-      ),
-      builder: (ctx) {
-        var isFirstTap = true;
-        return StatefulBuilder(
-          builder: (ctx, setState) {
-            final displayText = suffix != null ? '$current $suffix' : current;
-            return Padding(
-              padding: EdgeInsets.all(20.w),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  // Display
+/// Shows the app's calculator-style numpad bottom sheet, seeded with
+/// [initial]. Resolves to the entered string when Done is tapped, or null
+/// when the sheet is dismissed.
+///
+/// This is THE numeric-entry surface — every place the user types a number
+/// (set weight/reps, body weight, calorie goal, program targets, …) goes
+/// through it so digits look and behave the same everywhere.
+Future<String?> showNumpadSheet(
+  BuildContext context, {
+  required String initial,
+  bool allowDecimal = true,
+  String? suffix,
+  String? title,
+}) {
+  var current = initial;
+  final l10n = AppLocalizations.of(context);
+  final colors = AppColors.of(context);
+
+  return showModalBottomSheet<String>(
+    context: context,
+    backgroundColor: colors.card,
+    shape: RoundedRectangleBorder(
+      borderRadius: BorderRadius.vertical(top: Radius.circular(24.r)),
+    ),
+    builder: (ctx) {
+      var isFirstTap = true;
+      return StatefulBuilder(
+        builder: (ctx, setState) {
+          final displayText = suffix != null ? '$current $suffix' : current;
+          return Padding(
+            padding: EdgeInsets.all(20.w),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                if (title != null) ...[
+                  Text(
+                    title,
+                    style: TextStyle(
+                      color: colors.textPrimary,
+                      fontSize: 16.sp,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                  SizedBox(height: 12.h),
+                ],
+                // Display
                   Container(
                     width: double.infinity,
                     padding: EdgeInsets.symmetric(
@@ -166,10 +200,7 @@ class InlineEditableField extends StatelessWidget {
                       width: double.infinity,
                       height: 48.h,
                       opacity: 0.25,
-                      onTap: () {
-                        onChanged(current);
-                        Navigator.pop(ctx);
-                      },
+                      onTap: () => Navigator.pop(ctx, current),
                       child: Text(
                         l10n.done,
                         style: TextStyle(
@@ -188,7 +219,6 @@ class InlineEditableField extends StatelessWidget {
         );
       },
     );
-  }
 }
 
 class _NumpadGrid extends StatelessWidget {
