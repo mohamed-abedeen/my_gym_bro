@@ -2,6 +2,7 @@ import 'package:cupertino_native_better/cupertino_native_better.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import 'package:my_gym_bro/l10n/app_localizations.dart';
 import 'package:my_gym_bro/shared/constants.dart';
 import 'package:my_gym_bro/shared/widgets/bottom_nav_pill.dart';
 
@@ -22,25 +23,28 @@ class IosNativeNav extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final idx = ref.watch(navIndexProvider);
     final colors = AppColors.of(context);
+    final l10n = AppLocalizations.of(context);
 
     return CNTabBar(
       currentIndex: idx,
       onTap: (i) => ref.read(navIndexProvider.notifier).state = i,
       // Colors the selected icon — keeps the app's lime accent on the bar.
       tint: colors.accent,
-      // Icon-only (no labels) to match the app's existing nav design.
-      items: const [
+      items: [
         CNTabBarItem(
-          icon: CNSymbol('house'),
-          activeIcon: CNSymbol('house.fill'),
+          label: l10n.tabHome,
+          icon: const CNSymbol('house'),
+          activeIcon: const CNSymbol('house.fill'),
         ),
         CNTabBarItem(
-          icon: CNSymbol('dumbbell'),
-          activeIcon: CNSymbol('dumbbell.fill'),
+          label: l10n.tabWorkout,
+          icon: const CNSymbol('dumbbell'),
+          activeIcon: const CNSymbol('dumbbell.fill'),
         ),
         CNTabBarItem(
-          icon: CNSymbol('person.2'),
-          activeIcon: CNSymbol('person.2.fill'),
+          label: l10n.tabBros,
+          icon: const CNSymbol('person.2'),
+          activeIcon: const CNSymbol('person.2.fill'),
         ),
       ],
     );

@@ -71,6 +71,9 @@ Real Apple Liquid Glass via `cupertino_native_better` (`CNTabBar`), **iOS only**
 
 ---
 
+## 🎨 SVG assets: inline fills only — flutter_svg ignores CSS `<style>` blocks
+Illustrator exports put fills in a `<style>` class block; flutter_svg doesn't parse it ("unhandled element <style/>"), so paths paint default-black — invisible on dark backgrounds. This bit twice (anatomy vectors, `assets/icons/fire.svg`). When adding any SVG asset: **inline `fill="…"` attributes on the paths** (or render through a `ColorFilter` like the anatomy overlays do), and spot-check with `grep -rl "<style" assets --include="*.svg"`.
+
 ## 🗄️ Drift migrations must stay idempotent
 `lib/core/database/app_database.dart` is at **schemaVersion 19** (v17 = Bros friendships, v18 = challenge caches, v19 = leaderboard caches). Columns are declared in the table definitions, so a fresh `createAll()` already adds them — which means raw `ALTER TABLE … ADD COLUMN` in `onUpgrade` can crash with "duplicate column" on version-inconsistent DBs.
 

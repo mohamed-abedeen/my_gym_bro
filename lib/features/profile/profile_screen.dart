@@ -7,6 +7,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:intl/intl.dart';
+import 'package:my_gym_bro/core/providers/providers.dart';
 import 'package:my_gym_bro/core/router/app_router.dart';
 import 'package:my_gym_bro/core/services/exercise_gif_cache.dart';
 import 'package:my_gym_bro/core/services/units.dart';
@@ -38,16 +39,17 @@ class ProfileScreen extends ConsumerWidget {
     final profile = ref.watch(userProfileProvider);
     final enrichedSessions = ref.watch(enrichedAllSessionsProvider);
     final streak = ref.watch(streakProvider);
-    final gender = ref.watch(userGenderProvider);
     final tabIndex = ref.watch(profileTabProvider);
 
     final displayName = profile.whenOrNull(data: (p) => p?.displayName) ?? '';
     final avatarUrl = profile.whenOrNull(data: (p) => p?.avatarUrl);
     final bannerUrl = profile.whenOrNull(data: (p) => p?.bannerUrl);
     final streakCount = streak.whenOrNull(data: (s) => s) ?? 0;
-    final anatomyGender = gender == 'female'
-        ? AnatomyGender.female
-        : AnatomyGender.male;
+    // MUST match the provider that activeSkinPathProvider resolves the skin
+    // with — deriving this from the profile gender instead painted one
+    // gender's muscle vectors over the other gender's skin whenever the two
+    // disagreed (misaligned highlights on the Last Session card).
+    final anatomyGender = ref.watch(anatomyGenderProvider);
 
     return Scaffold(
       backgroundColor: colors.background,

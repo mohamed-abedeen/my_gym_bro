@@ -140,19 +140,19 @@ class _BottomNavPillState extends ConsumerState<BottomNavPill>
                     _NavTab(
                       index: 0,
                       icon: Icons.home_rounded,
-                      size: 34.sp,
+                      size: 24.sp,
                       label: l10n.tabHome,
                     ),
                     _NavTab(
                       index: 1,
                       icon: Icons.fitness_center_rounded,
-                      size: 34.sp,
+                      size: 24.sp,
                       label: l10n.tabWorkout,
                     ),
                     _NavTab(
                       index: 2,
                       icon: Icons.people_rounded,
-                      size: 38.sp,
+                      size: 26.sp,
                       label: l10n.tabBros,
                     ),
                   ],
@@ -204,27 +204,41 @@ class _NavTab extends ConsumerWidget {
     }
 
     return Expanded(
-      // Icon-only tab: give screen readers a name + tab semantics. The icon
-      // itself carries no semantics, so there's no double announcement.
+      // Icon + visible label: the label text also satisfies screen readers,
+      // so it carries the tab semantics (no separate Semantics label needed).
       child: Semantics(
         button: true,
         selected: isActive,
-        label: label,
         child: GestureDetector(
           behavior: HitTestBehavior.opaque,
           onTap: () => ref.read(navIndexProvider.notifier).state = index,
           child: SizedBox(
             height: AppSizes.navPillHeight.h,
-            child: Center(
-              child: AnimatedSwitcher(
-                duration: const Duration(milliseconds: 200),
-                child: Icon(
-                  icon,
-                  key: ValueKey('$index-$isActive'),
-                  size: size,
-                  color: color,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                AnimatedSwitcher(
+                  duration: const Duration(milliseconds: 200),
+                  child: Icon(
+                    icon,
+                    key: ValueKey('$index-$isActive'),
+                    size: size,
+                    color: color,
+                  ),
                 ),
-              ),
+                SizedBox(height: 2.h),
+                Text(
+                  label,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    fontSize: 10.sp,
+                    fontWeight: FontWeight.w600,
+                    color: color,
+                  ),
+                ),
+              ],
             ),
           ),
         ),
