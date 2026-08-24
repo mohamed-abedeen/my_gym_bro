@@ -21,7 +21,7 @@ class AppLocalizationsDe extends AppLocalizations {
   String get tabLog => 'Protokoll';
 
   @override
-  String get tabBros => 'Bros';
+  String get tabBros => 'Rangliste';
 
   @override
   String get status => 'Status';
@@ -1154,6 +1154,9 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get time => 'Zeit';
+
+  @override
+  String get paused => 'Pausiert';
 
   @override
   String get finish => 'Beenden';

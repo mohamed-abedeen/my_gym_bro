@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:math' as math;
 import 'dart:ui' show ImageFilter;
 
 import 'package:cached_network_image/cached_network_image.dart';
@@ -478,7 +479,9 @@ class _ActiveSessionScreenState extends ConsumerState<ActiveSessionScreen>
             Positioned(
               left: 10.w,
               right: 10.w,
-              bottom: bottomPad + 12.h,
+              // Sits lower than the Finish/Discard row: hugging the bottom
+              // edge but kept clear of the home indicator / gesture area.
+              bottom: math.max(8.h, bottomPad - 6.h),
               child: _RestPanel(notifier: notifier),
             )
           else
@@ -1284,11 +1287,18 @@ class _TopStatsCapsule extends StatelessWidget {
                     },
                     behavior: HitTestBehavior.opaque,
                     child: _StatColumn(
-                      label: l10n.time,
+                      // Pausing is a silent tap on this column — without a
+                      // visible state swap an accidental tap reads as "the
+                      // timer broke", not "I paused it".
+                      label: paused ? l10n.paused : l10n.time,
                       value: ValueListenableBuilder<int>(
                         valueListenable: elapsed,
-                        builder: (_, seconds, __) =>
-                            Text(_fmt(seconds), style: _valueStyle),
+                        builder: (_, seconds, __) => Text(
+                          _fmt(seconds),
+                          style: paused
+                              ? _valueStyle.copyWith(color: AppColors.amber)
+                              : _valueStyle,
+                        ),
                       ),
                     ),
                   ),
@@ -1341,10 +1351,14 @@ class _TopStatsCapsule extends StatelessWidget {
     );
   }
 
+  /// Stopwatch format: `0:05` → `12:45` → `1:02:03`. No unit suffix — the
+  /// old `MM:SSm` read as "minutes" from the very first second.
   static String _fmt(int seconds) {
-    final m = seconds ~/ 60;
-    final s = seconds % 60;
-    return '${m.toString().padLeft(2, '0')}:${s.toString().padLeft(2, '0')}m';
+    final h = seconds ~/ 3600;
+    final m = (seconds % 3600) ~/ 60;
+    final s = (seconds % 60).toString().padLeft(2, '0');
+    if (h > 0) return '$h:${m.toString().padLeft(2, '0')}:$s';
+    return '$m:$s';
   }
 
   TextStyle get _valueStyle => TextStyle(
@@ -2614,7 +2628,7 @@ class _RestPanel extends StatelessWidget {
         color: _panelColor,
         borderRadius: BorderRadius.circular(58.r),
       ),
-      padding: EdgeInsets.fromLTRB(14.w, 14.h, 14.w, 16.h),
+      padding: EdgeInsets.fromLTRB(12.w, 10.h, 12.w, 12.h),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
@@ -2637,7 +2651,7 @@ class _RestPanel extends StatelessWidget {
                   timeStr,
                   style: TextStyle(
                     color: Colors.white,
-                    fontSize: 48.sp,
+                    fontSize: 32.sp,
                     fontWeight: FontWeight.w700,
                     fontFeatures: const [FontFeature('ss15')],
                   ),
@@ -2645,7 +2659,7 @@ class _RestPanel extends StatelessWidget {
               );
             },
           ),
-          SizedBox(height: 10.h),
+          SizedBox(height: 8.h),
           Row(
             children: [
               _pill(
@@ -2690,7 +2704,8 @@ class _RestPanel extends StatelessWidget {
           onTap: onTap,
           behavior: HitTestBehavior.opaque,
           child: Container(
-            height: 51.h,
+            // 44 keeps the minimum comfortable tap-target height.
+            height: 44.h,
             decoration: BoxDecoration(
               color: accent
                   ? colors.accent.withValues(alpha: 0.16)
@@ -2704,7 +2719,7 @@ class _RestPanel extends StatelessWidget {
                 overflow: TextOverflow.ellipsis,
                 style: TextStyle(
                   color: accent ? colors.accent : Colors.white,
-                  fontSize: 24.sp,
+                  fontSize: 16.sp,
                   fontWeight: FontWeight.w600,
                 ),
               ),

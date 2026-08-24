@@ -580,11 +580,22 @@ class ActiveSessionNotifier extends StateNotifier<ActiveSessionState> {
       currentIndex = exercises.isEmpty ? 0 : exercises.length - 1;
     }
 
+    // The span between the last persisted touch and now is time the process
+    // spent dead/backgrounded — book it as paused so the restored clock
+    // resumes from the last recorded action instead of counting hours of
+    // dead time (or a lost pause) as workout time.
+    final deadGapSeconds = DateTime.now()
+        .difference(restored.lastActivityAt)
+        .inSeconds
+        .clamp(0, 1 << 30);
+
     state = state.copyWith(
       sessionId: restored.sessionId,
       startedAt: restored.startedAt,
       exercises: exercises,
       currentExerciseIndex: currentIndex,
+      accumulatedPausedSeconds: deadGapSeconds,
+      clearPausedAt: true,
     );
 
     restTimerService.completeSetFromNotification = completeNextSet;
@@ -615,7 +626,10 @@ class ActiveSessionNotifier extends StateNotifier<ActiveSessionState> {
       CreateSessionParams(startedAt: now, scheduleId: scheduleId),
     );
 
-    state = state.copyWith(sessionId: id, startedAt: now, exercises: []);
+    // Hard reset — NOT copyWith. Stale pause bookkeeping (pausedAt /
+    // accumulatedPausedSeconds) leaking in from a previous session would
+    // freeze or skew the new session's clock from its very first second.
+    state = ActiveSessionState(sessionId: id, startedAt: now);
 
     // Show a persistent ongoing notification in the status bar so the user
     // can see the elapsed workout time even when the app is backgrounded.

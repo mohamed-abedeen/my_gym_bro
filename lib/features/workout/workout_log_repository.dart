@@ -221,10 +221,17 @@ class RestoredSessionInfo {
   const RestoredSessionInfo({
     required this.sessionId,
     required this.startedAt,
+    DateTime? lastActivityAt,
     this.exercises = const [],
-  });
+  }) : lastActivityAt = lastActivityAt ?? startedAt;
   final int sessionId;
   final DateTime startedAt;
+
+  /// Newest persisted touch on the session (row updatedAt/createdAt across
+  /// the session, its exercises and sets), floored at [startedAt]. The
+  /// restore path treats the span from here to "now" as paused so time the
+  /// process spent dead doesn't count as workout time.
+  final DateTime lastActivityAt;
   final List<RestoredExerciseInfo> exercises;
 }
 
@@ -508,6 +515,14 @@ class WorkoutLogRepository {
     if (candidates.isEmpty) return null;
     final session = candidates.first;
 
+    var lastActivity = session.updatedAt ?? session.startedAt;
+    if (lastActivity.isBefore(session.startedAt)) {
+      lastActivity = session.startedAt;
+    }
+    void touch(DateTime? t) {
+      if (t != null && t.isAfter(lastActivity)) lastActivity = t;
+    }
+
     final sessionExercises = await _sessionDao
         .getSessionExercisesForSessions([session.localId])
       ..sort((a, b) => a.orderIndex.compareTo(b.orderIndex));
@@ -515,6 +530,7 @@ class WorkoutLogRepository {
       return RestoredSessionInfo(
         sessionId: session.localId,
         startedAt: session.startedAt,
+        lastActivityAt: lastActivity,
       );
     }
 
@@ -524,6 +540,10 @@ class WorkoutLogRepository {
     final setsBySeId = <int, List<WorkoutSet>>{};
     for (final s in sets) {
       setsBySeId.putIfAbsent(s.sessionExerciseId, () => []).add(s);
+      touch(s.updatedAt ?? s.createdAt);
+    }
+    for (final se in sessionExercises) {
+      touch(se.updatedAt ?? se.createdAt);
     }
 
     final exerciseRows = await _exerciseDao.findByExerciseIds(
@@ -567,6 +587,7 @@ class WorkoutLogRepository {
     return RestoredSessionInfo(
       sessionId: session.localId,
       startedAt: session.startedAt,
+      lastActivityAt: lastActivity,
       exercises: exercises,
     );
   }

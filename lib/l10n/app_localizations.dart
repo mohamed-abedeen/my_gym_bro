@@ -129,7 +129,7 @@ abstract class AppLocalizations {
   /// No description provided for @tabBros.
   ///
   /// In en, this message translates to:
-  /// **'Bros'**
+  /// **'Leaderboard'**
   String get tabBros;
 
   /// No description provided for @status.
@@ -2195,6 +2195,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Time'**
   String get time;
+
+  /// No description provided for @paused.
+  ///
+  /// In en, this message translates to:
+  /// **'Paused'**
+  String get paused;
 
   /// No description provided for @finish.
   ///
