@@ -816,20 +816,32 @@ class _ActiveSessionScreenState extends ConsumerState<ActiveSessionScreen>
                 ),
               ),
               SizedBox(height: 20.h),
-              actionPill(l10n.addExercise, () {
-                Navigator.pop(ctx);
-                unawaited(_addExerciseFlow());
-              }),
-              actionPill(l10n.editExercises, () {
-                Navigator.pop(ctx);
-                _showEditExercisesSheet();
-              }),
-              actionPill(l10n.settings, () {
-                Navigator.pop(ctx);
-                unawaited(context.push(AppRoutes.settings));
-              }),
+              _SheetItemReveal(
+                index: 0,
+                child: actionPill(l10n.addExercise, () {
+                  Navigator.pop(ctx);
+                  unawaited(_addExerciseFlow());
+                }),
+              ),
+              _SheetItemReveal(
+                index: 1,
+                child: actionPill(l10n.editExercises, () {
+                  Navigator.pop(ctx);
+                  _showEditExercisesSheet();
+                }),
+              ),
+              _SheetItemReveal(
+                index: 2,
+                child: actionPill(l10n.settings, () {
+                  Navigator.pop(ctx);
+                  unawaited(context.push(AppRoutes.settings));
+                }),
+              ),
               SizedBox(height: 4.h),
-              _finishDiscardRow(colors, l10n, sheetCtx: ctx),
+              _SheetItemReveal(
+                index: 3,
+                child: _finishDiscardRow(colors, l10n, sheetCtx: ctx),
+              ),
             ],
           ),
         ),
@@ -838,7 +850,8 @@ class _ActiveSessionScreenState extends ConsumerState<ActiveSessionScreen>
   }
 
   /// Edit Exercises sheet: drag to reorder the session's exercises, tap the
-  /// trash icon to remove one, tap a row to jump to it.
+  /// trash icon to remove one, tap a row to jump to it. See also
+  /// [_SheetItemReveal], which staggers the actions drawer's items in.
   void _showEditExercisesSheet() {
     final colors = AppColors.of(context);
     final l10n = AppLocalizations.of(context);
@@ -1533,27 +1546,32 @@ class _AnatomyPanel extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    // Completed sets per muscle group — only what THIS session targeted.
+    final l10n = AppLocalizations.of(context);
+    // Completed sets per muscle group — every muscle THIS session targets,
+    // including ones still at 0 sets (Hevy-style full inventory).
     final setCounts = <String, int>{};
     for (final ex in session.exercises) {
       final group = ex.muscleGroup;
       if (group == null || ex.isCardio) continue;
       final done = ex.sets.where((s) => s.isCompleted).length;
-      if (done > 0) setCounts[group] = (setCounts[group] ?? 0) + done;
+      setCounts[group] = (setCounts[group] ?? 0) + done;
     }
-    // Most-targeted first; bars are relative to the top muscle (= 100%).
+    // Most-targeted first; ties alphabetical so 0-set rows keep a stable order.
     final muscles = setCounts.keys.toList()
-      ..sort((a, b) => setCounts[b]!.compareTo(setCounts[a]!));
-    final maxSets = muscles.isEmpty ? 1 : setCounts[muscles.first]!;
+      ..sort((a, b) {
+        final byCount = setCounts[b]!.compareTo(setCounts[a]!);
+        return byCount != 0 ? byCount : a.compareTo(b);
+      });
 
-    // Highlight the session's muscles on the bodies, like the mini body.
+    // Highlight only muscles actually worked on the bodies, like the mini body.
     final states = [
       for (final g in muscles)
-        MuscleStateInfo(
-          muscleGroup: g,
-          state: MuscleState.recovering,
-          recoveryPercent: 0,
-        ),
+        if (setCounts[g]! > 0)
+          MuscleStateInfo(
+            muscleGroup: g,
+            state: MuscleState.recovering,
+            recoveryPercent: 0,
+          ),
     ];
 
     final gender = ref.watch(anatomyGenderProvider);
@@ -1644,8 +1662,20 @@ class _AnatomyPanel extends ConsumerWidget {
                   gender: gender,
                   basePngPath: skinPath,
                 ),
-                SizedBox(height: 16.h),
-                // Bars stay bright the whole way down (only the background
+                SizedBox(height: 12.h),
+                // Hevy-style table header: Muscle | Completed Sets. Fixed
+                // above the list so it doesn't scroll away.
+                Padding(
+                  padding: EdgeInsets.fromLTRB(28.w, 0, 28.w, 6.h),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(l10n.filterMuscle, style: _headerStyle),
+                      Text(l10n.completedSets, style: _headerStyle),
+                    ],
+                  ),
+                ),
+                // Rows stay bright the whole way down (only the background
                 // fades). A tiny edge fade lets overflow rows hint-fade.
                 Expanded(
                   child: ShaderMask(
@@ -1659,10 +1689,8 @@ class _AnatomyPanel extends ConsumerWidget {
                     child: ListView.builder(
                       padding: EdgeInsets.fromLTRB(28.w, 0, 28.w, 30.h),
                       itemCount: muscles.length,
-                      itemBuilder: (_, i) => _muscleBarRow(
-                        muscles[i],
-                        setCounts[muscles[i]]! / maxSets,
-                      ),
+                      itemBuilder: (_, i) =>
+                          _muscleRow(muscles[i], setCounts[muscles[i]]!),
                     ),
                   ),
                 ),
@@ -1674,66 +1702,35 @@ class _AnatomyPanel extends ConsumerWidget {
     );
   }
 
-  Widget _muscleBarRow(String muscleGroup, double fraction) {
-    final percentLabel = '${(fraction * 100).round()}%';
+  TextStyle get _headerStyle => TextStyle(
+    color: Colors.white.withValues(alpha: 0.55),
+    fontSize: 10.sp,
+    fontWeight: FontWeight.w600,
+  );
 
+  Widget _muscleRow(String muscleGroup, int completedSets) {
     return Padding(
-      padding: EdgeInsets.symmetric(vertical: 4.h),
+      padding: EdgeInsets.symmetric(vertical: 5.h),
       child: Row(
         children: [
-          SizedBox(
-            width: 72.w,
+          Expanded(
             child: Text(
               muscleGroup,
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
               style: TextStyle(
                 color: Colors.white,
-                fontSize: 10.sp,
-                fontWeight: FontWeight.w700,
+                fontSize: 12.sp,
+                fontWeight: FontWeight.w600,
               ),
             ),
           ),
-          SizedBox(width: 8.w),
-          // Pill bar per the mock: the unfilled remainder is a dim,
-          // olive version of the accent (not grey), and the fill is a
-          // fully-rounded capsule of its own.
-          Expanded(
-            child: SizedBox(
-              height: 5.h,
-              child: Stack(
-                children: [
-                  Container(
-                    decoration: BoxDecoration(
-                      color: AppColors.accent.withValues(alpha: 0.28),
-                      borderRadius: BorderRadius.circular(2.5.r),
-                    ),
-                  ),
-                  FractionallySizedBox(
-                    widthFactor: fraction,
-                    // Container (not a bare ColoredBox) so the fill
-                    // expands to the track height instead of collapsing.
-                    child: Container(
-                      decoration: BoxDecoration(
-                        color: AppColors.accent,
-                        borderRadius: BorderRadius.circular(2.5.r),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-          SizedBox(
-            width: 44.w,
-            child: Text(
-              percentLabel,
-              textAlign: TextAlign.right,
-              style: TextStyle(
-                color: Colors.white,
-                fontSize: 10.sp,
-                fontWeight: FontWeight.w700,
-              ),
+          Text(
+            '$completedSets',
+            style: TextStyle(
+              color: Colors.white,
+              fontSize: 12.sp,
+              fontWeight: FontWeight.w700,
             ),
           ),
         ],
@@ -1876,6 +1873,65 @@ class _SetsTable extends ConsumerWidget {
 // set-type color. Drag the check button left to arm delete.
 // ═══════════════════════════════════════════════════════════════
 
+// ═══════════════════════════════════════════════════════════════
+// SHEET ITEM REVEAL — staggers the actions drawer's pills in: each
+// item fades + slides up, delayed a beat per index.
+// ═══════════════════════════════════════════════════════════════
+
+class _SheetItemReveal extends StatefulWidget {
+  const _SheetItemReveal({required this.index, required this.child});
+
+  /// Position in the stagger — each step adds a 45ms delay.
+  final int index;
+  final Widget child;
+
+  @override
+  State<_SheetItemReveal> createState() => _SheetItemRevealState();
+}
+
+class _SheetItemRevealState extends State<_SheetItemReveal>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _ctrl = AnimationController(
+    vsync: this,
+    duration: const Duration(milliseconds: 260),
+  );
+  late final CurvedAnimation _anim = CurvedAnimation(
+    parent: _ctrl,
+    curve: Curves.easeOutCubic,
+  );
+  Timer? _delay;
+
+  @override
+  void initState() {
+    super.initState();
+    _delay = Timer(Duration(milliseconds: 45 * widget.index), () {
+      if (mounted) _ctrl.forward();
+    });
+  }
+
+  @override
+  void dispose() {
+    _delay?.cancel();
+    _anim.dispose();
+    _ctrl.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return FadeTransition(
+      opacity: _anim,
+      child: SlideTransition(
+        position: Tween<Offset>(
+          begin: const Offset(0, 0.25),
+          end: Offset.zero,
+        ).animate(_anim),
+        child: widget.child,
+      ),
+    );
+  }
+}
+
 enum _SetMenuAction { normal, warmUp, superset, dropset, failure, remove }
 
 enum _ExerciseMenuAction { add, reorder, replace, howTo, remove }
@@ -1906,6 +1962,9 @@ class _SetRowState extends State<_SetRow> {
   /// Armed = the row shows the red "Press To Delete" confirm bar.
   bool _armed = false;
   double _dragX = 0;
+
+  /// Rightward drag on the armed bar — mirrors the arm swipe to cancel.
+  double _cancelDragX = 0;
   Timer? _disarmTimer;
 
   static const double _kArmThreshold = -45;
@@ -1931,7 +1990,10 @@ class _SetRowState extends State<_SetRow> {
 
   void _disarm() {
     _disarmTimer?.cancel();
-    setState(() => _armed = false);
+    setState(() {
+      _armed = false;
+      _cancelDragX = 0;
+    });
   }
 
   @override
@@ -1943,11 +2005,29 @@ class _SetRowState extends State<_SetRow> {
     if (_armed) {
       return Padding(
         padding: EdgeInsets.symmetric(horizontal: 20.w, vertical: 5.h),
-        // Absorb horizontal drags here too — no exercise swipe while the
-        // delete confirm is showing.
+        // Swipe right to cancel — mirror of the arm swipe. Handling the drag
+        // here also keeps the screen-level exercise swipe from firing while
+        // the delete confirm is showing.
         child: GestureDetector(
-          onHorizontalDragEnd: (_) {},
-          child: _deleteBar(l10n, barHeight),
+          onHorizontalDragUpdate: (d) => setState(
+            () => _cancelDragX = (_cancelDragX + d.delta.dx).clamp(
+              0.0,
+              MediaQuery.sizeOf(context).width - 40.w,
+            ),
+          ),
+          onHorizontalDragEnd: (_) {
+            if (_cancelDragX > -_kArmThreshold) {
+              HapticFeedback.selectionClick();
+              _disarm();
+            } else {
+              setState(() => _cancelDragX = 0);
+            }
+          },
+          onHorizontalDragCancel: () => setState(() => _cancelDragX = 0),
+          child: Transform.translate(
+            offset: Offset(_cancelDragX, 0),
+            child: _deleteBar(l10n, barHeight),
+          ),
         ),
       );
     }
@@ -2535,6 +2615,7 @@ class _SetRowState extends State<_SetRow> {
   // ── Red confirm-delete bar ──
 
   Widget _deleteBar(AppLocalizations l10n, double barHeight) {
+    final colors = AppColors.of(context);
     return Container(
       height: barHeight,
       decoration: BoxDecoration(
@@ -2546,27 +2627,23 @@ class _SetRowState extends State<_SetRow> {
       child: Row(
         children: [
           // X — cancel (icon-only, so it carries a semantic label).
+          // Styled identically to the set row's pending check button.
           Semantics(
             button: true,
             label: l10n.cancel,
             child: GestureDetector(
               onTap: _disarm,
               behavior: HitTestBehavior.opaque,
-              child: Padding(
-                padding: EdgeInsets.all(4.w),
-                child: Container(
-                  width: barHeight - 8.w,
-                  height: barHeight - 8.w,
-                  decoration: const BoxDecoration(
-                    color: Color(0xFF9B1B1F),
-                    shape: BoxShape.circle,
-                  ),
-                  child: Center(
-                    child: Icon(
-                      Icons.close_rounded,
-                      color: Colors.white,
-                      size: 20.sp,
-                    ),
+              child: GlassSurface(
+                width: 58.w,
+                height: barHeight,
+                radius: barHeight / 2,
+                blurSigma: AppGlass.blurButton,
+                child: Center(
+                  child: Icon(
+                    Icons.close_rounded,
+                    color: colors.textPrimary.withValues(alpha: 0.8),
+                    size: 24.sp,
                   ),
                 ),
               ),
@@ -2596,8 +2673,8 @@ class _SetRowState extends State<_SetRow> {
               ),
             ),
           ),
-          // Balance the X circle so the text is optically centered.
-          SizedBox(width: barHeight - 4.w),
+          // Balance the X pill so the text is optically centered.
+          SizedBox(width: 58.w),
         ],
       ),
     );

@@ -246,6 +246,12 @@ abstract class AppLocalizations {
   /// **'Sets'**
   String get sets;
 
+  /// No description provided for @completedSets.
+  ///
+  /// In en, this message translates to:
+  /// **'Completed Sets'**
+  String get completedSets;
+
   /// No description provided for @reps.
   ///
   /// In en, this message translates to:
@@ -4289,6 +4295,204 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Last winner: {name}'**
   String lastWinnerLabel(Object name);
+
+  /// No description provided for @splitQuickShare.
+  ///
+  /// In en, this message translates to:
+  /// **'Share'**
+  String get splitQuickShare;
+
+  /// No description provided for @splitQuickShareSub.
+  ///
+  /// In en, this message translates to:
+  /// **'Send this split to a bro'**
+  String get splitQuickShareSub;
+
+  /// No description provided for @shareRoutineDefaultTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Workout plan'**
+  String get shareRoutineDefaultTitle;
+
+  /// No description provided for @shareRoutineSheetTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Share routine'**
+  String get shareRoutineSheetTitle;
+
+  /// No description provided for @shareRoutineCreating.
+  ///
+  /// In en, this message translates to:
+  /// **'Creating link…'**
+  String get shareRoutineCreating;
+
+  /// No description provided for @shareRoutineQrHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Scan with the phone camera to open in MyGymBro'**
+  String get shareRoutineQrHint;
+
+  /// No description provided for @shareRoutineCopy.
+  ///
+  /// In en, this message translates to:
+  /// **'Copy link'**
+  String get shareRoutineCopy;
+
+  /// No description provided for @shareRoutineCopied.
+  ///
+  /// In en, this message translates to:
+  /// **'Link copied'**
+  String get shareRoutineCopied;
+
+  /// No description provided for @shareRoutineAction.
+  ///
+  /// In en, this message translates to:
+  /// **'Share link'**
+  String get shareRoutineAction;
+
+  /// No description provided for @shareRoutineMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Try my \"{title}\" routine on MyGymBro: {link}'**
+  String shareRoutineMessage(String title, String link);
+
+  /// No description provided for @shareRoutineOffline.
+  ///
+  /// In en, this message translates to:
+  /// **'You\'re offline — sharing needs a connection. Try again later.'**
+  String get shareRoutineOffline;
+
+  /// No description provided for @shareRoutineSignedOut.
+  ///
+  /// In en, this message translates to:
+  /// **'Sign in to create share links.'**
+  String get shareRoutineSignedOut;
+
+  /// No description provided for @shareRoutineFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t create the link. Try again.'**
+  String get shareRoutineFailed;
+
+  /// No description provided for @shareRoutineEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'Add exercises to this plan before sharing.'**
+  String get shareRoutineEmpty;
+
+  /// No description provided for @shareRoutineRetry.
+  ///
+  /// In en, this message translates to:
+  /// **'Retry'**
+  String get shareRoutineRetry;
+
+  /// No description provided for @importShareTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Shared routine'**
+  String get importShareTitle;
+
+  /// No description provided for @importShareLoading.
+  ///
+  /// In en, this message translates to:
+  /// **'Fetching routine…'**
+  String get importShareLoading;
+
+  /// No description provided for @importShareNotFound.
+  ///
+  /// In en, this message translates to:
+  /// **'This link is no longer available.'**
+  String get importShareNotFound;
+
+  /// No description provided for @importShareOffline.
+  ///
+  /// In en, this message translates to:
+  /// **'You\'re offline — importing needs a connection.'**
+  String get importShareOffline;
+
+  /// No description provided for @importShareFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Something went wrong. Try again.'**
+  String get importShareFailed;
+
+  /// No description provided for @importShareUnsupported.
+  ///
+  /// In en, this message translates to:
+  /// **'Update MyGymBro to open this routine.'**
+  String get importShareUnsupported;
+
+  /// No description provided for @importShareSignIn.
+  ///
+  /// In en, this message translates to:
+  /// **'Sign in to import this routine.'**
+  String get importShareSignIn;
+
+  /// No description provided for @importShareSignInAction.
+  ///
+  /// In en, this message translates to:
+  /// **'Sign in'**
+  String get importShareSignInAction;
+
+  /// No description provided for @importShareKindProgram.
+  ///
+  /// In en, this message translates to:
+  /// **'Program'**
+  String get importShareKindProgram;
+
+  /// No description provided for @importShareKindDay.
+  ///
+  /// In en, this message translates to:
+  /// **'Single day'**
+  String get importShareKindDay;
+
+  /// No description provided for @importShareAddProgram.
+  ///
+  /// In en, this message translates to:
+  /// **'Add as new program'**
+  String get importShareAddProgram;
+
+  /// No description provided for @importShareAppendToActive.
+  ///
+  /// In en, this message translates to:
+  /// **'Add day to current program'**
+  String get importShareAppendToActive;
+
+  /// No description provided for @importShareImported.
+  ///
+  /// In en, this message translates to:
+  /// **'Imported! Find it on the Workout tab.'**
+  String get importShareImported;
+
+  /// No description provided for @importShareRestDay.
+  ///
+  /// In en, this message translates to:
+  /// **'Rest day'**
+  String get importShareRestDay;
+
+  /// No description provided for @importCodeTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Paste a share link or code'**
+  String get importCodeTitle;
+
+  /// No description provided for @importCodeHint.
+  ///
+  /// In en, this message translates to:
+  /// **'mygymbro.app/s/…'**
+  String get importCodeHint;
+
+  /// No description provided for @importCodeInvalid.
+  ///
+  /// In en, this message translates to:
+  /// **'That doesn\'t look like a share link.'**
+  String get importCodeInvalid;
+
+  /// No description provided for @importCodeOpen.
+  ///
+  /// In en, this message translates to:
+  /// **'Open'**
+  String get importCodeOpen;
 }
 
 class _AppLocalizationsDelegate

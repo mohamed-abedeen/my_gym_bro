@@ -84,6 +84,9 @@ class AppLocalizationsDe extends AppLocalizations {
   String get sets => 'Sätze';
 
   @override
+  String get completedSets => 'Abgeschlossene Sätze';
+
+  @override
   String get reps => 'Wdh.';
 
   @override
@@ -2345,4 +2348,114 @@ class AppLocalizationsDe extends AppLocalizations {
   String lastWinnerLabel(Object name) {
     return 'Letzter Sieg: $name';
   }
+
+  @override
+  String get splitQuickShare => 'Teilen';
+
+  @override
+  String get splitQuickShareSub => 'Schick diesen Split einem Bro';
+
+  @override
+  String get shareRoutineDefaultTitle => 'Trainingsplan';
+
+  @override
+  String get shareRoutineSheetTitle => 'Routine teilen';
+
+  @override
+  String get shareRoutineCreating => 'Link wird erstellt…';
+
+  @override
+  String get shareRoutineQrHint =>
+      'Mit der Handykamera scannen, um es in MyGymBro zu öffnen';
+
+  @override
+  String get shareRoutineCopy => 'Link kopieren';
+
+  @override
+  String get shareRoutineCopied => 'Link kopiert';
+
+  @override
+  String get shareRoutineAction => 'Link teilen';
+
+  @override
+  String shareRoutineMessage(String title, String link) {
+    return 'Probier meine Routine \"$title\" auf MyGymBro: $link';
+  }
+
+  @override
+  String get shareRoutineOffline =>
+      'Du bist offline — zum Teilen brauchst du eine Verbindung. Versuch es später erneut.';
+
+  @override
+  String get shareRoutineSignedOut => 'Melde dich an, um Links zu teilen.';
+
+  @override
+  String get shareRoutineFailed =>
+      'Link konnte nicht erstellt werden. Versuch es erneut.';
+
+  @override
+  String get shareRoutineEmpty => 'Füge diesem Plan erst Übungen hinzu.';
+
+  @override
+  String get shareRoutineRetry => 'Erneut versuchen';
+
+  @override
+  String get importShareTitle => 'Geteilte Routine';
+
+  @override
+  String get importShareLoading => 'Routine wird geladen…';
+
+  @override
+  String get importShareNotFound => 'Dieser Link ist nicht mehr verfügbar.';
+
+  @override
+  String get importShareOffline =>
+      'Du bist offline — zum Importieren brauchst du eine Verbindung.';
+
+  @override
+  String get importShareFailed =>
+      'Etwas ist schiefgelaufen. Versuch es erneut.';
+
+  @override
+  String get importShareUnsupported =>
+      'Aktualisiere MyGymBro, um diese Routine zu öffnen.';
+
+  @override
+  String get importShareSignIn =>
+      'Melde dich an, um diese Routine zu importieren.';
+
+  @override
+  String get importShareSignInAction => 'Anmelden';
+
+  @override
+  String get importShareKindProgram => 'Programm';
+
+  @override
+  String get importShareKindDay => 'Einzelner Tag';
+
+  @override
+  String get importShareAddProgram => 'Als neues Programm hinzufügen';
+
+  @override
+  String get importShareAppendToActive =>
+      'Tag zum aktuellen Programm hinzufügen';
+
+  @override
+  String get importShareImported =>
+      'Importiert! Du findest es im Training-Tab.';
+
+  @override
+  String get importShareRestDay => 'Ruhetag';
+
+  @override
+  String get importCodeTitle => 'Link oder Code einfügen';
+
+  @override
+  String get importCodeHint => 'mygymbro.app/s/…';
+
+  @override
+  String get importCodeInvalid => 'Das sieht nicht wie ein Teilen-Link aus.';
+
+  @override
+  String get importCodeOpen => 'Öffnen';
 }

@@ -101,7 +101,7 @@ The cloud project serves auth + data for beta builds, but repo state has NOT bee
 pushed. As of the last check the following were pending — **verify with
 `supabase migration list` before relying on cloud state**:
 
-- `supabase db push` — repo migrations go up to `016_skins.sql`
+- `supabase db push` — repo migrations go up to `020_routine_shares.sql`
   (012 = Bros Phase B friendships, 013 = feed/bucket drop + `delete_account_data`
   rewrite, 014 = Phase 4 challenges + leaderboard points wiring +
   another `delete_account_data` rewrite; authored 2026-08-15/16, **never run
@@ -168,10 +168,38 @@ pushed. As of the last check the following were pending — **verify with
   Post-deploy check: rivals scope shows a pod; after the first Monday,
   `season_results` has rows, the winner banner renders, and top-3 got the
   push.
-- **Bros invite deep link** — `https://mygymbro.app/bro/<username>` is generated/QR-encoded
-  by the client and the in-app `/bro/:username` route exists, but the universal-link
-  platform config (Apple AASA, Android assetlinks, and the web fallback page with the App
-  Store link) is NOT set up; external links won't open the app until it is.
+- **Routine shares (020) deploy notes (2026-08-29):** `routine_shares` table + 4
+  SECURITY DEFINER RPCs (`create_routine_share`, `get_routine_share`,
+  `increment_share_import`, `revoke_routine_share`) — plain `db push`, nothing to
+  schedule, no function secrets, anon keeps zero grants (recipients are signed in).
+  Post-deploy check: share a split from the app → link created; paste the
+  link/code on a second account → preview renders and the import lands locally;
+  `supabase/tests/local_integration.sh` has a `== routine shares ==` block.
+- **Universal links (bros invite + routine shares)** — the client generates/QR-encodes
+  `https://mygymbro.app/bro/<username>` and `https://mygymbro.app/s/<code>`, and the
+  in-app `/bro/:username` + `/s/:code` routes exist (an `app_links` listener,
+  `DeepLinkService`, handles both; Flutter's built-in deep linking is explicitly
+  disabled in the manifests — do not remove those flags, they keep the Supabase
+  OAuth callback out of GoRouter). **External links won't open the app until the
+  owner does ALL of the following** (until then, users import via the paste-link
+  dialog on the Discover screen — fully functional today):
+  1. Host `https://mygymbro.app/.well-known/apple-app-site-association`
+     (Content-Type `application/json`, no file extension):
+     `{"applinks":{"apps":[],"details":[{"appIDs":["<TEAMID>.com.mygymbro.myGymBro"],"components":[{"/":"/s/*"},{"/":"/bro/*"}]}]}}`
+  2. Host `https://mygymbro.app/.well-known/assetlinks.json` (Play App Signing
+     SHA-256 from Play Console):
+     `[{"relation":["delegate_permission/common.handle_all_urls"],"target":{"namespace":"android_app","package_name":"com.mygymbro.my_gym_bro","sha256_cert_fingerprints":["<RELEASE-SHA256>"]}}]`
+  3. Host fallback pages at `/s/<code>` and `/bro/<username>`: "Open in My Gym Bro"
+     + store badges. Until assetlinks verifies, Android 12+ opens https links in the
+     browser (no chooser), so the page's open button should use
+     `intent://s/<code>#Intent;scheme=https;package=com.mygymbro.my_gym_bro;end`.
+  4. Apple Developer portal: enable **Associated Domains** on the App ID and
+     regenerate profiles, THEN add `applinks:mygymbro.app` to
+     `ios/Runner/Runner.entitlements` (deliberately NOT added yet — with the
+     capability missing from the profile it breaks the green TestFlight lane) and
+     verify the TestFlight lane still passes.
+  5. Flip `android:autoVerify="true"` on the https intent-filter in
+     `AndroidManifest.xml` once assetlinks.json is live and verified.
 - `supabase functions deploy` — 7 functions in `supabase/functions/`; deployed versions are
   stale. Mind `verify_jwt`: `revenuecat-webhook` and cron-invoked functions must be deployed
   with JWT verification off (config or `--no-verify-jwt`) or they're dead behind the gate.

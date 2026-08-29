@@ -14,6 +14,7 @@ import 'package:my_gym_bro/core/database/daos/user_profile_dao.dart';
 import 'package:my_gym_bro/core/providers/providers.dart';
 import 'package:my_gym_bro/core/security/secure_storage.dart';
 import 'package:my_gym_bro/core/services/crash_reporter.dart';
+import 'package:my_gym_bro/core/services/deep_link_service.dart';
 import 'package:my_gym_bro/core/services/exercise_api_service.dart';
 import 'package:my_gym_bro/core/services/exercise_mapping.dart';
 import 'package:my_gym_bro/core/services/exercise_repository.dart';
@@ -205,6 +206,9 @@ Future<void> _bootstrap() async {
   // which can block indefinitely on a slow/absent network. Awaiting it
   // before runApp() froze the splash, so it is now fire-and-forget.
   unawaited(NotificationService.initialise());
+  // Universal links (routine shares / bros invites) — app_links listener;
+  // Flutter's built-in deep linking is disabled in the manifests.
+  unawaited(DeepLinkService.instance.initialise());
   unawaited(_backgroundDbInit(db));
 
   // Reconcile RevenueCat entitlements into the local profile on launch, and

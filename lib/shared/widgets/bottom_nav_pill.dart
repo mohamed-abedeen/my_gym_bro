@@ -140,19 +140,19 @@ class _BottomNavPillState extends ConsumerState<BottomNavPill>
                     _NavTab(
                       index: 0,
                       icon: Icons.home_rounded,
-                      size: 24.sp,
+                      size: 20.sp,
                       label: l10n.tabHome,
                     ),
                     _NavTab(
                       index: 1,
                       icon: Icons.fitness_center_rounded,
-                      size: 24.sp,
+                      size: 20.sp,
                       label: l10n.tabWorkout,
                     ),
                     _NavTab(
                       index: 2,
                       icon: Icons.people_rounded,
-                      size: 26.sp,
+                      size: 22.sp,
                       label: l10n.tabBros,
                     ),
                   ],

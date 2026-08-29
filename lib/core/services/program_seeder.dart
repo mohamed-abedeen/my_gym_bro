@@ -66,7 +66,10 @@ class ProgramSeeder {
   ///   1. local cache — exact match, then shortest partial,
   ///   2. exercise API by name (results are cached as a side effect),
   ///   3. a loggable custom exercise as a last resort (offline / no match).
-  Future<String> _id(String name, {String? muscleGroup}) async {
+  ///
+  /// Public because the shared-routine importer uses it as the fallback when
+  /// a payload's catalogue id doesn't resolve on this device.
+  Future<String> resolveExerciseId(String name, {String? muscleGroup}) async {
     final key = name.toLowerCase();
     if (_cache.containsKey(key)) return _cache[key]!;
 
@@ -151,7 +154,10 @@ class ProgramSeeder {
 
       for (var j = 0; j < day.exercises.length; j++) {
         final ex = day.exercises[j];
-        final exerciseId = await _id(ex.name, muscleGroup: ex.muscleGroup);
+        final exerciseId = await resolveExerciseId(
+          ex.name,
+          muscleGroup: ex.muscleGroup,
+        );
         await _scheduleDao.addExercise(
           ScheduledExercisesCompanion(
             scheduleDayId: Value(dayId),

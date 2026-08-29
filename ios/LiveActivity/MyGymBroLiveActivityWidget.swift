@@ -75,9 +75,15 @@ public struct MyGymBroLiveActivityWidget: Widget {
                       : "figure.strengthtraining.traditional")
                     .foregroundStyle(brandTint)
             } compactTrailing: {
+                // Text(timerInterval:) is layout-greedy — without a hard frame
+                // it inflates the island to near full-width. Clamp it.
                 TimerLabel(context: context)
                     .monospacedDigit()
                     .font(.caption2.weight(.semibold))
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.8) // "1:02:35" still fits once past 1h
+                    .frame(maxWidth: 44)
+                    .multilineTextAlignment(.trailing)
             } minimal: {
                 Image(systemName: context.state.isResting
                       ? "timer"
@@ -163,7 +169,11 @@ private struct TimerLabel: View {
             Text(timerInterval: Date()...endsAt, countsDown: true)
         } else {
             // Elapsed — show how long the session has been running.
-            Text(timerInterval: context.attributes.sessionStartedAt...Date.distantFuture,
+            // Cap the interval: SwiftUI reserves layout width for the longest
+            // possible string, and Date.distantFuture makes that enormous
+            // (it stretches the compact Dynamic Island to full width).
+            let start = context.attributes.sessionStartedAt
+            Text(timerInterval: start...start.addingTimeInterval(12 * 3600),
                  countsDown: false)
         }
     }

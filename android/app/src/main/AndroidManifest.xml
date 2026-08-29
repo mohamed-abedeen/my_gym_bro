@@ -51,6 +51,27 @@
                 <category android:name="android.intent.category.BROWSABLE"/>
                 <data android:scheme="io.supabase.mygymbro"/>
             </intent-filter>
+            <!-- Universal links (routine shares + bros invites). Kept as a
+                 SEPARATE filter from the OAuth one above — <data> elements
+                 within one filter cross-product. No autoVerify yet: flipping
+                 it on before /.well-known/assetlinks.json is hosted makes
+                 verification fail outright (SETUP-STATUS.md owner step). On
+                 Android 12+ links stay browser-bound until then; the in-app
+                 paste-link import covers the gap. -->
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW"/>
+                <category android:name="android.intent.category.DEFAULT"/>
+                <category android:name="android.intent.category.BROWSABLE"/>
+                <data android:scheme="https" android:host="mygymbro.app" android:pathPrefix="/s/"/>
+                <data android:scheme="https" android:host="mygymbro.app" android:pathPrefix="/bro/"/>
+            </intent-filter>
+            <!-- Deep links are handled EXCLUSIVELY by the app_links listener
+                 (DeepLinkService). Flutter's built-in deep linking defaults
+                 to ON when this flag is absent, which would double-handle
+                 links and push the Supabase OAuth callback into GoRouter. -->
+            <meta-data
+                android:name="flutter_deeplinking_enabled"
+                android:value="false" />
         </activity>
         <!-- Don't delete the meta-data below.
              This is used by the Flutter tool to generate GeneratedPluginRegistrant.java -->

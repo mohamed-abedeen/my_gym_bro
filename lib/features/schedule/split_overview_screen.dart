@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:my_gym_bro/core/database/app_database.dart';
 import 'package:my_gym_bro/core/router/app_router.dart';
+import 'package:my_gym_bro/features/schedule/share/routine_share_sheet.dart';
 import 'package:my_gym_bro/features/schedule/split_providers.dart';
 import 'package:my_gym_bro/features/schedule/split_widgets.dart';
 import 'package:my_gym_bro/features/workout/status_bottom_sheet.dart';
@@ -682,6 +683,25 @@ class _QuickLinks extends StatelessWidget {
                 subtitle: l10n.splitQuickDiscoverSub,
                 accent: true,
                 onTap: () => context.push(AppRoutes.discoverPrograms),
+              ),
+            ),
+          ],
+        ),
+        SizedBox(height: 12.h),
+        Row(
+          children: [
+            Expanded(
+              child: _QuickTile(
+                icon: Icons.ios_share_rounded,
+                title: l10n.splitQuickShare,
+                subtitle: l10n.splitQuickShareSub,
+                onTap: () => showRoutineShareSheet(
+                  context,
+                  scheduleId: schedule.localId,
+                  title: schedule.name.trim().isEmpty
+                      ? l10n.shareRoutineDefaultTitle
+                      : schedule.name,
+                ),
               ),
             ),
           ],

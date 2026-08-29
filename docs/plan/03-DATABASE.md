@@ -311,6 +311,35 @@ user_reports (          -- ⚠ shipped as `progress_reports` (name collision, se
 - Optional Drift mirror `UserReports` (cache) so the Reports window renders offline.
 - Indexes: `(user_id, period_type, period_start desc)` for the Reports list.
 
+### 3.6 Routine shares *(✅ built 2026-08-29 — migration `020_routine_shares.sql`)*
+
+Share a program/split or a single day via link (`https://mygymbro.app/s/<code>`).
+A share is an **independent, immutable snapshot** uploaded on demand — the dead
+`schedules`/`schedule_days`/`scheduled_exercises` cloud tables from 001 are NOT
+involved, and nothing new syncs. No Drift change: importing writes ordinary
+local schedule rows.
+
+```sql
+create table routine_shares (
+  id uuid primary key default gen_random_uuid(),
+  code text not null unique,            -- 8 chars, ambiguity-free alphabet
+  owner_id uuid not null references auth.users(id) on delete cascade,
+  kind text not null check (kind in ('program','day')),
+  title text not null,
+  payload jsonb not null,               -- server-scrubbed rebuild, never raw client JSON
+  import_count integer not null default 0,
+  created_at timestamptz not null default now(),
+  revoked_at timestamptz                -- soft revoke; rows never client-deleted
+)
+```
+- **RLS:** owner-only SELECT; **no client write policies** — all writes go
+  through the four SECURITY DEFINER RPCs (`create_routine_share`,
+  `get_routine_share`, `increment_share_import`, `revoke_routine_share`;
+  contracts in `04-BACKEND.md`). anon keeps zero grants (018 rule).
+- Index: `(owner_id, created_at desc)` for a future "my shares" list.
+- Account deletion is covered by the `on delete cascade` — `delete_account_data`
+  needed no change.
+
 ## 4. Schema Change Checklist
 
 When adding/altering a table:

@@ -23,8 +23,8 @@ import 'package:my_gym_bro/shared/responsive.dart';
 import 'package:my_gym_bro/shared/widgets/anatomy_body.dart';
 import 'package:my_gym_bro/shared/widgets/confirm_sheet.dart';
 import 'package:my_gym_bro/shared/widgets/fire_icon.dart';
-import 'package:my_gym_bro/shared/widgets/glass_surface.dart';
 import 'package:my_gym_bro/shared/widgets/liquid_glass_button.dart';
+import 'package:my_gym_bro/shared/widgets/refractive_glass.dart';
 
 /// Workout tab — pixel-perfect from Figma CSS.
 class WorkoutScreen extends ConsumerWidget {
@@ -174,88 +174,104 @@ class _ResumeSessionPillState extends ConsumerState<_ResumeSessionPill> {
       ),
     );
 
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    // RefractiveGlass needs explicit bounds: 48.w circle buttons + 10.w
+    // padding top/bottom. Width mirrors the old left/right 20.w insets.
+    final pillW = MediaQuery.of(context).size.width - 40.w;
+    final pillH = 68.w;
+
     return Positioned(
       left: 20.w,
       right: 20.w,
       bottom: MediaQuery.of(context).padding.bottom + 92.h,
       child: GestureDetector(
         onTap: () => context.push(AppRoutes.activeSession),
-        child: GlassSurface(
+        // Refractive liquid-glass look — floating session bar qualifies as
+        // prominent nav-like chrome (safe here: Stack overlay, no scrollable).
+        child: RefractiveGlass(
+          width: pillW,
+          height: pillH,
           radius: 34.r,
-          tint: colors.panelBackground.withValues(alpha: 0.85),
-          padding: EdgeInsets.all(10.w),
+          // Translucent enough for the refraction to read (the old frosted
+          // 0.85 panel tint would bury the shader), matched to the nav pill.
+          tint: isDark
+              ? Colors.black.withValues(alpha: 0.50)
+              : Colors.white.withValues(alpha: 0.50),
           shadow: BoxShadow(
             color: Colors.black.withValues(alpha: 0.35),
             blurRadius: 18.w,
             offset: Offset(0, 6.h),
           ),
-          child: Row(
-            children: [
-              circleButton(
-                onTap: () => context.push(AppRoutes.activeSession),
-                child: Icon(
-                  Icons.keyboard_arrow_up_rounded,
-                  color: colors.textPrimary,
-                  size: 26.sp,
+          child: Padding(
+            padding: EdgeInsets.all(10.w),
+            child: Row(
+              children: [
+                circleButton(
+                  onTap: () => context.push(AppRoutes.activeSession),
+                  child: Icon(
+                    Icons.keyboard_arrow_up_rounded,
+                    color: colors.textPrimary,
+                    size: 26.sp,
+                  ),
                 ),
-              ),
-              Expanded(
-                child: Column(
-                  children: [
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Container(
-                          width: 8.w,
-                          height: 8.w,
-                          decoration: BoxDecoration(
-                            color: colors.success,
-                            shape: BoxShape.circle,
+                Expanded(
+                  child: Column(
+                    children: [
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Container(
+                            width: 8.w,
+                            height: 8.w,
+                            decoration: BoxDecoration(
+                              color: colors.success,
+                              shape: BoxShape.circle,
+                            ),
                           ),
-                        ),
-                        SizedBox(width: 8.w),
-                        Text(
-                          l10n.tabWorkout,
-                          style: TextStyle(
-                            color: colors.textPrimary,
-                            fontSize: 15.sp,
-                            fontWeight: FontWeight.w800,
+                          SizedBox(width: 8.w),
+                          Text(
+                            l10n.tabWorkout,
+                            style: TextStyle(
+                              color: colors.textPrimary,
+                              fontSize: 15.sp,
+                              fontWeight: FontWeight.w800,
+                            ),
                           ),
-                        ),
-                        SizedBox(width: 5.w),
-                        Text(
-                          _fmt(session.elapsedSeconds),
-                          style: TextStyle(
-                            color: colors.textPrimary,
-                            fontSize: 15.sp,
-                            fontWeight: FontWeight.w500,
+                          SizedBox(width: 5.w),
+                          Text(
+                            _fmt(session.elapsedSeconds),
+                            style: TextStyle(
+                              color: colors.textPrimary,
+                              fontSize: 15.sp,
+                              fontWeight: FontWeight.w500,
+                            ),
                           ),
-                        ),
-                      ],
-                    ),
-                    SizedBox(height: 2.h),
-                    Text(
-                      session.currentExercise?.name ?? '',
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: TextStyle(
-                        color: colors.textSecondary,
-                        fontSize: 13.sp,
+                        ],
                       ),
-                    ),
-                  ],
+                      SizedBox(height: 2.h),
+                      Text(
+                        session.currentExercise?.name ?? '',
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                          color: colors.textSecondary,
+                          fontSize: 13.sp,
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
-              ),
-              circleButton(
-                onTap: _discard,
-                color: const Color(0xFF3E1418),
-                child: Icon(
-                  Icons.delete_outline_rounded,
-                  color: const Color(0xFFFF453A),
-                  size: 22.sp,
+                circleButton(
+                  onTap: _discard,
+                  color: const Color(0xFF3E1418),
+                  child: Icon(
+                    Icons.delete_outline_rounded,
+                    color: const Color(0xFFFF453A),
+                    size: 22.sp,
+                  ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         ),
       ),

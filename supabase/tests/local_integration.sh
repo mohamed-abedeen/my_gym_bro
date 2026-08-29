@@ -201,6 +201,34 @@ check "hijack changed nothing" "$U5" "$(q "SELECT user_id FROM sessions WHERE id
 check "anon cannot execute push_workout" "401" \
   "$(curl -s -o /dev/null -w "%{http_code}" -X POST "$API/rest/v1/rpc/push_workout" -H "apikey: $ANON" -H "Content-Type: application/json" -d "$(WPAYLOAD 1 1)")"
 
+echo "== routine shares (020) =="
+RS() { curl -s -X POST "$API/rest/v1/rpc/$1" \
+  -H "apikey: $ANON" -H "Authorization: Bearer $2" -H "Content-Type: application/json" -d "$3"; }
+RSCODE_HTTP() { curl -s -o /dev/null -w "%{http_code}" -X POST "$API/rest/v1/rpc/$1" \
+  -H "apikey: $ANON" -H "Authorization: Bearer $2" -H "Content-Type: application/json" -d "$3"; }
+RSPAYLOAD='{"p":{"v":1,"kind":"program","title":"Test <b>Split</b>","days":[{"label":"Push","rest":false,"exercises":[{"id":"bench_press","name":"Bench Press","muscle":"Chest","sets":5,"reps":8},{"name":"Run","sets":1,"reps":1,"durationSeconds":600,"distance":2.5}]},{"label":"Rest","rest":true,"exercises":[]}]}}'
+RSCODE=$(RS create_routine_share "$T1" "$RSPAYLOAD" | jget "")
+check "share code allocated (8 chars)" "8" "$(printf %s "$RSCODE" | wc -c | tr -d ' ')"
+RSGET=$(RS get_routine_share "$T2" "{\"p_code\":\"$RSCODE\"}")
+check "recipient fetches the share, html scrubbed" "Test Split" "$(echo "$RSGET" | jget ".title")"
+check "payload keeps both days" "2" "$(echo "$RSGET" | jget ".payload.days.length")"
+check "cardio fields survive the server rebuild" "600" "$(echo "$RSGET" | jget ".payload.days[0].exercises[1].durationSeconds")"
+check "owner_id never exposed to recipients" "undefined" "$(echo "$RSGET" | jget ".owner_id")"
+check "anon cannot execute get_routine_share" "401" "$(curl -s -o /dev/null -w "%{http_code}" -X POST "$API/rest/v1/rpc/get_routine_share" -H "apikey: $ANON" -H "Content-Type: application/json" -d "{\"p_code\":\"$RSCODE\"}")"
+RS increment_share_import "$T2" "{\"p_code\":\"$RSCODE\"}" >/dev/null
+check "import counter incremented" "1" "$(q "SELECT import_count FROM routine_shares WHERE code='$RSCODE'")"
+check "revoke by non-owner returns false" "false" "$(RS revoke_routine_share "$T2" "{\"p_code\":\"$RSCODE\"}")"
+check "revoke by owner returns true" "true" "$(RS revoke_routine_share "$T1" "{\"p_code\":\"$RSCODE\"}")"
+check "revoked share fetches as null" "null" "$(RS get_routine_share "$T2" "{\"p_code\":\"$RSCODE\"}")"
+RSBIG=$(node -pe "JSON.stringify({p:{v:1,kind:'program',title:'Big',days:Array.from({length:40},()=>({label:'D',rest:false,exercises:[{name:'X',sets:3,reps:10}]}))}})")
+check "40-day payload rejected" "400" "$(RSCODE_HTTP create_routine_share "$T1" "$RSBIG")"
+check "rest-days-only payload rejected" "400" "$(RSCODE_HTTP create_routine_share "$T1" '{"p":{"v":1,"kind":"program","title":"Lazy","days":[{"label":"R","rest":true,"exercises":[]}]}}')"
+RSDAY='{"p":{"v":1,"kind":"day","title":"Leg Day","days":[{"label":"Legs","rest":false,"exercises":[{"name":"Squat","sets":3,"reps":10}]}]}}'
+RSDAYCODE=$(RS create_routine_share "$T2" "$RSDAY" | jget "")
+check "day share allocates a code" "8" "$(printf %s "$RSDAYCODE" | wc -c | tr -d ' ')"
+q "INSERT INTO routine_shares (code, owner_id, kind, title, payload) SELECT 'rl' || lpad(i::text, 6, '0'), '$U2', 'day', 'T', '{}'::jsonb FROM generate_series(1, 30) i" >/dev/null
+check "rate limit blocks the 31st share in an hour" "400" "$(RSCODE_HTTP create_routine_share "$T2" "$RSDAY")"
+
 echo "== account deletion =="
 q "SELECT delete_account_data('$U3')" >/dev/null
 check "delete_account_data wipes every u3 row" "0" \

@@ -24,6 +24,7 @@ import 'package:my_gym_bro/features/schedule/day_detail_screen.dart';
 import 'package:my_gym_bro/features/schedule/discover_programs_screen.dart';
 import 'package:my_gym_bro/features/schedule/premade_programs_screen.dart';
 import 'package:my_gym_bro/features/schedule/schedule_builder_screen.dart';
+import 'package:my_gym_bro/features/schedule/share/import_share_screen.dart';
 import 'package:my_gym_bro/features/schedule/split_overview_screen.dart';
 import 'package:my_gym_bro/features/settings/settings_screen.dart';
 import 'package:my_gym_bro/features/social/add_bro_screen.dart';
@@ -82,6 +83,9 @@ class AppRoutes {
 
   // Bros — invite deep-link target (the invite link/QR encodes the username).
   static const addBro = '/bro/:username';
+
+  // Shared routine deep-link target (the share link/QR encodes the code).
+  static const importShare = '/s/:code';
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -384,6 +388,27 @@ final routerProvider = Provider<GoRouter>((ref) {
           state: state,
         ),
       ),
+
+      // ────────────────────────────────────────────────────────────────────
+      // SHARED ROUTINE — import deep link (same TODO(deploy) universal-link
+      // platform work as the Bros invite; the paste-link dialog and in-app
+      // pushes work today).
+      GoRoute(
+        path: AppRoutes.importShare,
+        redirect: (context, state) {
+          final code =
+              state.pathParameters['code']?.trim().toLowerCase() ?? '';
+          return RegExp(r'^[a-z0-9]{4,16}$').hasMatch(code)
+              ? null
+              : AppRoutes.home;
+        },
+        pageBuilder: (context, state) => _platformPage(
+          child: ImportShareScreen(
+            code: state.pathParameters['code']!.trim().toLowerCase(),
+          ),
+          state: state,
+        ),
+      ),
     ],
     // ──────────────────────────────────────────────────────────────────────
     // PAYWALL GATE — single source of truth. When the trial has elapsed or
@@ -399,7 +424,11 @@ final routerProvider = Provider<GoRouter>((ref) {
           loc == AppRoutes.paywall ||
           loc == AppRoutes.splash ||
           loc.startsWith('/auth') ||
-          loc.startsWith('/onboarding');
+          loc.startsWith('/onboarding') ||
+          // Shared-routine import stays reachable while locked (product
+          // decision: importing is free; the gate re-applies on the next
+          // route change, so app usage stays paywalled).
+          loc.startsWith('/s/');
       return exempt ? null : AppRoutes.paywall;
     },
   );

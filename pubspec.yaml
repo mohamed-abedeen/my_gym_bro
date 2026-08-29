@@ -7,6 +7,10 @@ environment:
   sdk: ^3.9.0
 
 dependencies:
+  # Universal-link listener (routine shares / bros invites). Already compiled
+  # into every build as supabase_flutter's transitive dep — promoting it to a
+  # direct dep only exposes the Dart API, no new native code.
+  app_links: ^7.0.0
   audio_session: ^0.1.21
   audioplayers: ^6.1.0
   cached_network_image: ^3.3.1

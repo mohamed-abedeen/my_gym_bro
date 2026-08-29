@@ -18,6 +18,7 @@ import 'package:my_gym_bro/l10n/app_localizations.dart';
 import 'package:my_gym_bro/shared/constants.dart';
 import 'package:my_gym_bro/shared/responsive.dart';
 import 'package:my_gym_bro/shared/widgets/confirm_sheet.dart';
+import 'package:my_gym_bro/shared/widgets/glass_surface.dart';
 import 'package:my_gym_bro/shared/widgets/inline_editable_field.dart';
 import 'package:my_gym_bro/shared/widgets/liquid_glass_button.dart';
 import 'package:my_gym_bro/shared/widgets/oc_glass_btn.dart';
@@ -25,11 +26,8 @@ import 'package:my_gym_bro/shared/widgets/oc_glass_btn.dart';
 // ── Local UI Models ──
 
 class _DayModel {
-
-  _DayModel({
-    required this.label,
-    List<_ExerciseModel>? exercises,
-  }) : exercises = exercises ?? [];
+  _DayModel({required this.label, List<_ExerciseModel>? exercises})
+    : exercises = exercises ?? [];
   String label;
   String dayOfWeek = ''; // e.g. "Saturday", "Monday"
   bool isRestDay = false;
@@ -37,7 +35,6 @@ class _DayModel {
 }
 
 class _ExerciseModel {
-
   _ExerciseModel({
     required this.exerciseId,
     required this.name,
@@ -62,7 +59,6 @@ class _SetModel {
 // ═══════════════════════════════════════════════════════════════════
 
 class ScheduleBuilderScreen extends ConsumerStatefulWidget {
-
   const ScheduleBuilderScreen({super.key, this.scheduleId});
   final int? scheduleId;
 
@@ -71,8 +67,7 @@ class ScheduleBuilderScreen extends ConsumerStatefulWidget {
       _ScheduleBuilderScreenState();
 }
 
-class _ScheduleBuilderScreenState
-    extends ConsumerState<ScheduleBuilderScreen> {
+class _ScheduleBuilderScreenState extends ConsumerState<ScheduleBuilderScreen> {
   final _nameController = TextEditingController();
   final List<_DayModel> _days = [];
   int _expandedDay = -1;
@@ -105,8 +100,9 @@ class _ScheduleBuilderScreenState
     final exerciseDao = ref.read(exerciseDaoProvider);
 
     final schedules = await dao.getAll();
-    final schedule =
-        schedules.where((s) => s.localId == widget.scheduleId).firstOrNull;
+    final schedule = schedules
+        .where((s) => s.localId == widget.scheduleId)
+        .firstOrNull;
     if (schedule == null) return;
 
     _nameController.text = schedule.name;
@@ -120,8 +116,9 @@ class _ScheduleBuilderScreenState
         continue;
       }
       final scheduledExercises = await dao.getExercises(day.localId);
-      final exerciseIds =
-          scheduledExercises.map((se) => se.exerciseId).toList();
+      final exerciseIds = scheduledExercises
+          .map((se) => se.exerciseId)
+          .toList();
       final exercises = exerciseIds.isNotEmpty
           ? await exerciseDao.findByExerciseIds(exerciseIds)
           : <Exercise>[];
@@ -141,10 +138,7 @@ class _ScheduleBuilderScreenState
         );
       }).toList();
 
-      dayModels.add(_DayModel(
-        label: day.label ?? '',
-        exercises: exModels,
-      ));
+      dayModels.add(_DayModel(label: day.label ?? '', exercises: exModels));
     }
 
     if (mounted) {
@@ -178,7 +172,10 @@ class _ScheduleBuilderScreenState
             // ── Header: X + (trash in edit mode) + checkmark ──
             Padding(
               padding: EdgeInsets.fromLTRB(
-                AppSizes.contentPaddingH.w, 10.h, AppSizes.contentPaddingH.w, 0,
+                AppSizes.contentPaddingH.w,
+                10.h,
+                AppSizes.contentPaddingH.w,
+                0,
               ),
               child: Row(
                 children: [
@@ -274,12 +271,14 @@ class _ScheduleBuilderScreenState
       padding: EdgeInsets.symmetric(horizontal: 16.w),
       child: Row(
         children: [
-          Text('Tt',
-              style: TextStyle(
-                color: colors.textPrimary,
-                fontSize: 20.sp,
-                fontWeight: FontWeight.w700,
-              )),
+          Text(
+            'Tt',
+            style: TextStyle(
+              color: colors.textPrimary,
+              fontSize: 20.sp,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
           SizedBox(width: 12.w),
           Expanded(
             child: TextField(
@@ -303,8 +302,7 @@ class _ScheduleBuilderScreenState
               ),
             ),
           ),
-          Icon(Icons.edit_rounded,
-              color: colors.textPrimary, size: 16.sp),
+          Icon(Icons.edit_rounded, color: colors.textPrimary, size: 16.sp),
         ],
       ),
     );
@@ -324,8 +322,11 @@ class _ScheduleBuilderScreenState
         padding: EdgeInsets.symmetric(horizontal: 16.w),
         child: Row(
           children: [
-            Icon(Icons.calendar_today_rounded,
-                color: colors.accent, size: 20.sp),
+            Icon(
+              Icons.calendar_today_rounded,
+              color: colors.accent,
+              size: 20.sp,
+            ),
             SizedBox(width: 12.w),
             Expanded(
               child: Text(
@@ -343,8 +344,11 @@ class _ScheduleBuilderScreenState
               height: 40.w,
               opacity: 0.15,
               radius: 20.r,
-              child: Icon(Icons.add_rounded,
-                  color: colors.textPrimary, size: 22.sp),
+              child: Icon(
+                Icons.add_rounded,
+                color: colors.textPrimary,
+                size: 22.sp,
+              ),
             ),
           ],
         ),
@@ -378,8 +382,11 @@ class _ScheduleBuilderScreenState
             behavior: HitTestBehavior.opaque,
             child: Row(
               children: [
-                Icon(Icons.calendar_today_rounded,
-                    color: colors.accent, size: 20.sp),
+                Icon(
+                  Icons.calendar_today_rounded,
+                  color: colors.accent,
+                  size: 20.sp,
+                ),
                 SizedBox(width: 10.w),
                 Expanded(
                   child: Text(
@@ -401,8 +408,11 @@ class _ScheduleBuilderScreenState
                         }
                       });
                     },
-                    child: Icon(Icons.delete_outline_rounded,
-                        color: colors.textPrimary, size: 20.sp),
+                    child: Icon(
+                      Icons.delete_outline_rounded,
+                      color: colors.textPrimary,
+                      size: 20.sp,
+                    ),
                   ),
                   SizedBox(width: 12.w),
                 ],
@@ -443,7 +453,10 @@ class _ScheduleBuilderScreenState
               children: [
                 for (var exIdx = 0; exIdx < day.exercises.length; exIdx++)
                   _buildExerciseRow(
-                    i, exIdx, day.exercises[exIdx], l10n,
+                    i,
+                    exIdx,
+                    day.exercises[exIdx],
+                    l10n,
                     // exerciseId is guaranteed unique within a day.
                     key: ValueKey(day.exercises[exIdx].exerciseId),
                   ),
@@ -471,8 +484,11 @@ class _ScheduleBuilderScreenState
                       height: 36.w,
                       opacity: 0.15,
                       radius: 18.r,
-                      child: Icon(Icons.add_rounded,
-                          color: colors.textPrimary, size: 20.sp),
+                      child: Icon(
+                        Icons.add_rounded,
+                        color: colors.textPrimary,
+                        size: 20.sp,
+                      ),
                     ),
                     SizedBox(width: 10.w),
                     Text(
@@ -551,73 +567,117 @@ class _ScheduleBuilderScreenState
   // ── Exercise Row with action buttons and sets ──
   // [key] is required by ReorderableListView — callers pass ValueKey(ex.exerciseId).
   Widget _buildExerciseRow(
-      int dayIdx, int exIdx, _ExerciseModel ex, AppLocalizations l10n,
-      {Key? key}) {
+    int dayIdx,
+    int exIdx,
+    _ExerciseModel ex,
+    AppLocalizations l10n, {
+    Key? key,
+  }) {
     final colors = AppColors.of(context);
+    final rowRadius = 18.r;
+
+    // Frosted glass row (GlassSurface, not RefractiveGlass — the refractive
+    // shader is banned inside scrolling viewports; see root CLAUDE.md).
+    final rowCore = GlassSurface(
+      radius: rowRadius,
+      blurSigma: AppGlass.blurButton,
+      padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 6.h),
+      child: Row(
+        children: [
+          // Drag handle — hold to reorder within the day
+          ReorderableDragStartListener(
+            index: exIdx,
+            child: Padding(
+              padding: EdgeInsets.only(right: 8.w),
+              child: Icon(
+                Icons.drag_handle,
+                color: colors.textSecondary,
+                size: 22.sp,
+              ),
+            ),
+          ),
+          // Thumbnail + name — tap opens the How-To detail (replaces the
+          // old "?" button).
+          Expanded(
+            child: GestureDetector(
+              behavior: HitTestBehavior.opaque,
+              onTap: () => _showExerciseInfo(ex),
+              child: Row(
+                children: [
+                  // Rounded square GIF thumbnail (Figma: 58x58, radius 12)
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(12.r),
+                    child: ex.gifUrl != null
+                        ? CachedNetworkImage(
+                            cacheManager: ExerciseGifCache.instance,
+                            imageUrl: ex.gifUrl!,
+                            width: 50.w,
+                            height: 50.h,
+                            fit: BoxFit.cover,
+                            memCacheWidth: 120,
+                            memCacheHeight: 120,
+                            placeholder: (_, __) => _exercisePlaceholder(),
+                            errorWidget: (_, __, ___) => _exercisePlaceholder(),
+                          )
+                        : _exercisePlaceholder(),
+                  ),
+                  SizedBox(width: 10.w),
+                  // Exercise name
+                  Expanded(
+                    child: Text(
+                      ex.name,
+                      style: TextStyle(
+                        color: colors.textPrimary,
+                        fontSize: 14.sp,
+                        fontWeight: FontWeight.w700,
+                      ),
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+          SizedBox(width: 8.w),
+          // Edit / done toggle — roomier now that ? and trash are gone.
+          _editSetsButton(dayIdx, exIdx, ex),
+        ],
+      ),
+    );
+
     return Padding(
       key: key,
       padding: EdgeInsets.only(bottom: 8.h),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Divider above exercise
-          Container(
-            height: 1,
-            color: colors.divider,
-            margin: EdgeInsets.only(bottom: 10.h),
+          // Swipe right-to-left to delete (replaces the old trash button).
+          Dismissible(
+            key: ValueKey('dismiss-${ex.exerciseId}'),
+            direction: DismissDirection.endToStart,
+            background: Container(
+              alignment: AlignmentDirectional.centerEnd,
+              padding: EdgeInsets.only(right: 18.w),
+              decoration: BoxDecoration(
+                // Same reds as the active-session delete bar.
+                color: const Color(0xFF7A1215),
+                borderRadius: BorderRadius.circular(rowRadius),
+              ),
+              child: Icon(
+                Icons.delete_outline_rounded,
+                color: const Color(0xFFFF6B6B),
+                size: 22.sp,
+              ),
+            ),
+            onDismissed: (_) {
+              setState(() {
+                _days[dayIdx].exercises.removeAt(exIdx);
+              });
+            },
+            child: rowCore,
           ),
 
-          // Exercise header: drag handle + GIF + name + action buttons
-          Row(
-            children: [
-              // Drag handle — hold to reorder within the day
-              ReorderableDragStartListener(
-                index: exIdx,
-                child: Padding(
-                  padding: EdgeInsets.only(right: 8.w),
-                  child: Icon(
-                    Icons.drag_handle,
-                    color: colors.textSecondary,
-                    size: 22.sp,
-                  ),
-                ),
-              ),
-              // Rounded square GIF thumbnail (Figma: 58x58, radius 12)
-              ClipRRect(
-                borderRadius: BorderRadius.circular(12.r),
-                child: ex.gifUrl != null
-                    ? CachedNetworkImage(
-                        cacheManager: ExerciseGifCache.instance,
-                        imageUrl: ex.gifUrl!,
-                        width: 50.w,
-                        height: 50.h,
-                        fit: BoxFit.cover,
-                        memCacheWidth: 120,
-                        memCacheHeight: 120,
-                        placeholder: (_, __) => _exercisePlaceholder(),
-                        errorWidget: (_, __, ___) => _exercisePlaceholder(),
-                      )
-                    : _exercisePlaceholder(),
-              ),
-              SizedBox(width: 10.w),
-              // Exercise name
-              Expanded(
-                child: Text(
-                  ex.name,
-                  style: TextStyle(
-                    color: colors.textPrimary,
-                    fontSize: 14.sp,
-                    fontWeight: FontWeight.w700,
-                  ),
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ),
-              // Action buttons pill (?, checkmark/edit, delete)
-              _buildActionPill(dayIdx, exIdx, ex),
-            ],
-          ),
-
-          // ── Sets table (shown when checkmark is tapped) ──
+          // ── Sets table (shown when the edit button is tapped) ──
           if (ex.showSets) ...[
             SizedBox(height: 12.h),
             _buildSetsTable(dayIdx, exIdx, ex, l10n),
@@ -627,68 +687,37 @@ class _ScheduleBuilderScreenState
     );
   }
 
-  // ── Action pill: ? + check/edit + trash ──
-  Widget _buildActionPill(int dayIdx, int exIdx, _ExerciseModel ex) {
-    return Container(
-      padding: EdgeInsets.symmetric(horizontal: 6.w, vertical: 6.h),
-      decoration: BoxDecoration(
-        color: AppColors.of(context).white.withValues(alpha: 0.08),
-        borderRadius: BorderRadius.circular(24.r),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          // ? info button — opens How-To detail
-          _miniActionButton(
-            icon: Icons.help_outline_rounded,
-            onTap: () => _showExerciseInfo(ex),
-          ),
-          SizedBox(width: 4.w),
-          // Checkmark / edit toggle sets visibility
-          _miniActionButton(
-            icon: ex.showSets ? Icons.check_rounded : Icons.edit_outlined,
-            onTap: () {
-              setState(() {
-                _days[dayIdx].exercises[exIdx].showSets =
-                    !_days[dayIdx].exercises[exIdx].showSets;
-              });
-            },
-          ),
-          SizedBox(width: 4.w),
-          // Delete
-          _miniActionButton(
-            icon: Icons.delete_outline_rounded,
-            onTap: () {
-              setState(() {
-                _days[dayIdx].exercises.removeAt(exIdx);
-              });
-            },
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _miniActionButton(
-      {required IconData icon, required VoidCallback onTap}) {
+  // ── Edit/done toggle — the row's single action button ──
+  Widget _editSetsButton(int dayIdx, int exIdx, _ExerciseModel ex) {
     final colors = AppColors.of(context);
     return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        width: 28.w,
-        height: 28.h,
-        decoration: BoxDecoration(
-          color: AppColors.of(context).white.withValues(alpha: 0.10),
-          borderRadius: BorderRadius.circular(14.r),
+      onTap: () {
+        setState(() {
+          _days[dayIdx].exercises[exIdx].showSets =
+              !_days[dayIdx].exercises[exIdx].showSets;
+        });
+      },
+      child: GlassSurface(
+        width: 40.w,
+        height: 40.w,
+        radius: 20.r,
+        blurSigma: AppGlass.blurButton,
+        child: Icon(
+          ex.showSets ? Icons.check_rounded : Icons.edit_outlined,
+          color: colors.textPrimary,
+          size: 20.sp,
         ),
-        child: Icon(icon, color: colors.textPrimary, size: 16.sp),
       ),
     );
   }
 
   // ── Sets Table ──
   Widget _buildSetsTable(
-      int dayIdx, int exIdx, _ExerciseModel ex, AppLocalizations l10n) {
+    int dayIdx,
+    int exIdx,
+    _ExerciseModel ex,
+    AppLocalizations l10n,
+  ) {
     final colors = AppColors.of(context);
     return Column(
       children: [
@@ -699,32 +728,38 @@ class _ScheduleBuilderScreenState
             children: [
               SizedBox(
                 width: 50.w,
-                child: Text(l10n.sets,
+                child: Text(
+                  l10n.sets,
+                  style: TextStyle(
+                    color: colors.textSecondary,
+                    fontSize: 13.sp,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              ),
+              Expanded(
+                child: Center(
+                  child: Text(
+                    l10n.weightsKg,
                     style: TextStyle(
                       color: colors.textSecondary,
                       fontSize: 13.sp,
                       fontWeight: FontWeight.w700,
-                    )),
-              ),
-              Expanded(
-                child: Center(
-                  child: Text(l10n.weightsKg,
-                      style: TextStyle(
-                        color: colors.textSecondary,
-                        fontSize: 13.sp,
-                        fontWeight: FontWeight.w700,
-                      )),
+                    ),
+                  ),
                 ),
               ),
               SizedBox(
                 width: 50.w,
-                child: Text(l10n.reps,
-                    textAlign: TextAlign.end,
-                    style: TextStyle(
-                      color: colors.textSecondary,
-                      fontSize: 13.sp,
-                      fontWeight: FontWeight.w700,
-                    )),
+                child: Text(
+                  l10n.reps,
+                  textAlign: TextAlign.end,
+                  style: TextStyle(
+                    color: colors.textSecondary,
+                    fontSize: 13.sp,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
               ),
             ],
           ),
@@ -757,8 +792,11 @@ class _ScheduleBuilderScreenState
                       child: Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          Icon(Icons.unfold_more,
-                              color: colors.textSecondary, size: 14.sp),
+                          Icon(
+                            Icons.unfold_more,
+                            color: colors.textSecondary,
+                            size: 14.sp,
+                          ),
                           Text(
                             '${setModel.weight.toInt()}',
                             style: TextStyle(
@@ -779,8 +817,11 @@ class _ScheduleBuilderScreenState
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.end,
                       children: [
-                        Icon(Icons.unfold_more,
-                            color: colors.textSecondary, size: 14.sp),
+                        Icon(
+                          Icons.unfold_more,
+                          color: colors.textSecondary,
+                          size: 14.sp,
+                        ),
                         Text(
                           '${setModel.reps}',
                           style: TextStyle(
@@ -833,15 +874,18 @@ class _ScheduleBuilderScreenState
   Widget _exercisePlaceholder() {
     final colors = AppColors.of(context);
     return Container(
-        width: 50.w,
-        height: 50.h,
-        decoration: BoxDecoration(
-          color: colors.separator,
-          borderRadius: BorderRadius.circular(12.r),
-        ),
-        child: Icon(Icons.fitness_center_rounded,
-            color: colors.textSecondary, size: 22.sp),
-      );
+      width: 50.w,
+      height: 50.h,
+      decoration: BoxDecoration(
+        color: colors.separator,
+        borderRadius: BorderRadius.circular(12.r),
+      ),
+      child: Icon(
+        Icons.fitness_center_rounded,
+        color: colors.textSecondary,
+        size: 22.sp,
+      ),
+    );
   }
 
   // ── Actions ──
@@ -878,16 +922,21 @@ class _ScheduleBuilderScreenState
                 children: [
                   CupertinoButton(
                     padding: EdgeInsets.zero,
-                    child: Text(l10n.cancel,
-                        style: TextStyle(
-                            color: colors.textSecondary, fontSize: 14.sp)),
+                    child: Text(
+                      l10n.cancel,
+                      style: TextStyle(
+                        color: colors.textSecondary,
+                        fontSize: 14.sp,
+                      ),
+                    ),
                     onPressed: () => Navigator.pop(context),
                   ),
                   CupertinoButton(
                     padding: EdgeInsets.zero,
-                    child: Text(l10n.done,
-                        style: TextStyle(
-                            color: colors.accent, fontSize: 14.sp)),
+                    child: Text(
+                      l10n.done,
+                      style: TextStyle(color: colors.accent, fontSize: 14.sp),
+                    ),
                     onPressed: () => Navigator.pop(context),
                   ),
                 ],
@@ -903,12 +952,17 @@ class _ScheduleBuilderScreenState
                   });
                 },
                 children: weekdays
-                    .map((d) => Center(
-                          child: Text(d,
-                              style: TextStyle(
-                                  color: colors.textPrimary,
-                                  fontSize: 16.sp)),
-                        ))
+                    .map(
+                      (d) => Center(
+                        child: Text(
+                          d,
+                          style: TextStyle(
+                            color: colors.textPrimary,
+                            fontSize: 16.sp,
+                          ),
+                        ),
+                      ),
+                    )
                     .toList(),
               ),
             ),
@@ -927,32 +981,38 @@ class _ScheduleBuilderScreenState
       builder: (ctx) => AlertDialog(
         backgroundColor: colors.panelBackground,
         shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(16.r)),
-        title: Text(l10n.dayLabel,
-            style: TextStyle(
-                color: colors.textPrimary,
-                fontSize: 18.sp,
-                fontWeight: FontWeight.w700)),
+          borderRadius: BorderRadius.circular(16.r),
+        ),
+        title: Text(
+          l10n.dayLabel,
+          style: TextStyle(
+            color: colors.textPrimary,
+            fontSize: 18.sp,
+            fontWeight: FontWeight.w700,
+          ),
+        ),
         content: TextField(
           controller: controller,
           autofocus: true,
           style: TextStyle(color: colors.textPrimary, fontSize: 16.sp),
           decoration: InputDecoration(
             hintText: l10n.dayLabelHint,
-            hintStyle:
-                TextStyle(color: colors.textSecondary, fontSize: 16.sp),
+            hintStyle: TextStyle(color: colors.textSecondary, fontSize: 16.sp),
             enabledBorder: UnderlineInputBorder(
-                borderSide: BorderSide(color: colors.accent)),
+              borderSide: BorderSide(color: colors.accent),
+            ),
             focusedBorder: UnderlineInputBorder(
-                borderSide: BorderSide(color: colors.accent)),
+              borderSide: BorderSide(color: colors.accent),
+            ),
           ),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
-            child: Text(l10n.cancel,
-                style: TextStyle(
-                    color: colors.textSecondary, fontSize: 14.sp)),
+            child: Text(
+              l10n.cancel,
+              style: TextStyle(color: colors.textSecondary, fontSize: 14.sp),
+            ),
           ),
           TextButton(
             onPressed: () {
@@ -961,9 +1021,10 @@ class _ScheduleBuilderScreenState
               });
               Navigator.pop(ctx);
             },
-            child: Text(l10n.save,
-                style:
-                    TextStyle(color: colors.accent, fontSize: 14.sp)),
+            child: Text(
+              l10n.save,
+              style: TextStyle(color: colors.accent, fontSize: 14.sp),
+            ),
           ),
         ],
       ),
@@ -1031,9 +1092,9 @@ class _ScheduleBuilderScreenState
             setState(() {
               for (final exercise in exercises) {
                 // Avoid duplicate exercises in the same day
-                final alreadyAdded = _days[dayIndex]
-                    .exercises
-                    .any((e) => e.exerciseId == exercise.exerciseId);
+                final alreadyAdded = _days[dayIndex].exercises.any(
+                  (e) => e.exerciseId == exercise.exerciseId,
+                );
                 if (!alreadyAdded) {
                   _days[dayIndex].exercises.add(
                     _ExerciseModel(
@@ -1055,11 +1116,13 @@ class _ScheduleBuilderScreenState
     final exerciseDao = ExerciseDao(ref.read(databaseProvider));
     final exercises = await exerciseDao.findByExerciseIds([ex.exerciseId]);
     if (exercises.isNotEmpty && mounted) {
-      unawaited(Navigator.of(context).push(
-        MaterialPageRoute<void>(
-          builder: (_) => ExerciseDetailScreen(exercise: exercises.first),
+      unawaited(
+        Navigator.of(context).push(
+          MaterialPageRoute<void>(
+            builder: (_) => ExerciseDetailScreen(exercise: exercises.first),
+          ),
         ),
-      ));
+      );
     }
   }
 
@@ -1102,8 +1165,8 @@ class _ScheduleBuilderScreenState
         final label = day.label.isNotEmpty
             ? day.label
             : (day.dayOfWeek.isNotEmpty
-                ? day.dayOfWeek
-                : l10n.dayNumber(d + 1));
+                  ? day.dayOfWeek
+                  : l10n.dayNumber(d + 1));
         final dayId = await scheduleDao.addDay(
           ScheduleDaysCompanion(
             scheduleId: Value(scheduleId),
@@ -1128,7 +1191,6 @@ class _ScheduleBuilderScreenState
             ),
           );
         }
-
       }
 
       // Cache-on-save: make sure every exercise referenced by this schedule is

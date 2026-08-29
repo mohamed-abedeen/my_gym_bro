@@ -35,6 +35,25 @@ The app does **not** call custom CRUD endpoints — it uses the Supabase SDK aga
 > `user_profiles` updates PATCH by `user_id` (the profile's remote key), not
 > `id`. Permanent-drop codes now include `P0001` + `22xxx` casts.
 
+> **Routine shares** (migration 020, built 2026-08-29): NOT sync-queue items —
+> both calls are foreground RPCs (the user is waiting for the link/preview),
+> 10 s timeout, typed graceful errors, direct via `RoutineShareService`.
+> Contracts (all SECURITY DEFINER, `authenticated` only, anon has nothing):
+> - `create_routine_share(p jsonb) → text` — p = `{v:1, kind:'program'|'day',
+>   title, days:[{label, rest, exercises:[{id?, name, muscle?, sets, reps,
+>   durationSeconds?, distance?}]}]}`. The server REBUILDS the payload from
+>   whitelisted keys (tag/control-char scrub, length truncation, numeric
+>   clamps); caps: 100 KB, 31 days, 50 exercises/day, day-kind = exactly 1
+>   day, ≥1 non-rest exercise, 30 shares/owner/hour. Returns the 8-char code
+>   (alphabet `abcdefghjkmnpqrstuvwxyz23456789`).
+> - `get_routine_share(p_code text) → jsonb` — `{kind, title, payload,
+>   created_at}` or NULL (unknown and revoked are indistinguishable; owner_id
+>   is never returned). Client decodes `payload` with `RoutineShareCodec`
+>   (unknown newer `v` → "update the app").
+> - `increment_share_import(p_code)` — best-effort counter, fire-and-forget.
+> - `revoke_routine_share(p_code) → boolean` — owner-only soft revoke
+>   (revoke UI is a follow-up; the SQL surface ships now).
+
 ---
 
 ## 2. Current Edge Functions *(built)*

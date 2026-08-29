@@ -5,6 +5,7 @@ import 'package:my_gym_bro/core/router/app_router.dart';
 import 'package:my_gym_bro/features/schedule/premade_program_card.dart';
 import 'package:my_gym_bro/features/schedule/premade_programs.dart';
 import 'package:my_gym_bro/features/schedule/premade_programs_screen.dart';
+import 'package:my_gym_bro/features/schedule/share/import_code_dialog.dart';
 import 'package:my_gym_bro/features/schedule/split_widgets.dart';
 import 'package:my_gym_bro/l10n/app_localizations.dart';
 import 'package:my_gym_bro/shared/constants.dart';
@@ -128,6 +129,14 @@ class _DiscoverProgramsScreenState
                             fontSize: 17.sp,
                             fontWeight: FontWeight.w600,
                           ),
+                        ),
+                      ),
+                      // Import a shared routine by pasting its link/code.
+                      Align(
+                        alignment: Alignment.centerRight,
+                        child: SplitHeaderButton(
+                          icon: Icons.link_rounded,
+                          onTap: () => showImportCodeDialog(context),
                         ),
                       ),
                     ],

@@ -71,6 +71,15 @@
 				</array>
 			</dict>
 		</array>
+		<!-- Deep links are handled EXCLUSIVELY by the app_links listener
+		     (DeepLinkService). Flutter's built-in deep linking defaults to ON
+		     when this key is absent, which would double-handle links and push
+		     the Supabase OAuth callback into GoRouter. NOTE: the Associated
+		     Domains entitlement (applinks:mygymbro.app) is deliberately NOT
+		     added yet — the provisioning profile lacks the capability and
+		     AASA isn't hosted; see SETUP-STATUS.md owner steps. -->
+		<key>FlutterDeepLinkingEnabled</key>
+		<false/>
 		<key>NSCameraUsageDescription</key>
 		<string>Take a photo for your profile picture.</string>
 		<!-- Never actually triggered (photos only), but the image-picker

@@ -6,8 +6,10 @@ import 'package:my_gym_bro/core/database/app_database.dart';
 import 'package:my_gym_bro/core/router/app_router.dart';
 import 'package:my_gym_bro/core/services/exercise_gif_cache.dart';
 import 'package:my_gym_bro/features/exercises/exercise_detail_screen.dart';
+import 'package:my_gym_bro/features/schedule/share/routine_share_sheet.dart';
 import 'package:my_gym_bro/features/schedule/split_providers.dart';
 import 'package:my_gym_bro/features/schedule/split_widgets.dart';
+import 'package:my_gym_bro/features/workout/workout_providers.dart';
 import 'package:my_gym_bro/l10n/app_localizations.dart';
 import 'package:my_gym_bro/shared/constants.dart';
 import 'package:my_gym_bro/shared/responsive.dart';
@@ -73,12 +75,33 @@ class DayDetailScreen extends ConsumerWidget {
                                     icon: Icons.arrow_back_rounded,
                                     onTap: () => Navigator.of(context).pop(),
                                   ),
-                                  SplitHeaderButton(
-                                    icon: Icons.edit_rounded,
-                                    onTap: () => context.push(
-                                      AppRoutes.scheduleBuilder,
-                                      extra: day.scheduleId,
-                                    ),
+                                  Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      // Rest days have nothing to share.
+                                      if (!isRestScheduleDay(day)) ...[
+                                        SplitHeaderButton(
+                                          icon: Icons.ios_share_rounded,
+                                          onTap: () => showRoutineShareSheet(
+                                            context,
+                                            scheduleId: day.scheduleId,
+                                            scheduleDayId: day.localId,
+                                            title: day.label ??
+                                                l10n.dayNumber(
+                                                  day.dayIndex + 1,
+                                                ),
+                                          ),
+                                        ),
+                                        SizedBox(width: 10.w),
+                                      ],
+                                      SplitHeaderButton(
+                                        icon: Icons.edit_rounded,
+                                        onTap: () => context.push(
+                                          AppRoutes.scheduleBuilder,
+                                          extra: day.scheduleId,
+                                        ),
+                                      ),
+                                    ],
                                   ),
                                 ],
                               ),

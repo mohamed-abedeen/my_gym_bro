@@ -83,6 +83,9 @@ class AppLocalizationsEs extends AppLocalizations {
   String get sets => 'Series';
 
   @override
+  String get completedSets => 'Series completadas';
+
+  @override
   String get reps => 'Reps';
 
   @override
@@ -2336,4 +2339,112 @@ class AppLocalizationsEs extends AppLocalizations {
   String lastWinnerLabel(Object name) {
     return 'Último ganador: $name';
   }
+
+  @override
+  String get splitQuickShare => 'Compartir';
+
+  @override
+  String get splitQuickShareSub => 'Envía este split a un bro';
+
+  @override
+  String get shareRoutineDefaultTitle => 'Plan de entrenamiento';
+
+  @override
+  String get shareRoutineSheetTitle => 'Compartir rutina';
+
+  @override
+  String get shareRoutineCreating => 'Creando enlace…';
+
+  @override
+  String get shareRoutineQrHint =>
+      'Escanéalo con la cámara del móvil para abrirlo en MyGymBro';
+
+  @override
+  String get shareRoutineCopy => 'Copiar enlace';
+
+  @override
+  String get shareRoutineCopied => 'Enlace copiado';
+
+  @override
+  String get shareRoutineAction => 'Compartir enlace';
+
+  @override
+  String shareRoutineMessage(String title, String link) {
+    return 'Prueba mi rutina \"$title\" en MyGymBro: $link';
+  }
+
+  @override
+  String get shareRoutineOffline =>
+      'Estás sin conexión — compartir necesita internet. Inténtalo más tarde.';
+
+  @override
+  String get shareRoutineSignedOut => 'Inicia sesión para crear enlaces.';
+
+  @override
+  String get shareRoutineFailed =>
+      'No se pudo crear el enlace. Inténtalo de nuevo.';
+
+  @override
+  String get shareRoutineEmpty =>
+      'Añade ejercicios a este plan antes de compartirlo.';
+
+  @override
+  String get shareRoutineRetry => 'Reintentar';
+
+  @override
+  String get importShareTitle => 'Rutina compartida';
+
+  @override
+  String get importShareLoading => 'Cargando rutina…';
+
+  @override
+  String get importShareNotFound => 'Este enlace ya no está disponible.';
+
+  @override
+  String get importShareOffline =>
+      'Estás sin conexión — importar necesita internet.';
+
+  @override
+  String get importShareFailed => 'Algo salió mal. Inténtalo de nuevo.';
+
+  @override
+  String get importShareUnsupported =>
+      'Actualiza MyGymBro para abrir esta rutina.';
+
+  @override
+  String get importShareSignIn => 'Inicia sesión para importar esta rutina.';
+
+  @override
+  String get importShareSignInAction => 'Iniciar sesión';
+
+  @override
+  String get importShareKindProgram => 'Programa';
+
+  @override
+  String get importShareKindDay => 'Día suelto';
+
+  @override
+  String get importShareAddProgram => 'Añadir como programa nuevo';
+
+  @override
+  String get importShareAppendToActive => 'Añadir el día al programa actual';
+
+  @override
+  String get importShareImported =>
+      '¡Importada! La encontrarás en la pestaña Entrenamiento.';
+
+  @override
+  String get importShareRestDay => 'Día de descanso';
+
+  @override
+  String get importCodeTitle => 'Pega un enlace o código';
+
+  @override
+  String get importCodeHint => 'mygymbro.app/s/…';
+
+  @override
+  String get importCodeInvalid => 'Eso no parece un enlace para compartir.';
+
+  @override
+  String get importCodeOpen => 'Abrir';
 }

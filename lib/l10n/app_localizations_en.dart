@@ -83,6 +83,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get sets => 'Sets';
 
   @override
+  String get completedSets => 'Completed Sets';
+
+  @override
   String get reps => 'Reps';
 
   @override
@@ -2324,4 +2327,108 @@ class AppLocalizationsEn extends AppLocalizations {
   String lastWinnerLabel(Object name) {
     return 'Last winner: $name';
   }
+
+  @override
+  String get splitQuickShare => 'Share';
+
+  @override
+  String get splitQuickShareSub => 'Send this split to a bro';
+
+  @override
+  String get shareRoutineDefaultTitle => 'Workout plan';
+
+  @override
+  String get shareRoutineSheetTitle => 'Share routine';
+
+  @override
+  String get shareRoutineCreating => 'Creating link…';
+
+  @override
+  String get shareRoutineQrHint =>
+      'Scan with the phone camera to open in MyGymBro';
+
+  @override
+  String get shareRoutineCopy => 'Copy link';
+
+  @override
+  String get shareRoutineCopied => 'Link copied';
+
+  @override
+  String get shareRoutineAction => 'Share link';
+
+  @override
+  String shareRoutineMessage(String title, String link) {
+    return 'Try my \"$title\" routine on MyGymBro: $link';
+  }
+
+  @override
+  String get shareRoutineOffline =>
+      'You\'re offline — sharing needs a connection. Try again later.';
+
+  @override
+  String get shareRoutineSignedOut => 'Sign in to create share links.';
+
+  @override
+  String get shareRoutineFailed => 'Couldn\'t create the link. Try again.';
+
+  @override
+  String get shareRoutineEmpty => 'Add exercises to this plan before sharing.';
+
+  @override
+  String get shareRoutineRetry => 'Retry';
+
+  @override
+  String get importShareTitle => 'Shared routine';
+
+  @override
+  String get importShareLoading => 'Fetching routine…';
+
+  @override
+  String get importShareNotFound => 'This link is no longer available.';
+
+  @override
+  String get importShareOffline =>
+      'You\'re offline — importing needs a connection.';
+
+  @override
+  String get importShareFailed => 'Something went wrong. Try again.';
+
+  @override
+  String get importShareUnsupported => 'Update MyGymBro to open this routine.';
+
+  @override
+  String get importShareSignIn => 'Sign in to import this routine.';
+
+  @override
+  String get importShareSignInAction => 'Sign in';
+
+  @override
+  String get importShareKindProgram => 'Program';
+
+  @override
+  String get importShareKindDay => 'Single day';
+
+  @override
+  String get importShareAddProgram => 'Add as new program';
+
+  @override
+  String get importShareAppendToActive => 'Add day to current program';
+
+  @override
+  String get importShareImported => 'Imported! Find it on the Workout tab.';
+
+  @override
+  String get importShareRestDay => 'Rest day';
+
+  @override
+  String get importCodeTitle => 'Paste a share link or code';
+
+  @override
+  String get importCodeHint => 'mygymbro.app/s/…';
+
+  @override
+  String get importCodeInvalid => 'That doesn\'t look like a share link.';
+
+  @override
+  String get importCodeOpen => 'Open';
 }

@@ -40,6 +40,11 @@ class ScheduleDao extends DatabaseAccessor<AppDatabase>
     );
   }
 
+  /// Get a single schedule by its local ID, or null if not found.
+  Future<Schedule?> getScheduleById(int localId) =>
+      (select(schedules)..where((t) => t.localId.equals(localId)))
+          .getSingleOrNull();
+
   /// Get days for a schedule.
   Future<List<ScheduleDay>> getDays(int scheduleId) => (select(scheduleDays)
         ..where((t) => t.scheduleId.equals(scheduleId))

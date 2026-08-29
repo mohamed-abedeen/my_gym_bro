@@ -5,6 +5,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:my_gym_bro/core/security/secure_storage.dart';
+import 'package:my_gym_bro/core/services/deep_link_service.dart';
 import 'package:my_gym_bro/core/services/subscription_sync_service.dart';
 import 'package:my_gym_bro/features/home/home_screen.dart';
 import 'package:my_gym_bro/features/leaderboard/leaderboard_providers.dart';
@@ -56,6 +57,12 @@ class _MyGymBroScaffoldState extends ConsumerState<MyGymBroScaffold>
       // Schedule the ambient achievement notifications (streak-at-risk,
       // weekly recap, scheduled-day, muscle-recovered) for today's data.
       unawaited(ref.read(achievementPlannerProvider).refresh());
+      // Replay a routine-share link that arrived before the main app was on
+      // screen (cold start via link, fresh-install onboarding, or a
+      // signed-out user sent through sign-in by the import screen).
+      final pendingShare =
+          DeepLinkService.instance.consumePendingShareCode();
+      if (pendingShare != null) context.push('/s/$pendingShare');
     });
   }
 
