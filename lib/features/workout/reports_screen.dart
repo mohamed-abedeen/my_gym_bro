@@ -71,7 +71,7 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
   );
 
   /// Select [day] outright, switching weeks if it lies outside the visible
-  /// one — the rest day's "Open <last session>" jump.
+  /// one — the rest day's `Open <last session>` jump.
   void _jumpToDay(DateTime day) {
     setState(() {
       _weekStart = _mondayOf(day);
@@ -702,7 +702,7 @@ class _StatTile extends StatelessWidget {
 }
 
 /// Accent-tinted pill button (icon + label) — the picker's "This Week" jump
-/// and the rest day's "Open <last session>".
+/// and the rest day's `Open <last session>`.
 class _AccentPill extends StatelessWidget {
   const _AccentPill({
     required this.icon,

@@ -3,7 +3,9 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:my_gym_bro/core/auth/auth_notifier.dart';
-import 'package:my_gym_bro/core/database/app_database.dart';
+// Drift also generates a `Session` (the sessions table); the auth Session
+// below is Supabase's.
+import 'package:my_gym_bro/core/database/app_database.dart' hide Session;
 import 'package:my_gym_bro/core/database/daos/exercise_dao.dart';
 import 'package:my_gym_bro/core/security/secure_storage.dart';
 import 'package:my_gym_bro/core/services/exercise_api_service.dart';
@@ -42,7 +44,28 @@ final supabaseProvider = Provider<SupabaseClient?>((ref) {
   }
 });
 
-/// ExerciseDB OSS exercise API client (free, no key).
+/// The current Supabase auth session, live: seeds with what's restored at
+/// startup and follows sign-in/sign-out. Null when signed out or when
+/// Supabase isn't initialised (offline dev builds, unit tests).
+final authSessionProvider = StreamProvider<Session?>((ref) {
+  final client = ref.watch(supabaseProvider);
+  if (client == null) return Stream.value(null);
+  Stream<Session?> sessions() async* {
+    yield client.auth.currentSession;
+    yield* client.auth.onAuthStateChange.map((event) => event.session);
+  }
+
+  return sessions();
+});
+
+/// Whether a user is signed in. Drives the paywall gate's fail-closed
+/// branch: a signed-in device with no local profile row is locked.
+final isSignedInProvider = Provider<bool>(
+  (ref) => ref.watch(authSessionProvider).valueOrNull != null,
+);
+
+/// Exercise catalogue API client (OSS by default; licensed source via
+/// dart-defines — see [ExerciseApiService]).
 final exerciseApiServiceProvider = Provider<ExerciseApiService>((ref) {
   final service = ExerciseApiService();
   ref.onDispose(service.dispose);

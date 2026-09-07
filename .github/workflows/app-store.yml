@@ -1,26 +1,24 @@
-# Builds a signed iOS IPA on a macOS runner and uploads it to TestFlight.
-# No local Mac needed: signing certificate + provisioning profile are created
-# and fetched automatically via the App Store Connect API (codemagic-cli-tools).
-#
-# This is the BETA lane: the paywall/trial gate is disabled (BETA_FREE) so
-# testers aren't gated. Store builds come from app-store.yml.
+# Builds the STORE-configured iOS IPA on a macOS runner and uploads it to App
+# Store Connect: paywall ON (no BETA_FREE), RevenueCat key required, Firebase
+# and the licensed exercise source when their secrets exist. It only uploads
+# and waits for Apple to process the build — attaching it to the App Store
+# version and pressing "Add for Review" stays a deliberate step in App Store
+# Connect (metadata, screenshots and the first subscription review ride along
+# with the version). Signing, runner and Flutter pins mirror testflight.yml.
 #
 # Required repository secrets (Settings → Secrets and variables → Actions):
-#   APP_STORE_CONNECT_ISSUER_ID       App Store Connect → Users & Access → Integrations
-#   APP_STORE_CONNECT_KEY_IDENTIFIER  the API key's Key ID
-#   APP_STORE_CONNECT_PRIVATE_KEY     full contents of the downloaded .p8 file
-#   CERTIFICATE_PRIVATE_KEY           an RSA 2048 private key (PEM) used to
-#                                     create/reuse the iOS distribution cert
-# Optional (same names the other lanes use):
-#   SUPABASE_URL / SUPABASE_ANON_KEY / REVENUECAT_IOS_KEY
-#   FIREBASE_IOS_PLIST_B64            base64 of GoogleService-Info.plist
-#   EXERCISEDB_API_KEY + repo variable EXERCISEDB_BASE_URL
-name: TestFlight
+#   APP_STORE_CONNECT_ISSUER_ID / _KEY_IDENTIFIER / _PRIVATE_KEY, CERTIFICATE_PRIVATE_KEY
+#   SUPABASE_URL, SUPABASE_ANON_KEY
+#   REVENUECAT_IOS_KEY               public SDK key (appl_…) — store builds must gate
+# Optional:
+#   FIREBASE_IOS_PLIST_B64           base64 of GoogleService-Info.plist (Crashlytics/FCM)
+#   EXERCISEDB_API_KEY  + repo variable EXERCISEDB_BASE_URL (licensed exercise data)
+name: App Store build
 
 on:
   workflow_dispatch:
 
-# Shared with app-store.yml: both lanes derive the build number from App
+# Shared with testflight.yml: both lanes derive the build number from App
 # Store Connect (latest + 1), so they must never upload concurrently.
 concurrency:
   group: ios-upload
@@ -28,12 +26,9 @@ concurrency:
 
 jobs:
   build-and-upload:
-    name: Build iOS IPA + upload to TestFlight
-    # macos-26 = Xcode 26 / iOS 26 SDK — required by cupertino_native_better's
-    # Liquid Glass APIs (glassEffect etc.); macos-15's Xcode 16 can't compile it.
+    name: Build store IPA + upload to App Store Connect
+    # macos-26 = Xcode 26 / iOS 26 SDK — required by cupertino_native_better.
     runs-on: macos-26
-    # Build ~25 min + up to 40 min waiting for Apple to process the upload
-    # before the beta-group assignment (--max-build-processing-wait below).
     timeout-minutes: 75
     env:
       BUNDLE_ID: com.mygymbro.myGymBro
@@ -43,24 +38,31 @@ jobs:
       CERTIFICATE_PRIVATE_KEY: ${{ secrets.CERTIFICATE_PRIVATE_KEY }}
     steps:
       - name: Check required secrets
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
+          REVENUECAT_IOS_KEY: ${{ secrets.REVENUECAT_IOS_KEY }}
+          FIREBASE_IOS_PLIST_B64: ${{ secrets.FIREBASE_IOS_PLIST_B64 }}
+          EXERCISEDB_BASE_URL: ${{ vars.EXERCISEDB_BASE_URL }}
         run: |
           missing=0
           for v in APP_STORE_CONNECT_ISSUER_ID APP_STORE_CONNECT_KEY_IDENTIFIER \
-                   APP_STORE_CONNECT_PRIVATE_KEY CERTIFICATE_PRIVATE_KEY; do
+                   APP_STORE_CONNECT_PRIVATE_KEY CERTIFICATE_PRIVATE_KEY \
+                   SUPABASE_URL SUPABASE_ANON_KEY REVENUECAT_IOS_KEY; do
             if [ -z "${!v}" ]; then
-              echo "::error::secret $v is not set — see the header of this workflow file"
+              echo "::error::secret $v is not set — a store build cannot ship without it (see the header of this workflow)"
               missing=1
             fi
           done
+          [ -n "$FIREBASE_IOS_PLIST_B64" ] || echo "::warning::FIREBASE_IOS_PLIST_B64 not set — Crashlytics and push stay inert in this build"
+          [ -n "$EXERCISEDB_BASE_URL" ] || echo "::warning::EXERCISEDB_BASE_URL not set — this build uses the NON-COMMERCIAL OSS exercise API (store-release blocker)"
           exit $missing
 
       - uses: actions/checkout@v4
 
       - uses: subosito/flutter-action@v2
         with:
-          # Pinned to the version the app is developed against. Latest stable
-          # removed CupertinoPageTransitionsBuilder (used in lib/app.dart) —
-          # bump this deliberately together with a local Flutter upgrade.
+          # Pinned together with testflight.yml and ci.yml.
           flutter-version: 3.41.1
           channel: stable
           cache: true
@@ -72,15 +74,13 @@ jobs:
       - name: Install codemagic-cli-tools
         run: pipx install codemagic-cli-tools
 
-      - name: Fetch signing files (creates cert + profile on first run)
+      - name: Fetch signing files
         run: |
           keychain initialize
           app-store-connect fetch-signing-files "$BUNDLE_ID" \
             --platform IOS \
             --type IOS_APP_STORE \
             --create
-          # The Live Activity widget extension is its own bundle id and needs
-          # its own App ID + provisioning profile (created via the API too).
           app-store-connect fetch-signing-files "$BUNDLE_ID.MyGymBroLiveActivity" \
             --platform IOS \
             --type IOS_APP_STORE \
@@ -88,20 +88,18 @@ jobs:
           keychain add-certificates
           xcode-project use-profiles
 
-      # github.run_number is per-workflow, so it can't be shared with the
-      # store lane — read the next free number from App Store Connect instead.
       - name: Resolve build number from App Store Connect
         id: build_number
         uses: ./.github/actions/asc-build-number
         with:
           bundle_id: ${{ env.BUNDLE_ID }}
 
-      - name: Firebase options from secret (optional)
+      - name: Firebase options from secret
         uses: ./.github/actions/firebase-defines
         with:
           plist_b64: ${{ secrets.FIREBASE_IOS_PLIST_B64 }}
 
-      - name: Build IPA
+      - name: Build store IPA
         env:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
@@ -112,12 +110,10 @@ jobs:
         run: |
           FIREBASE=()
           if [ -s firebase_defines.txt ]; then readarray -t FIREBASE < firebase_defines.txt; fi
-          # BETA_FREE disables the paywall/trial gate for TestFlight testers.
-          # Store builds come from app-store.yml, which omits it.
+          # No BETA_FREE here: the paywall/trial gate is live in store builds.
           flutter build ipa --release \
             --build-number="$BUILD_NUMBER" \
             --export-options-plist "$HOME/export_options.plist" \
-            --dart-define=BETA_FREE=true \
             --dart-define="SUPABASE_URL=$SUPABASE_URL" \
             --dart-define="SUPABASE_ANON_KEY=$SUPABASE_ANON_KEY" \
             --dart-define="REVENUECAT_IOS_KEY=$REVENUECAT_IOS_KEY" \
@@ -125,19 +121,20 @@ jobs:
             --dart-define="EXERCISEDB_API_KEY=$EXERCISEDB_API_KEY" \
             "${FIREBASE[@]}"
 
-      - name: Upload to TestFlight
-        # --testflight submits the build for beta app review and --beta-group
-        # assigns it to the external tester group once Apple finishes
-        # processing (assignment alone would not trigger review submission).
-        # First review of a version takes up to a day; later builds of the
-        # same version are approved near-instantly.
+      - name: Upload to App Store Connect and wait for processing
+        env:
+          BUILD_NUMBER: ${{ steps.build_number.outputs.build_number }}
         run: |
           app-store-connect publish --path build/ios/ipa/*.ipa \
-            --testflight \
-            --beta-group "my gym bro testers1" \
             --max-build-processing-wait 40
+          version=$(grep -E '^version:' pubspec.yaml | sed -E 's/version: *([0-9.]+).*/\1/')
+          {
+            echo "## Store build $version ($BUILD_NUMBER) uploaded"
+            echo
+            echo "Processed by Apple. Next, in App Store Connect → App Store → **$version** → Build: pick **$BUILD_NUMBER**, complete the metadata, then **Add for Review**."
+          } >> "$GITHUB_STEP_SUMMARY"
 
       - uses: actions/upload-artifact@v4
         with:
-          name: ios-ipa
+          name: ios-ipa-store
           path: build/ios/ipa/*.ipa

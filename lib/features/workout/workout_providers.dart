@@ -369,14 +369,24 @@ final userProfileProvider = StreamProvider<UserProfile?>((ref) {
 const bool kBetaFreeAccess = bool.fromEnvironment('BETA_FREE');
 
 /// Whole-app paywall gate. True when access must be blocked: the trial window
-/// has elapsed, or the subscription is expired. Returns false while the
-/// profile is loading or absent (pre-onboarding) so we never lock a user we
-/// don't yet know about. This is the single source of truth for gating —
-/// the router redirect and the paywall both read it.
+/// has elapsed, or the subscription is expired. This is the single source of
+/// truth for gating — the router redirect and the paywall both read it.
+///
+/// Fails closed: the only states that unlock are ones the app's own writers
+/// produce (sign-up / OAuth restore always write `trial` + an expiry; the
+/// sync service and the server functions only ever write `active`,
+/// `grace_period`, `expired` or `trial`). Anything else — an unknown status,
+/// a trial with no expiry, or a signed-in device whose profile row is gone —
+/// can only come from a tampered or corrupted local DB and locks until the
+/// next sign-in / RevenueCat sync rewrites the row. Two deliberate opens:
+/// while the profile stream is still loading (no paywall flash at launch)
+/// and a missing row on a signed-out device (pre-onboarding).
 final subscriptionLockedProvider = Provider<bool>((ref) {
   if (kBetaFreeAccess) return false;
-  final profile = ref.watch(userProfileProvider).valueOrNull;
-  if (profile == null) return false;
+  final profileAsync = ref.watch(userProfileProvider);
+  if (profileAsync.isLoading && !profileAsync.hasValue) return false;
+  final profile = profileAsync.valueOrNull;
+  if (profile == null) return ref.watch(isSignedInProvider);
   switch (profile.subscriptionStatus) {
     case 'active':
     case 'grace_period': {
@@ -393,13 +403,16 @@ final subscriptionLockedProvider = Provider<bool>((ref) {
     case 'expired':
       return true;
     case 'trial': {
+      // Every trial row is written with an expiry; a missing one is not a
+      // state the app produces.
       final end = profile.subscriptionExpiresAt;
-      return end != null && DateTime.now().isAfter(end);
+      return end == null || DateTime.now().isAfter(end);
     }
     default:
-      // Any unknown status → don't lock: offline-first, never brick on a
-      // bad write; the next RC sync / server verify rewrites it.
-      return false;
+      // Not a status any writer produces (the sync service validates against
+      // the same four; the webhook / verify functions emit only those) →
+      // tampered or corrupted row. Lock; the next verify rewrites it.
+      return true;
   }
 });
 
@@ -2016,7 +2029,7 @@ class WeekSummary {
   int get durationSeconds => days.fold(0, (a, d) => a + d.durationSeconds);
 }
 
-/// Week summary for the week starting at [weekStart] (pass Monday midnight).
+/// Week summary for the week starting at `weekStart` (pass Monday midnight).
 final weekSummaryProvider = FutureProvider.family<WeekSummary, DateTime>((
   ref,
   weekStart,
@@ -2058,7 +2071,7 @@ final weekSummaryProvider = FutureProvider.family<WeekSummary, DateTime>((
   return WeekSummary(days: days);
 });
 
-/// Most recent trained day strictly before [day] (local midnight), looking
+/// Most recent trained day strictly before `day` (local midnight), looking
 /// back up to a year; null when there is none. Powers the Reports rest-day
 /// "your last session was …" hint.
 final lastTrainedDayBeforeProvider =

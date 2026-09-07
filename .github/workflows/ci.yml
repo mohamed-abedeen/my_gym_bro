@@ -83,12 +83,19 @@ jobs:
       - run: flutter pub get
       - run: dart run build_runner build --delete-conflicting-outputs
       - run: flutter gen-l10n
+      - name: Firebase options from secret (optional)
+        uses: ./.github/actions/firebase-defines
+        with:
+          json_b64: ${{ secrets.FIREBASE_ANDROID_JSON_B64 }}
       - name: Build APK
         run: |
+          FIREBASE=()
+          if [ -s firebase_defines.txt ]; then readarray -t FIREBASE < firebase_defines.txt; fi
           flutter build apk --debug \
             --dart-define=SUPABASE_URL=${{ secrets.SUPABASE_URL }} \
             --dart-define=SUPABASE_ANON_KEY=${{ secrets.SUPABASE_ANON_KEY }} \
-            --dart-define=REVENUECAT_ANDROID_KEY=${{ secrets.REVENUECAT_ANDROID_KEY }}
+            --dart-define=REVENUECAT_ANDROID_KEY=${{ secrets.REVENUECAT_ANDROID_KEY }} \
+            "${FIREBASE[@]}"
       - uses: actions/upload-artifact@v4
         with:
           name: debug-apk
@@ -152,12 +159,25 @@ jobs:
             echo "keyAlias=$ANDROID_KEY_ALIAS"
             echo "keyPassword=$ANDROID_KEY_PASSWORD"
           } > android/key.properties
+      - name: Firebase options from secret (optional)
+        uses: ./.github/actions/firebase-defines
+        with:
+          json_b64: ${{ secrets.FIREBASE_ANDROID_JSON_B64 }}
       - name: Build AAB
+        env:
+          EXERCISEDB_BASE_URL: ${{ vars.EXERCISEDB_BASE_URL }}
+          EXERCISEDB_API_KEY: ${{ secrets.EXERCISEDB_API_KEY }}
         run: |
+          FIREBASE=()
+          if [ -s firebase_defines.txt ]; then readarray -t FIREBASE < firebase_defines.txt; fi
+          # Play release: paywall live, licensed exercise source when configured.
           flutter build appbundle --release \
             --dart-define=SUPABASE_URL=${{ secrets.SUPABASE_URL }} \
             --dart-define=SUPABASE_ANON_KEY=${{ secrets.SUPABASE_ANON_KEY }} \
-            --dart-define=REVENUECAT_ANDROID_KEY=${{ secrets.REVENUECAT_ANDROID_KEY }}
+            --dart-define=REVENUECAT_ANDROID_KEY=${{ secrets.REVENUECAT_ANDROID_KEY }} \
+            --dart-define="EXERCISEDB_BASE_URL=$EXERCISEDB_BASE_URL" \
+            --dart-define="EXERCISEDB_API_KEY=$EXERCISEDB_API_KEY" \
+            "${FIREBASE[@]}"
       - uses: actions/upload-artifact@v4
         with:
           name: release-aab

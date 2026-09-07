@@ -1,0 +1,39 @@
+name: Next iOS build number
+description: >
+  Reads the highest build number App Store Connect knows for the app and
+  returns it + 1. Both iOS lanes (TestFlight + App Store) use this instead of
+  github.run_number, which is per-workflow and would collide across lanes.
+  Needs codemagic-cli-tools installed and the APP_STORE_CONNECT_* env vars.
+inputs:
+  bundle_id:
+    description: Bundle identifier of the app
+    required: true
+outputs:
+  build_number:
+    description: The build number to use for this run
+    value: ${{ steps.next.outputs.build_number }}
+runs:
+  using: composite
+  steps:
+    - id: next
+      shell: bash
+      env:
+        BUNDLE_ID: ${{ inputs.bundle_id }}
+      run: |
+        set -euo pipefail
+        app_id=$(app-store-connect apps list \
+          --bundle-id-identifier "$BUNDLE_ID" --strict-match-identifier --json \
+          | jq -r '.[0].id // empty')
+        latest=""
+        if [ -n "$app_id" ]; then
+          latest=$(app-store-connect get-latest-build-number "$app_id" --platform IOS 2>/dev/null \
+            | tail -n 1 | tr -dc '0-9' || true)
+        fi
+        if [ -z "$latest" ]; then
+          echo "::warning::could not read the latest build number from App Store Connect; falling back to run number + 1000"
+          next=$(( GITHUB_RUN_NUMBER + 1000 ))
+        else
+          next=$(( latest + 1 ))
+        fi
+        echo "build_number=$next" >> "$GITHUB_OUTPUT"
+        echo "Latest build in App Store Connect: ${latest:-unknown} -> building $next"

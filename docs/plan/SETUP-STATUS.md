@@ -20,9 +20,10 @@
 | RevenueCat | 🟡 Project + products exist; entitlement/offering/webhook/keys pending |
 | Supabase **cloud** | 🟡 Live for auth/data, but behind the repo (db push, function secrets, config push pending) |
 | Apple sign-in (Supabase side) | 🔴 Provider not enabled in dashboard — errors until then |
-| Firebase (Crashlytics + FCM) | 🔴 Untouched — no config files in repo, Crashlytics inert, no push |
-| Exercise data license | 🔴 **Store-release blocker** — running on non-commercial OSS data |
-| Paywall in beta builds | ⚠️ Disabled via `BETA_FREE=true` — must be removed for store builds |
+| Firebase (Crashlytics + FCM) | 🟡 **Wired (2026-09-08)** — CI derives options from base64 config secrets; owner still has to create the project + set the secrets |
+| Exercise data license | 🔴 **Store-release blocker** — OSS default; the licensed source is a config switch (`EXERCISEDB_BASE_URL` / `EXERCISEDB_API_KEY`), see below |
+| Paywall in beta builds | ⚠️ `BETA_FREE=true` stays in the TestFlight lane only |
+| **App Store lane** (`app-store.yml`, 2026-09-08) | ✅ Exists — paywall ON, requires `REVENUECAT_IOS_KEY`; uploads + waits for processing, submission stays manual in ASC |
 
 ---
 
@@ -34,10 +35,16 @@ IPA on GitHub's Mac runners and uploads to TestFlight — no local Mac needed.
 - **Pins that must not change casually:** runner `macos-26` (Xcode 26 — `cupertino_native_better`
   needs Liquid Glass APIs), Flutter **3.41.1** (newer stable removed
   `CupertinoPageTransitionsBuilder` used in `lib/app.dart`), iOS deployment target **15.0**.
-- Build number = CI `run_number` (cancelled runs still consume numbers).
-- **`--dart-define=BETA_FREE=true` is in the lane** — it short-circuits the paywall/trial gate
-  (`kBetaFreeAccess` in `lib/features/workout/workout_providers.dart`). **Remove it the day
-  this lane produces store builds.**
+- **Build number = App Store Connect's latest + 1** (`.github/actions/asc-build-number`,
+  since 2026-09-08; was `github.run_number`, which is per-workflow and would collide with the
+  store lane). Both iOS lanes share the `ios-upload` concurrency group so they never upload
+  at the same time.
+- **`--dart-define=BETA_FREE=true` is in this lane only** — it short-circuits the
+  paywall/trial gate (`kBetaFreeAccess` in `lib/features/workout/workout_providers.dart`).
+  Store builds come from `app-store.yml`, which omits it. Never add it there.
+- Firebase (`FIREBASE_IOS_PLIST_B64`) and the licensed exercise source
+  (`EXERCISEDB_BASE_URL` / `EXERCISEDB_API_KEY`) are picked up automatically when set —
+  a TestFlight build with those + `REVENUECAT_IOS_KEY` is the on-device test build.
 - `--dart-define=REVENUECAT_IOS_KEY=${{ secrets.REVENUECAT_IOS_KEY }}` is wired in the yml,
   but the GitHub secret is **not set yet** (verified 2026-08-04) — resolves empty, app skips
   RevenueCat configure. Set it once RevenueCat setup (below) finishes.
@@ -52,6 +59,42 @@ IPA on GitHub's Mac runners and uploads to TestFlight — no local Mac needed.
 - Gotcha: `purchases_flutter` on iOS **fatalErrors (uncatchable)** if any `Purchases.*` call
   runs before `configure()` — every new call site needs an `await Purchases.isConfigured`
   guard (Android throws catchably, so you won't see it in dev).
+
+## App Store lane (`.github/workflows/app-store.yml`, added 2026-09-08)
+
+Manual `workflow_dispatch` from `main`. Same runner/Flutter/signing as the TestFlight lane,
+but: **no `BETA_FREE`** (gate live), **`REVENUECAT_IOS_KEY` required** (fails fast without
+it), Firebase + licensed exercise defines when their secrets exist (warns when not). It
+uploads the IPA and waits for Apple to process it, then prints the build number in the run
+summary. Submission is deliberately manual: App Store Connect → App Store → version →
+pick the build → complete metadata → **Add for Review** (the first subscription review
+rides along with the version). The build also appears under TestFlight like any upload.
+
+`ios/Runner/PrivacyInfo.xcprivacy` (added 2026-09-08, registered in the Xcode project)
+declares the collected data types + required-reason APIs — keep it in sync with the App
+Privacy labels in ASC when data collection changes.
+
+## Secrets & variables checklist (owner — values never go in this repo)
+
+`gh secret set NAME` prompts for the value; `gh variable set` is for non-secret config.
+Already set: the four App Store Connect / certificate secrets, `SUPABASE_URL`,
+`SUPABASE_ANON_KEY`. Still to set, in the order the lanes need them:
+
+```bash
+gh secret set REVENUECAT_IOS_KEY          # appl_… public SDK key (RevenueCat → API keys)
+gh secret set REVENUECAT_ANDROID_KEY      # goog_… (Play lane)
+# Firebase console → project settings → your apps → download config, then:
+gh secret set FIREBASE_IOS_PLIST_B64     --body "$(base64 -w0 GoogleService-Info.plist)"
+gh secret set FIREBASE_ANDROID_JSON_B64  --body "$(base64 -w0 google-services.json)"
+# Licensed exercise data (after purchase): base URL is a plain variable, key a secret
+gh variable set EXERCISEDB_BASE_URL      --body "https://…"
+gh secret set EXERCISEDB_API_KEY
+# Play release signing (build-aab job), when ready:
+gh secret set ANDROID_KEYSTORE_BASE64    --body "$(base64 -w0 upload-keystore.jks)"
+gh secret set ANDROID_KEYSTORE_PASSWORD; gh secret set ANDROID_KEY_ALIAS; gh secret set ANDROID_KEY_PASSWORD
+```
+(macOS: `base64 -i file` instead of `base64 -w0 file`.) The lanes' first step reports
+which of these are missing.
 
 ## RevenueCat + App Store Connect (in progress — stopped mid-way 2026-08-03)
 
@@ -214,13 +257,23 @@ pushed. As of the last check the following were pending — **verify with
   app is OAuth-only (Google all platforms + native Apple on iOS; email/password removed from
   the UI) — **Apple sign-in fails until this is flipped.**
 
-## Firebase — untouched
+## Firebase — wired, waiting for the project (2026-09-08)
 
-No `android/app/google-services.json`, no `ios/Runner/GoogleService-Info.plist` (verified
-2026-08-04). Consequences: Crashlytics is inert in all builds; FCM push (and the
-notification edge functions' delivery) cannot work. Owner must register both apps (iOS
-`com.mygymbro.myGymBro`, Android `com.mygymbro.my_gym_bro`), enable Crashlytics, set up
-FCM V1 + APNs key, and produce a service-account JSON for the edge functions.
+The app no longer needs `google-services.json` / `GoogleService-Info.plist` in the native
+projects: `Firebase.initializeApp` takes options from build-time defines
+(`lib/core/services/firebase_options_env.dart`), and CI derives those defines from the
+console config files stored as base64 secrets (`.github/actions/firebase-defines`, used by
+the TestFlight, App Store and Android lanes). Without the secrets Firebase stays inert
+exactly as before — Crashlytics off, no push. Both files are now git-ignored; never commit
+them.
+
+Owner steps: create the Firebase project, register iOS `com.mygymbro.myGymBro` and Android
+`com.mygymbro.my_gym_bro`, enable Crashlytics, download both config files and set
+`FIREBASE_IOS_PLIST_B64` / `FIREBASE_ANDROID_JSON_B64` (checklist above). For push on iOS
+additionally: APNs key in Firebase, **Push Notifications capability on the App ID** in the
+developer portal (regenerates profiles — like Associated Domains, do this before touching
+`Runner.entitlements` or the green lanes break), FCM V1 + a service-account JSON for the
+edge functions.
 
 ## Exercise data license — store-release blocker
 
@@ -228,14 +281,29 @@ The app currently syncs its catalogue from the free **ExerciseDB OSS v1 API**
 (`oss.exercisedb.dev`) whose license is **non-commercial — it must not ship in the paid
 release**. Decision on record: buy the **ExerciseDB.io one-time dataset license** (Mobile
 $299) at deployment and swap the source. `assets/exercises_starter.json` is the small
-bundled fallback. History in `08-WORKOUTX-MIGRATION.md` (superseded WorkoutX era).
+bundled fallback.
+
+**The swap is a config change (2026-09-08):** `ExerciseApiService` reads
+`EXERCISEDB_BASE_URL`, `EXERCISEDB_API_KEY` and `EXERCISEDB_API_KEY_HEADER`
+(default `x-api-key`) from dart-defines; every lane passes the repo variable + secret
+through. If the licensed delivery is an API with the same `/exercises` cursor contract,
+set the variable/secret and you're done; if it's a dataset dump, host it behind that
+contract (e.g. a Supabase edge function) or bundle it, then point the URL there. The
+store lane warns loudly while the URL is unset. History in `08-WORKOUTX-MIGRATION.md` (superseded WorkoutX era).
 
 ## Security audit — known-open items (as of 2026-07-14; re-verify before fixing)
 
 - Onboarding **Skip button** has no `kDebugMode` guard (owner is keeping it during beta —
   remove/gate before store release).
-- Supabase session tokens in plaintext `SharedPreferences`; Drift DB unencrypted;
-  `subscriptionLockedProvider` fails open on a null profile.
+- ~~Supabase session tokens in plaintext `SharedPreferences`~~ — done earlier: the
+  session is persisted through `SecureSessionStorage` (Keychain /
+  EncryptedSharedPreferences, `lib/core/security/secure_storage.dart`).
+- ~~`subscriptionLockedProvider` fails open on a null profile~~ — **fixed 2026-09-08:**
+  the gate now fails closed on an unknown status, a trial without expiry, and a
+  signed-in device with no profile row (`isSignedInProvider`); it stays open only while
+  the profile stream is loading and for a missing row on a signed-out device. Tests in
+  `test/subscription_gate_test.dart`.
+- Drift DB unencrypted (still open).
 - `otp_expiry` / `site_url` (see Supabase section). Fixed already: column-level REVOKE on
   subscription columns (009), cron-secret on `send-push-notification`, fail-fast release
   signing (no debug-keystore fallback).
