@@ -303,7 +303,8 @@ store lane warns loudly while the URL is unset. History in `08-WORKOUTX-MIGRATIO
   signed-in device with no profile row (`isSignedInProvider`); it stays open only while
   the profile stream is loading and for a missing row on a signed-out device. Tests in
   `test/subscription_gate_test.dart`.
-- Drift DB unencrypted (still open).
+- Drift DB unencrypted — **deliberate**, not a to-do: SQLCipher was removed on purpose
+  (`docs/plan/CLAUDE.md` §3, "do not re-add").
 - `otp_expiry` / `site_url` (see Supabase section). Fixed already: column-level REVOKE on
   subscription columns (009), cron-secret on `send-push-notification`, fail-fast release
   signing (no debug-keystore fallback).
