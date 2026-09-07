@@ -509,6 +509,26 @@
   "last3Months": "Last 3 Months",
   "last6Months": "Last 6 Months",
   "allTime": "All Time",
+  "personalBests": "Personal bests",
+  "oneRepMaxEstimated": "One rep max · est.",
+  "vsLastMonth": "vs last month",
+  "pbHeaviest": "Heaviest",
+  "pbBestSet": "Best set",
+  "pbBestSession": "Best session",
+  "volumePerSession": "Volume per session",
+  "periodShort3M": "3M",
+  "periodShort6M": "6M",
+  "periodShortAll": "All",
+  "legendLatestPr": "latest / PR",
+  "legendEarlierSessions": "earlier sessions",
+  "prTag": "PR",
+  "rankProgressToNext": "{percent}% → {rank}",
+  "@rankProgressToNext": {
+    "placeholders": {
+      "percent": { "type": "int" },
+      "rank": { "type": "String" }
+    }
+  },
   "noHistoryYet": "No history yet",
   "primaryLabel": "Primary",
   "secondaryLabel": "Secondary",

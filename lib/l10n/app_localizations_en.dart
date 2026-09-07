@@ -2538,4 +2538,48 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get splitAddRestDay => 'Add rest day';
+
+  @override
+  String get personalBests => 'Personal bests';
+
+  @override
+  String get oneRepMaxEstimated => 'One rep max · est.';
+
+  @override
+  String get vsLastMonth => 'vs last month';
+
+  @override
+  String get pbHeaviest => 'Heaviest';
+
+  @override
+  String get pbBestSet => 'Best set';
+
+  @override
+  String get pbBestSession => 'Best session';
+
+  @override
+  String get volumePerSession => 'Volume per session';
+
+  @override
+  String get periodShort3M => '3M';
+
+  @override
+  String get periodShort6M => '6M';
+
+  @override
+  String get periodShortAll => 'All';
+
+  @override
+  String get legendLatestPr => 'latest / PR';
+
+  @override
+  String get legendEarlierSessions => 'earlier sessions';
+
+  @override
+  String get prTag => 'PR';
+
+  @override
+  String rankProgressToNext(int percent, String rank) {
+    return '$percent% → $rank';
+  }
 }

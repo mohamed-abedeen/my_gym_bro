@@ -4661,6 +4661,90 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Add rest day'**
   String get splitAddRestDay;
+
+  /// No description provided for @personalBests.
+  ///
+  /// In en, this message translates to:
+  /// **'Personal bests'**
+  String get personalBests;
+
+  /// No description provided for @oneRepMaxEstimated.
+  ///
+  /// In en, this message translates to:
+  /// **'One rep max · est.'**
+  String get oneRepMaxEstimated;
+
+  /// No description provided for @vsLastMonth.
+  ///
+  /// In en, this message translates to:
+  /// **'vs last month'**
+  String get vsLastMonth;
+
+  /// No description provided for @pbHeaviest.
+  ///
+  /// In en, this message translates to:
+  /// **'Heaviest'**
+  String get pbHeaviest;
+
+  /// No description provided for @pbBestSet.
+  ///
+  /// In en, this message translates to:
+  /// **'Best set'**
+  String get pbBestSet;
+
+  /// No description provided for @pbBestSession.
+  ///
+  /// In en, this message translates to:
+  /// **'Best session'**
+  String get pbBestSession;
+
+  /// No description provided for @volumePerSession.
+  ///
+  /// In en, this message translates to:
+  /// **'Volume per session'**
+  String get volumePerSession;
+
+  /// No description provided for @periodShort3M.
+  ///
+  /// In en, this message translates to:
+  /// **'3M'**
+  String get periodShort3M;
+
+  /// No description provided for @periodShort6M.
+  ///
+  /// In en, this message translates to:
+  /// **'6M'**
+  String get periodShort6M;
+
+  /// No description provided for @periodShortAll.
+  ///
+  /// In en, this message translates to:
+  /// **'All'**
+  String get periodShortAll;
+
+  /// No description provided for @legendLatestPr.
+  ///
+  /// In en, this message translates to:
+  /// **'latest / PR'**
+  String get legendLatestPr;
+
+  /// No description provided for @legendEarlierSessions.
+  ///
+  /// In en, this message translates to:
+  /// **'earlier sessions'**
+  String get legendEarlierSessions;
+
+  /// No description provided for @prTag.
+  ///
+  /// In en, this message translates to:
+  /// **'PR'**
+  String get prTag;
+
+  /// No description provided for @rankProgressToNext.
+  ///
+  /// In en, this message translates to:
+  /// **'{percent}% → {rank}'**
+  String rankProgressToNext(int percent, String rank);
 }
 
 class _AppLocalizationsDelegate

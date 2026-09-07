@@ -660,6 +660,26 @@
   "last3Months": "3 derniers mois",
   "last6Months": "6 derniers mois",
   "allTime": "Depuis le début",
+  "personalBests": "Records personnels",
+  "oneRepMaxEstimated": "1RM · estimé",
+  "vsLastMonth": "vs mois dernier",
+  "pbHeaviest": "Le plus lourd",
+  "pbBestSet": "Meilleure série",
+  "pbBestSession": "Meilleure séance",
+  "volumePerSession": "Volume par séance",
+  "periodShort3M": "3M",
+  "periodShort6M": "6M",
+  "periodShortAll": "Tout",
+  "legendLatestPr": "dernière / PR",
+  "legendEarlierSessions": "séances précédentes",
+  "prTag": "PR",
+  "rankProgressToNext": "{percent}% → {rank}",
+  "@rankProgressToNext": {
+    "placeholders": {
+      "percent": { "type": "int" },
+      "rank": { "type": "String" }
+    }
+  },
   "noHistoryYet": "Aucun historique pour l'instant",
   "primaryLabel": "Principal",
   "secondaryLabel": "Secondaire",
