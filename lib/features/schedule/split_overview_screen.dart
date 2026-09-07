@@ -652,7 +652,7 @@ class _WeeklyPlanCardState extends ConsumerState<_WeeklyPlanCard> {
   }
 
   Future<void> _addRestDay() async {
-    HapticFeedback.selectionClick();
+    unawaited(HapticFeedback.selectionClick());
     await ref.read(scheduleDaoProvider).addRestDay(widget.scheduleId);
     if (mounted) _refreshDerived();
   }
