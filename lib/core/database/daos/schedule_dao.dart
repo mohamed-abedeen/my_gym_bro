@@ -67,7 +67,7 @@ class ScheduleDao extends DatabaseAccessor<AppDatabase>
       into(scheduleDays).insert(companion);
 
   /// Append a rest day after the schedule's last day — the same shape the
-  /// builder and share importer create, so [isRestScheduleDay] holds.
+  /// builder and share importer create, so `isRestScheduleDay` holds.
   Future<int> addRestDay(int scheduleId) async {
     final days = await getDays(scheduleId);
     final nextIndex = days.isEmpty ? 0 : days.last.dayIndex + 1;

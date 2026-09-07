@@ -2029,7 +2029,7 @@ class WeekSummary {
   int get durationSeconds => days.fold(0, (a, d) => a + d.durationSeconds);
 }
 
-/// Week summary for the week starting at [weekStart] (pass Monday midnight).
+/// Week summary for the week starting at `weekStart` (pass Monday midnight).
 final weekSummaryProvider = FutureProvider.family<WeekSummary, DateTime>((
   ref,
   weekStart,
@@ -2071,7 +2071,7 @@ final weekSummaryProvider = FutureProvider.family<WeekSummary, DateTime>((
   return WeekSummary(days: days);
 });
 
-/// Most recent trained day strictly before [day] (local midnight), looking
+/// Most recent trained day strictly before `day` (local midnight), looking
 /// back up to a year; null when there is none. Powers the Reports rest-day
 /// "your last session was …" hint.
 final lastTrainedDayBeforeProvider =
