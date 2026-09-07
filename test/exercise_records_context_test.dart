@@ -88,8 +88,8 @@ void main() {
       expect(r.bestSetVolumeSet?.reps, 10);
       expect(r.bestSetVolumeSet?.date, aug);
 
-      // Epley: 100 x (1 + 8/30) = 133.3 beats 95 x (1 + 8/30) = 120.3.
-      expect(r.best1rm, closeTo(133.33, 0.01));
+      // Epley: 100 x (1 + 8/30) = 126.67 beats 95 x (1 + 8/30) = 120.33.
+      expect(r.best1rm, closeTo(126.67, 0.01));
       expect(r.best1rmSet?.weight, 100);
       expect(r.best1rmSet?.reps, 8);
       expect(r.best1rmSet?.date, aug);
