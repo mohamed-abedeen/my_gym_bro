@@ -1,7 +1,7 @@
 # Read-only: reports where a TestFlight build stands on Apple's side —
-# processing state, beta-review state and beta-group assignment — using the
-# same App Store Connect API key the TestFlight lane uses. Nothing is
-# modified. Runs on Linux: only the ASC REST calls are needed, no Xcode.
+# processing state and beta-review state — using the same App Store Connect
+# API key the TestFlight lane uses. Nothing is modified. Runs on Linux: only
+# the ASC REST calls are needed, no Xcode.
 #
 # Run it with:  gh workflow run testflight-status.yml [-f build_number=38]
 # Read it with: gh run view <run-id> (the summary tab has the table).
@@ -47,14 +47,23 @@ jobs:
           BUILD_NUMBER: ${{ inputs.build_number }}
         run: |
           set -euo pipefail
-          args=(--bundle-id "$BUNDLE_ID" --platform IOS --json)
+          # builds list filters by app id, not bundle id — resolve it first.
+          app-store-connect apps list \
+            --bundle-id-identifier "$BUNDLE_ID" --strict-match-identifier --json > apps.json
+          app_id=$(jq -r '.[0].id // empty' apps.json)
+          if [ -z "$app_id" ]; then
+            echo "::error::no App Store Connect app found for bundle id $BUNDLE_ID"
+            exit 1
+          fi
+          echo "app_id=$app_id"
+
+          args=(--app-id "$app_id" --platform IOS --json)
           if [ -n "$BUILD_NUMBER" ]; then
             args+=(--build-version-number "$BUILD_NUMBER")
           fi
           app-store-connect builds list "${args[@]}" > builds.json
-          count=$(jq 'length' builds.json)
-          if [ "$count" -eq 0 ]; then
-            echo "::error::no build found for bundle $BUNDLE_ID${BUILD_NUMBER:+ with build number $BUILD_NUMBER}"
+          if [ "$(jq 'length' builds.json)" -eq 0 ]; then
+            echo "::error::no build found${BUILD_NUMBER:+ with build number $BUILD_NUMBER}"
             exit 1
           fi
           # Newest upload wins when several builds match.
@@ -64,20 +73,14 @@ jobs:
           echo "Recent builds (newest last):"
           jq -r '.[] | "  build \(.attributes.version)  \(.attributes.processingState)  uploaded \(.attributes.uploadedDate)"' builds.json | tail -n 5
 
-      - name: Fetch beta details and review submission
+      - name: Fetch beta review submission
         env:
           BUILD_ID: ${{ steps.build.outputs.id }}
         run: |
           set -uo pipefail
-          # Each call is best-effort so one unsupported flag can't hide the rest.
-          app-store-connect builds get "$BUILD_ID" --json > build_full.json \
-            || { echo "::warning::builds get failed"; echo '{}' > build_full.json; }
-          app-store-connect builds beta-detail "$BUILD_ID" --json > beta_detail.json \
-            || { echo "::warning::builds beta-detail failed"; echo '{}' > beta_detail.json; }
-          app-store-connect beta-app-review-submissions list --build-id "$BUILD_ID" --json > review.json \
+          # Best-effort: a build that was never submitted simply has none.
+          app-store-connect beta-app-review-submissions list "$BUILD_ID" --json > review.json \
             || { echo "::warning::beta-app-review-submissions list failed"; echo '[]' > review.json; }
-          app-store-connect beta-groups list --bundle-id "$BUNDLE_ID" --json > groups.json \
-            || { echo "::warning::beta-groups list failed"; echo '[]' > groups.json; }
 
       - name: Summary
         env:
@@ -88,10 +91,16 @@ jobs:
           processing=$(jq -r '.attributes.processingState // "?"' build.json)
           uploaded=$(jq -r '.attributes.uploadedDate // "?"' build.json)
           expired=$(jq -r '.attributes.expired // "?"' build.json)
-          internal=$(jq -r '.attributes.internalBuildState // (.[0]? .attributes.internalBuildState) // "?"' beta_detail.json 2>/dev/null || echo "?")
-          external=$(jq -r '.attributes.externalBuildState // (.[0]? .attributes.externalBuildState) // "?"' beta_detail.json 2>/dev/null || echo "?")
-          review=$(jq -r 'if type=="array" then (.[0].attributes.betaReviewState // "none") else (.attributes.betaReviewState // "none") end' review.json 2>/dev/null || echo "?")
-          groups=$(jq -r '[.[] | .attributes.name] | join(", ")' groups.json 2>/dev/null || echo "?")
+          min_os=$(jq -r '.attributes.minOsVersion // "?"' build.json)
+          review=$(jq -r 'if type=="array" then (.[0].attributes.betaReviewState // "not submitted") else (.attributes.betaReviewState // "not submitted") end' review.json 2>/dev/null || echo "?")
+
+          case "$review" in
+            APPROVED) meaning="approved — external testers can install" ;;
+            WAITING_FOR_REVIEW) meaning="queued for Apple's beta review" ;;
+            IN_REVIEW) meaning="Apple is reviewing it now" ;;
+            REJECTED) meaning="rejected — see App Store Connect for the reason" ;;
+            *) meaning="internal testers only (no external submission found)" ;;
+          esac
 
           {
             echo "## TestFlight build $VERSION"
@@ -101,16 +110,11 @@ jobs:
             echo "| Build id | \`$BUILD_ID\` |"
             echo "| Uploaded | $uploaded |"
             echo "| Processing state | **$processing** |"
-            echo "| Internal build state | **$internal** |"
-            echo "| External build state | **$external** |"
-            echo "| Beta review state | **$review** |"
+            echo "| Beta review state | **$review** — $meaning |"
+            echo "| Min OS | $min_os |"
             echo "| Expired | $expired |"
-            echo "| Beta groups on the app | $groups |"
-            echo
-            echo "_External states: READY_FOR_BETA_SUBMISSION → WAITING_FOR_BETA_REVIEW → IN_BETA_REVIEW → IN_BETA_TESTING (approved) / BETA_REJECTED._"
           } | tee -a "$GITHUB_STEP_SUMMARY"
 
           echo
           echo "=== raw: build ==="; cat build.json
-          echo "=== raw: beta detail ==="; cat beta_detail.json
           echo "=== raw: review submissions ==="; cat review.json
