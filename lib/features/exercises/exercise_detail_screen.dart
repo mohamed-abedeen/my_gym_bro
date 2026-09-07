@@ -2,10 +2,12 @@ import 'dart:async';
 import 'dart:math' as math;
 
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:flutter/foundation.dart' show listEquals;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:intl/intl.dart';
+// `show DateFormat` keeps intl's own TextDirection from shadowing Flutter's.
+import 'package:intl/intl.dart' show DateFormat;
 import 'package:my_gym_bro/core/database/app_database.dart';
 import 'package:my_gym_bro/core/database/daos/session_dao.dart';
 import 'package:my_gym_bro/core/router/app_router.dart';
