@@ -838,5 +838,43 @@
   "importCodeTitle": "Pega un enlace o código",
   "importCodeHint": "mygymbro.app/s/…",
   "importCodeInvalid": "Eso no parece un enlace para compartir.",
-  "importCodeOpen": "Abrir"
+  "importCodeOpen": "Abrir",
+  "statusTonnageTitle": "Tonelaje total",
+  "statusRepsWeightTitle": "Reps vs peso · mensual",
+  "statusCaloriesTitle": "Calorías",
+  "statusRadarTitle": "Equilibrio muscular · esta semana",
+  "legendNextMilestone": "Hasta los próximos 5K",
+  "legendWeeklyGoal": "Meta semanal",
+  "statusUnlocksTitle": "Se desbloquea al entrenar",
+  "unlockTonnage": "Tonelaje total y reps vs peso",
+  "unlockTonnageHint": "Tras 2 sesiones registradas",
+  "unlockProgress": "Progreso por ejercicio",
+  "unlockProgressHint": "Registra el mismo ejercicio dos veces",
+  "unlockRings": "Anillos de calorías",
+  "unlockRingsHint": "Tras tu primera quema",
+  "weeklyCardHint": "Termina un entrenamiento y la barra de hoy se llenará.",
+  "radarEmptyHint": "Tus series de esta semana llenan la forma verde. La meta es de 12–20 series por grupo.",
+  "reportSessionsCount": "{count, plural, =1{1 sesión} other{{count} sesiones}}",
+  "@reportSessionsCount": {
+    "placeholders": {
+      "count": { "type": "int" }
+    }
+  },
+  "reportRestCounts": "Descansar cuenta. Tu última sesión: {day}.",
+  "reportOpenDay": "Abrir {day}",
+  "reportWeekSoFar": "Esta semana hasta ahora",
+  "reportRestDay": "Día de descanso",
+  "reportUpcoming": "Próximamente",
+  "splitNextUp": "Siguiente · Día {n}",
+  "splitPlanned": "planificados",
+  "splitEstimated": "estimado",
+  "splitOpen": "Abrir",
+  "splitRestDaysCount": "{count, plural, =1{1 día de descanso} other{{count} días de descanso}}",
+  "@splitRestDaysCount": {
+    "placeholders": {
+      "count": { "type": "int" }
+    }
+  },
+  "splitReorderHint": "Mantén para reordenar",
+  "splitAddRestDay": "Añadir día de descanso"
 }

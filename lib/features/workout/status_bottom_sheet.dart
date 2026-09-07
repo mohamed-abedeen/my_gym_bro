@@ -25,14 +25,14 @@ void showStatusBottomSheet(BuildContext context) {
   );
 }
 
-class _StatusSheet extends StatefulWidget {
+class _StatusSheet extends ConsumerStatefulWidget {
   const _StatusSheet();
 
   @override
-  State<_StatusSheet> createState() => _StatusSheetState();
+  ConsumerState<_StatusSheet> createState() => _StatusSheetState();
 }
 
-class _StatusSheetState extends State<_StatusSheet> {
+class _StatusSheetState extends ConsumerState<_StatusSheet> {
   static const _initialSize = 0.85;
 
   /// 0 = resting sheet (cards on a panel), 1 = expanded to full screen
@@ -47,6 +47,16 @@ class _StatusSheetState extends State<_StatusSheet> {
     // padding from its subtree, but the raw status-bar inset is still
     // needed once the sheet covers the whole screen.
     final topPad = MediaQuery.viewPaddingOf(context).top;
+
+    // Section availability — the same conditions each section uses to hide
+    // itself — drives the "unlocks as you train" rows under the charts, so a
+    // new user sees what's coming instead of a half-empty sheet.
+    final lifetime = ref.watch(lifetimeChartDataProvider).asData?.value;
+    final hasTonnage = (lifetime?.cumulativeVolume.length ?? 0) >= 2;
+    final hasProgress =
+        ref.watch(chartableExercisesProvider).asData?.value.isNotEmpty ??
+        false;
+    final hasRings = (lifetime?.totalCalories ?? 0) > 0;
 
     return NotificationListener<DraggableScrollableNotification>(
       onNotification: (n) {
@@ -184,11 +194,17 @@ class _StatusSheetState extends State<_StatusSheet> {
                         ),
                       ),
                       // Each section brings its own top spacing so a hidden
-                      // one leaves no gap.
+                      // one leaves no gap; hidden ones surface as unlock rows.
                       _TonnageSection(l10n: l10n),
                       _RepsWeightSection(l10n: l10n),
                       _ExerciseProgressSection(l10n: l10n),
                       _RingsSection(l10n: l10n),
+                      _UnlocksSection(
+                        l10n: l10n,
+                        showTonnage: !hasTonnage,
+                        showProgress: !hasProgress,
+                        showRings: !hasRings,
+                      ),
                     ],
                   ),
                 ),
@@ -293,46 +309,76 @@ class _WeeklyReportSection extends ConsumerWidget {
         ? l10n.statusKcalProgress(burned, goal.round())
         : l10n.statusKcalNoGoal(burned);
 
+    // Footer: sessions + date range, or a nudge while the week is empty.
+    final weekEmpty = burned <= 0;
+    final sessions = days.where((d) => d > 0).length;
+    final stripDays = strip.asData?.value;
+    final rangeFmt = DateFormat.MMMEd(locale.languageCode);
+    final range = stripDays == null || stripDays.isEmpty
+        ? null
+        : '${rangeFmt.format(stripDays.first.date)} – '
+              '${rangeFmt.format(stripDays.last.date)}';
+    final footer = weekEmpty
+        ? l10n.weeklyCardHint
+        : range == null
+        ? l10n.reportSessionsCount(sessions)
+        : '${l10n.reportSessionsCount(sessions)} · $range';
+
     return Padding(
       padding: EdgeInsets.symmetric(horizontal: 4.w),
       child: Row(
         children: [
-          // Left: label + kcal progress
+          // Left: label + kcal progress + footer. Same height as the bars so
+          // the footer bottom-aligns with their day labels.
           Expanded(
             flex: 5,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  children: [
-                    Flexible(
-                      child: Text(
-                        l10n.weeklyReports,
-                        style: TextStyle(
-                          color: colors.textPrimary,
-                          fontSize: 14.sp,
-                          fontWeight: FontWeight.w700,
+            child: SizedBox(
+              height: 140.h,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Flexible(
+                        child: Text(
+                          l10n.weeklyReports,
+                          style: TextStyle(
+                            color: colors.textPrimary,
+                            fontSize: 14.sp,
+                            fontWeight: FontWeight.w700,
+                          ),
                         ),
                       ),
-                    ),
-                    SizedBox(width: 4.w),
-                    Icon(
-                      Icons.arrow_forward_rounded,
-                      color: colors.textPrimary,
-                      size: 14.sp,
-                    ),
-                  ],
-                ),
-                SizedBox(height: 4.h),
-                Text(
-                  kcalText,
-                  style: TextStyle(
-                    color: colors.accent,
-                    fontSize: 16.sp,
-                    fontWeight: FontWeight.w800,
+                      SizedBox(width: 4.w),
+                      Icon(
+                        Icons.arrow_forward_rounded,
+                        color: colors.textPrimary,
+                        size: 14.sp,
+                      ),
+                    ],
                   ),
-                ),
-              ],
+                  SizedBox(height: 4.h),
+                  Text(
+                    kcalText,
+                    style: TextStyle(
+                      color: colors.accent,
+                      fontSize: 16.sp,
+                      fontWeight: FontWeight.w800,
+                    ),
+                  ),
+                  const Spacer(),
+                  Text(
+                    footer,
+                    maxLines: 3,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                      color: colors.textSecondary,
+                      fontSize: 11.sp,
+                      height: 1.4,
+                    ),
+                  ),
+                ],
+              ),
             ),
           ),
           SizedBox(width: 12.w),
@@ -351,6 +397,7 @@ class _WeeklyReportSection extends ConsumerWidget {
                       max: days.reduce(math.max),
                       label: strip.asData?.value[i].abbreviation ?? '',
                       isToday: strip.asData?.value[i].isToday ?? false,
+                      nub: !weekEmpty,
                     ),
                   ],
                 ],
@@ -369,11 +416,16 @@ class _DayBar extends StatelessWidget {
     required this.max,
     required this.label,
     required this.isToday,
+    required this.nub,
   });
   final int value;
   final int max;
   final String label;
   final bool isToday;
+
+  /// Draw a 4 px stub on zero days. Off while the whole week is empty so the
+  /// card reads as bare tracks (the mock's first-week state).
+  final bool nub;
 
   @override
   Widget build(BuildContext context) {
@@ -381,7 +433,7 @@ class _DayBar extends StatelessWidget {
     final trackHeight = 100.0.h;
     final fraction = max <= 0 ? 0.0 : (value / max).clamp(0.0, 1.0);
     final fillHeight = value <= 0
-        ? 4.0.h
+        ? (nub ? 4.0.h : 0.0)
         : math.max(6.0.h, trackHeight * fraction);
 
     final bar = SizedBox(
@@ -481,32 +533,112 @@ class _MuscleRadarSection extends ConsumerWidget {
             .clamp(0.0, 1.15),
     ];
 
+    // No sets yet: dim the chart to the target outline and explain it.
+    final isEmpty = achieved.every((v) => v <= 0);
+    final hairline = Theme.of(context).brightness == Brightness.dark
+        ? AppGlass.borderDark
+        : AppGlass.borderLight;
+
     return Column(
       children: [
-        SizedBox(
-          height: 290.h,
-          width: double.infinity,
-          child: CustomPaint(
-            painter: _RadarPainter(
-              labels: labels,
-              achieved: achieved,
-              gridColor: colors.textSecondary.withValues(alpha: 0.25),
-              labelColor: colors.textPrimary,
-              targetColor: colors.accent,
-              achievedColor: colors.trendPositive,
-              labelSize: 11.sp,
-            ),
+        Padding(
+          padding: EdgeInsets.fromLTRB(4.w, 0, 4.w, 6.h),
+          child: _SectionTitleRow(
+            title: l10n.statusRadarTitle,
+            legend: [
+              _LegendDot(color: colors.accent, label: l10n.target),
+              _LegendDot(color: colors.trendPositive, label: l10n.achieved),
+            ],
           ),
         ),
-        SizedBox(height: 14.h),
-        Row(
-          mainAxisAlignment: MainAxisAlignment.center,
+        Stack(
+          alignment: Alignment.center,
           children: [
-            _LegendDot(color: colors.accent, label: l10n.target),
-            SizedBox(width: 18.w),
-            _LegendDot(color: colors.trendPositive, label: l10n.achieved),
+            Opacity(
+              opacity: isEmpty ? 0.55 : 1,
+              child: SizedBox(
+                height: 270.h,
+                width: double.infinity,
+                child: CustomPaint(
+                  painter: _RadarPainter(
+                    labels: labels,
+                    achieved: achieved,
+                    showAchieved: !isEmpty,
+                    gridColor: colors.textSecondary.withValues(alpha: 0.25),
+                    labelColor: colors.textPrimary,
+                    targetColor: colors.accent,
+                    achievedColor: colors.trendPositive,
+                    labelSize: 11.sp,
+                  ),
+                ),
+              ),
+            ),
+            if (isEmpty)
+              Container(
+                width: 190.w,
+                padding: EdgeInsets.symmetric(horizontal: 14.w, vertical: 10.h),
+                decoration: BoxDecoration(
+                  color: colors.panelBackground.withValues(alpha: 0.92),
+                  borderRadius: BorderRadius.circular(16.r),
+                  border: Border.all(color: hairline, width: 0.7),
+                ),
+                child: Text(
+                  l10n.radarEmptyHint,
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    color: colors.textPrimary,
+                    fontSize: 12.sp,
+                    fontWeight: FontWeight.w700,
+                    height: 1.4,
+                  ),
+                ),
+              ),
           ],
         ),
+      ],
+    );
+  }
+}
+
+/// Uppercase section eyebrow — the `statusProgressTitle` treatment, now
+/// shared by every chart section so full-bleed charts are identifiable.
+class _Eyebrow extends StatelessWidget {
+  const _Eyebrow(this.text);
+  final String text;
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = AppColors.of(context);
+    return Text(
+      text.toUpperCase(),
+      maxLines: 1,
+      overflow: TextOverflow.ellipsis,
+      style: TextStyle(
+        color: colors.textSecondary,
+        fontSize: 12.sp,
+        fontWeight: FontWeight.w800,
+        letterSpacing: 0.08 * 12.sp,
+      ),
+    );
+  }
+}
+
+/// Eyebrow on the left, legend dots (14 px apart) on the right — the title
+/// row above each chart, replacing the labels once painted onto the lines.
+class _SectionTitleRow extends StatelessWidget {
+  const _SectionTitleRow({required this.title, this.legend = const []});
+  final String title;
+  final List<Widget> legend;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: [
+        Expanded(child: _Eyebrow(title)),
+        for (var i = 0; i < legend.length; i++) ...[
+          SizedBox(width: i == 0 ? 12.w : 14.w),
+          legend[i],
+        ],
       ],
     );
   }
@@ -547,6 +679,7 @@ class _RadarPainter extends CustomPainter {
     required this.targetColor,
     required this.achievedColor,
     required this.labelSize,
+    required this.showAchieved,
   });
 
   final List<String> labels;
@@ -556,6 +689,9 @@ class _RadarPainter extends CustomPainter {
   final Color targetColor;
   final Color achievedColor;
   final double labelSize;
+
+  /// False for the empty state: target polygon only.
+  final bool showAchieved;
 
   static const _maxFraction = 1.15;
 
@@ -604,7 +740,6 @@ class _RadarPainter extends CustomPainter {
     // Target — regular polygon at 1.0 (each axis is normalized to its own
     // weekly target).
     final targetPath = _polygon(center, radius, List.filled(n, 1));
-    final achievedPath = _polygon(center, radius, achieved);
     canvas
       ..drawPath(
         targetPath,
@@ -616,19 +751,24 @@ class _RadarPainter extends CustomPainter {
           ..style = PaintingStyle.stroke
           ..strokeWidth = 2
           ..color = targetColor,
-      )
-      // Achieved.
-      ..drawPath(
-        achievedPath,
-        Paint()..color = achievedColor.withValues(alpha: 0.25),
-      )
-      ..drawPath(
-        achievedPath,
-        Paint()
-          ..style = PaintingStyle.stroke
-          ..strokeWidth = 2
-          ..color = achievedColor,
       );
+
+    // Achieved.
+    if (showAchieved) {
+      final achievedPath = _polygon(center, radius, achieved);
+      canvas
+        ..drawPath(
+          achievedPath,
+          Paint()..color = achievedColor.withValues(alpha: 0.25),
+        )
+        ..drawPath(
+          achievedPath,
+          Paint()
+            ..style = PaintingStyle.stroke
+            ..strokeWidth = 2
+            ..color = achievedColor,
+        );
+    }
 
     // Axis labels just outside the outer ring.
     for (var i = 0; i < n; i++) {
@@ -649,7 +789,9 @@ class _RadarPainter extends CustomPainter {
 
   @override
   bool shouldRepaint(_RadarPainter old) =>
-      old.achieved != achieved || old.labels != labels;
+      old.achieved != achieved ||
+      old.labels != labels ||
+      old.showAchieved != showAchieved;
 }
 
 // ── Lifetime tonnage — full-bleed cumulative area chart ──────────────
@@ -676,7 +818,14 @@ class _TonnageSection extends ConsumerWidget {
 
     return Column(
       children: [
-        SizedBox(height: 28.h),
+        SizedBox(height: 48.h),
+        Padding(
+          padding: EdgeInsets.symmetric(
+            horizontal: AppSizes.contentPaddingH.w,
+          ),
+          child: _SectionTitleRow(title: l10n.statusTonnageTitle),
+        ),
+        SizedBox(height: 10.h),
         // Edge-to-edge, like the mock.
         SizedBox(
           height: 160.h,
@@ -780,7 +929,15 @@ class _RepsWeightSection extends ConsumerWidget {
       padding: EdgeInsets.symmetric(horizontal: AppSizes.contentPaddingH.w),
       child: Column(
         children: [
-          SizedBox(height: 56.h),
+          SizedBox(height: 48.h),
+          _SectionTitleRow(
+            title: l10n.statusRepsWeightTitle,
+            legend: [
+              _LegendDot(color: colors.accent, label: l10n.reps),
+              _LegendDot(color: colors.trendPositive, label: l10n.weight),
+            ],
+          ),
+          SizedBox(height: 12.h),
           SizedBox(
             height: 200.h,
             width: double.infinity,
@@ -788,13 +945,12 @@ class _RepsWeightSection extends ConsumerWidget {
               painter: _DualLinePainter(
                 a: [for (final m in monthly) m.reps.toDouble()],
                 b: [for (final m in monthly) m.volume],
-                labelA: l10n.reps,
-                labelB: l10n.weight,
                 months: [for (final m in monthly) monthFmt.format(m.month)],
                 colorA: colors.accent,
                 colorB: colors.trendPositive,
                 gridColor: colors.textSecondary.withValues(alpha: 0.25),
-                axisTextColor: colors.textPrimary,
+                // Axis numbers read as axis, not data.
+                axisTextColor: colors.textSecondary,
                 monthTextColor: colors.textSecondary,
                 textSize: 10.sp,
               ),
@@ -802,7 +958,7 @@ class _RepsWeightSection extends ConsumerWidget {
           ),
           // Always end with a stat line under the chart, like the mock:
           // growth when there is any, otherwise the all-time rep count.
-          SizedBox(height: 20.h),
+          SizedBox(height: 16.h),
           Padding(
             padding: EdgeInsets.symmetric(horizontal: 12.w),
             child: pct != null && pct > 0
@@ -822,15 +978,14 @@ class _RepsWeightSection extends ConsumerWidget {
 }
 
 /// Mock-style dual line chart: y-axis numbers on the left (scaled to the
-/// reps series), dashed gridlines, gradient fill under the reps line, each
-/// series labeled above its own peak, month labels under the points. The
-/// weight series is normalized to its own max so both lines stay readable.
+/// reps series), dashed gridlines, gradient fill under the reps line, month
+/// labels under the points. The series legend lives in the section title
+/// row, not on the chart. The weight series is normalized to its own max so
+/// both lines stay readable.
 class _DualLinePainter extends CustomPainter {
   _DualLinePainter({
     required this.a,
     required this.b,
-    required this.labelA,
-    required this.labelB,
     required this.months,
     required this.colorA,
     required this.colorB,
@@ -842,8 +997,6 @@ class _DualLinePainter extends CustomPainter {
 
   final List<double> a; // reps — owns the y-axis
   final List<double> b; // volume — own scale
-  final String labelA;
-  final String labelB;
   final List<String> months;
   final Color colorA;
   final Color colorB;
@@ -852,14 +1005,10 @@ class _DualLinePainter extends CustomPainter {
   final Color monthTextColor;
   final double textSize;
 
-  TextPainter _text(String s, Color color, {FontWeight? weight}) => TextPainter(
+  TextPainter _text(String s, Color color) => TextPainter(
     text: TextSpan(
       text: s,
-      style: TextStyle(
-        color: color,
-        fontSize: textSize,
-        fontWeight: weight ?? FontWeight.w400,
-      ),
+      style: TextStyle(color: color, fontSize: textSize),
     ),
     textDirection: TextDirection.ltr,
   )..layout();
@@ -871,12 +1020,12 @@ class _DualLinePainter extends CustomPainter {
     // the labels read 0/100/200/... like the mock.
     final axisMax = math.max(4, (maxA / 100).ceilToDouble() * 100).toDouble();
 
-    // Reserve gutters: left for axis numbers, bottom for months, top for
-    // the series labels.
+    // Reserve gutters: left for axis numbers, bottom for months, and half a
+    // label of headroom so the top axis number isn't clipped.
     final leftGutter =
         _text(groupDigits('${axisMax.round()}'), axisTextColor).width + 10;
     final bottomGutter = textSize + 10;
-    final topPad = textSize + 10;
+    final topPad = textSize / 2 + 4;
     final chart = Rect.fromLTRB(
       leftGutter,
       topPad,
@@ -944,28 +1093,6 @@ class _DualLinePainter extends CustomPainter {
       // Weight line.
       ..drawPath(pathOf(yB), stroke(colorB));
 
-    // Series labels above each line's peak.
-    void peakLabel(
-      String label,
-      Color color,
-      double Function(int) yOf,
-      List<double> values,
-    ) {
-      var peak = 0;
-      for (var i = 1; i < values.length; i++) {
-        if (values[i] > values[peak]) peak = i;
-      }
-      final tp = _text(label, color, weight: FontWeight.w700);
-      final x = (xAt(peak) - tp.width / 2).clamp(
-        chart.left,
-        chart.right - tp.width,
-      );
-      tp.paint(canvas, Offset(x, yOf(peak) - tp.height - 6));
-    }
-
-    peakLabel(labelA, colorA, yA, a);
-    peakLabel(labelB, colorB, yB, b);
-
     // Month labels under the points.
     for (var i = 0; i < months.length; i++) {
       final tp = _text(months[i], monthTextColor);
@@ -1022,52 +1149,68 @@ class _RingsSection extends ConsumerWidget {
               ? '${dropped.round()}%'
               : '${dropped.toStringAsFixed(1)}%');
 
-    return Padding(
-      padding: EdgeInsets.symmetric(
-        horizontal: (AppSizes.contentPaddingH + 12).w,
-      ),
-      child: Column(
-        children: [
-          SizedBox(height: 56.h),
-          Center(
-            child: SizedBox(
-              width: 200.w,
-              height: 200.w,
-              child: CustomPaint(
-                painter: _RingsPainter(
-                  outerFraction: outer,
-                  innerFraction: inner,
-                  outerColor: colors.accent,
-                  innerColor: colors.trendPositive,
-                  trackColor: colors.textSecondary.withValues(alpha: 0.15),
-                ),
-                child: Center(
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Text(
-                        totalLabel,
-                        style: TextStyle(
-                          color: colors.textPrimary,
-                          fontSize: 30.sp,
-                          fontWeight: FontWeight.w800,
-                        ),
+    return Column(
+      children: [
+        SizedBox(height: 48.h),
+        Padding(
+          padding: EdgeInsets.symmetric(
+            horizontal: AppSizes.contentPaddingH.w,
+          ),
+          child: _SectionTitleRow(
+            title: l10n.statusCaloriesTitle,
+            legend: [
+              _LegendDot(color: colors.accent, label: l10n.legendNextMilestone),
+              _LegendDot(
+                color: colors.trendPositive,
+                label: l10n.legendWeeklyGoal,
+              ),
+            ],
+          ),
+        ),
+        SizedBox(height: 12.h),
+        Center(
+          child: SizedBox(
+            width: 200.w,
+            height: 200.w,
+            child: CustomPaint(
+              painter: _RingsPainter(
+                outerFraction: outer,
+                innerFraction: inner,
+                outerColor: colors.accent,
+                innerColor: colors.trendPositive,
+                trackColor: colors.textSecondary.withValues(alpha: 0.15),
+              ),
+              child: Center(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      totalLabel,
+                      style: TextStyle(
+                        color: colors.textPrimary,
+                        fontSize: 30.sp,
+                        fontWeight: FontWeight.w800,
                       ),
-                      Text(
-                        l10n.calBurned,
-                        style: TextStyle(
-                          color: colors.textSecondary,
-                          fontSize: 10.sp,
-                        ),
+                    ),
+                    Text(
+                      l10n.calBurned,
+                      style: TextStyle(
+                        color: colors.textSecondary,
+                        fontSize: 10.sp,
                       ),
-                    ],
-                  ),
+                    ),
+                  ],
                 ),
               ),
             ),
           ),
-          SizedBox(height: 20.h),
-          _Caption(
+        ),
+        SizedBox(height: 16.h),
+        Padding(
+          padding: EdgeInsets.symmetric(
+            horizontal: (AppSizes.contentPaddingH + 12).w,
+          ),
+          child: _Caption(
             text: droppedLabel != null
                 ? l10n.statusCaloriesBodyFat(totalLabel, droppedLabel)
                 : l10n.statusCaloriesBurnedTotal(totalLabel),
@@ -1076,8 +1219,8 @@ class _RingsSection extends ConsumerWidget {
               if (droppedLabel != null) droppedLabel: colors.trendPositive,
             },
           ),
-        ],
-      ),
+        ),
+      ],
     );
   }
 }
@@ -1132,6 +1275,143 @@ class _RingsPainter extends CustomPainter {
       old.outerFraction != outerFraction || old.innerFraction != innerFraction;
 }
 
+// ── Unlocks — placeholders for sections that need more data ──────────
+// One dashed row per hidden chart so a new user sees what's coming instead
+// of a half-empty sheet; each row goes away as its section becomes available.
+
+class _UnlocksSection extends StatelessWidget {
+  const _UnlocksSection({
+    required this.l10n,
+    required this.showTonnage,
+    required this.showProgress,
+    required this.showRings,
+  });
+  final AppLocalizations l10n;
+  final bool showTonnage;
+  final bool showProgress;
+  final bool showRings;
+
+  @override
+  Widget build(BuildContext context) {
+    final rows = <(IconData, String, String)>[
+      if (showTonnage)
+        (Icons.show_chart_rounded, l10n.unlockTonnage, l10n.unlockTonnageHint),
+      if (showProgress)
+        (Icons.timeline_rounded, l10n.unlockProgress, l10n.unlockProgressHint),
+      if (showRings)
+        (
+          Icons.local_fire_department_rounded,
+          l10n.unlockRings,
+          l10n.unlockRingsHint,
+        ),
+    ];
+    if (rows.isEmpty) return const SizedBox.shrink();
+
+    return Padding(
+      padding: EdgeInsets.symmetric(horizontal: AppSizes.contentPaddingH.w),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          // Right under the cards while nothing has unlocked (card gap);
+          // a full section gap once it follows a chart.
+          SizedBox(height: showTonnage ? 24.h : 48.h),
+          _Eyebrow(l10n.statusUnlocksTitle),
+          for (final (icon, title, hint) in rows) ...[
+            SizedBox(height: 10.h),
+            _UnlockRow(icon: icon, title: title, hint: hint),
+          ],
+        ],
+      ),
+    );
+  }
+}
+
+class _UnlockRow extends StatelessWidget {
+  const _UnlockRow({
+    required this.icon,
+    required this.title,
+    required this.hint,
+  });
+  final IconData icon;
+  final String title;
+  final String hint;
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = AppColors.of(context);
+    return CustomPaint(
+      painter: _DashedBorderPainter(color: colors.separator, radius: 18.r),
+      child: Padding(
+        padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 14.h),
+        child: Row(
+          children: [
+            Icon(icon, color: colors.textSecondary, size: 22.sp),
+            SizedBox(width: 14.w),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    title,
+                    style: TextStyle(
+                      color: colors.textPrimary,
+                      fontSize: 13.sp,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                  SizedBox(height: 2.h),
+                  Text(
+                    hint,
+                    style: TextStyle(
+                      color: colors.textSecondary,
+                      fontSize: 12.sp,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// 1 px dashed rounded outline — Flutter's [Border] has no dashed style.
+class _DashedBorderPainter extends CustomPainter {
+  _DashedBorderPainter({required this.color, required this.radius});
+  final Color color;
+  final double radius;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 1
+      ..color = color;
+    // Inset half the stroke so the line isn't clipped at the edges.
+    final rect = (Offset.zero & size).deflate(0.5);
+    final path = Path()
+      ..addRRect(RRect.fromRectAndRadius(rect, Radius.circular(radius)));
+    const dash = 5.0;
+    const gap = 4.0;
+    for (final metric in path.computeMetrics()) {
+      var d = 0.0;
+      while (d < metric.length) {
+        canvas.drawPath(
+          metric.extractPath(d, math.min(d + dash, metric.length)),
+          paint,
+        );
+        d += dash + gap;
+      }
+    }
+  }
+
+  @override
+  bool shouldRepaint(_DashedBorderPainter old) =>
+      old.color != color || old.radius != radius;
+}
+
 // ── Exercise Progress — identical past sessions compared (PRD §5.12) ─
 // Chip-pick one of the most-logged exercises, toggle the metric
 // (volume / top set / est. 1RM), and see its per-session trend.
@@ -1184,16 +1464,8 @@ class _ExerciseProgressSectionState
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          SizedBox(height: 56.h),
-          Text(
-            l10n.statusProgressTitle.toUpperCase(),
-            style: TextStyle(
-              color: colors.textSecondary,
-              fontSize: 12.sp,
-              fontWeight: FontWeight.w800,
-              letterSpacing: 0.08 * 12.sp,
-            ),
-          ),
+          SizedBox(height: 48.h),
+          _Eyebrow(l10n.statusProgressTitle),
           SizedBox(height: 12.h),
           SingleChildScrollView(
             scrollDirection: Axis.horizontal,

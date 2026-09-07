@@ -4493,6 +4493,174 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Open'**
   String get importCodeOpen;
+
+  /// No description provided for @statusTonnageTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Lifetime tonnage'**
+  String get statusTonnageTitle;
+
+  /// No description provided for @statusRepsWeightTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Reps vs weight · monthly'**
+  String get statusRepsWeightTitle;
+
+  /// No description provided for @statusCaloriesTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Calories'**
+  String get statusCaloriesTitle;
+
+  /// No description provided for @statusRadarTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Muscle balance · this week'**
+  String get statusRadarTitle;
+
+  /// No description provided for @legendNextMilestone.
+  ///
+  /// In en, this message translates to:
+  /// **'To next 5K'**
+  String get legendNextMilestone;
+
+  /// No description provided for @legendWeeklyGoal.
+  ///
+  /// In en, this message translates to:
+  /// **'Weekly goal'**
+  String get legendWeeklyGoal;
+
+  /// No description provided for @statusUnlocksTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Unlocks as you train'**
+  String get statusUnlocksTitle;
+
+  /// No description provided for @unlockTonnage.
+  ///
+  /// In en, this message translates to:
+  /// **'Lifetime tonnage & reps vs weight'**
+  String get unlockTonnage;
+
+  /// No description provided for @unlockTonnageHint.
+  ///
+  /// In en, this message translates to:
+  /// **'After 2 logged sessions'**
+  String get unlockTonnageHint;
+
+  /// No description provided for @unlockProgress.
+  ///
+  /// In en, this message translates to:
+  /// **'Exercise progress'**
+  String get unlockProgress;
+
+  /// No description provided for @unlockProgressHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Log the same exercise twice'**
+  String get unlockProgressHint;
+
+  /// No description provided for @unlockRings.
+  ///
+  /// In en, this message translates to:
+  /// **'Calorie rings'**
+  String get unlockRings;
+
+  /// No description provided for @unlockRingsHint.
+  ///
+  /// In en, this message translates to:
+  /// **'After your first burn'**
+  String get unlockRingsHint;
+
+  /// No description provided for @weeklyCardHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Finish a workout and today\'s bar fills in.'**
+  String get weeklyCardHint;
+
+  /// No description provided for @radarEmptyHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Your sets this week fill the green shape. Target is 12–20 sets per group.'**
+  String get radarEmptyHint;
+
+  /// No description provided for @reportSessionsCount.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 session} other{{count} sessions}}'**
+  String reportSessionsCount(int count);
+
+  /// No description provided for @reportRestCounts.
+  ///
+  /// In en, this message translates to:
+  /// **'Rest counts. Your last session was {day}.'**
+  String reportRestCounts(String day);
+
+  /// No description provided for @reportOpenDay.
+  ///
+  /// In en, this message translates to:
+  /// **'Open {day}'**
+  String reportOpenDay(String day);
+
+  /// No description provided for @reportWeekSoFar.
+  ///
+  /// In en, this message translates to:
+  /// **'This week so far'**
+  String get reportWeekSoFar;
+
+  /// No description provided for @reportRestDay.
+  ///
+  /// In en, this message translates to:
+  /// **'Rest day'**
+  String get reportRestDay;
+
+  /// No description provided for @reportUpcoming.
+  ///
+  /// In en, this message translates to:
+  /// **'Upcoming'**
+  String get reportUpcoming;
+
+  /// No description provided for @splitNextUp.
+  ///
+  /// In en, this message translates to:
+  /// **'Next up · Day {n}'**
+  String splitNextUp(int n);
+
+  /// No description provided for @splitPlanned.
+  ///
+  /// In en, this message translates to:
+  /// **'planned'**
+  String get splitPlanned;
+
+  /// No description provided for @splitEstimated.
+  ///
+  /// In en, this message translates to:
+  /// **'estimated'**
+  String get splitEstimated;
+
+  /// No description provided for @splitOpen.
+  ///
+  /// In en, this message translates to:
+  /// **'Open'**
+  String get splitOpen;
+
+  /// No description provided for @splitRestDaysCount.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 rest day} other{{count} rest days}}'**
+  String splitRestDaysCount(int count);
+
+  /// No description provided for @splitReorderHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Hold to reorder'**
+  String get splitReorderHint;
+
+  /// No description provided for @splitAddRestDay.
+  ///
+  /// In en, this message translates to:
+  /// **'Add rest day'**
+  String get splitAddRestDay;
 }
 
 class _AppLocalizationsDelegate

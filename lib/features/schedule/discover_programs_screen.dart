@@ -1,7 +1,5 @@
 ﻿import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:go_router/go_router.dart';
-import 'package:my_gym_bro/core/router/app_router.dart';
 import 'package:my_gym_bro/features/schedule/premade_program_card.dart';
 import 'package:my_gym_bro/features/schedule/premade_programs.dart';
 import 'package:my_gym_bro/features/schedule/premade_programs_screen.dart';
@@ -11,8 +9,8 @@ import 'package:my_gym_bro/l10n/app_localizations.dart';
 import 'package:my_gym_bro/shared/constants.dart';
 import 'package:my_gym_bro/shared/responsive.dart';
 
-/// Discover Programs — featured picks from the premade catalog with a link
-/// into the full library. Level/category chips filter the whole catalog.
+/// Discover Programs — the whole premade catalog as cards; level/category
+/// chips narrow it down.
 class DiscoverProgramsScreen extends ConsumerStatefulWidget {
   const DiscoverProgramsScreen({super.key});
 
@@ -28,28 +26,9 @@ class _DiscoverProgramsScreenState
 
   bool get _filtersActive => _level != null || _category != null;
 
-  /// One program per level (beginner → advanced), topped up to three.
-  static List<PremadeProgram> _featured() {
-    final picks = <PremadeProgram>[];
-    for (final level in PremadeLevel.values) {
-      for (final p in premadePrograms) {
-        if (p.level == level) {
-          picks.add(p);
-          break;
-        }
-      }
-    }
-    for (final p in premadePrograms) {
-      if (picks.length >= 3) break;
-      if (!picks.contains(p)) picks.add(p);
-    }
-    return picks.take(3).toList();
-  }
-
-  /// Featured picks by default; matches from the full catalog once a
-  /// filter is set.
+  /// The whole catalog, narrowed by whichever filters are set.
   List<PremadeProgram> _visiblePrograms() {
-    if (!_filtersActive) return _featured();
+    if (!_filtersActive) return premadePrograms;
     return premadePrograms
         .where(
           (p) =>
@@ -203,7 +182,7 @@ class _DiscoverProgramsScreenState
                 ),
               ),
               SizedBox(height: 18.h),
-              // ── Program cards — featured picks, or filtered results ──
+              // ── Program cards — the whole catalog, or filtered results ──
               Padding(
                 padding: EdgeInsets.symmetric(
                   horizontal: AppSizes.contentPaddingH.w,
@@ -241,31 +220,6 @@ class _DiscoverProgramsScreenState
                       SizedBox(height: 14.h),
                     ],
                   ],
-                ),
-              ),
-              // ── Show all → full premade library ──
-              Padding(
-                padding: EdgeInsets.symmetric(
-                  horizontal: AppSizes.contentPaddingH.w,
-                ),
-                child: GestureDetector(
-                  onTap: () => context.push(AppRoutes.premadePrograms),
-                  child: Container(
-                    height: 56.h,
-                    alignment: Alignment.center,
-                    decoration: BoxDecoration(
-                      color: colors.panelBackground,
-                      borderRadius: BorderRadius.circular(20.r),
-                    ),
-                    child: Text(
-                      l10n.discoverShowAll(premadePrograms.length),
-                      style: TextStyle(
-                        color: colors.accent,
-                        fontSize: 15.5.sp,
-                        fontWeight: FontWeight.w700,
-                      ),
-                    ),
-                  ),
                 ),
               ),
               SizedBox(height: 40.h),
