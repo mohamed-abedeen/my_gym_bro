@@ -66,6 +66,39 @@ class ScheduleDao extends DatabaseAccessor<AppDatabase>
   Future<int> addDay(ScheduleDaysCompanion companion) =>
       into(scheduleDays).insert(companion);
 
+  /// Append a rest day after the schedule's last day — the same shape the
+  /// builder and share importer create, so [isRestScheduleDay] holds.
+  Future<int> addRestDay(int scheduleId) async {
+    final days = await getDays(scheduleId);
+    final nextIndex = days.isEmpty ? 0 : days.last.dayIndex + 1;
+    return addDay(
+      ScheduleDaysCompanion(
+        scheduleId: Value(scheduleId),
+        dayIndex: Value(nextIndex),
+        isRestDay: const Value(true),
+        createdAt: Value(DateTime.now()),
+      ),
+    );
+  }
+
+  /// Persist a new day order: each id in [orderedDayIds] takes its list
+  /// position as `dayIndex`. One transaction, so [watchDays] never emits a
+  /// half-applied order.
+  Future<void> reorderDays(List<int> orderedDayIds) => transaction(() async {
+    final now = DateTime.now();
+    for (var i = 0; i < orderedDayIds.length; i++) {
+      await (update(scheduleDays)
+            ..where((t) => t.localId.equals(orderedDayIds[i])))
+          .write(
+            ScheduleDaysCompanion(
+              dayIndex: Value(i),
+              syncStatus: const Value('pending'),
+              updatedAt: Value(now),
+            ),
+          );
+    }
+  });
+
   /// Get exercises for a schedule day.
   Future<List<ScheduledExercise>> getExercises(int scheduleDayId) =>
       (select(scheduledExercises)

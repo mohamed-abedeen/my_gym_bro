@@ -1086,5 +1086,22 @@
   },
   "reportWeekSoFar": "This week so far",
   "reportRestDay": "Rest day",
-  "reportUpcoming": "Upcoming"
+  "reportUpcoming": "Upcoming",
+  "splitNextUp": "Next up · Day {n}",
+  "@splitNextUp": {
+    "placeholders": {
+      "n": { "type": "int" }
+    }
+  },
+  "splitPlanned": "planned",
+  "splitEstimated": "estimated",
+  "splitOpen": "Open",
+  "splitRestDaysCount": "{count, plural, =1{1 rest day} other{{count} rest days}}",
+  "@splitRestDaysCount": {
+    "placeholders": {
+      "count": { "type": "int" }
+    }
+  },
+  "splitReorderHint": "Hold to reorder",
+  "splitAddRestDay": "Add rest day"
 }

@@ -4619,6 +4619,48 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Upcoming'**
   String get reportUpcoming;
+
+  /// No description provided for @splitNextUp.
+  ///
+  /// In en, this message translates to:
+  /// **'Next up · Day {n}'**
+  String splitNextUp(int n);
+
+  /// No description provided for @splitPlanned.
+  ///
+  /// In en, this message translates to:
+  /// **'planned'**
+  String get splitPlanned;
+
+  /// No description provided for @splitEstimated.
+  ///
+  /// In en, this message translates to:
+  /// **'estimated'**
+  String get splitEstimated;
+
+  /// No description provided for @splitOpen.
+  ///
+  /// In en, this message translates to:
+  /// **'Open'**
+  String get splitOpen;
+
+  /// No description provided for @splitRestDaysCount.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 rest day} other{{count} rest days}}'**
+  String splitRestDaysCount(int count);
+
+  /// No description provided for @splitReorderHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Hold to reorder'**
+  String get splitReorderHint;
+
+  /// No description provided for @splitAddRestDay.
+  ///
+  /// In en, this message translates to:
+  /// **'Add rest day'**
+  String get splitAddRestDay;
 }
 
 class _AppLocalizationsDelegate

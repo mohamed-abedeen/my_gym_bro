@@ -864,5 +864,17 @@
   "reportOpenDay": "Abrir {day}",
   "reportWeekSoFar": "Esta semana hasta ahora",
   "reportRestDay": "Día de descanso",
-  "reportUpcoming": "Próximamente"
+  "reportUpcoming": "Próximamente",
+  "splitNextUp": "Siguiente · Día {n}",
+  "splitPlanned": "planificados",
+  "splitEstimated": "estimado",
+  "splitOpen": "Abrir",
+  "splitRestDaysCount": "{count, plural, =1{1 día de descanso} other{{count} días de descanso}}",
+  "@splitRestDaysCount": {
+    "placeholders": {
+      "count": { "type": "int" }
+    }
+  },
+  "splitReorderHint": "Mantén para reordenar",
+  "splitAddRestDay": "Añadir día de descanso"
 }

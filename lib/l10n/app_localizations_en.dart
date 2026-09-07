@@ -2507,4 +2507,35 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get reportUpcoming => 'Upcoming';
+
+  @override
+  String splitNextUp(int n) {
+    return 'Next up · Day $n';
+  }
+
+  @override
+  String get splitPlanned => 'planned';
+
+  @override
+  String get splitEstimated => 'estimated';
+
+  @override
+  String get splitOpen => 'Open';
+
+  @override
+  String splitRestDaysCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count rest days',
+      one: '1 rest day',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get splitReorderHint => 'Hold to reorder';
+
+  @override
+  String get splitAddRestDay => 'Add rest day';
 }
