@@ -1990,6 +1990,92 @@ final dayReportProvider = FutureProvider.family<DayReport, DateTime>((
   );
 });
 
+/// One trained day inside a [WeekSummary].
+class WeekDaySummary {
+  const WeekDaySummary({
+    required this.date,
+    required this.calories,
+    required this.durationSeconds,
+    required this.exerciseCount,
+  });
+  final DateTime date; // local midnight
+  final int calories;
+  final int durationSeconds;
+  final int exerciseCount;
+}
+
+/// Totals for one Monday-anchored week plus a row per trained day — the
+/// "This week so far" block on a Reports rest day. Reuses the per-day
+/// calorie maths of [dayReportProvider] so the numbers agree with it.
+class WeekSummary {
+  const WeekSummary({this.days = const []});
+  final List<WeekDaySummary> days;
+
+  int get sessions => days.length;
+  int get calories => days.fold(0, (a, d) => a + d.calories);
+  int get durationSeconds => days.fold(0, (a, d) => a + d.durationSeconds);
+}
+
+/// Week summary for the week starting at [weekStart] (pass Monday midnight).
+final weekSummaryProvider = FutureProvider.family<WeekSummary, DateTime>((
+  ref,
+  weekStart,
+) async {
+  final sessionDao = ref.watch(sessionDaoProvider);
+  final exerciseDao = ref.watch(exerciseDaoProvider);
+  final profile = await ref.watch(userProfileProvider.future);
+  final bw = profile?.bodyWeightKg ?? _kFallbackBodyWeightKg;
+
+  final monday = _dayStart(weekStart);
+  final days = <WeekDaySummary>[];
+  for (var i = 0; i < 7; i++) {
+    // Calendar arithmetic (not Duration) so DST shifts can't skew midnight.
+    final start = DateTime(monday.year, monday.month, monday.day + i);
+    final totals = await _dayExerciseTotals(
+      sessionDao,
+      exerciseDao,
+      start,
+      DateTime(start.year, start.month, start.day + 1),
+      bodyWeightKg: bw,
+      gender: profile?.gender,
+    );
+    if (totals.isEmpty) continue;
+    var calories = 0;
+    var seconds = 0;
+    for (final e in totals.values) {
+      calories += e.calories;
+      seconds += e.activeSeconds;
+    }
+    days.add(
+      WeekDaySummary(
+        date: start,
+        calories: calories,
+        durationSeconds: seconds,
+        exerciseCount: totals.length,
+      ),
+    );
+  }
+  return WeekSummary(days: days);
+});
+
+/// Most recent trained day strictly before [day] (local midnight), looking
+/// back up to a year; null when there is none. Powers the Reports rest-day
+/// "your last session was …" hint.
+final lastTrainedDayBeforeProvider =
+    FutureProvider.family<DateTime?, DateTime>((ref, day) async {
+      final to = _dayStart(day);
+      final from = DateTime(to.year - 1, to.month, to.day);
+      final sessions = await ref
+          .watch(sessionDaoProvider)
+          .getInRange(from, to);
+      DateTime? latest;
+      for (final s in sessions) {
+        final d = _dayStart(s.startedAt);
+        if (latest == null || d.isAfter(latest)) latest = d;
+      }
+      return latest;
+    });
+
 /// Distinct local calendar days (as millisecondsSinceEpoch of midnight) with
 /// at least one completed session in [range.from, range.to). Powers the
 /// week-picker calendar's "trained week" dots.

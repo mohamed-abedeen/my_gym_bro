@@ -1050,5 +1050,41 @@
   "importCodeTitle": "Paste a share link or code",
   "importCodeHint": "mygymbro.app/s/…",
   "importCodeInvalid": "That doesn't look like a share link.",
-  "importCodeOpen": "Open"
+  "importCodeOpen": "Open",
+  "statusTonnageTitle": "Lifetime tonnage",
+  "statusRepsWeightTitle": "Reps vs weight · monthly",
+  "statusCaloriesTitle": "Calories",
+  "statusRadarTitle": "Muscle balance · this week",
+  "legendNextMilestone": "To next 5K",
+  "legendWeeklyGoal": "Weekly goal",
+  "statusUnlocksTitle": "Unlocks as you train",
+  "unlockTonnage": "Lifetime tonnage & reps vs weight",
+  "unlockTonnageHint": "After 2 logged sessions",
+  "unlockProgress": "Exercise progress",
+  "unlockProgressHint": "Log the same exercise twice",
+  "unlockRings": "Calorie rings",
+  "unlockRingsHint": "After your first burn",
+  "weeklyCardHint": "Finish a workout and today's bar fills in.",
+  "radarEmptyHint": "Your sets this week fill the green shape. Target is 12–20 sets per group.",
+  "reportSessionsCount": "{count, plural, =1{1 session} other{{count} sessions}}",
+  "@reportSessionsCount": {
+    "placeholders": {
+      "count": { "type": "int" }
+    }
+  },
+  "reportRestCounts": "Rest counts. Your last session was {day}.",
+  "@reportRestCounts": {
+    "placeholders": {
+      "day": { "type": "String" }
+    }
+  },
+  "reportOpenDay": "Open {day}",
+  "@reportOpenDay": {
+    "placeholders": {
+      "day": { "type": "String" }
+    }
+  },
+  "reportWeekSoFar": "This week so far",
+  "reportRestDay": "Rest day",
+  "reportUpcoming": "Upcoming"
 }

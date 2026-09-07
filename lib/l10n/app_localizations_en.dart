@@ -2431,4 +2431,80 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get importCodeOpen => 'Open';
+
+  @override
+  String get statusTonnageTitle => 'Lifetime tonnage';
+
+  @override
+  String get statusRepsWeightTitle => 'Reps vs weight · monthly';
+
+  @override
+  String get statusCaloriesTitle => 'Calories';
+
+  @override
+  String get statusRadarTitle => 'Muscle balance · this week';
+
+  @override
+  String get legendNextMilestone => 'To next 5K';
+
+  @override
+  String get legendWeeklyGoal => 'Weekly goal';
+
+  @override
+  String get statusUnlocksTitle => 'Unlocks as you train';
+
+  @override
+  String get unlockTonnage => 'Lifetime tonnage & reps vs weight';
+
+  @override
+  String get unlockTonnageHint => 'After 2 logged sessions';
+
+  @override
+  String get unlockProgress => 'Exercise progress';
+
+  @override
+  String get unlockProgressHint => 'Log the same exercise twice';
+
+  @override
+  String get unlockRings => 'Calorie rings';
+
+  @override
+  String get unlockRingsHint => 'After your first burn';
+
+  @override
+  String get weeklyCardHint => 'Finish a workout and today\'s bar fills in.';
+
+  @override
+  String get radarEmptyHint =>
+      'Your sets this week fill the green shape. Target is 12–20 sets per group.';
+
+  @override
+  String reportSessionsCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count sessions',
+      one: '1 session',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String reportRestCounts(String day) {
+    return 'Rest counts. Your last session was $day.';
+  }
+
+  @override
+  String reportOpenDay(String day) {
+    return 'Open $day';
+  }
+
+  @override
+  String get reportWeekSoFar => 'This week so far';
+
+  @override
+  String get reportRestDay => 'Rest day';
+
+  @override
+  String get reportUpcoming => 'Upcoming';
 }

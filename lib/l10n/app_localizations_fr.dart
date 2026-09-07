@@ -2456,4 +2456,81 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String get importCodeOpen => 'Ouvrir';
+
+  @override
+  String get statusTonnageTitle => 'Tonnage total';
+
+  @override
+  String get statusRepsWeightTitle => 'Reps vs poids · mensuel';
+
+  @override
+  String get statusCaloriesTitle => 'Calories';
+
+  @override
+  String get statusRadarTitle => 'Équilibre musculaire · cette semaine';
+
+  @override
+  String get legendNextMilestone => 'Jusqu\'aux prochains 5K';
+
+  @override
+  String get legendWeeklyGoal => 'Objectif hebdo';
+
+  @override
+  String get statusUnlocksTitle => 'Se débloque en t\'entraînant';
+
+  @override
+  String get unlockTonnage => 'Tonnage total et reps vs poids';
+
+  @override
+  String get unlockTonnageHint => 'Après 2 séances enregistrées';
+
+  @override
+  String get unlockProgress => 'Progression par exercice';
+
+  @override
+  String get unlockProgressHint => 'Enregistre le même exercice deux fois';
+
+  @override
+  String get unlockRings => 'Anneaux de calories';
+
+  @override
+  String get unlockRingsHint => 'Après ta première dépense';
+
+  @override
+  String get weeklyCardHint =>
+      'Termine une séance et la barre du jour se remplit.';
+
+  @override
+  String get radarEmptyHint =>
+      'Tes séries de la semaine remplissent la forme verte. L\'objectif est de 12–20 séries par groupe.';
+
+  @override
+  String reportSessionsCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count séances',
+      one: '1 séance',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String reportRestCounts(String day) {
+    return 'Le repos compte. Ta dernière séance : $day.';
+  }
+
+  @override
+  String reportOpenDay(String day) {
+    return 'Ouvrir $day';
+  }
+
+  @override
+  String get reportWeekSoFar => 'Cette semaine jusqu\'ici';
+
+  @override
+  String get reportRestDay => 'Jour de repos';
+
+  @override
+  String get reportUpcoming => 'À venir';
 }

@@ -15,9 +15,10 @@ import 'package:my_gym_bro/shared/widgets/glass_surface.dart';
 import 'package:my_gym_bro/shared/widgets/liquid_glass_button.dart';
 
 /// Full-screen "Reports" view opened from the Weekly Reports card in the
-/// Status sheet. A week of day circles + a week pill drive a per-day report:
-/// weights (this vs last week), calories burned, and duration — all broken
-/// down per exercise for the selected day.
+/// Status sheet. A week navigator (‹ date range › + calendar picker) and a
+/// row of day circles drive a per-day report: weights (this vs last week),
+/// calories burned, and duration — all broken down per exercise for the
+/// selected day. Rest days show the week's totals instead.
 class ReportsScreen extends ConsumerStatefulWidget {
   const ReportsScreen({super.key});
 
@@ -27,6 +28,16 @@ class ReportsScreen extends ConsumerStatefulWidget {
 
 DateTime _mondayOf(DateTime d) =>
     DateTime(d.year, d.month, d.day - (d.weekday - 1));
+
+/// Unselected chip fill — a faint accent wash over the elevated card (the
+/// olive look in the mock).
+Color _chipColor(AppColorsTheme colors) =>
+    Color.alphaBlend(colors.accent.withValues(alpha: 0.13), colors.cardElevated);
+
+/// "Friday, Sep 4" — full weekday + short month/day, each part localized.
+String _longDay(DateTime d, Locale locale) =>
+    '${DateFormat.EEEE(locale.languageCode).format(d)}, '
+    '${DateFormat.MMMd(locale.languageCode).format(d)}';
 
 class _ReportsScreenState extends ConsumerState<ReportsScreen> {
   late DateTime _weekStart; // Monday midnight
@@ -53,6 +64,21 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
     });
   }
 
+  DateTime _shiftedWeek(int weeks) => DateTime(
+    _weekStart.year,
+    _weekStart.month,
+    _weekStart.day + 7 * weeks,
+  );
+
+  /// Select [day] outright, switching weeks if it lies outside the visible
+  /// one — the rest day's "Open <last session>" jump.
+  void _jumpToDay(DateTime day) {
+    setState(() {
+      _weekStart = _mondayOf(day);
+      _selectedDay = day;
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     final colors = AppColors.of(context);
@@ -60,6 +86,7 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
     final locale = Localizations.localeOf(context);
     final report = ref.watch(dayReportProvider(_selectedDay));
     final unit = ref.watch(weightUnitProvider);
+    final isCurrentWeek = _weekStart == _mondayOf(DateTime.now());
 
     return Scaffold(
       backgroundColor: colors.background,
@@ -102,18 +129,36 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
               ),
             ),
 
-            // ── Day circles + Week pill ──
+            // ── Week navigator + day circles ──
             Padding(
-              padding: EdgeInsets.symmetric(
-                horizontal: AppSizes.contentPaddingH.w,
-                vertical: 8.h,
+              padding: EdgeInsets.fromLTRB(
+                AppSizes.contentPaddingH.w,
+                8.h,
+                AppSizes.contentPaddingH.w,
+                0,
+              ),
+              child: _WeekNavigator(
+                weekStart: _weekStart,
+                locale: locale,
+                onPrevious: () => _selectWeek(_shiftedWeek(-1)),
+                onNext: isCurrentWeek
+                    ? null
+                    : () => _selectWeek(_shiftedWeek(1)),
+                onTapRange: _openWeekPicker,
+              ),
+            ),
+            Padding(
+              padding: EdgeInsets.fromLTRB(
+                AppSizes.contentPaddingH.w,
+                10.h,
+                AppSizes.contentPaddingH.w,
+                8.h,
               ),
               child: _DaySelector(
                 weekStart: _weekStart,
                 selectedDay: _selectedDay,
                 locale: locale,
                 onSelectDay: (d) => setState(() => _selectedDay = d),
-                onTapWeek: _openWeekPicker,
               ),
             ),
 
@@ -128,7 +173,13 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
                 ),
                 error: (_, __) => const SizedBox.shrink(),
                 data: (r) => !r.hasData
-                    ? _EmptyDay(l10n: l10n)
+                    ? _EmptyDay(
+                        day: _selectedDay,
+                        weekStart: _weekStart,
+                        l10n: l10n,
+                        locale: locale,
+                        onOpenDay: _jumpToDay,
+                      )
                     : SingleChildScrollView(
                         padding: EdgeInsets.fromLTRB(
                           AppSizes.contentPaddingH.w,
@@ -139,6 +190,12 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
+                            _DaySummaryLine(
+                              day: _selectedDay,
+                              report: r,
+                              l10n: l10n,
+                              locale: locale,
+                            ),
                             _WeightsSection(report: r, unit: unit, l10n: l10n),
                             SizedBox(height: 36.h),
                             _CalBurnedSection(
@@ -177,121 +234,564 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
   }
 }
 
-// ── Day circles + week pill ──────────────────────────────────────────
+// ── Week navigator + day circles ─────────────────────────────────────
 
-class _DaySelector extends StatelessWidget {
-  const _DaySelector({
+/// ‹ [📅 date range · This week ⌄] › — the arrows step a week, the pill
+/// opens the calendar picker. The right arrow is disabled in the current
+/// week.
+class _WeekNavigator extends StatelessWidget {
+  const _WeekNavigator({
     required this.weekStart,
-    required this.selectedDay,
     required this.locale,
-    required this.onSelectDay,
-    required this.onTapWeek,
+    required this.onPrevious,
+    required this.onNext,
+    required this.onTapRange,
   });
   final DateTime weekStart;
-  final DateTime selectedDay;
   final Locale locale;
-  final ValueChanged<DateTime> onSelectDay;
-  final VoidCallback onTapWeek;
+  final VoidCallback onPrevious;
+
+  /// Null when the week contains today (nothing to step forward to).
+  final VoidCallback? onNext;
+  final VoidCallback onTapRange;
 
   @override
   Widget build(BuildContext context) {
     final colors = AppColors.of(context);
-    final now = DateTime.now();
-    final today = DateTime(now.year, now.month, now.day);
-    // Unselected chips carry a faint accent wash (the olive look in the mock).
-    final chipColor = Color.alphaBlend(
-      colors.accent.withValues(alpha: 0.13),
-      colors.cardElevated,
+    final l10n = AppLocalizations.of(context);
+    final chipColor = _chipColor(colors);
+    final thisMonday = _mondayOf(DateTime.now());
+    final lastMonday = DateTime(
+      thisMonday.year,
+      thisMonday.month,
+      thisMonday.day - 7,
     );
+    final fmt = DateFormat.MMMd(locale.languageCode);
+    final weekEnd = DateTime(weekStart.year, weekStart.month, weekStart.day + 6);
+    final range = '${fmt.format(weekStart)} – ${fmt.format(weekEnd)}';
+    final relative = weekStart == thisMonday
+        ? l10n.thisWeek
+        : weekStart == lastMonday
+        ? l10n.lastWeek
+        : null;
 
     return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
-        for (var i = 0; i < 7; i++)
-          () {
-            final date = weekStart.add(Duration(days: i));
-            final initial = DateFormat.E(
-              locale.languageCode,
-            ).format(date).substring(0, 1);
-            final selected = date == selectedDay;
-            final isFuture = date.isAfter(today);
-            return GestureDetector(
-              onTap: () => onSelectDay(date),
-              behavior: HitTestBehavior.opaque,
-              child: Container(
-                width: 32.w,
-                height: 32.w,
-                alignment: Alignment.center,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  color: selected ? colors.accent : chipColor,
-                  border: date == today && !selected
-                      ? Border.all(color: colors.accent, width: 1.5)
-                      : null,
-                ),
-                child: Text(
-                  initial.toUpperCase(),
-                  style: TextStyle(
-                    color: selected
-                        ? colors.background
-                        : isFuture
-                        ? colors.textSecondary
-                        : colors.textPrimary,
-                    fontSize: 12.sp,
-                    fontWeight: FontWeight.w700,
-                  ),
-                ),
+        _NavCircle(
+          icon: Icons.chevron_left_rounded,
+          color: chipColor,
+          onTap: onPrevious,
+        ),
+        SizedBox(width: 8.w),
+        Expanded(
+          child: GestureDetector(
+            onTap: onTapRange,
+            behavior: HitTestBehavior.opaque,
+            child: Container(
+              height: 36.h,
+              decoration: BoxDecoration(
+                color: chipColor,
+                borderRadius: BorderRadius.circular(18.r),
               ),
-            );
-          }(),
-        // Week pill → opens the calendar.
-        GestureDetector(
-          onTap: onTapWeek,
-          child: Container(
-            height: 32.w,
-            padding: EdgeInsets.symmetric(horizontal: 12.w),
-            alignment: Alignment.center,
-            decoration: BoxDecoration(
-              color: chipColor,
-              borderRadius: BorderRadius.circular(16.w),
-            ),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Text(
-                  AppLocalizations.of(context).week,
-                  style: TextStyle(
-                    color: colors.textPrimary,
-                    fontSize: 11.sp,
-                    fontWeight: FontWeight.w700,
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(
+                    Icons.calendar_month_rounded,
+                    color: colors.accent,
+                    size: 16.sp,
                   ),
-                ),
-                SizedBox(width: 2.w),
-                Icon(
-                  Icons.expand_more_rounded,
-                  color: colors.textSecondary,
-                  size: 15.sp,
-                ),
-              ],
+                  SizedBox(width: 6.w),
+                  Flexible(
+                    child: Text(
+                      range,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        color: colors.textPrimary,
+                        fontSize: 13.sp,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                  ),
+                  if (relative != null) ...[
+                    SizedBox(width: 6.w),
+                    Text(
+                      '· $relative',
+                      style: TextStyle(
+                        color: colors.textSecondary,
+                        fontSize: 11.sp,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                  ],
+                  SizedBox(width: 6.w),
+                  Icon(
+                    Icons.expand_more_rounded,
+                    color: colors.textSecondary,
+                    size: 16.sp,
+                  ),
+                ],
+              ),
             ),
           ),
+        ),
+        SizedBox(width: 8.w),
+        _NavCircle(
+          icon: Icons.chevron_right_rounded,
+          color: chipColor,
+          onTap: onNext,
         ),
       ],
     );
   }
 }
 
-class _EmptyDay extends StatelessWidget {
-  const _EmptyDay({required this.l10n});
-  final AppLocalizations l10n;
+/// 36 px round week-step button; dimmed and inert when [onTap] is null.
+class _NavCircle extends StatelessWidget {
+  const _NavCircle({
+    required this.icon,
+    required this.color,
+    required this.onTap,
+  });
+  final IconData icon;
+  final Color color;
+  final VoidCallback? onTap;
 
   @override
   Widget build(BuildContext context) {
     final colors = AppColors.of(context);
-    return Center(
+    return GestureDetector(
+      onTap: onTap,
+      behavior: HitTestBehavior.opaque,
+      child: Opacity(
+        opacity: onTap == null ? 0.4 : 1,
+        child: Container(
+          width: 36.w,
+          height: 36.w,
+          decoration: BoxDecoration(shape: BoxShape.circle, color: color),
+          child: Icon(icon, color: colors.textPrimary, size: 20.sp),
+        ),
+      ),
+    );
+  }
+}
+
+/// Mon…Sun: weekday initial over a 40 px date circle, trained-day dot under.
+class _DaySelector extends ConsumerWidget {
+  const _DaySelector({
+    required this.weekStart,
+    required this.selectedDay,
+    required this.locale,
+    required this.onSelectDay,
+  });
+  final DateTime weekStart;
+  final DateTime selectedDay;
+  final Locale locale;
+  final ValueChanged<DateTime> onSelectDay;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final colors = AppColors.of(context);
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+    final chipColor = _chipColor(colors);
+    final weekEnd = DateTime(weekStart.year, weekStart.month, weekStart.day + 7);
+    final trained =
+        ref
+            .watch(trainedDaysInRangeProvider((from: weekStart, to: weekEnd)))
+            .asData
+            ?.value ??
+        const <int>{};
+    final dayFmt = DateFormat.E(locale.languageCode);
+
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        for (var i = 0; i < 7; i++)
+          () {
+            final date = DateTime(
+              weekStart.year,
+              weekStart.month,
+              weekStart.day + i,
+            );
+            final selected = date == selectedDay;
+            final isToday = date == today;
+            final isFuture = date.isAfter(today);
+            final hasSession = trained.contains(date.millisecondsSinceEpoch);
+            return GestureDetector(
+              onTap: () => onSelectDay(date),
+              behavior: HitTestBehavior.opaque,
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    dayFmt.format(date).substring(0, 1).toUpperCase(),
+                    style: TextStyle(
+                      color: selected
+                          ? colors.textPrimary
+                          : colors.textSecondary,
+                      fontSize: 10.sp,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                  SizedBox(height: 5.h),
+                  AnimatedContainer(
+                    duration: const Duration(milliseconds: 200),
+                    width: 40.w,
+                    height: 40.w,
+                    alignment: Alignment.center,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      color: selected ? colors.accent : chipColor,
+                      border: isToday && !selected
+                          ? Border.all(color: colors.accent, width: 1.5)
+                          : null,
+                    ),
+                    child: Text(
+                      '${date.day}',
+                      style: TextStyle(
+                        color: selected
+                            ? colors.background
+                            : isFuture
+                            ? colors.textSecondary
+                            : colors.textPrimary,
+                        fontSize: 13.sp,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                  ),
+                  SizedBox(height: 5.h),
+                  Container(
+                    width: 4.w,
+                    height: 4.w,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      color: hasSession ? colors.accent : Colors.transparent,
+                    ),
+                  ),
+                ],
+              ),
+            );
+          }(),
+      ],
+    );
+  }
+}
+
+/// "Friday, Sep 4 · 5 exercises · 60 min" above a trained day's sections.
+class _DaySummaryLine extends StatelessWidget {
+  const _DaySummaryLine({
+    required this.day,
+    required this.report,
+    required this.l10n,
+    required this.locale,
+  });
+  final DateTime day;
+  final DayReport report;
+  final AppLocalizations l10n;
+  final Locale locale;
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = AppColors.of(context);
+    final seconds = report.exercises.fold<int>(
+      0,
+      (a, e) => a + e.durationSeconds,
+    );
+    final minutes = (seconds / 60).round();
+    return Padding(
+      padding: EdgeInsets.only(bottom: 14.h),
       child: Text(
-        l10n.reportNoData,
-        style: TextStyle(color: colors.textSecondary, fontSize: 14.sp),
+        '${_longDay(day, locale)} · '
+        '${l10n.premadeExercisesCount(report.exercises.length)} · '
+        '$minutes ${l10n.minUnit}',
+        style: TextStyle(color: colors.textSecondary, fontSize: 12.sp),
+      ),
+    );
+  }
+}
+
+/// Rest-day body: a "no workout" card that points back at the last session,
+/// then the week's totals and one calorie bar per trained day.
+class _EmptyDay extends ConsumerWidget {
+  const _EmptyDay({
+    required this.day,
+    required this.weekStart,
+    required this.l10n,
+    required this.locale,
+    required this.onOpenDay,
+  });
+  final DateTime day;
+  final DateTime weekStart;
+  final AppLocalizations l10n;
+  final Locale locale;
+  final ValueChanged<DateTime> onOpenDay;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final colors = AppColors.of(context);
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+    final lastTrained =
+        ref.watch(lastTrainedDayBeforeProvider(day)).asData?.value;
+    final week =
+        ref.watch(weekSummaryProvider(weekStart)).asData?.value ??
+        const WeekSummary();
+
+    final status = day == today
+        ? l10n.today
+        : day.isAfter(today)
+        ? l10n.reportUpcoming
+        : l10n.reportRestDay;
+    final shortFmt = DateFormat.MMMEd(locale.languageCode);
+    final weekdayFmt = DateFormat.E(locale.languageCode);
+    final grouped = NumberFormat.decimalPattern(locale.toString());
+    final maxCal = week.days.fold<int>(0, (m, d) => math.max(m, d.calories));
+
+    return SingleChildScrollView(
+      padding: EdgeInsets.fromLTRB(
+        AppSizes.contentPaddingH.w,
+        12.h,
+        AppSizes.contentPaddingH.w,
+        40.h,
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            '${_longDay(day, locale)} · $status',
+            style: TextStyle(color: colors.textSecondary, fontSize: 12.sp),
+          ),
+          SizedBox(height: 16.h),
+          Container(
+            width: double.infinity,
+            padding: EdgeInsets.symmetric(horizontal: 20.w, vertical: 24.h),
+            decoration: BoxDecoration(
+              color: colors.cardElevated,
+              borderRadius: BorderRadius.circular(25.r),
+            ),
+            child: Column(
+              children: [
+                Icon(
+                  Icons.bedtime_rounded,
+                  color: colors.textSecondary,
+                  size: 34.sp,
+                ),
+                SizedBox(height: 8.h),
+                Text(
+                  l10n.reportNoData,
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    color: colors.textPrimary,
+                    fontSize: 17.sp,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+                if (lastTrained != null) ...[
+                  SizedBox(height: 8.h),
+                  Text(
+                    l10n.reportRestCounts(_longDay(lastTrained, locale)),
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      color: colors.textSecondary,
+                      fontSize: 13.sp,
+                      height: 1.4,
+                    ),
+                  ),
+                  SizedBox(height: 16.h),
+                  _AccentPill(
+                    icon: Icons.history_rounded,
+                    label: l10n.reportOpenDay(shortFmt.format(lastTrained)),
+                    onTap: () => onOpenDay(lastTrained),
+                  ),
+                ],
+              ],
+            ),
+          ),
+          if (week.sessions > 0) ...[
+            SizedBox(height: 24.h),
+            _Eyebrow(l10n.reportWeekSoFar),
+            SizedBox(height: 16.h),
+            Row(
+              children: [
+                Expanded(
+                  child: _StatTile(
+                    value: '${week.sessions}',
+                    label: l10n.reportSessions,
+                  ),
+                ),
+                SizedBox(width: 10.w),
+                Expanded(
+                  child: _StatTile(
+                    value: grouped.format(week.calories),
+                    label: l10n.calBurned,
+                  ),
+                ),
+                SizedBox(width: 10.w),
+                Expanded(
+                  child: _StatTile(
+                    value: _formatDuration(week.durationSeconds, l10n),
+                    label: l10n.duration,
+                  ),
+                ),
+              ],
+            ),
+            SizedBox(height: 16.h),
+            for (final d in week.days)
+              _StatBar(
+                label: weekdayFmt.format(d.date),
+                fraction: maxCal <= 0 ? 0 : d.calories / maxCal,
+                value: grouped.format(d.calories),
+                unit: l10n.calUnit,
+              ),
+          ],
+        ],
+      ),
+    );
+  }
+}
+
+/// "2h 41" past the hour, "41 Min" under it.
+String _formatDuration(int seconds, AppLocalizations l10n) {
+  final h = seconds ~/ 3600;
+  final m = (seconds % 3600) ~/ 60;
+  return h > 0
+      ? '${h}h ${m.toString().padLeft(2, '0')}'
+      : '$m ${l10n.minUnit}';
+}
+
+/// Big number over a small label — the "This week so far" tiles.
+class _StatTile extends StatelessWidget {
+  const _StatTile({required this.value, required this.label});
+  final String value;
+  final String label;
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = AppColors.of(context);
+    return Container(
+      padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 14.h),
+      decoration: BoxDecoration(
+        color: colors.cardElevated,
+        borderRadius: BorderRadius.circular(18.r),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          FittedBox(
+            fit: BoxFit.scaleDown,
+            alignment: Alignment.centerLeft,
+            child: Text(
+              value,
+              style: TextStyle(
+                color: colors.textPrimary,
+                fontSize: 22.sp,
+                fontWeight: FontWeight.w800,
+              ),
+            ),
+          ),
+          Text(
+            label,
+            style: TextStyle(color: colors.textSecondary, fontSize: 11.sp),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// Accent-tinted pill button (icon + label) — the picker's "This Week" jump
+/// and the rest day's "Open <last session>".
+class _AccentPill extends StatelessWidget {
+  const _AccentPill({
+    required this.icon,
+    required this.label,
+    required this.onTap,
+  });
+  final IconData icon;
+  final String label;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = AppColors.of(context);
+    return GestureDetector(
+      onTap: onTap,
+      behavior: HitTestBehavior.opaque,
+      child: Container(
+        height: 36.h,
+        padding: EdgeInsets.symmetric(horizontal: 18.w),
+        alignment: Alignment.center,
+        decoration: BoxDecoration(
+          color: colors.accent.withValues(alpha: 0.14),
+          border: Border.all(color: colors.accent.withValues(alpha: 0.30)),
+          borderRadius: BorderRadius.circular(100.r),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(icon, color: colors.accent, size: 14.sp),
+            SizedBox(width: 6.w),
+            Text(
+              label,
+              style: TextStyle(
+                color: colors.accent,
+                fontSize: 12.sp,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// Legend swatch: 8 px dot + 11 px label.
+class _LegendDot extends StatelessWidget {
+  const _LegendDot({required this.color, required this.label});
+  final Color color;
+  final String label;
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = AppColors.of(context);
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Container(
+          width: 8.w,
+          height: 8.w,
+          decoration: BoxDecoration(color: color, shape: BoxShape.circle),
+        ),
+        SizedBox(width: 6.w),
+        Text(
+          label,
+          style: TextStyle(color: colors.textPrimary, fontSize: 11.sp),
+        ),
+      ],
+    );
+  }
+}
+
+/// Uppercase section eyebrow (12/800, 0.08 em tracking, secondary).
+class _Eyebrow extends StatelessWidget {
+  const _Eyebrow(this.text);
+  final String text;
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = AppColors.of(context);
+    return Text(
+      text.toUpperCase(),
+      maxLines: 1,
+      overflow: TextOverflow.ellipsis,
+      style: TextStyle(
+        color: colors.textSecondary,
+        fontSize: 12.sp,
+        fontWeight: FontWeight.w800,
+        letterSpacing: 0.08 * 12.sp,
       ),
     );
   }
@@ -329,7 +829,12 @@ class _StatBar extends StatelessWidget {
     required this.fraction,
     required this.value,
     required this.unit,
+    this.index,
   });
+
+  /// 1-based position matching the chart's x axis; omitted on rows that
+  /// have no chart (the rest day's per-day bars).
+  final int? index;
   final String label;
   final double fraction;
   final String value;
@@ -342,8 +847,20 @@ class _StatBar extends StatelessWidget {
       padding: EdgeInsets.symmetric(vertical: 5.h),
       child: Row(
         children: [
+          if (index != null)
+            SizedBox(
+              width: 16.w,
+              child: Text(
+                '$index',
+                style: TextStyle(
+                  color: colors.textSecondary,
+                  fontSize: 10.sp,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+            ),
           SizedBox(
-            width: 62.w,
+            width: 84.w,
             child: Text(
               label,
               maxLines: 1,
@@ -431,9 +948,32 @@ class _WeightsSection extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        _SectionHeader(l10n.weights),
+        // Title left, series legend right — replaces the labels that used
+        // to be painted onto the lines.
+        Padding(
+          padding: EdgeInsets.only(bottom: 12.h),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.baseline,
+            textBaseline: TextBaseline.alphabetic,
+            children: [
+              Expanded(
+                child: Text(
+                  l10n.weights,
+                  style: TextStyle(
+                    color: colors.textPrimary,
+                    fontSize: 20.sp,
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
+              ),
+              _LegendDot(color: colors.accent, label: l10n.thisWeek),
+              SizedBox(width: 14.w),
+              _LegendDot(color: colors.textSecondary, label: l10n.lastWeek),
+            ],
+          ),
+        ),
         SizedBox(
-          height: 180.h,
+          height: 170.h,
           width: double.infinity,
           child: CustomPaint(
             painter: _WeightComparePainter(
@@ -445,23 +985,26 @@ class _WeightsSection extends StatelessWidget {
                 for (final e in report.exercises)
                   convertFromKg(e.lastWeekTopWeightKg, unit),
               ],
-              thisLabel: l10n.thisWeek,
-              lastLabel: l10n.lastWeek,
               thisColor: colors.accent,
               lastColor: colors.textSecondary,
               gridColor: colors.textSecondary.withValues(alpha: 0.25),
-              axisTextColor: colors.textPrimary,
+              // Axis numbers read as axis, not data.
+              axisTextColor: colors.textSecondary,
               textSize: 10.sp,
-              xLabelPrefix: l10n.exercisePrefix,
             ),
           ),
         ),
-        SizedBox(height: 16.h),
-        for (final e in report.exercises)
+        SizedBox(height: 12.h),
+        for (var i = 0; i < report.exercises.length; i++)
           _StatBar(
-            label: e.name,
-            fraction: maxTop <= 0 ? 0 : e.topWeightKg / maxTop,
-            value: formatWeight(e.topWeightKg, unit, decimals: 0),
+            index: i + 1,
+            label: report.exercises[i].name,
+            fraction: maxTop <= 0 ? 0 : report.exercises[i].topWeightKg / maxTop,
+            value: formatWeight(
+              report.exercises[i].topWeightKg,
+              unit,
+              decimals: 0,
+            ),
             unit: weightUnitLabel(unit),
           ),
       ],
@@ -549,11 +1092,12 @@ class _CalBurnedSection extends StatelessWidget {
           ),
         ),
         SizedBox(height: 20.h),
-        for (final e in report.exercises)
+        for (var i = 0; i < report.exercises.length; i++)
           _StatBar(
-            label: e.name,
-            fraction: maxCal <= 0 ? 0 : e.calories / maxCal,
-            value: '${e.calories}',
+            index: i + 1,
+            label: report.exercises[i].name,
+            fraction: maxCal <= 0 ? 0 : report.exercises[i].calories / maxCal,
+            value: '${report.exercises[i].calories}',
             unit: l10n.calUnit,
           ),
       ],
@@ -597,11 +1141,14 @@ class _DurationSection extends StatelessWidget {
           ),
         ),
         SizedBox(height: 16.h),
-        for (final e in report.exercises)
+        for (var i = 0; i < report.exercises.length; i++)
           _StatBar(
-            label: e.name,
-            fraction: maxDur <= 0 ? 0 : e.durationSeconds / maxDur,
-            value: '${(e.durationSeconds / 60).round()}',
+            index: i + 1,
+            label: report.exercises[i].name,
+            fraction: maxDur <= 0
+                ? 0
+                : report.exercises[i].durationSeconds / maxDur,
+            value: '${(report.exercises[i].durationSeconds / 60).round()}',
             unit: l10n.minUnit,
           ),
       ],
@@ -671,30 +1218,25 @@ class _VerticalBar extends StatelessWidget {
 // ── Painters ─────────────────────────────────────────────────────────
 
 /// This-week vs last-week per-exercise weight. x = exercise index (1..n),
-/// last week drawn as a soft filled line, this week as a bright line.
+/// last week drawn as a soft filled line, this week as a bright line. The
+/// series legend lives in the section header, not on the chart.
 class _WeightComparePainter extends CustomPainter {
   _WeightComparePainter({
     required this.thisWeek,
     required this.lastWeek,
-    required this.thisLabel,
-    required this.lastLabel,
     required this.thisColor,
     required this.lastColor,
     required this.gridColor,
     required this.axisTextColor,
     required this.textSize,
-    required this.xLabelPrefix,
   });
   final List<double> thisWeek;
   final List<double> lastWeek;
-  final String thisLabel;
-  final String lastLabel;
   final Color thisColor;
   final Color lastColor;
   final Color gridColor;
   final Color axisTextColor;
   final double textSize;
-  final String xLabelPrefix;
 
   TextPainter _tp(String s, Color c, {FontWeight? w}) => TextPainter(
     text: TextSpan(
@@ -715,11 +1257,13 @@ class _WeightComparePainter extends CustomPainter {
     final leftGutter =
         _tp(groupDigits('${axisMax.round()}'), axisTextColor).width + 8;
     final bottomGutter = textSize + 10;
-    final topPad = textSize + 8;
+    // Half a label of headroom so the top axis number isn't clipped, and a
+    // right inset so the last x label isn't either.
+    final topPad = textSize / 2 + 4;
     final chart = Rect.fromLTRB(
       leftGutter,
       topPad,
-      size.width,
+      size.width - 12,
       size.height - bottomGutter,
     );
 
@@ -797,31 +1341,10 @@ class _WeightComparePainter extends CustomPainter {
           ..color = thisColor,
       );
 
-    // Series labels above each line's peak.
-    void peakLabel(String label, Color color, List<double> vals) {
-      var peak = 0;
-      for (var i = 1; i < n; i++) {
-        if (vals[i] > vals[peak]) peak = i;
-      }
-      final tp = _tp(label, color, w: FontWeight.w700);
-      final x = (xAt(peak) - tp.width / 2).clamp(
-        chart.left,
-        chart.right - tp.width,
-      );
-      tp.paint(canvas, Offset(x, yOf(vals[peak]) - tp.height - 5));
-    }
-
-    if (lastWeek.any((v) => v > 0)) peakLabel(lastLabel, lastColor, lastWeek);
-    peakLabel(thisLabel, thisColor, thisWeek);
-
-    // x labels: "Exe 1", "Exe 2", … (bare index when crowded).
+    // x labels: bare 1…n, matching the numbered stat bars below.
     for (var i = 0; i < n; i++) {
-      final label = n <= 8 ? '$xLabelPrefix ${i + 1}' : '${i + 1}';
-      final tp = _tp(label, axisTextColor);
-      final x = (xAt(i) - tp.width / 2).clamp(
-        chart.left - leftGutter,
-        size.width - tp.width,
-      );
+      final tp = _tp('${i + 1}', axisTextColor, w: FontWeight.w700);
+      final x = (xAt(i) - tp.width / 2).clamp(0.0, size.width - tp.width);
       tp.paint(canvas, Offset(x, chart.bottom + 8));
     }
   }
@@ -1091,8 +1614,13 @@ class _WeekPickerSheetState extends ConsumerState<_WeekPickerSheet> {
                     children: [
                       for (var w = 0; w < 6; w++)
                         () {
-                          final rowMonday = gridStart.add(
-                            Duration(days: w * 7),
+                          // Calendar arithmetic (not Duration) so a DST
+                          // shift can't move the row off midnight — the
+                          // picked Monday is compared for equality.
+                          final rowMonday = DateTime(
+                            gridStart.year,
+                            gridStart.month,
+                            gridStart.day + w * 7,
                           );
                           final isSelected = rowMonday == selectedWeek;
                           return GestureDetector(
@@ -1133,19 +1661,24 @@ class _WeekPickerSheetState extends ConsumerState<_WeekPickerSheet> {
                               child: Row(
                                 children: [
                                   for (var i = 0; i < 7; i++)
-                                    Expanded(
-                                      child: _DayCell(
-                                        date: rowMonday.add(Duration(days: i)),
-                                        month: _month.month,
-                                        today: today,
-                                        trained: trained.contains(
-                                          rowMonday
-                                              .add(Duration(days: i))
-                                              .millisecondsSinceEpoch,
+                                    () {
+                                      final cellDate = DateTime(
+                                        rowMonday.year,
+                                        rowMonday.month,
+                                        rowMonday.day + i,
+                                      );
+                                      return Expanded(
+                                        child: _DayCell(
+                                          date: cellDate,
+                                          month: _month.month,
+                                          today: today,
+                                          trained: trained.contains(
+                                            cellDate.millisecondsSinceEpoch,
+                                          ),
+                                          colors: colors,
                                         ),
-                                        colors: colors,
-                                      ),
-                                    ),
+                                      );
+                                    }(),
                                 ],
                               ),
                             ),
@@ -1157,40 +1690,10 @@ class _WeekPickerSheetState extends ConsumerState<_WeekPickerSheet> {
               ),
               SizedBox(height: 12.h),
               // Quick jump: select the current week.
-              GestureDetector(
+              _AccentPill(
+                icon: Icons.today_rounded,
+                label: l10n.thisWeek,
                 onTap: () => _pickWeek(_mondayOf(today)),
-                behavior: HitTestBehavior.opaque,
-                child: Container(
-                  height: 36.h,
-                  padding: EdgeInsets.symmetric(horizontal: 18.w),
-                  alignment: Alignment.center,
-                  decoration: BoxDecoration(
-                    color: colors.accent.withValues(alpha: 0.14),
-                    border: Border.all(
-                      color: colors.accent.withValues(alpha: 0.30),
-                    ),
-                    borderRadius: BorderRadius.circular(100.r),
-                  ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(
-                        Icons.today_rounded,
-                        color: colors.accent,
-                        size: 14.sp,
-                      ),
-                      SizedBox(width: 6.w),
-                      Text(
-                        l10n.thisWeek,
-                        style: TextStyle(
-                          color: colors.accent,
-                          fontSize: 12.sp,
-                          fontWeight: FontWeight.w700,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
               ),
             ],
           ),

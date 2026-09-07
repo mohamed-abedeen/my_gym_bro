@@ -838,5 +838,31 @@
   "importCodeTitle": "Link oder Code einfügen",
   "importCodeHint": "mygymbro.app/s/…",
   "importCodeInvalid": "Das sieht nicht wie ein Teilen-Link aus.",
-  "importCodeOpen": "Öffnen"
+  "importCodeOpen": "Öffnen",
+  "statusTonnageTitle": "Gesamttonnage",
+  "statusRepsWeightTitle": "Wdh. vs Gewicht · monatlich",
+  "statusCaloriesTitle": "Kalorien",
+  "statusRadarTitle": "Muskelbalance · diese Woche",
+  "legendNextMilestone": "Bis zur nächsten 5K",
+  "legendWeeklyGoal": "Wochenziel",
+  "statusUnlocksTitle": "Wird beim Training freigeschaltet",
+  "unlockTonnage": "Gesamttonnage & Wdh. vs Gewicht",
+  "unlockTonnageHint": "Nach 2 erfassten Einheiten",
+  "unlockProgress": "Übungsfortschritt",
+  "unlockProgressHint": "Dieselbe Übung zweimal erfassen",
+  "unlockRings": "Kalorienringe",
+  "unlockRingsHint": "Nach deiner ersten Verbrennung",
+  "weeklyCardHint": "Beende ein Training und der heutige Balken füllt sich.",
+  "radarEmptyHint": "Deine Sätze dieser Woche füllen die grüne Form. Ziel sind 12–20 Sätze pro Gruppe.",
+  "reportSessionsCount": "{count, plural, =1{1 Einheit} other{{count} Einheiten}}",
+  "@reportSessionsCount": {
+    "placeholders": {
+      "count": { "type": "int" }
+    }
+  },
+  "reportRestCounts": "Erholung zählt. Deine letzte Einheit: {day}.",
+  "reportOpenDay": "{day} öffnen",
+  "reportWeekSoFar": "Diese Woche bisher",
+  "reportRestDay": "Ruhetag",
+  "reportUpcoming": "Bevorstehend"
 }

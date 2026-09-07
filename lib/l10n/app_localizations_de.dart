@@ -2458,4 +2458,81 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get importCodeOpen => 'Öffnen';
+
+  @override
+  String get statusTonnageTitle => 'Gesamttonnage';
+
+  @override
+  String get statusRepsWeightTitle => 'Wdh. vs Gewicht · monatlich';
+
+  @override
+  String get statusCaloriesTitle => 'Kalorien';
+
+  @override
+  String get statusRadarTitle => 'Muskelbalance · diese Woche';
+
+  @override
+  String get legendNextMilestone => 'Bis zur nächsten 5K';
+
+  @override
+  String get legendWeeklyGoal => 'Wochenziel';
+
+  @override
+  String get statusUnlocksTitle => 'Wird beim Training freigeschaltet';
+
+  @override
+  String get unlockTonnage => 'Gesamttonnage & Wdh. vs Gewicht';
+
+  @override
+  String get unlockTonnageHint => 'Nach 2 erfassten Einheiten';
+
+  @override
+  String get unlockProgress => 'Übungsfortschritt';
+
+  @override
+  String get unlockProgressHint => 'Dieselbe Übung zweimal erfassen';
+
+  @override
+  String get unlockRings => 'Kalorienringe';
+
+  @override
+  String get unlockRingsHint => 'Nach deiner ersten Verbrennung';
+
+  @override
+  String get weeklyCardHint =>
+      'Beende ein Training und der heutige Balken füllt sich.';
+
+  @override
+  String get radarEmptyHint =>
+      'Deine Sätze dieser Woche füllen die grüne Form. Ziel sind 12–20 Sätze pro Gruppe.';
+
+  @override
+  String reportSessionsCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count Einheiten',
+      one: '1 Einheit',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String reportRestCounts(String day) {
+    return 'Erholung zählt. Deine letzte Einheit: $day.';
+  }
+
+  @override
+  String reportOpenDay(String day) {
+    return '$day öffnen';
+  }
+
+  @override
+  String get reportWeekSoFar => 'Diese Woche bisher';
+
+  @override
+  String get reportRestDay => 'Ruhetag';
+
+  @override
+  String get reportUpcoming => 'Bevorstehend';
 }
