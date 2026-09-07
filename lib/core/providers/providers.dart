@@ -3,7 +3,9 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:my_gym_bro/core/auth/auth_notifier.dart';
-import 'package:my_gym_bro/core/database/app_database.dart';
+// Drift also generates a `Session` (the sessions table); the auth Session
+// below is Supabase's.
+import 'package:my_gym_bro/core/database/app_database.dart' hide Session;
 import 'package:my_gym_bro/core/database/daos/exercise_dao.dart';
 import 'package:my_gym_bro/core/security/secure_storage.dart';
 import 'package:my_gym_bro/core/services/exercise_api_service.dart';
