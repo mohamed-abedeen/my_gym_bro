@@ -90,12 +90,13 @@ jobs:
           set -uo pipefail
           processing=$(jq -r '.attributes.processingState // "?"' build.json)
           uploaded=$(jq -r '.attributes.uploadedDate // "?"' build.json)
-          expired=$(jq -r '.attributes.expired // "?"' build.json)
+          # Not `//`: jq treats a legitimate `false` as missing.
+          expired=$(jq -r 'if .attributes.expired == null then "?" else .attributes.expired end' build.json)
           min_os=$(jq -r '.attributes.minOsVersion // "?"' build.json)
           review=$(jq -r 'if type=="array" then (.[0].attributes.betaReviewState // "not submitted") else (.attributes.betaReviewState // "not submitted") end' review.json 2>/dev/null || echo "?")
 
           case "$review" in
-            APPROVED) meaning="approved — external testers can install" ;;
+            APPROVED) meaning="external testers can install" ;;
             WAITING_FOR_REVIEW) meaning="queued for Apple's beta review" ;;
             IN_REVIEW) meaning="Apple is reviewing it now" ;;
             REJECTED) meaning="rejected — see App Store Connect for the reason" ;;
