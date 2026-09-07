@@ -224,6 +224,11 @@ class _OverviewBody extends ConsumerWidget {
   }
 }
 
+/// Zero-width space: a line-break opportunity after each slash in the plan
+/// title. Built from the code point so the source stays ASCII — an inline
+/// U+200B is invisible and trips hidden-Unicode warnings in review.
+final _zwsp = String.fromCharCode(0x200B);
+
 /// Plan title with every `/` separator rendered in the accent color. A
 /// zero-width space after each slash lets long names like
 /// "Push/Pull/Legs/Upper/Lower" wrap there instead of overflowing.
@@ -241,7 +246,7 @@ class _AccentSlashTitle extends StatelessWidget {
           for (var i = 0; i < parts.length; i++) ...[
             if (i > 0)
               TextSpan(
-                text: '/\\u200B',
+                text: '/$_zwsp',
                 style: TextStyle(color: colors.accent),
               ),
             TextSpan(text: parts[i]),
@@ -632,10 +637,12 @@ class _WeeklyPlanCardState extends ConsumerState<_WeeklyPlanCard> {
   }
 
   Future<void> _onReorder(int oldIndex, int newIndex) async {
-    if (newIndex > oldIndex) newIndex -= 1;
-    if (oldIndex == newIndex) return;
+    // ReorderableListView reports the insertion slot, which is one past
+    // the target when moving down.
+    final to = newIndex > oldIndex ? newIndex - 1 : newIndex;
+    if (oldIndex == to) return;
     final next = List<ScheduleDay>.of(_days);
-    next.insert(newIndex, next.removeAt(oldIndex));
+    next.insert(to, next.removeAt(oldIndex));
     setState(() => _days = next);
     await ref
         .read(scheduleDaoProvider)
@@ -773,7 +780,9 @@ class _WeeklyDayRow extends ConsumerWidget {
             const <DayExercise>[];
     final muscles = dayMuscleGroups(exercises);
     final number = index + 1;
-    final name = isRest ? l10n.dayNumber(number) : day.label ?? l10n.dayNumber(number);
+    final name = isRest
+        ? l10n.dayNumber(number)
+        : day.label ?? l10n.dayNumber(number);
 
     return GestureDetector(
       onTap: isRest
