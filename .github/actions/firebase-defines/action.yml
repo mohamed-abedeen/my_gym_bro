@@ -1,0 +1,86 @@
+name: Firebase dart-defines
+description: >
+  Turns a Firebase console config file, stored as a base64 GitHub secret, into
+  --dart-define flags (written one per line to firebase_defines.txt) that
+  lib/core/services/firebase_options_env.dart reads. Pass plist_b64 for iOS
+  (GoogleService-Info.plist) or json_b64 for Android (google-services.json).
+  With neither set the file is empty and Firebase stays inert.
+inputs:
+  plist_b64:
+    description: base64 of GoogleService-Info.plist (iOS)
+    required: false
+    default: ""
+  json_b64:
+    description: base64 of google-services.json (Android)
+    required: false
+    default: ""
+  android_package:
+    description: Android applicationId to pick from google-services.json
+    required: false
+    default: com.mygymbro.my_gym_bro
+outputs:
+  configured:
+    description: "true when defines were produced"
+    value: ${{ steps.extract.outputs.configured }}
+runs:
+  using: composite
+  steps:
+    - id: extract
+      shell: bash
+      env:
+        PLIST_B64: ${{ inputs.plist_b64 }}
+        JSON_B64: ${{ inputs.json_b64 }}
+        ANDROID_PACKAGE: ${{ inputs.android_package }}
+      run: |
+        python3 - <<'PY'
+        import base64, json, os, plistlib
+
+        out = []
+
+        def add(key, value):
+            if value:
+                out.append(f"--dart-define={key}={value}")
+
+        plist_b64 = os.environ.get("PLIST_B64", "").strip()
+        json_b64 = os.environ.get("JSON_B64", "").strip()
+        package = os.environ.get("ANDROID_PACKAGE", "")
+
+        if plist_b64:
+            p = plistlib.loads(base64.b64decode(plist_b64))
+            add("FIREBASE_API_KEY", p.get("API_KEY"))
+            add("FIREBASE_APP_ID", p.get("GOOGLE_APP_ID"))
+            add("FIREBASE_MESSAGING_SENDER_ID", p.get("GCM_SENDER_ID"))
+            add("FIREBASE_PROJECT_ID", p.get("PROJECT_ID"))
+            add("FIREBASE_STORAGE_BUCKET", p.get("STORAGE_BUCKET"))
+            add("FIREBASE_IOS_BUNDLE_ID", p.get("BUNDLE_ID"))
+        elif json_b64:
+            j = json.loads(base64.b64decode(json_b64))
+            info = j.get("project_info", {})
+            clients = j.get("client", [])
+            client = next(
+                (
+                    c
+                    for c in clients
+                    if c.get("client_info", {})
+                    .get("android_client_info", {})
+                    .get("package_name")
+                    == package
+                ),
+                clients[0] if clients else {},
+            )
+            api_keys = client.get("api_key") or [{}]
+            add("FIREBASE_API_KEY", api_keys[0].get("current_key"))
+            add("FIREBASE_APP_ID", client.get("client_info", {}).get("mobilesdk_app_id"))
+            add("FIREBASE_MESSAGING_SENDER_ID", info.get("project_number"))
+            add("FIREBASE_PROJECT_ID", info.get("project_id"))
+            add("FIREBASE_STORAGE_BUCKET", info.get("storage_bucket"))
+
+        with open("firebase_defines.txt", "w") as f:
+            f.write("".join(line + "\n" for line in out))
+        # Keep the extracted values out of the logs.
+        for line in out:
+            print("::add-mask::" + line.split("=", 2)[2])
+        with open(os.environ["GITHUB_OUTPUT"], "a") as f:
+            f.write("configured=" + ("true" if out else "false") + "\n")
+        print("Firebase: " + (str(len(out)) + " defines" if out else "no config secret set, inert"))
+        PY

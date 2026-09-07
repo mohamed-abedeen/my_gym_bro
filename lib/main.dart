@@ -18,6 +18,7 @@ import 'package:my_gym_bro/core/services/deep_link_service.dart';
 import 'package:my_gym_bro/core/services/exercise_api_service.dart';
 import 'package:my_gym_bro/core/services/exercise_mapping.dart';
 import 'package:my_gym_bro/core/services/exercise_repository.dart';
+import 'package:my_gym_bro/core/services/firebase_options_env.dart';
 import 'package:my_gym_bro/core/services/notification_service.dart';
 import 'package:my_gym_bro/core/services/program_seeder.dart';
 import 'package:my_gym_bro/core/services/subscription_sync_service.dart';
@@ -71,13 +72,14 @@ Future<void> _bootstrap() async {
   mark('orientation set');
 
   // Firebase + crash handlers — fast, local init.
-  // No Firebase config (google-services.json / firebase_options.dart) means
-  // initializeApp() throws; that's non-fatal, the app runs without Firebase.
-  // We log only a one-liner — dumping the full native stacktrace floods
-  // debugPrint's throttle and swallows later logs.
+  // Options come from build-time defines (CI lanes derive them from the
+  // console config files kept as secrets — see firebase_options_env.dart).
+  // Without them initializeApp() throws; that's non-fatal, the app runs
+  // without Firebase. We log only a one-liner — dumping the full native
+  // stacktrace floods debugPrint's throttle and swallows later logs.
   try {
     mark('firebase init begin');
-    await Firebase.initializeApp();
+    await Firebase.initializeApp(options: firebaseOptionsFromEnvironment());
     mark('firebase init done');
     if (!kDebugMode) {
       FlutterError.onError =

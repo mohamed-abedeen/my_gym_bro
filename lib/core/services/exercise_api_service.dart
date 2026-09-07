@@ -45,12 +45,41 @@ class ExerciseApiPage {
 ///     callers must treat 429 as "stop and resume later", not retry-loop.
 ///
 /// This service performs no caching or fallback — that is the repository's
-/// job. TESTING ONLY: this dataset is licensed non-commercial; swap the data
-/// source for the purchased ExerciseDB.io dataset before any paid release.
+/// job.
+///
+/// The OSS dataset is licensed NON-COMMERCIAL and is only the development
+/// default. Paid builds point this client at the licensed source through
+/// build-time defines — no code change:
+///   `--dart-define=EXERCISEDB_BASE_URL=https://…`   (same `/exercises` contract)
+///   `--dart-define=EXERCISEDB_API_KEY=…`             (sent as [apiKeyHeader])
+///   `--dart-define=EXERCISEDB_API_KEY_HEADER=…`      (defaults to `x-api-key`)
+/// An empty define keeps the default, so lanes can pass the variables
+/// unconditionally. The store lane warns when no licensed URL is set.
 class ExerciseApiService {
   ExerciseApiService({http.Client? client}) : _client = client ?? http.Client();
 
-  static const String baseUrl = 'https://oss.exercisedb.dev/api/v1';
+  static const String _defaultBaseUrl = 'https://oss.exercisedb.dev/api/v1';
+  static const String _envBaseUrl =
+      String.fromEnvironment('EXERCISEDB_BASE_URL');
+  static const String _envApiKey = String.fromEnvironment('EXERCISEDB_API_KEY');
+  static const String _envApiKeyHeader =
+      String.fromEnvironment('EXERCISEDB_API_KEY_HEADER');
+
+  /// Catalogue base URL — the licensed source when configured, else OSS.
+  static const String baseUrl =
+      _envBaseUrl == '' ? _defaultBaseUrl : _envBaseUrl;
+
+  /// Header that carries the API key, when one is configured.
+  static const String apiKeyHeader =
+      _envApiKeyHeader == '' ? 'x-api-key' : _envApiKeyHeader;
+
+  /// True when the build points at a licensed source (URL or key overridden).
+  static const bool isLicensedSource = _envBaseUrl != '' || _envApiKey != '';
+
+  static const Map<String, String> _headers = _envApiKey == ''
+      ? <String, String>{}
+      : <String, String>{apiKeyHeader: _envApiKey};
+
   static const Duration _timeout = Duration(seconds: 15);
 
   /// The API caps page size at 25 regardless of the requested limit.
@@ -103,7 +132,7 @@ class ExerciseApiService {
 
     http.Response res;
     try {
-      res = await _client.get(uri).timeout(_timeout);
+      res = await _client.get(uri, headers: _headers).timeout(_timeout);
     } on SocketException {
       throw const ExerciseApiException('No internet connection.');
     } on TimeoutException {

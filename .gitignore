@@ -65,3 +65,8 @@ android/.kotlin/
 # Front/back body-split assets - generated but NOT final (skins being redone with a new pose); untrack until the split work lands
 assets/anatomy_split/
 assets/skins_split/
+
+# Firebase console config — provided to CI as base64 secrets
+# (FIREBASE_IOS_PLIST_B64 / FIREBASE_ANDROID_JSON_B64), never committed.
+android/app/google-services.json
+ios/Runner/GoogleService-Info.plist

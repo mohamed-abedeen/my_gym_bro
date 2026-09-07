@@ -1,6 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:my_gym_bro/core/database/app_database.dart';
+import 'package:my_gym_bro/core/providers/providers.dart';
 import 'package:my_gym_bro/core/services/subscription_sync_service.dart';
 import 'package:my_gym_bro/features/workout/workout_providers.dart';
 
@@ -22,10 +23,11 @@ UserProfile _profile({
   );
 }
 
-ProviderContainer _containerFor(UserProfile? profile) {
+ProviderContainer _containerFor(UserProfile? profile, {bool signedIn = false}) {
   final container = ProviderContainer(
     overrides: [
       userProfileProvider.overrideWith((ref) => Stream.value(profile)),
+      isSignedInProvider.overrideWithValue(signedIn),
     ],
   );
   addTearDown(container.dispose);
@@ -33,8 +35,8 @@ ProviderContainer _containerFor(UserProfile? profile) {
 }
 
 /// Reads [subscriptionLockedProvider] after the overridden stream emits.
-/// The provider watches [userProfileProvider] via `.valueOrNull`, which is
-/// null on the very first synchronous frame, so let the stream deliver first.
+/// The provider deliberately stays open while the stream is still loading,
+/// so let it deliver first to test the settled verdict.
 Future<bool> _locked(ProviderContainer container) async {
   await container.read(userProfileProvider.future);
   return container.read(subscriptionLockedProvider);
@@ -42,8 +44,14 @@ Future<bool> _locked(ProviderContainer container) async {
 
 void main() {
   group('subscriptionLockedProvider', () {
-    test('null profile (pre-onboarding / loading) does not lock', () async {
+    test('no profile on a signed-out device (pre-onboarding) does not lock',
+        () async {
       expect(await _locked(_containerFor(null)), isFalse);
+    });
+
+    test('no profile on a signed-in device (row gone / tampered) locks',
+        () async {
+      expect(await _locked(_containerFor(null, signedIn: true)), isTrue);
     });
 
     test('active subscription is unlocked', () async {
@@ -72,9 +80,9 @@ void main() {
       expect(await _locked(c), isTrue);
     });
 
-    test('trial with no expiry set does not lock', () async {
+    test('trial with no expiry (never written by the app) locks', () async {
       final c = _containerFor(_profile(subscriptionStatus: 'trial'));
-      expect(await _locked(c), isFalse);
+      expect(await _locked(c), isTrue);
     });
 
     test('grace_period does not lock', () async {
@@ -115,14 +123,14 @@ void main() {
       expect(await _locked(c), isFalse);
     });
 
-    test('unknown / free status does not lock', () async {
+    test('a status no writer produces (tampered row) locks', () async {
       expect(
         await _locked(_containerFor(_profile(subscriptionStatus: 'free'))),
-        isFalse,
+        isTrue,
       );
       expect(
         await _locked(_containerFor(_profile(subscriptionStatus: 'whatever'))),
-        isFalse,
+        isTrue,
       );
     });
   });
