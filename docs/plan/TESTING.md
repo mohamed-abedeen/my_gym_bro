@@ -37,7 +37,7 @@ flutter run --dart-define=SUPABASE_URL=<url> --dart-define=SUPABASE_ANON_KEY=<an
 - [ ] Settings → subscription row shows **"X days left"** + chevron; tapping opens the paywall.
 - [ ] Simulate trial expiry (device clock +8 days, or temporarily set `trialDurationDays = 0` in `lib/shared/app_constants.dart`) → on resume the app is **forced to the paywall**: no close (X) button, back/swipe-back blocked, cannot navigate away.
 - [ ] After a valid subscription/restore, the gate **releases** and returns to the app.
-- [ ] Settings → **Delete Account** → hold to confirm → on an Apple-linked account the native Sign in with Apple sheet appears (dismissing it cancels; nothing changes) → lands on sign-in with no local history left; iOS Settings → Apple ID → Sign in with Apple no longer lists the app. Needs `delete-account` deployed + the `APPLE_*` function secrets (without them deletion still completes and the skipped revocation is logged).
+- [ ] Settings → **Delete Account** → hold to confirm → on an Apple-linked account the native Sign in with Apple sheet appears (dismissing it cancels; nothing changes) → lands on sign-in with no local history left; iOS Settings → Apple ID → Sign in with Apple no longer lists the app. `delete-account` v8 is deployed (2026-09-08); revocation additionally needs the `APPLE_*` function secrets (without them deletion still completes and the skipped revocation is logged).
 - [ ] Apply `supabase/migrations/005_drop_dm.sql` on deploy (`supabase db push`).
 
 ---

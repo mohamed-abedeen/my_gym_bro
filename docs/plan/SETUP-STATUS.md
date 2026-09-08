@@ -18,7 +18,7 @@
 | TestFlight CI lane | ✅ **Green.** Builds distributed to external testers |
 | App Store Connect subscriptions | 🟡 Created, stuck at "Missing Metadata" (screenshot pending) |
 | RevenueCat | 🟡 Project + products exist; entitlement/offering/webhook/keys pending |
-| Supabase **cloud** | 🟡 Live for auth/data, but behind the repo (db push, function secrets, config push pending) |
+| Supabase **cloud** | 🟢 **Schema current (verified 2026-09-08):** migrations 001–020 applied; `delete-account` v8 (Apple token revocation) deployed + smoke-tested. Pending: function secrets (`APPLE_*` etc.), `purchase-skin` deploy, config push, Apple provider toggle |
 | Apple sign-in (Supabase side) | 🔴 Provider not enabled in dashboard — errors until then |
 | Firebase (Crashlytics + FCM) | 🟡 **Wired (2026-09-08)** — CI derives options from base64 config secrets; owner still has to create the project + set the secrets |
 | Exercise data license | 🔴 **Store-release blocker** — OSS default; the licensed source is a config switch (`EXERCISEDB_BASE_URL` / `EXERCISEDB_API_KEY`), see below |
@@ -144,23 +144,17 @@ migration 016 and `skin_provider.dart`). Owner steps, after the subscription flo
 ⚠️ The whole server-verification path is **deployable but untested** until this setup
 finishes — test a sandbox skin purchase + restore end-to-end then.
 
-## Supabase cloud (behind the repo — deploy pending)
+## Supabase cloud (schema current as of 2026-09-08 — secrets/config pending)
 
-The cloud project serves auth + data for beta builds, but repo state has NOT been fully
-pushed. As of the last check the following were pending — **verify with
-`supabase migration list` before relying on cloud state**:
+Project `mygym-bro-prod` (ref `konzjrklgyuodzrrhwwv`, eu-west-1). Verified through the
+Supabase connector on 2026-09-08: **migrations 001–020 are all applied** and
+`delete_account_data` is the 017 version. Re-verify with `supabase migration list` (or the
+connector's `list_migrations`) before assuming anything newer is applied. Still pending:
 
-- `supabase db push` — repo migrations go up to `020_routine_shares.sql`
-  (012 = Bros Phase B friendships, 013 = feed/bucket drop + `delete_account_data`
-  rewrite, 014 = Phase 4 challenges + leaderboard points wiring +
-  another `delete_account_data` rewrite; authored 2026-08-15/16, **never run
-  against cloud**); cloud is known
-  to be several behind (at minimum 007–014, incl. `009_security_hardening.sql` which
-  closes a real paywall-bypass hole). ⚠️ 012 and 013 must land together: 012 drops
-  `follows` and only 013 rewrites `delete_account_data` to stop referencing it —
-  012 without 013 breaks account deletion (store blocker). After pushing, run the
-  RLS matrix in 012's header (request/accept/decline/block both sides, username-claim
-  race, `leaderboard_friends` still returns rows) and verify delete-account end to end.
+- `supabase db push` — nothing pending (001–020 applied). When a new migration lands, push
+  it and re-run the checks its header documents (012's RLS matrix, the 013/014
+  `delete_account_data` contract). 012 and 013 must always land together: 012 drops
+  `follows` and only 013 stops `delete_account_data` referencing it.
 - **Challenges (014) deploy notes:** the completion-push trigger reads the same
   Vault secrets 010 documents (`project_url`, `cron_secret`) — it silently
   skips pushes until they exist. `notify-social-challenge` must be redeployed
@@ -249,8 +243,12 @@ pushed. As of the last check the following were pending — **verify with
      verify the TestFlight lane still passes.
   5. Flip `android:autoVerify="true"` on the https intent-filter in
      `AndroidManifest.xml` once assetlinks.json is live and verified.
-- `supabase functions deploy` — 7 functions in `supabase/functions/`; deployed versions are
-  stale. **No local CLI needed:** `gh workflow run supabase-deploy.yml -f functions=all`
+- `supabase functions deploy` — 8 functions in `supabase/functions/`. Cloud state 2026-09-08:
+  `delete-account` **v8 = repo (Apple token revocation), deployed via the connector and
+  smoke-tested (401 gates, CORS preflight 200)**; the webhook/cron functions were redeployed
+  2026-09-07, `verify-subscription` 2026-08-29; **`purchase-skin` has never been deployed**;
+  `moderate-content` and `report-content` exist only in the cloud (community-feed leftovers,
+  delete when convenient). **No local CLI needed:** `gh workflow run supabase-deploy.yml -f functions=all`
   (`.github/workflows/supabase-deploy.yml`, added 2026-09-08) deploys from CI with
   `SUPABASE_ACCESS_TOKEN` + the project ref derived from `SUPABASE_URL`, and first syncs
   every function secret that exists as a GitHub secret of the same name. `verify_jwt` per
