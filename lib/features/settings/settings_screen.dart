@@ -397,13 +397,17 @@ class SettingsScreen extends ConsumerWidget {
                     label: l10n.restoreSubscription,
                     onTap: () => _restorePurchases(context, ref, l10n),
                   ),
-                  SettingsNavRow(
-                    icon: Icons.delete_forever_rounded,
-                    iconColor: SettingsBadgeColors.red,
-                    label: l10n.deleteAccount,
-                    isDestructive: true,
-                    onTap: () => _showDeleteAccountDialog(context, ref, l10n),
-                  ),
+                  // Only meaningful with an account to delete (same guard as
+                  // the sign-out card below).
+                  if (isSignedIn)
+                    SettingsNavRow(
+                      icon: Icons.delete_forever_rounded,
+                      iconColor: SettingsBadgeColors.red,
+                      label: l10n.deleteAccount,
+                      isDestructive: true,
+                      onTap: () =>
+                          _showDeleteAccountDialog(context, ref, l10n),
+                    ),
                 ],
               ),
 
@@ -667,12 +671,18 @@ class SettingsScreen extends ConsumerWidget {
       confirmLabel: l10n.holdToDelete,
     );
     if (!confirmed || !context.mounted) return;
-    final ok = await ref.read(authNotifierProvider.notifier).deleteAccount();
+    final result =
+        await ref.read(authNotifierProvider.notifier).deleteAccount();
     if (!context.mounted) return;
-    if (ok) {
-      Navigator.of(context).pop();
-    } else {
-      _showSnack(context, l10n.deleteAccountFailed);
+    switch (result) {
+      case DeleteAccountResult.deleted:
+        // Same landing as sign-out: the account no longer exists.
+        context.go(AppRoutes.signIn);
+      case DeleteAccountResult.cancelled:
+        // Apple re-auth sheet dismissed; nothing changed, nothing to say.
+        break;
+      case DeleteAccountResult.failed:
+        _showSnack(context, l10n.deleteAccountFailed);
     }
   }
 }

@@ -142,7 +142,7 @@ For each pending queue item (oldest first):
 
 - **Auth:** Supabase email/password + Google/Apple OAuth. OAuth completes via deep link; `onAuthStateChange` is the real login signal. RevenueCat `logIn()` is invoked on every auth event.
 - **Authorization:** enforced at the database via **RLS** (users can only touch their own rows; community reads require an active subscription). The client does not hold privileged logic — the server is the boundary.
-- **Account deletion:** `delete-account` edge function cascades soft-deletes then removes the auth user.
+- **Account deletion:** Settings → hold-to-delete → Apple-linked accounts re-run the native Sign in with Apple sheet for a fresh authorization code → `delete-account` edge function revokes the Apple tokens (App Store guideline 5.1.1(v)), purges every row via `delete_account_data` and deletes the auth user → the client wipes all local account data (`AppDatabase.wipeAccountData`), logs out of RevenueCat and signs out.
 
 ---
 

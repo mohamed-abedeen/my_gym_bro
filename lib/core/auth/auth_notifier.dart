@@ -7,8 +7,6 @@ import 'package:drift/drift.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:my_gym_bro/core/database/app_database.dart';
-import 'package:my_gym_bro/core/database/daos/progress_report_dao.dart';
-import 'package:my_gym_bro/core/database/daos/skin_dao.dart';
 import 'package:my_gym_bro/core/database/daos/user_profile_dao.dart';
 import 'package:my_gym_bro/core/security/input_sanitiser.dart';
 import 'package:my_gym_bro/core/security/secure_storage.dart';
@@ -23,6 +21,18 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 /// Authentication state.
 enum AuthStatus { initial, loading, authenticated, unauthenticated, error }
+
+/// Outcome of [AuthNotifier.deleteAccount].
+enum DeleteAccountResult {
+  /// Server account and local data are gone; the user is signed out.
+  deleted,
+
+  /// The user dismissed the Sign in with Apple re-auth sheet. Nothing changed.
+  cancelled,
+
+  /// The server refused or was unreachable. Nothing changed; safe to retry.
+  failed,
+}
 
 @immutable
 class AppAuthState {
@@ -390,78 +400,113 @@ class AuthNotifier extends StateNotifier<AppAuthState> {
   // ──────────────────────────────────────────────
   // Delete Account (Apple §5.1.1(v) compliance)
   // ──────────────────────────────────────────────
-  /// Invokes the `delete-account` Supabase edge function, which cascades a
-  /// soft-delete across the user's rows and hard-deletes the auth.users
-  /// record. On success, also wipes the local profile and signs out so the
-  /// next sign-up on this device starts clean.
+  /// Deletes the signed-in account end to end:
   ///
-  /// Returns true on success. On any failure returns false WITHOUT signing
-  /// the user out, so they can retry without losing local state.
-  Future<bool> deleteAccount() async {
+  ///  1. Apple-linked accounts re-run the native Sign in with Apple sheet.
+  ///     Apple requires apps to revoke the user's tokens on account deletion,
+  ///     and the revoke endpoint only accepts a fresh, single-use
+  ///     authorization code -- the sheet is the only source of one.
+  ///     Dismissing it returns [DeleteAccountResult.cancelled]; nothing
+  ///     changes.
+  ///  2. The `delete-account` edge function revokes those tokens, purges every
+  ///     server row (`delete_account_data`) and removes the auth.users record.
+  ///  3. Every local row that belongs to the account is wiped, RevenueCat is
+  ///     logged out and the session cleared, so the next sign-up on this
+  ///     device starts clean instead of inheriting (or backfill-pushing) the
+  ///     deleted user's history.
+  ///
+  /// Any server failure returns [DeleteAccountResult.failed] WITHOUT signing
+  /// out or touching local data, so the user can simply retry.
+  Future<DeleteAccountResult> deleteAccount() async {
     final sb = _supabase;
-    if (sb == null) {
-      state = state.copyWith(
-        status: AuthStatus.error,
-        errorMessage: 'Not connected to server',
-      );
-      return false;
+    if (sb == null) return DeleteAccountResult.failed;
+
+    String? appleCode;
+    if (Platform.isIOS &&
+        _hasAppleIdentity(sb.auth.currentUser ?? state.user)) {
+      try {
+        final credential =
+            await SignInWithApple.getAppleIDCredential(scopes: const []);
+        appleCode = credential.authorizationCode;
+      } on SignInWithAppleAuthorizationException catch (e) {
+        if (e.code == AuthorizationErrorCode.canceled) {
+          return DeleteAccountResult.cancelled;
+        }
+        // Any other sheet failure still deletes -- the account must always be
+        // deletable; the function logs the skipped revocation.
+        CrashReporter.recordError(e, reason: 'Apple re-auth for deletion failed');
+      } on Exception catch (e) {
+        CrashReporter.recordError(e, reason: 'Apple re-auth for deletion failed');
+      }
     }
+
     state = state.copyWith(status: AuthStatus.loading);
     try {
-      final response = await sb.functions.invoke('delete-account');
-      if (response.status >= 400) {
-        CrashReporter.recordError(
-          Exception('delete-account returned status ${response.status}'),
-          reason: 'Account deletion failed',
-        );
-        state = state.copyWith(
-          status: AuthStatus.error,
-          errorMessage: 'Could not delete account. Please try again.',
-        );
-        return false;
-      }
-
-      // Wipe local profile so the next sign-up doesn't inherit the old user.
-      try {
-        await UserProfileDao(_db).clearAll();
-      } on Exception catch (e) {
-        CrashReporter.recordError(e, reason: 'Local profile wipe failed');
-      }
-
-      // Same for cosmetics: the ownership mirror and the SecureStorage skin
-      // keys are per-account, not per-device.
-      try {
-        await SkinDao(_db).clearAll();
-        await SecureStorage().delete('setting_owned_skins');
-        await SecureStorage().delete('setting_selected_skin');
-      } on Exception catch (e) {
-        CrashReporter.recordError(e, reason: 'Local skin wipe failed');
-      }
-
-      // And the periodic-reports mirror — a new sign-up on this device must
-      // not see the deleted account's training history.
-      try {
-        await ProgressReportDao(_db).clearAll();
-      } on Exception catch (e) {
-        CrashReporter.recordError(e, reason: 'Local reports wipe failed');
-      }
-
-      try {
-        if (await Purchases.isConfigured) await Purchases.logOut();
-      } on Exception catch (e) {
-        CrashReporter.recordError(e, reason: 'RevenueCat logOut failed');
-      }
-      await sb.auth.signOut();
-      await SecureStorage().clearTokens();
-      state = const AppAuthState(status: AuthStatus.unauthenticated);
-      return true;
-    } on Exception catch (e) {
-      CrashReporter.recordError(e, reason: 'deleteAccount exception');
-      state = state.copyWith(
-        status: AuthStatus.error,
-        errorMessage: 'Could not delete account. Please try again.',
+      final response = await sb.functions.invoke(
+        'delete-account',
+        body: appleCode == null
+            ? null
+            : {'apple_authorization_code': appleCode},
       );
-      return false;
+      if (response.status >= 400) {
+        throw Exception('delete-account returned status ${response.status}');
+      }
+    } on Exception catch (e) {
+      CrashReporter.recordError(e, reason: 'Account deletion failed');
+      // Back to a usable signed-in state -- nothing was deleted.
+      state = state.copyWith(status: AuthStatus.authenticated);
+      return DeleteAccountResult.failed;
+    }
+
+    // The server side is gone; everything below is local cleanup and must not
+    // report a failure for a deletion that already happened.
+    await _wipeLocalAccountData();
+    try {
+      if (await Purchases.isConfigured) await Purchases.logOut();
+    } on Exception catch (e) {
+      CrashReporter.recordError(e, reason: 'RevenueCat logOut failed');
+    }
+    try {
+      // Drops the local session first, then tells the server; the SDK
+      // swallows the 401/403/404 the already-deleted user produces.
+      await sb.auth.signOut();
+    } on Exception catch (e) {
+      CrashReporter.recordError(e, reason: 'Sign-out after deletion failed');
+    }
+    await SecureStorage().clearTokens();
+    state = const AppAuthState(status: AuthStatus.unauthenticated);
+    return DeleteAccountResult.deleted;
+  }
+
+  static bool _hasAppleIdentity(User? user) {
+    if (user == null) return false;
+    if (user.identities?.any((i) => i.provider == 'apple') ?? false) {
+      return true;
+    }
+    final providers = user.appMetadata['providers'];
+    return providers is List && providers.contains('apple');
+  }
+
+  /// Wipes every local row and per-account key that belongs to the account.
+  /// The exercise catalogue is a device-level cache and stays.
+  Future<void> _wipeLocalAccountData() async {
+    try {
+      await _db.wipeAccountData();
+    } on Exception catch (e) {
+      CrashReporter.recordError(e, reason: 'Local account wipe failed');
+    }
+    // SecureStorage keys that are per-account rather than per-device
+    // (cosmetics, last-opened routine); theme/nav prefs stay.
+    for (final key in const [
+      'setting_owned_skins',
+      'setting_selected_skin',
+      'last_selected_schedule_id',
+    ]) {
+      try {
+        await SecureStorage().delete(key);
+      } on Exception catch (e) {
+        CrashReporter.recordError(e, reason: 'Local key wipe failed: $key');
+      }
     }
   }
 
