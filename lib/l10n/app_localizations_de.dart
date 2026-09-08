@@ -2002,6 +2002,15 @@ class AppLocalizationsDe extends AppLocalizations {
       'Keine Programme passen zu deinen Filtern, Bro!';
 
   @override
+  String get discoverCreateOwn => 'Erstelle dein eigenes';
+
+  @override
+  String get discoverCreateOwnSub => 'Wähle Tage und Übungen von Grund auf';
+
+  @override
+  String get discoverCreateOwnTag => 'EIGENES';
+
+  @override
   String discoverRoutinesCount(int count) {
     String _temp0 = intl.Intl.pluralLogic(
       count,
