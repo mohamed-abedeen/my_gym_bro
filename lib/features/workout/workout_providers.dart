@@ -88,6 +88,16 @@ final exercisePersonalRecordsProvider =
       return ref.watch(sessionDaoProvider).getPersonalRecords(exerciseId);
     });
 
+/// Best estimated 1RM (kg) logged strictly before a date — the "vs last
+/// month" baseline on the exercise detail screen. Null when nothing was
+/// logged before that date.
+final exerciseBest1rmBeforeProvider = FutureProvider.family<
+    double?, ({String exerciseId, DateTime before})>((ref, params) {
+  return ref
+      .watch(sessionDaoProvider)
+      .getBestOneRepMaxBefore(params.exerciseId, params.before);
+});
+
 /// Session history (with sets) for a given exercise, newest first.
 final exerciseSessionHistoryProvider =
     FutureProvider.family<List<ExerciseHistoryEntry>, String>((

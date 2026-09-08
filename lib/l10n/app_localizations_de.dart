@@ -2566,4 +2566,48 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get splitAddRestDay => 'Ruhetag hinzufügen';
+
+  @override
+  String get personalBests => 'Bestleistungen';
+
+  @override
+  String get oneRepMaxEstimated => '1RM · geschätzt';
+
+  @override
+  String get vsLastMonth => 'vs. letzter Monat';
+
+  @override
+  String get pbHeaviest => 'Schwerste';
+
+  @override
+  String get pbBestSet => 'Bester Satz';
+
+  @override
+  String get pbBestSession => 'Beste Einheit';
+
+  @override
+  String get volumePerSession => 'Volumen pro Einheit';
+
+  @override
+  String get periodShort3M => '3M';
+
+  @override
+  String get periodShort6M => '6M';
+
+  @override
+  String get periodShortAll => 'Alle';
+
+  @override
+  String get legendLatestPr => 'aktuell / PR';
+
+  @override
+  String get legendEarlierSessions => 'frühere Einheiten';
+
+  @override
+  String get prTag => 'PR';
+
+  @override
+  String rankProgressToNext(int percent, String rank) {
+    return '$percent% → $rank';
+  }
 }

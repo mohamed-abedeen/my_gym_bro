@@ -4,17 +4,50 @@ import 'package:my_gym_bro/core/database/app_database.dart';
 
 part 'session_dao.g.dart';
 
+/// The logged set behind a personal record: what was lifted, and when.
+class RecordSet {
+  const RecordSet({
+    required this.weight,
+    required this.reps,
+    required this.date,
+  });
+
+  /// Weight in kg (canonical storage unit).
+  final double weight;
+  final int reps;
+
+  /// Start of the session the set was logged in.
+  final DateTime date;
+}
+
 class ExercisePersonalRecords {
   const ExercisePersonalRecords({
     this.maxWeight,
     this.best1rm,
     this.bestSetVolume,
     this.bestSessionVolume,
+    this.maxWeightSet,
+    this.best1rmSet,
+    this.bestSetVolumeSet,
+    this.bestSessionDate,
   });
   final double? maxWeight;
   final double? best1rm;
   final double? bestSetVolume;
   final double? bestSessionVolume;
+
+  /// The set that produced [maxWeight] — most reps at that weight, earliest
+  /// session on ties. Null when nothing is logged.
+  final RecordSet? maxWeightSet;
+
+  /// The set that produced [best1rm] (earliest session on ties).
+  final RecordSet? best1rmSet;
+
+  /// The set that produced [bestSetVolume] (earliest session on ties).
+  final RecordSet? bestSetVolumeSet;
+
+  /// Start of the session that produced [bestSessionVolume].
+  final DateTime? bestSessionDate;
 }
 
 class ExerciseHistoryEntry {
@@ -305,6 +338,18 @@ class SessionDao extends DatabaseAccessor<AppDatabase>
     String exerciseId, {
     int? excludeSessionId,
   }) async {
+    // Shared filter for every set-level query below. The active-session
+    // baseline (excludeSessionId) also restricts to completed sets, so an
+    // untouched placeholder row can never count as a record.
+    final setFilter = 'se.exercise_id = ? '
+        'AND ws.weight IS NOT NULL AND ws.reps IS NOT NULL'
+        '${excludeSessionId == null ? '' : ' '
+            'AND se.session_id != ? AND ws.is_completed = 1'}';
+    final setVariables = <Variable<Object>>[
+      Variable<String>(exerciseId),
+      if (excludeSessionId != null) Variable<int>(excludeSessionId),
+    ];
+
     final setRow = await customSelect(
       'SELECT '
       '  MAX(ws.weight) AS max_weight, '
@@ -312,33 +357,94 @@ class SessionDao extends DatabaseAccessor<AppDatabase>
       '  MAX(ws.weight * ws.reps) AS best_set_volume '
       'FROM session_exercises se '
       'JOIN workout_sets ws ON ws.session_exercise_id = se.local_id '
-      'WHERE se.exercise_id = ? '
-      '  AND ws.weight IS NOT NULL AND ws.reps IS NOT NULL'
-      '${excludeSessionId == null ? '' : ' '
-          'AND se.session_id != ? AND ws.is_completed = 1'}',
-      variables: [
-        Variable<String>(exerciseId),
-        if (excludeSessionId != null) Variable<int>(excludeSessionId),
-      ],
+      'WHERE $setFilter',
+      variables: setVariables,
       readsFrom: {sessionExercises, workoutSets},
     ).getSingleOrNull();
 
+    // Heaviest session by total volume; its date captions the record.
     final volRow = await customSelect(
-      'SELECT MAX(s.total_volume) AS best_session_volume '
+      'SELECT s.total_volume AS best_session_volume, s.started_at '
       'FROM sessions s '
       'JOIN session_exercises se ON se.session_id = s.local_id '
-      'WHERE se.exercise_id = ? AND s.total_volume IS NOT NULL',
+      'WHERE se.exercise_id = ? AND s.total_volume IS NOT NULL '
+      'ORDER BY s.total_volume DESC, s.started_at ASC '
+      'LIMIT 1',
       variables: [Variable<String>(exerciseId)],
       readsFrom: {sessions, sessionExercises},
     ).getSingleOrNull();
 
+    final maxWeight = setRow?.read<double?>('max_weight');
+
+    // The set behind each record, ranked by the record's own measure with
+    // the earliest session winning ties (a record is dated when first set).
+    Future<RecordSet?> recordSet(String orderBy) async {
+      if (maxWeight == null) return null;
+      final row = await customSelect(
+        'SELECT ws.weight, ws.reps, s.started_at '
+        'FROM session_exercises se '
+        'JOIN workout_sets ws ON ws.session_exercise_id = se.local_id '
+        'JOIN sessions s ON s.local_id = se.session_id '
+        'WHERE $setFilter '
+        'ORDER BY $orderBy, s.started_at ASC '
+        'LIMIT 1',
+        variables: setVariables,
+        readsFrom: {sessionExercises, workoutSets, sessions},
+      ).getSingleOrNull();
+      if (row == null) return null;
+      return RecordSet(
+        weight: row.read<double>('weight'),
+        reps: row.read<int>('reps'),
+        date: _dateFromSeconds(row.read<int>('started_at')),
+      );
+    }
+
     return ExercisePersonalRecords(
-      maxWeight: setRow?.read<double?>('max_weight'),
+      maxWeight: maxWeight,
       best1rm: setRow?.read<double?>('best_1rm'),
       bestSetVolume: setRow?.read<double?>('best_set_volume'),
       bestSessionVolume: volRow?.read<double?>('best_session_volume'),
+      maxWeightSet: await recordSet('ws.weight DESC, ws.reps DESC'),
+      best1rmSet: await recordSet(
+        'ws.weight * (1.0 + CAST(ws.reps AS REAL) / 30.0) DESC',
+      ),
+      bestSetVolumeSet: await recordSet('ws.weight * ws.reps DESC'),
+      bestSessionDate: volRow == null
+          ? null
+          : _dateFromSeconds(volRow.read<int>('started_at')),
     );
   }
+
+  /// Best Epley estimated 1RM (kg) over sets logged in sessions that started
+  /// before [before], or null when nothing was logged before then. Same set
+  /// filter and formula as [getPersonalRecords], so it is directly comparable
+  /// with the headline 1RM ("vs last month" on the exercise detail screen).
+  Future<double?> getBestOneRepMaxBefore(
+    String exerciseId,
+    DateTime before,
+  ) async {
+    final row = await customSelect(
+      'SELECT MAX(ws.weight * (1.0 + CAST(ws.reps AS REAL) / 30.0)) '
+      '  AS best_1rm '
+      'FROM session_exercises se '
+      'JOIN workout_sets ws ON ws.session_exercise_id = se.local_id '
+      'JOIN sessions s ON s.local_id = se.session_id '
+      'WHERE se.exercise_id = ? '
+      '  AND ws.weight IS NOT NULL AND ws.reps IS NOT NULL '
+      '  AND s.started_at < ?',
+      variables: [
+        Variable<String>(exerciseId),
+        Variable<int>(before.millisecondsSinceEpoch ~/ 1000),
+      ],
+      readsFrom: {sessionExercises, workoutSets, sessions},
+    ).getSingleOrNull();
+    return row?.read<double?>('best_1rm');
+  }
+
+  /// Drift stores `DateTime` columns as Unix seconds; raw rows come back as
+  /// that integer.
+  static DateTime _dateFromSeconds(int seconds) =>
+      DateTime.fromMillisecondsSinceEpoch(seconds * 1000);
 
   /// Completed sets from the most recent **completed** session in which the
   /// exercise was actually performed (≥ 1 completed set).
