@@ -3696,6 +3696,24 @@ abstract class AppLocalizations {
   /// **'No programs match your filters, Bro!'**
   String get discoverNoMatches;
 
+  /// No description provided for @discoverCreateOwn.
+  ///
+  /// In en, this message translates to:
+  /// **'Create your own'**
+  String get discoverCreateOwn;
+
+  /// No description provided for @discoverCreateOwnSub.
+  ///
+  /// In en, this message translates to:
+  /// **'Pick your days and exercises from scratch'**
+  String get discoverCreateOwnSub;
+
+  /// No description provided for @discoverCreateOwnTag.
+  ///
+  /// In en, this message translates to:
+  /// **'CUSTOM'**
+  String get discoverCreateOwnTag;
+
   /// No description provided for @discoverRoutinesCount.
   ///
   /// In en, this message translates to:

@@ -915,6 +915,9 @@
   "discoverEquipment": "Equipment",
   "discoverCategory": "Category",
   "discoverNoMatches": "No programs match your filters, Bro!",
+  "discoverCreateOwn": "Create your own",
+  "discoverCreateOwnSub": "Pick your days and exercises from scratch",
+  "discoverCreateOwnTag": "CUSTOM",
   "discoverRoutinesCount": "{count, plural, =1{1 routine} other{{count} routines}}",
   "@discoverRoutinesCount": {
     "placeholders": {

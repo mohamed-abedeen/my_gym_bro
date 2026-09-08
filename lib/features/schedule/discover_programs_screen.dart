@@ -1,5 +1,7 @@
 ﻿import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
+import 'package:my_gym_bro/core/router/app_router.dart';
 import 'package:my_gym_bro/features/schedule/premade_program_card.dart';
 import 'package:my_gym_bro/features/schedule/premade_programs.dart';
 import 'package:my_gym_bro/features/schedule/premade_programs_screen.dart';
@@ -189,6 +191,13 @@ class _DiscoverProgramsScreenState
                 ),
                 child: Column(
                   children: [
+                    // Always first — build a routine from scratch, shown even
+                    // when filters are active or match nothing.
+                    CreateOwnProgramCard(
+                      l10n: l10n,
+                      onTap: () => context.push(AppRoutes.scheduleBuilder),
+                    ),
+                    SizedBox(height: 14.h),
                     if (visible.isEmpty)
                       Padding(
                         padding: EdgeInsets.symmetric(vertical: 30.h),

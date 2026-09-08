@@ -1993,6 +1993,15 @@ class AppLocalizationsEs extends AppLocalizations {
       'Ningún programa coincide con tus filtros, Bro!';
 
   @override
+  String get discoverCreateOwn => 'Crea el tuyo';
+
+  @override
+  String get discoverCreateOwnSub => 'Elige tus días y ejercicios desde cero';
+
+  @override
+  String get discoverCreateOwnTag => 'PROPIO';
+
+  @override
   String discoverRoutinesCount(int count) {
     String _temp0 = intl.Intl.pluralLogic(
       count,
