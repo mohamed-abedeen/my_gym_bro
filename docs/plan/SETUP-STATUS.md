@@ -89,6 +89,12 @@ gh secret set FIREBASE_ANDROID_JSON_B64  --body "$(base64 -w0 google-services.js
 # Licensed exercise data (after purchase): base URL is a plain variable, key a secret
 gh variable set EXERCISEDB_BASE_URL      --body "https://…"
 gh secret set EXERCISEDB_API_KEY
+# Supabase deploy lane (supabase-deploy.yml): personal access token from the Supabase
+# dashboard → Account → Access Tokens, plus the Sign in with Apple key for delete-account's
+# token revocation — the lane pushes these to the project's function secrets:
+gh secret set SUPABASE_ACCESS_TOKEN
+gh secret set APPLE_TEAM_ID; gh secret set APPLE_KEY_ID
+gh secret set APPLE_PRIVATE_KEY < AuthKey_XXXXXXXXXX.p8
 # Play release signing (build-aab job), when ready:
 gh secret set ANDROID_KEYSTORE_BASE64    --body "$(base64 -w0 upload-keystore.jks)"
 gh secret set ANDROID_KEYSTORE_PASSWORD; gh secret set ANDROID_KEY_ALIAS; gh secret set ANDROID_KEY_PASSWORD
@@ -244,8 +250,12 @@ pushed. As of the last check the following were pending — **verify with
   5. Flip `android:autoVerify="true"` on the https intent-filter in
      `AndroidManifest.xml` once assetlinks.json is live and verified.
 - `supabase functions deploy` — 7 functions in `supabase/functions/`; deployed versions are
-  stale. Mind `verify_jwt`: `revenuecat-webhook` and cron-invoked functions must be deployed
-  with JWT verification off (config or `--no-verify-jwt`) or they're dead behind the gate.
+  stale. **No local CLI needed:** `gh workflow run supabase-deploy.yml -f functions=all`
+  (`.github/workflows/supabase-deploy.yml`, added 2026-09-08) deploys from CI with
+  `SUPABASE_ACCESS_TOKEN` + the project ref derived from `SUPABASE_URL`, and first syncs
+  every function secret that exists as a GitHub secret of the same name. `verify_jwt` per
+  function comes from `config.toml` (`revenuecat-webhook` and the cron-invoked functions are
+  off there); the lane passes no flags, so keep those blocks intact.
 - **Function secrets** (`supabase secrets set …`): `FCM_SERVICE_ACCOUNT` (service-account
   JSON), `REVENUECAT_SECRET_KEY`, `REVENUECAT_WEBHOOK_SECRET`, `CRON_SECRET`, and — for
   Sign in with Apple token revocation on account deletion (`delete-account`, App Store
@@ -254,7 +264,8 @@ pushed. As of the last check the following were pending — **verify with
   client secret is generated from; optional `APPLE_CLIENT_ID`, defaults to the bundle id).
   The service-role key is auto-injected as `SUPABASE_SERVICE_ROLE_KEY` — nothing to set.
   Without the `APPLE_*` secrets deletion still completes; the function logs
-  `Apple token revocation failed (not_configured)`.
+  `Apple token revocation failed (not_configured)`. Easiest path: store each as a GitHub
+  secret of the same name and run the deploy lane above — it syncs whichever exist.
 - `supabase config push` — `config.toml` carries SMTP (Resend) settings; owner must also
   create the Resend account, verify the sending domain, mirror SMTP in dashboard Auth
   settings, and raise Auth email rate limits. Also outstanding from the security audit:

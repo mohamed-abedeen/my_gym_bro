@@ -1,0 +1,120 @@
+name: Supabase deploy
+
+# Deploys edge functions to the cloud project from CI — the owner's
+# `supabase functions deploy` step without a local CLI or `supabase login`.
+# Also syncs function secrets: every GitHub secret in the list below that is
+# set gets pushed to the project's function secrets under the same name, so
+# secret values never leave GitHub/Supabase.
+#
+# Manual only. Migrations are NOT run here — `supabase db push` is a
+# deliberate owner step (docs/plan/SETUP-STATUS.md → Supabase cloud).
+#
+# Needs: SUPABASE_URL (the project ref is derived from it) and
+# SUPABASE_ACCESS_TOKEN (Supabase dashboard → Account → Access Tokens).
+# Optional function secrets (synced when present): APPLE_TEAM_ID,
+# APPLE_KEY_ID, APPLE_PRIVATE_KEY (delete-account's Sign in with Apple token
+# revocation), FCM_SERVICE_ACCOUNT, REVENUECAT_SECRET_KEY,
+# REVENUECAT_WEBHOOK_SECRET, CRON_SECRET.
+
+on:
+  workflow_dispatch:
+    inputs:
+      functions:
+        description: "Function name(s) to deploy, space-separated, or 'all'"
+        default: delete-account
+        type: string
+      sync_secrets:
+        description: "Push the function secrets that exist as GitHub secrets to the project"
+        default: true
+        type: boolean
+
+concurrency:
+  group: supabase-deploy
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    name: Deploy edge functions
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+    steps:
+      - name: Check required secrets
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+        run: |
+          missing=()
+          [ -n "$SUPABASE_ACCESS_TOKEN" ] || missing+=(SUPABASE_ACCESS_TOKEN)
+          [ -n "$SUPABASE_URL" ] || missing+=(SUPABASE_URL)
+          if [ ${#missing[@]} -gt 0 ]; then
+            echo "::error::Missing GitHub secrets: ${missing[*]} — see docs/plan/SETUP-STATUS.md → Secrets & variables checklist"
+            exit 1
+          fi
+          ref=$(printf '%s' "$SUPABASE_URL" | sed -E 's#^https?://([a-z0-9]+)\.supabase\.(co|in).*$#\1#')
+          if [ -z "$ref" ] || [ "$ref" = "$SUPABASE_URL" ]; then
+            echo "::error::Could not derive the project ref from SUPABASE_URL"
+            exit 1
+          fi
+          echo "::add-mask::$ref"
+          echo "PROJECT_REF=$ref" >> "$GITHUB_ENV"
+
+      - uses: actions/checkout@v4
+
+      - uses: supabase/setup-cli@v1
+        with:
+          version: latest
+
+      - name: Sync function secrets
+        if: ${{ inputs.sync_secrets }}
+        env:
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+          APPLE_KEY_ID: ${{ secrets.APPLE_KEY_ID }}
+          APPLE_PRIVATE_KEY: ${{ secrets.APPLE_PRIVATE_KEY }}
+          FCM_SERVICE_ACCOUNT: ${{ secrets.FCM_SERVICE_ACCOUNT }}
+          REVENUECAT_SECRET_KEY: ${{ secrets.REVENUECAT_SECRET_KEY }}
+          REVENUECAT_WEBHOOK_SECRET: ${{ secrets.REVENUECAT_WEBHOOK_SECRET }}
+          CRON_SECRET: ${{ secrets.CRON_SECRET }}
+        run: |
+          args=(); set_names=()
+          for name in APPLE_TEAM_ID APPLE_KEY_ID APPLE_PRIVATE_KEY FCM_SERVICE_ACCOUNT \
+                      REVENUECAT_SECRET_KEY REVENUECAT_WEBHOOK_SECRET CRON_SECRET; do
+            val="${!name}"
+            if [ -n "$val" ]; then args+=("$name=$val"); set_names+=("$name"); fi
+          done
+          apple=0
+          for n in APPLE_TEAM_ID APPLE_KEY_ID APPLE_PRIVATE_KEY; do
+            [ -n "${!n}" ] && apple=$((apple + 1))
+          done
+          if [ "$apple" -eq 0 ]; then
+            echo "::warning::APPLE_* secrets not set — Sign in with Apple token revocation stays unconfigured (delete-account still works; it logs not_configured)"
+          elif [ "$apple" -lt 3 ]; then
+            echo "::warning::Only $apple of the 3 APPLE_* secrets are set — token revocation needs all three"
+          fi
+          if [ ${#args[@]} -eq 0 ]; then
+            echo "No function secrets present in GitHub — nothing to sync"
+            exit 0
+          fi
+          supabase secrets set --project-ref "$PROJECT_REF" "${args[@]}"
+          echo "Synced function secrets: ${set_names[*]}"
+
+      - name: Deploy
+        env:
+          FUNCTIONS: ${{ inputs.functions }}
+        run: |
+          # verify_jwt per function comes from supabase/config.toml
+          # ([functions.<name>] blocks) — no flags needed here.
+          if [ "$FUNCTIONS" = "all" ]; then
+            supabase functions deploy --project-ref "$PROJECT_REF"
+          else
+            for fn in $FUNCTIONS; do
+              if [ ! -d "supabase/functions/$fn" ]; then
+                echo "::error::No such function: $fn"
+                exit 1
+              fi
+              supabase functions deploy "$fn" --project-ref "$PROJECT_REF"
+            done
+          fi
+
+      - name: Deployed functions
+        run: supabase functions list --project-ref "$PROJECT_REF"
