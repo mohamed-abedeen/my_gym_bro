@@ -246,9 +246,15 @@ pushed. As of the last check the following were pending — **verify with
 - `supabase functions deploy` — 7 functions in `supabase/functions/`; deployed versions are
   stale. Mind `verify_jwt`: `revenuecat-webhook` and cron-invoked functions must be deployed
   with JWT verification off (config or `--no-verify-jwt`) or they're dead behind the gate.
-- **Function secrets** (`supabase secrets set …`): `SERVICE_ROLE_KEY` (custom name — the
-  code does NOT read the auto-injected `SUPABASE_SERVICE_ROLE_KEY`), `FCM_SERVER_KEY`,
-  `REVENUECAT_WEBHOOK_SECRET`.
+- **Function secrets** (`supabase secrets set …`): `FCM_SERVICE_ACCOUNT` (service-account
+  JSON), `REVENUECAT_SECRET_KEY`, `REVENUECAT_WEBHOOK_SECRET`, `CRON_SECRET`, and — for
+  Sign in with Apple token revocation on account deletion (`delete-account`, App Store
+  guideline 5.1.1(v)) — `APPLE_TEAM_ID`, `APPLE_KEY_ID`,
+  `APPLE_PRIVATE_KEY="$(cat AuthKey_XXXXXXXXXX.p8)"` (the same .p8 the Apple provider's
+  client secret is generated from; optional `APPLE_CLIENT_ID`, defaults to the bundle id).
+  The service-role key is auto-injected as `SUPABASE_SERVICE_ROLE_KEY` — nothing to set.
+  Without the `APPLE_*` secrets deletion still completes; the function logs
+  `Apple token revocation failed (not_configured)`.
 - `supabase config push` — `config.toml` carries SMTP (Resend) settings; owner must also
   create the Resend account, verify the sending domain, mirror SMTP in dashboard Auth
   settings, and raise Auth email rate limits. Also outstanding from the security audit:

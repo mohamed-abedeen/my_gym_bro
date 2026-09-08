@@ -413,6 +413,31 @@ class AppDatabase extends _$AppDatabase {
   @override
   int get schemaVersion => 21;
 
+  /// Account deletion: removes every row that belongs to the account in one
+  /// transaction, children before parents. The exercise catalogue is a
+  /// device-level cache and stays (user-authored custom exercises go); the
+  /// social/leaderboard tables are server mirrors that refill on the next
+  /// sign-in. Leaving any of this behind would let the next sign-up on this
+  /// device see -- and backfill-push -- the deleted user's history.
+  Future<void> wipeAccountData() => transaction(() async {
+        await delete(workoutSets).go();
+        await delete(sessionExercises).go();
+        await delete(sessions).go();
+        await delete(scheduledExercises).go();
+        await delete(scheduleDays).go();
+        await delete(schedules).go();
+        await delete(syncQueue).go();
+        await delete(challengeParticipants).go();
+        await delete(challenges).go();
+        await delete(friendships).go();
+        await delete(leaderboardCache).go();
+        await delete(seasonWinnerCache).go();
+        await delete(skinOwnerships).go();
+        await delete(progressReports).go();
+        await delete(userProfiles).go();
+        await (delete(exercises)..where((e) => e.isCustom.equals(true))).go();
+      });
+
   @override
   MigrationStrategy get migration => MigrationStrategy(
     onCreate: (m) async {

@@ -37,7 +37,7 @@ flutter run --dart-define=SUPABASE_URL=<url> --dart-define=SUPABASE_ANON_KEY=<an
 - [ ] Settings → subscription row shows **"X days left"** + chevron; tapping opens the paywall.
 - [ ] Simulate trial expiry (device clock +8 days, or temporarily set `trialDurationDays = 0` in `lib/shared/app_constants.dart`) → on resume the app is **forced to the paywall**: no close (X) button, back/swipe-back blocked, cannot navigate away.
 - [ ] After a valid subscription/restore, the gate **releases** and returns to the app.
-- [ ] Settings → **Delete Account** → confirm dialog → completes (needs `delete-account` edge function deployed).
+- [ ] Settings → **Delete Account** → hold to confirm → on an Apple-linked account the native Sign in with Apple sheet appears (dismissing it cancels; nothing changes) → lands on sign-in with no local history left; iOS Settings → Apple ID → Sign in with Apple no longer lists the app. Needs `delete-account` deployed + the `APPLE_*` function secrets (without them deletion still completes and the skipped revocation is logged).
 - [ ] Apply `supabase/migrations/005_drop_dm.sql` on deploy (`supabase db push`).
 
 ---
@@ -62,7 +62,7 @@ The 6 edge functions are **deployed** to project `konzjrklgyuodzrrhwwv`, but the
 
 Exact names the code reads (from `Deno.env.get(...)`):
 - `SUPABASE_URL`, `SUPABASE_ANON_KEY` — **auto-injected** by Supabase, no action.
-- **`SERVICE_ROLE_KEY`** — ⚠️ **MUST set manually.** The code uses this custom name, NOT the auto-injected `SUPABASE_SERVICE_ROLE_KEY`, so it is undefined until you set it. Needed by ALL functions (revenuecat-webhook, verify-subscription, send-push-notification, schedule-notifications, delete-account, notify-social-challenge). Value = Dashboard → Project Settings → API → `service_role` key.
+- **Service-role key** — auto-injected into every function as `SUPABASE_SERVICE_ROLE_KEY`; nothing to set. Secrets that DO need setting: `FCM_SERVICE_ACCOUNT`, `REVENUECAT_SECRET_KEY`, `REVENUECAT_WEBHOOK_SECRET`, `CRON_SECRET`, and `APPLE_TEAM_ID` / `APPLE_KEY_ID` / `APPLE_PRIVATE_KEY` for delete-account's Sign in with Apple token revocation (see SETUP-STATUS → Supabase cloud).
 - **`FCM_SERVER_KEY`** — set manually. Needed by send-push-notification, schedule-notifications, notify-social-challenge. Value = Firebase Console → Project Settings → Cloud Messaging server key. (Note: Google deprecated legacy FCM server keys; if it's gone, the functions may need updating to FCM HTTP v1.)
 - **`REVENUECAT_WEBHOOK_SECRET`** — set manually. Needed by revenuecat-webhook. Value = the Authorization secret you configure on the RevenueCat webhook.
 

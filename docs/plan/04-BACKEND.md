@@ -63,7 +63,7 @@ The app does **not** call custom CRUD endpoints — it uses the Supabase SDK aga
 | **verify-subscription** | Returns `{ status, expires_at }` from `subscriptions`; falls back to `trial_started_at` window if no row. |
 | **revenuecat-webhook** | HMAC-SHA256-verified; maps RC events (INITIAL_PURCHASE→active, CANCELLATION→expired, BILLING_ISSUE→grace_period) → upserts `subscriptions`. |
 | **schedule-notifications** | Cron (pg_cron): sends morning/evening/streak FCM pushes to users with active schedules + valid tokens; filters by weekday + session completion; batches ≤500. |
-| **delete-account** | Cascading soft-delete of user data, then hard-delete auth user. |
+| **delete-account** | Revokes Sign in with Apple tokens first (Apple REST API, App Store guideline 5.1.1(v); needs the `APPLE_*` secrets plus the fresh authorization code the client sends), then hard-deletes every user row via `delete_account_data` and the auth user. A failed revocation is logged, never blocks deletion. |
 | **notify-social-challenge** | Sends "new PR / challenge" FCM to active subscribers (except record holder); randomizes template. |
 | **send-push-notification** | Generic FCM send (by user-id array or topic). |
 
