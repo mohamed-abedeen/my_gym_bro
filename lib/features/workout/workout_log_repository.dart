@@ -30,9 +30,14 @@ class Patch<T> {
 
 /// Parameters needed to create a new workout session.
 class CreateSessionParams {
-  const CreateSessionParams({required this.startedAt, this.scheduleId});
+  const CreateSessionParams({
+    required this.startedAt,
+    this.scheduleId,
+    this.scheduleDayId,
+  });
   final DateTime startedAt;
   final int? scheduleId;
+  final int? scheduleDayId;
 }
 
 /// Parameters needed to add an exercise to an active session.
@@ -222,9 +227,13 @@ class RestoredSessionInfo {
     required this.sessionId,
     required this.startedAt,
     DateTime? lastActivityAt,
+    this.scheduleDayId,
     this.exercises = const [],
   }) : lastActivityAt = lastActivityAt ?? startedAt;
   final int sessionId;
+
+  /// The plan day this session was started from, or null for a free session.
+  final int? scheduleDayId;
   final DateTime startedAt;
 
   /// Newest persisted touch on the session (row updatedAt/createdAt across
@@ -290,6 +299,9 @@ class WorkoutLogRepository {
       scheduleId: params.scheduleId == null
           ? const Value.absent()
           : Value(params.scheduleId),
+      scheduleDayId: params.scheduleDayId == null
+          ? const Value.absent()
+          : Value(params.scheduleDayId),
     ));
   }
 
@@ -494,6 +506,43 @@ class WorkoutLogRepository {
         .toList();
   }
 
+  /// Overwrite a schedule day's exercise list with [performed], in order, in
+  /// one transaction. Exercises the day already had keep their existing
+  /// planned targets (sets/reps and any cardio duration/distance goals);
+  /// brand-new exercises are planned from [performed]. A duplicated exercise
+  /// reuses the saved row once, then plans further copies from [performed].
+  Future<void> replaceScheduledExercises(
+    int scheduleDayId,
+    List<ScheduledExerciseInfo> performed,
+  ) async {
+    final existing = await _scheduleDao.getExercises(scheduleDayId);
+    final priorById = <String, List<ScheduledExercise>>{};
+    for (final e in existing) {
+      priorById.putIfAbsent(e.exerciseId, () => []).add(e);
+    }
+    final now = DateTime.now();
+    final rows = <ScheduledExercisesCompanion>[];
+    for (var i = 0; i < performed.length; i++) {
+      final p = performed[i];
+      final prior = priorById[p.exerciseId];
+      final kept =
+          (prior != null && prior.isNotEmpty) ? prior.removeAt(0) : null;
+      rows.add(
+        ScheduledExercisesCompanion(
+          scheduleDayId: Value(scheduleDayId),
+          exerciseId: Value(p.exerciseId),
+          orderIndex: Value(i),
+          targetSets: Value(kept?.targetSets ?? p.targetSets),
+          targetReps: Value(kept?.targetReps ?? p.targetReps),
+          targetDurationSeconds: Value(kept?.targetDurationSeconds),
+          targetDistance: Value(kept?.targetDistance),
+          createdAt: Value(now),
+        ),
+      );
+    }
+    await _scheduleDao.replaceDayExercises(scheduleDayId, rows);
+  }
+
   // ── Session restore (crash / process-kill recovery) ────────────────────
 
   /// How long an unfinished session stays restorable before being treated
@@ -531,6 +580,7 @@ class WorkoutLogRepository {
         sessionId: session.localId,
         startedAt: session.startedAt,
         lastActivityAt: lastActivity,
+        scheduleDayId: session.scheduleDayId,
       );
     }
 
@@ -588,6 +638,7 @@ class WorkoutLogRepository {
       sessionId: session.localId,
       startedAt: session.startedAt,
       lastActivityAt: lastActivity,
+      scheduleDayId: session.scheduleDayId,
       exercises: exercises,
     );
   }

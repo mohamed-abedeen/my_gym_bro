@@ -1270,6 +1270,21 @@ class AppLocalizationsDe extends AppLocalizations {
   String get newPrLabel => 'Neuer PR';
 
   @override
+  String saveDayChangesTitle(String day) {
+    return 'Änderungen an $day speichern?';
+  }
+
+  @override
+  String get saveDayChangesBody =>
+      'Die heutigen Übungen weichen von deinem Plan ab. Liste speichern, damit der Tag beim nächsten Mal so startet.';
+
+  @override
+  String get saveDayChangesConfirm => 'Änderungen speichern';
+
+  @override
+  String get saveDayChangesKeep => 'Nicht speichern';
+
+  @override
   String get leaderboardTab => 'Rangliste';
 
   @override

@@ -367,6 +367,10 @@
   "tapAgainToConfirm": "Toca de nuevo para confirmar",
   "exercisesLabel": "Ejercicios",
   "newPrLabel": "Nuevo PR",
+  "saveDayChangesTitle": "¿Guardar cambios en {day}?",
+  "saveDayChangesBody": "Los ejercicios de hoy difieren de tu plan. Guarda esta lista para que el día empiece así la próxima vez.",
+  "saveDayChangesConfirm": "Guardar cambios",
+  "saveDayChangesKeep": "No guardar",
 
   "leaderboardTab": "Clasificación",
   "challengesTab": "Retos",

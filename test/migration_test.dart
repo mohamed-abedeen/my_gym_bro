@@ -23,7 +23,8 @@ class _SchemaStamp extends QueryExecutorUser {
 
 /// The v11-era shape of the tables the 11→16 migration steps touch.
 /// user_profiles lacks body_weight_kg / height_cm (added in v12); the
-/// exercise tables were already at their current shape by v11.
+/// exercise tables were already at their current shape by v11; sessions is at
+/// its pre-v22 shape (the v22 step adds schedule_day_id).
 const _v11Ddl = [
   '''
   CREATE TABLE user_profiles (
@@ -56,6 +57,19 @@ const _v11Ddl = [
     is_custom INTEGER NOT NULL DEFAULT 0,
     usage_count INTEGER NOT NULL DEFAULT 0,
     is_favorite INTEGER NOT NULL DEFAULT 0
+  )''',
+  '''
+  CREATE TABLE sessions (
+    local_id INTEGER PRIMARY KEY AUTOINCREMENT,
+    remote_id TEXT,
+    sync_status TEXT NOT NULL DEFAULT 'pending',
+    created_at INTEGER, updated_at INTEGER, deleted_at INTEGER,
+    schedule_id INTEGER,
+    started_at INTEGER NOT NULL,
+    finished_at INTEGER,
+    duration_seconds INTEGER,
+    total_volume REAL,
+    notes TEXT
   )''',
   '''
   CREATE TABLE session_exercises (
@@ -132,7 +146,13 @@ void main() {
 
     // Migration completed and stamped the current version.
     final version = await query('PRAGMA user_version');
-    expect(version.single.read<int>('user_version'), 21);
+    expect(version.single.read<int>('user_version'), 22);
+
+    // v22: sessions remember the plan day they were started from.
+    final sessionCols = (await query('PRAGMA table_info(sessions)'))
+        .map((r) => r.read<String>('name'))
+        .toSet();
+    expect(sessionCols, contains('schedule_day_id'));
 
     // v12/v17 _addColumnIfMissing columns were added to user_profiles.
     final profileCols = (await query('PRAGMA table_info(user_profiles)'))
@@ -211,7 +231,7 @@ void main() {
     Future<List<QueryRow>> query(String sql) => db.customSelect(sql).get();
 
     final version = await query('PRAGMA user_version');
-    expect(version.single.read<int>('user_version'), 21);
+    expect(version.single.read<int>('user_version'), 22);
 
     final tables = (await query(
       "SELECT name FROM sqlite_master WHERE type = 'table'",
@@ -246,7 +266,7 @@ void main() {
     final db = AppDatabase(NativeDatabase(file));
     addTearDown(db.close);
     final version = await db.customSelect('PRAGMA user_version').get();
-    expect(version.single.read<int>('user_version'), 21);
+    expect(version.single.read<int>('user_version'), 22);
   });
 
   test('fresh createAll builds every table', () async {

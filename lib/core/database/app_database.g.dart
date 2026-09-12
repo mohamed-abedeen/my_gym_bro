@@ -4495,6 +4495,20 @@ class $SessionsTable extends Sessions with TableInfo<$SessionsTable, Session> {
       'REFERENCES schedules (local_id)',
     ),
   );
+  static const VerificationMeta _scheduleDayIdMeta = const VerificationMeta(
+    'scheduleDayId',
+  );
+  @override
+  late final GeneratedColumn<int> scheduleDayId = GeneratedColumn<int>(
+    'schedule_day_id',
+    aliasedName,
+    true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'REFERENCES schedule_days (local_id)',
+    ),
+  );
   static const VerificationMeta _startedAtMeta = const VerificationMeta(
     'startedAt',
   );
@@ -4557,6 +4571,7 @@ class $SessionsTable extends Sessions with TableInfo<$SessionsTable, Session> {
     updatedAt,
     deletedAt,
     scheduleId,
+    scheduleDayId,
     startedAt,
     finishedAt,
     durationSeconds,
@@ -4615,6 +4630,15 @@ class $SessionsTable extends Sessions with TableInfo<$SessionsTable, Session> {
       context.handle(
         _scheduleIdMeta,
         scheduleId.isAcceptableOrUnknown(data['schedule_id']!, _scheduleIdMeta),
+      );
+    }
+    if (data.containsKey('schedule_day_id')) {
+      context.handle(
+        _scheduleDayIdMeta,
+        scheduleDayId.isAcceptableOrUnknown(
+          data['schedule_day_id']!,
+          _scheduleDayIdMeta,
+        ),
       );
     }
     if (data.containsKey('started_at')) {
@@ -4692,6 +4716,10 @@ class $SessionsTable extends Sessions with TableInfo<$SessionsTable, Session> {
         DriftSqlType.int,
         data['${effectivePrefix}schedule_id'],
       ),
+      scheduleDayId: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}schedule_day_id'],
+      ),
       startedAt: attachedDatabase.typeMapping.read(
         DriftSqlType.dateTime,
         data['${effectivePrefix}started_at'],
@@ -4729,6 +4757,7 @@ class Session extends DataClass implements Insertable<Session> {
   final DateTime? updatedAt;
   final DateTime? deletedAt;
   final int? scheduleId;
+  final int? scheduleDayId;
   final DateTime startedAt;
   final DateTime? finishedAt;
   final int? durationSeconds;
@@ -4742,6 +4771,7 @@ class Session extends DataClass implements Insertable<Session> {
     this.updatedAt,
     this.deletedAt,
     this.scheduleId,
+    this.scheduleDayId,
     required this.startedAt,
     this.finishedAt,
     this.durationSeconds,
@@ -4767,6 +4797,9 @@ class Session extends DataClass implements Insertable<Session> {
     }
     if (!nullToAbsent || scheduleId != null) {
       map['schedule_id'] = Variable<int>(scheduleId);
+    }
+    if (!nullToAbsent || scheduleDayId != null) {
+      map['schedule_day_id'] = Variable<int>(scheduleDayId);
     }
     map['started_at'] = Variable<DateTime>(startedAt);
     if (!nullToAbsent || finishedAt != null) {
@@ -4803,6 +4836,9 @@ class Session extends DataClass implements Insertable<Session> {
       scheduleId: scheduleId == null && nullToAbsent
           ? const Value.absent()
           : Value(scheduleId),
+      scheduleDayId: scheduleDayId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(scheduleDayId),
       startedAt: Value(startedAt),
       finishedAt: finishedAt == null && nullToAbsent
           ? const Value.absent()
@@ -4832,6 +4868,7 @@ class Session extends DataClass implements Insertable<Session> {
       updatedAt: serializer.fromJson<DateTime?>(json['updatedAt']),
       deletedAt: serializer.fromJson<DateTime?>(json['deletedAt']),
       scheduleId: serializer.fromJson<int?>(json['scheduleId']),
+      scheduleDayId: serializer.fromJson<int?>(json['scheduleDayId']),
       startedAt: serializer.fromJson<DateTime>(json['startedAt']),
       finishedAt: serializer.fromJson<DateTime?>(json['finishedAt']),
       durationSeconds: serializer.fromJson<int?>(json['durationSeconds']),
@@ -4850,6 +4887,7 @@ class Session extends DataClass implements Insertable<Session> {
       'updatedAt': serializer.toJson<DateTime?>(updatedAt),
       'deletedAt': serializer.toJson<DateTime?>(deletedAt),
       'scheduleId': serializer.toJson<int?>(scheduleId),
+      'scheduleDayId': serializer.toJson<int?>(scheduleDayId),
       'startedAt': serializer.toJson<DateTime>(startedAt),
       'finishedAt': serializer.toJson<DateTime?>(finishedAt),
       'durationSeconds': serializer.toJson<int?>(durationSeconds),
@@ -4866,6 +4904,7 @@ class Session extends DataClass implements Insertable<Session> {
     Value<DateTime?> updatedAt = const Value.absent(),
     Value<DateTime?> deletedAt = const Value.absent(),
     Value<int?> scheduleId = const Value.absent(),
+    Value<int?> scheduleDayId = const Value.absent(),
     DateTime? startedAt,
     Value<DateTime?> finishedAt = const Value.absent(),
     Value<int?> durationSeconds = const Value.absent(),
@@ -4879,6 +4918,9 @@ class Session extends DataClass implements Insertable<Session> {
     updatedAt: updatedAt.present ? updatedAt.value : this.updatedAt,
     deletedAt: deletedAt.present ? deletedAt.value : this.deletedAt,
     scheduleId: scheduleId.present ? scheduleId.value : this.scheduleId,
+    scheduleDayId: scheduleDayId.present
+        ? scheduleDayId.value
+        : this.scheduleDayId,
     startedAt: startedAt ?? this.startedAt,
     finishedAt: finishedAt.present ? finishedAt.value : this.finishedAt,
     durationSeconds: durationSeconds.present
@@ -4900,6 +4942,9 @@ class Session extends DataClass implements Insertable<Session> {
       scheduleId: data.scheduleId.present
           ? data.scheduleId.value
           : this.scheduleId,
+      scheduleDayId: data.scheduleDayId.present
+          ? data.scheduleDayId.value
+          : this.scheduleDayId,
       startedAt: data.startedAt.present ? data.startedAt.value : this.startedAt,
       finishedAt: data.finishedAt.present
           ? data.finishedAt.value
@@ -4924,6 +4969,7 @@ class Session extends DataClass implements Insertable<Session> {
           ..write('updatedAt: $updatedAt, ')
           ..write('deletedAt: $deletedAt, ')
           ..write('scheduleId: $scheduleId, ')
+          ..write('scheduleDayId: $scheduleDayId, ')
           ..write('startedAt: $startedAt, ')
           ..write('finishedAt: $finishedAt, ')
           ..write('durationSeconds: $durationSeconds, ')
@@ -4942,6 +4988,7 @@ class Session extends DataClass implements Insertable<Session> {
     updatedAt,
     deletedAt,
     scheduleId,
+    scheduleDayId,
     startedAt,
     finishedAt,
     durationSeconds,
@@ -4959,6 +5006,7 @@ class Session extends DataClass implements Insertable<Session> {
           other.updatedAt == this.updatedAt &&
           other.deletedAt == this.deletedAt &&
           other.scheduleId == this.scheduleId &&
+          other.scheduleDayId == this.scheduleDayId &&
           other.startedAt == this.startedAt &&
           other.finishedAt == this.finishedAt &&
           other.durationSeconds == this.durationSeconds &&
@@ -4974,6 +5022,7 @@ class SessionsCompanion extends UpdateCompanion<Session> {
   final Value<DateTime?> updatedAt;
   final Value<DateTime?> deletedAt;
   final Value<int?> scheduleId;
+  final Value<int?> scheduleDayId;
   final Value<DateTime> startedAt;
   final Value<DateTime?> finishedAt;
   final Value<int?> durationSeconds;
@@ -4987,6 +5036,7 @@ class SessionsCompanion extends UpdateCompanion<Session> {
     this.updatedAt = const Value.absent(),
     this.deletedAt = const Value.absent(),
     this.scheduleId = const Value.absent(),
+    this.scheduleDayId = const Value.absent(),
     this.startedAt = const Value.absent(),
     this.finishedAt = const Value.absent(),
     this.durationSeconds = const Value.absent(),
@@ -5001,6 +5051,7 @@ class SessionsCompanion extends UpdateCompanion<Session> {
     this.updatedAt = const Value.absent(),
     this.deletedAt = const Value.absent(),
     this.scheduleId = const Value.absent(),
+    this.scheduleDayId = const Value.absent(),
     required DateTime startedAt,
     this.finishedAt = const Value.absent(),
     this.durationSeconds = const Value.absent(),
@@ -5015,6 +5066,7 @@ class SessionsCompanion extends UpdateCompanion<Session> {
     Expression<DateTime>? updatedAt,
     Expression<DateTime>? deletedAt,
     Expression<int>? scheduleId,
+    Expression<int>? scheduleDayId,
     Expression<DateTime>? startedAt,
     Expression<DateTime>? finishedAt,
     Expression<int>? durationSeconds,
@@ -5029,6 +5081,7 @@ class SessionsCompanion extends UpdateCompanion<Session> {
       if (updatedAt != null) 'updated_at': updatedAt,
       if (deletedAt != null) 'deleted_at': deletedAt,
       if (scheduleId != null) 'schedule_id': scheduleId,
+      if (scheduleDayId != null) 'schedule_day_id': scheduleDayId,
       if (startedAt != null) 'started_at': startedAt,
       if (finishedAt != null) 'finished_at': finishedAt,
       if (durationSeconds != null) 'duration_seconds': durationSeconds,
@@ -5045,6 +5098,7 @@ class SessionsCompanion extends UpdateCompanion<Session> {
     Value<DateTime?>? updatedAt,
     Value<DateTime?>? deletedAt,
     Value<int?>? scheduleId,
+    Value<int?>? scheduleDayId,
     Value<DateTime>? startedAt,
     Value<DateTime?>? finishedAt,
     Value<int?>? durationSeconds,
@@ -5059,6 +5113,7 @@ class SessionsCompanion extends UpdateCompanion<Session> {
       updatedAt: updatedAt ?? this.updatedAt,
       deletedAt: deletedAt ?? this.deletedAt,
       scheduleId: scheduleId ?? this.scheduleId,
+      scheduleDayId: scheduleDayId ?? this.scheduleDayId,
       startedAt: startedAt ?? this.startedAt,
       finishedAt: finishedAt ?? this.finishedAt,
       durationSeconds: durationSeconds ?? this.durationSeconds,
@@ -5091,6 +5146,9 @@ class SessionsCompanion extends UpdateCompanion<Session> {
     if (scheduleId.present) {
       map['schedule_id'] = Variable<int>(scheduleId.value);
     }
+    if (scheduleDayId.present) {
+      map['schedule_day_id'] = Variable<int>(scheduleDayId.value);
+    }
     if (startedAt.present) {
       map['started_at'] = Variable<DateTime>(startedAt.value);
     }
@@ -5119,6 +5177,7 @@ class SessionsCompanion extends UpdateCompanion<Session> {
           ..write('updatedAt: $updatedAt, ')
           ..write('deletedAt: $deletedAt, ')
           ..write('scheduleId: $scheduleId, ')
+          ..write('scheduleDayId: $scheduleDayId, ')
           ..write('startedAt: $startedAt, ')
           ..write('finishedAt: $finishedAt, ')
           ..write('durationSeconds: $durationSeconds, ')
