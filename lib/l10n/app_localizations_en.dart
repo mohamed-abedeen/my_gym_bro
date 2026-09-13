@@ -1260,6 +1260,21 @@ class AppLocalizationsEn extends AppLocalizations {
   String get newPrLabel => 'New PR';
 
   @override
+  String saveDayChangesTitle(String day) {
+    return 'Save changes to $day?';
+  }
+
+  @override
+  String get saveDayChangesBody =>
+      'Today\'s exercises differ from your plan. Save this list so the day starts with it next time.';
+
+  @override
+  String get saveDayChangesConfirm => 'Save changes';
+
+  @override
+  String get saveDayChangesKeep => 'Don\'t save';
+
+  @override
   String get leaderboardTab => 'Leaderboard';
 
   @override

@@ -110,6 +110,20 @@ class ScheduleDao extends DatabaseAccessor<AppDatabase>
   Future<int> addExercise(ScheduledExercisesCompanion companion) =>
       into(scheduledExercises).insert(companion);
 
+  /// Replace a day's exercise list with [rows], in order. Delete + re-insert
+  /// in one transaction so readers never observe a half-applied list.
+  Future<void> replaceDayExercises(
+    int scheduleDayId,
+    List<ScheduledExercisesCompanion> rows,
+  ) => transaction(() async {
+    await (delete(scheduledExercises)
+          ..where((t) => t.scheduleDayId.equals(scheduleDayId)))
+        .go();
+    for (final row in rows) {
+      await into(scheduledExercises).insert(row);
+    }
+  });
+
   /// Update a schedule's fields.
   Future<void> updateSchedule(int localId, SchedulesCompanion companion) =>
       (update(schedules)..where((t) => t.localId.equals(localId)))

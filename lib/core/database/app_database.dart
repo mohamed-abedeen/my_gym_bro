@@ -135,6 +135,12 @@ class Sessions extends Table {
 
   IntColumn get scheduleId =>
       integer().nullable().references(Schedules, #localId)();
+
+  /// The plan day this session was started from (null for a free session).
+  /// Lets a session restored after a process kill still offer to save its
+  /// exercise changes back to that day when it finishes.
+  IntColumn get scheduleDayId =>
+      integer().nullable().references(ScheduleDays, #localId)();
   DateTimeColumn get startedAt => dateTime()();
   DateTimeColumn get finishedAt => dateTime().nullable()();
   IntColumn get durationSeconds => integer().nullable()();
@@ -411,7 +417,7 @@ class AppDatabase extends _$AppDatabase {
   }
 
   @override
-  int get schemaVersion => 21;
+  int get schemaVersion => 22;
 
   /// Account deletion: removes every row that belongs to the account in one
   /// transaction, children before parents. The exercise catalogue is a
@@ -581,6 +587,12 @@ class AppDatabase extends _$AppDatabase {
         if (!await _hasTable('progress_reports')) {
           await m.createTable(progressReports);
         }
+      }
+      if (from < 22) {
+        // Sessions remember the plan day they were started from, so a
+        // session restored after a process kill can still offer to save its
+        // exercise changes to that day when it finishes.
+        await _addColumnIfMissing('sessions', 'schedule_day_id', 'INTEGER');
       }
     },
   );

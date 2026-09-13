@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:math' as math;
 
+import 'package:flutter/foundation.dart' show listEquals;
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:my_gym_bro/core/providers/providers.dart';
@@ -182,6 +183,8 @@ class ActiveSessionState {
     this.accumulatedPausedSeconds = 0,
     this.prEvent,
     this.rankUpEvent,
+    this.scheduleDayId,
+    this.scheduleExerciseIds,
   });
   final int? sessionId;
   final List<ActiveExercise> exercises;
@@ -197,6 +200,16 @@ class ActiveSessionState {
   /// Latest per-lift rank-up this session; same instance-compare contract
   /// as [prEvent].
   final LiftRankUpEvent? rankUpEvent;
+
+  /// The plan day this session was started from; null for a free session.
+  /// Survives a process-kill restore via the session row.
+  final int? scheduleDayId;
+
+  /// Exercise ids loaded from [scheduleDayId] at start, in order: the
+  /// baseline for "did the user change this day's exercises?". Null when
+  /// unknown (free session, or restored after a kill), in which case the
+  /// day's currently-saved list is used as the baseline instead.
+  final List<String>? scheduleExerciseIds;
 
   /// Wall-clock time the user pressed pause. `null` when the session is
   /// active. The elapsed clock and Live Activity reads this to freeze.
@@ -222,6 +235,8 @@ class ActiveSessionState {
     bool clearPausedAt = false,
     PrEvent? prEvent,
     LiftRankUpEvent? rankUpEvent,
+    int? scheduleDayId,
+    List<String>? scheduleExerciseIds,
   }) => ActiveSessionState(
     sessionId: sessionId ?? this.sessionId,
     exercises: exercises ?? this.exercises,
@@ -234,12 +249,17 @@ class ActiveSessionState {
         accumulatedPausedSeconds ?? this.accumulatedPausedSeconds,
     prEvent: prEvent ?? this.prEvent,
     rankUpEvent: rankUpEvent ?? this.rankUpEvent,
+    scheduleDayId: scheduleDayId ?? this.scheduleDayId,
+    scheduleExerciseIds: scheduleExerciseIds ?? this.scheduleExerciseIds,
   );
 
   ActiveExercise? get currentExercise =>
       exercises.isNotEmpty && currentExerciseIndex < exercises.length
       ? exercises[currentExerciseIndex]
       : null;
+
+  /// Exercise ids in session order.
+  List<String> get exerciseIds => [for (final e in exercises) e.exerciseId];
 
   /// Session time excluding pauses — wall clock minus accumulated paused
   /// time minus any in-flight pause. Matches what finishSession persists.
@@ -276,6 +296,28 @@ class ActiveSessionState {
     }
     return count;
   }
+}
+
+// ── Schedule day changes ──────────────────────
+
+/// True when [performed] (this session's exercise ids, in order) differs from
+/// [planned] (the day's list): added, removed, replaced or reordered. An
+/// emptied session never counts, since saving it would wipe the day.
+bool scheduleDayExercisesChanged(
+  List<String> planned,
+  List<String> performed,
+) => performed.isNotEmpty && !listEquals(planned, performed);
+
+/// Planned targets for writing [exercise] back to a schedule day: the working
+/// (non-warm-up) set count and the first working set's reps, falling back to
+/// the schedule defaults of 3 x 10 when the session holds nothing usable.
+({int sets, int reps}) plannedTargetsFor(ActiveExercise exercise) {
+  final working = exercise.sets.where((s) => !s.isWarmup).toList();
+  final reps = working.isEmpty ? null : working.first.reps;
+  return (
+    sets: working.isEmpty ? 3 : working.length,
+    reps: reps == null || reps <= 0 ? 10 : reps,
+  );
 }
 
 // ── Notifier ──────────────────────────────────
@@ -596,6 +638,7 @@ class ActiveSessionNotifier extends StateNotifier<ActiveSessionState> {
       currentExerciseIndex: currentIndex,
       accumulatedPausedSeconds: deadGapSeconds,
       clearPausedAt: true,
+      scheduleDayId: restored.scheduleDayId,
     );
 
     restTimerService.completeSetFromNotification = completeNextSet;
@@ -623,13 +666,21 @@ class ActiveSessionNotifier extends StateNotifier<ActiveSessionState> {
         ? null
         : await _repository.getScheduleIdForDay(scheduleDayId);
     final id = await _repository.createSession(
-      CreateSessionParams(startedAt: now, scheduleId: scheduleId),
+      CreateSessionParams(
+        startedAt: now,
+        scheduleId: scheduleId,
+        scheduleDayId: scheduleDayId,
+      ),
     );
 
     // Hard reset — NOT copyWith. Stale pause bookkeeping (pausedAt /
     // accumulatedPausedSeconds) leaking in from a previous session would
     // freeze or skew the new session's clock from its very first second.
-    state = ActiveSessionState(sessionId: id, startedAt: now);
+    state = ActiveSessionState(
+      sessionId: id,
+      startedAt: now,
+      scheduleDayId: scheduleDayId,
+    );
 
     // Show a persistent ongoing notification in the status bar so the user
     // can see the elapsed workout time even when the app is backgrounded.
@@ -743,6 +794,11 @@ class ActiveSessionNotifier extends StateNotifier<ActiveSessionState> {
 
       state = state.copyWith(exercises: [...state.exercises, activeExercise]);
     }
+
+    // Baseline for the finish-time "save changes to this day?" prompt: what
+    // actually loaded (an exercise the library couldn't resolve is skipped
+    // above and must not later read as "removed by the user").
+    state = state.copyWith(scheduleExerciseIds: state.exerciseIds);
 
     // Select the first exercise
     if (state.exercises.isNotEmpty) {
@@ -888,6 +944,45 @@ class ActiveSessionNotifier extends StateNotifier<ActiveSessionState> {
         i,
       );
     }
+  }
+
+  /// Whether the exercises done this session differ from the plan day it was
+  /// started from (added, removed, replaced or reordered). Always false for a
+  /// free session and for an emptied one, which must not wipe the day.
+  Future<bool> hasScheduleDayChanges() async {
+    final dayId = state.scheduleDayId;
+    if (dayId == null) return false;
+    final planned = state.scheduleExerciseIds ??
+        [
+          for (final e in await _repository.getScheduledExercises(dayId))
+            e.exerciseId,
+        ];
+    return scheduleDayExercisesChanged(planned, state.exerciseIds);
+  }
+
+  /// Write this session's exercise list back to the plan day it was started
+  /// from, in session order. Exercises the day already had keep their planned
+  /// targets; new ones are planned from what was done today.
+  Future<void> saveExercisesToScheduleDay() async {
+    final dayId = state.scheduleDayId;
+    if (dayId == null) return;
+    final exercises = state.exercises;
+    final rows = <ScheduledExerciseInfo>[];
+    for (var i = 0; i < exercises.length; i++) {
+      final targets = plannedTargetsFor(exercises[i]);
+      rows.add(
+        ScheduledExerciseInfo(
+          exerciseId: exercises[i].exerciseId,
+          targetSets: targets.sets,
+          targetReps: targets.reps,
+          orderIndex: i,
+        ),
+      );
+    }
+    await _repository.replaceScheduledExercises(dayId, rows);
+    // The day now matches the session, so a second finish attempt (after a
+    // cancelled share screen, say) doesn't ask again.
+    state = state.copyWith(scheduleExerciseIds: state.exerciseIds);
   }
 
   /// Delete a set by its local id, removing it from both state and the DB.

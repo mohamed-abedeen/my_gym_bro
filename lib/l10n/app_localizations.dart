@@ -2412,6 +2412,30 @@ abstract class AppLocalizations {
   /// **'New PR'**
   String get newPrLabel;
 
+  /// No description provided for @saveDayChangesTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Save changes to {day}?'**
+  String saveDayChangesTitle(String day);
+
+  /// No description provided for @saveDayChangesBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Today\'s exercises differ from your plan. Save this list so the day starts with it next time.'**
+  String get saveDayChangesBody;
+
+  /// No description provided for @saveDayChangesConfirm.
+  ///
+  /// In en, this message translates to:
+  /// **'Save changes'**
+  String get saveDayChangesConfirm;
+
+  /// No description provided for @saveDayChangesKeep.
+  ///
+  /// In en, this message translates to:
+  /// **'Don\'t save'**
+  String get saveDayChangesKeep;
+
   /// No description provided for @leaderboardTab.
   ///
   /// In en, this message translates to:

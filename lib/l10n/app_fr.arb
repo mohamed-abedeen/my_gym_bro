@@ -367,6 +367,10 @@
   "tapAgainToConfirm": "Touchez à nouveau pour confirmer",
   "exercisesLabel": "Exercices",
   "newPrLabel": "Nouveau record",
+  "saveDayChangesTitle": "Enregistrer les changements dans {day} ?",
+  "saveDayChangesBody": "Les exercices d'aujourd'hui diffèrent de ton plan. Enregistre cette liste pour que la journée commence ainsi la prochaine fois.",
+  "saveDayChangesConfirm": "Enregistrer",
+  "saveDayChangesKeep": "Ne pas enregistrer",
 
   "leaderboardTab": "Classement",
   "challengesTab": "Défis",

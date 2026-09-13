@@ -13,12 +13,18 @@ import 'package:my_gym_bro/core/database/app_database.dart';
 import 'package:my_gym_bro/core/database/daos/exercise_dao.dart';
 import 'package:my_gym_bro/core/providers/providers.dart';
 import 'package:my_gym_bro/core/router/app_router.dart';
+import 'package:my_gym_bro/core/services/crash_reporter.dart';
 import 'package:my_gym_bro/core/services/exercise_gif_cache.dart';
 import 'package:my_gym_bro/core/services/notification_tone.dart';
 import 'package:my_gym_bro/core/services/units.dart';
 import 'package:my_gym_bro/features/exercises/exercise_detail_screen.dart';
 import 'package:my_gym_bro/features/leaderboard/rank.dart';
 import 'package:my_gym_bro/features/leaderboard/rank_up_overlay.dart';
+import 'package:my_gym_bro/features/schedule/split_providers.dart'
+    show
+        dayExercisesProvider,
+        scheduleDayProvider,
+        scheduleSessionMinutesProvider;
 import 'package:my_gym_bro/features/settings/skin_provider.dart';
 import 'package:my_gym_bro/features/workout/active_session/active_session_notifier.dart';
 import 'package:my_gym_bro/features/workout/active_session/pr_banner.dart';
@@ -661,6 +667,11 @@ class _ActiveSessionScreenState extends ConsumerState<ActiveSessionScreen>
     );
     if (!confirmed) return;
 
+    // Started from a plan day whose exercise list changed during the session?
+    // Offer to write it back now — finishing resets the state that knows it.
+    await _offerScheduleDayChanges(notifier);
+    if (!mounted) return;
+
     // Snapshot BEFORE finishing: finishSession() resets the live state, so the
     // share card is built from this pre-finish immutable instance, not from a
     // post-finish (wiped) read.
@@ -723,6 +734,62 @@ class _ActiveSessionScreenState extends ConsumerState<ActiveSessionScreen>
     } else {
       context.pop();
     }
+  }
+
+  /// Second step of finishing a plan-day session: when the exercises done
+  /// differ from the day's list (added / removed / replaced / reordered), ask
+  /// whether to save the new list to that day. Dismissing keeps the plan as it
+  /// was; a failure is logged rather than blocking the finish.
+  Future<void> _offerScheduleDayChanges(ActiveSessionNotifier notifier) async {
+    final dayId = ref.read(activeSessionProvider).scheduleDayId;
+    if (dayId == null) return;
+
+    var changed = false;
+    ScheduleDay? day;
+    try {
+      changed = await notifier.hasScheduleDayChanges();
+      // The day can be gone (plan deleted mid-session): nothing to save to.
+      if (changed) day = await ref.read(scheduleDayProvider(dayId).future);
+    } on Object catch (e, s) {
+      CrashReporter.recordError(
+        e,
+        stackTrace: s,
+        reason: 'Schedule day change check failed',
+      );
+      return;
+    }
+    if (!changed || day == null || !mounted) return;
+
+    final l10n = AppLocalizations.of(context);
+    final dayName = day.label ?? l10n.dayNumber(day.dayIndex + 1);
+    final save = await showConfirmSheet(
+      context,
+      tier: ConfirmTier.reversible,
+      icon: Icons.edit_calendar_rounded,
+      title: l10n.saveDayChangesTitle(dayName),
+      body: l10n.saveDayChangesBody,
+      confirmLabel: l10n.saveDayChangesConfirm,
+      cancelLabel: l10n.saveDayChangesKeep,
+    );
+    if (!save || !mounted) return;
+
+    try {
+      await notifier.saveExercisesToScheduleDay();
+    } on Object catch (e, s) {
+      CrashReporter.recordError(
+        e,
+        stackTrace: s,
+        reason: 'Saving session exercises to schedule day failed',
+      );
+      return;
+    }
+    if (!mounted) return;
+    // Day-keyed caches are plain family providers (no autoDispose), so refresh
+    // them or the plan screens keep showing the old list.
+    ref
+      ..invalidate(dayExercisesProvider(dayId))
+      ..invalidate(dayRecoveryStatusProvider(dayId))
+      ..invalidate(scheduleSessionMinutesProvider(day.scheduleId));
   }
 
   Future<void> _discard() async {

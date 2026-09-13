@@ -583,6 +583,15 @@
   "tapAgainToConfirm": "Tap again to confirm",
   "exercisesLabel": "Exercises",
   "newPrLabel": "New PR",
+  "saveDayChangesTitle": "Save changes to {day}?",
+  "@saveDayChangesTitle": {
+    "placeholders": {
+      "day": { "type": "String" }
+    }
+  },
+  "saveDayChangesBody": "Today's exercises differ from your plan. Save this list so the day starts with it next time.",
+  "saveDayChangesConfirm": "Save changes",
+  "saveDayChangesKeep": "Don't save",
 
   "leaderboardTab": "Leaderboard",
   "challengesTab": "Challenges",
