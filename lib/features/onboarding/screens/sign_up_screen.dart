@@ -8,10 +8,9 @@ import 'package:go_router/go_router.dart';
 import 'package:my_gym_bro/core/auth/auth_notifier.dart';
 import 'package:my_gym_bro/core/providers/providers.dart';
 import 'package:my_gym_bro/core/router/app_router.dart';
-import 'package:my_gym_bro/core/security/secure_storage.dart';
 import 'package:my_gym_bro/core/services/crash_reporter.dart';
 import 'package:my_gym_bro/core/services/notification_service.dart';
-import 'package:my_gym_bro/core/services/program_seeder.dart';
+import 'package:my_gym_bro/features/onboarding/app_entry.dart';
 import 'package:my_gym_bro/features/onboarding/onboarding_persistence.dart';
 import 'package:my_gym_bro/features/onboarding/onboarding_state.dart';
 import 'package:my_gym_bro/features/onboarding/widgets/mgb_logo.dart';
@@ -92,21 +91,9 @@ class _SignUpScreenState extends ConsumerState<SignUpScreen> {
   }
 
   Future<void> _seedAndEnter() async {
-    // Exercises are no longer bundled/seeded in bulk — they sync from the
-    // exercise API and are cached on demand. We only ensure the tiny bundled
-    // starter set is cached so the default program has rich offline data.
-    await SecureStorage().delete('needs_exercise_seed');
-
     if (!mounted) return;
     setState(() => _seeding = true);
-
-    try {
-      final db = ref.read(databaseProvider);
-      final repo = ref.read(exerciseRepositoryProvider);
-      await ProgramSeeder(db, repo).ensureStarterCached();
-    } on Exception {
-      // Non-fatal — proceed regardless.
-    }
+    await prepareAppEntry(ref);
 
     if (!mounted) return;
     setState(() => _seeding = false);
@@ -242,24 +229,27 @@ class _SignUpScreenState extends ConsumerState<SignUpScreen> {
                           ),
                         ),
                       ),
-                      // Dev/beta: into the app without an account.
+                      // Dev/beta: into the app without an account — sized to
+                      // be found while sign-in isn't fully set up.
                       if (kDebugMode || kBetaFreeAccess)
                         ob.centered(
-                          top: 892,
+                          top: 888,
                           child: GestureDetector(
                             behavior: HitTestBehavior.opaque,
                             onTap: isLoading ? null : _seedAndEnter,
                             child: Padding(
-                              padding: EdgeInsets.all(ob(8)),
+                              padding: EdgeInsets.symmetric(
+                                horizontal: ob(20),
+                                vertical: ob(8),
+                              ),
                               child: Text(
                                 l10n.skip,
                                 style: ob
-                                    .text(14,
-                                        weight: FontWeight.w600,
-                                        color: AppOnboarding.textMuted)
+                                    .text(17, weight: FontWeight.w600)
                                     .copyWith(
                                       decoration: TextDecoration.underline,
-                                      decorationColor: AppOnboarding.textMuted,
+                                      decorationColor:
+                                          AppOnboarding.textPrimary,
                                     ),
                               ),
                             ),

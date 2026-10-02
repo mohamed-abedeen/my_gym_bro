@@ -467,7 +467,9 @@ rank state. The sign-out confirmation says so.
 
 - ~~Onboarding **Skip button** has no `kDebugMode` guard~~ — **gated 2026-09-30:** the
   Welcome, paywall and sign-up Skips only render when `kDebugMode || kBetaFreeAccess`, so
-  they stay in TestFlight (`BETA_FREE=true`) and are absent from store builds.
+  they stay in TestFlight (`BETA_FREE=true`) and are absent from store builds. **Sign In got
+  the same gated Skip on 2026-10-02**, and the sign-up Skip was made larger, so testers can get
+  in while Google/Apple sign-in isn't fully connected.
 - ~~Supabase session tokens in plaintext `SharedPreferences`~~ — done earlier: the
   session is persisted through `SecureSessionStorage` (Keychain /
   EncryptedSharedPreferences, `lib/core/security/secure_storage.dart`).
