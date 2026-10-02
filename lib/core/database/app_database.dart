@@ -49,6 +49,32 @@ class UserProfiles extends Table {
   /// skin_provider.dart). Null = default body. Synced like any other
   /// profile field; lock-gating happens at selection time.
   TextColumn get activeSkinId => text().nullable()();
+
+  // ── Onboarding answers (v23; wire values in onboarding_state.dart) ──
+  /// 'cm' | 'ft' — the height picker's unit.
+  TextColumn get heightUnit => text().withDefault(const Constant('cm'))();
+  DateTimeColumn get birthDate => dateTime().nullable()();
+  RealColumn get targetWeightKg => real().nullable()();
+
+  /// JSON array of focus-area wire ids, e.g. `["back","chest"]`.
+  TextColumn get focusAreas => text().nullable()();
+
+  /// 'prolonged_sitting' | 'poor_sleep' | 'diet' | 'healthy'.
+  TextColumn get healthIssue => text().nullable()();
+
+  /// JSON array of recent-injury areas; `[]` = answered "None".
+  TextColumn get injuries => text().nullable()();
+
+  /// Planned rest after an injury (1–14); null without one.
+  IntColumn get injuryRestDays => integer().nullable()();
+
+  /// JSON array of ISO weekdays (Monday = 1).
+  TextColumn get trainingDays => text().nullable()();
+
+  /// When the user gave explicit consent for their health data (GDPR
+  /// Art. 9); null = no consent. Weight, height, target weight, health
+  /// issue, injuries and rest days are only stored while this is set.
+  DateTimeColumn get healthConsentAt => dateTime().nullable()();
 }
 
 /// Bundled + custom exercises.
@@ -417,7 +443,7 @@ class AppDatabase extends _$AppDatabase {
   }
 
   @override
-  int get schemaVersion => 22;
+  int get schemaVersion => 23;
 
   /// Account deletion: removes every row that belongs to the account in one
   /// transaction, children before parents. The exercise catalogue is a
@@ -593,6 +619,26 @@ class AppDatabase extends _$AppDatabase {
         // session restored after a process kill can still offer to save its
         // exercise changes to that day when it finishes.
         await _addColumnIfMissing('sessions', 'schedule_day_id', 'INTEGER');
+      }
+      if (from < 23) {
+        // Onboarding v3: every answer joins the synced profile (Supabase
+        // migration 021) instead of living only for the flow.
+        await _addColumnIfMissing(
+          'user_profiles',
+          'height_unit',
+          "TEXT NOT NULL DEFAULT 'cm'",
+        );
+        await _addColumnIfMissing('user_profiles', 'birth_date', 'INTEGER');
+        await _addColumnIfMissing(
+            'user_profiles', 'target_weight_kg', 'REAL');
+        await _addColumnIfMissing('user_profiles', 'focus_areas', 'TEXT');
+        await _addColumnIfMissing('user_profiles', 'health_issue', 'TEXT');
+        await _addColumnIfMissing('user_profiles', 'injuries', 'TEXT');
+        await _addColumnIfMissing(
+            'user_profiles', 'injury_rest_days', 'INTEGER');
+        await _addColumnIfMissing('user_profiles', 'training_days', 'TEXT');
+        await _addColumnIfMissing(
+            'user_profiles', 'health_consent_at', 'INTEGER');
       }
     },
   );

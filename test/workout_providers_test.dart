@@ -34,6 +34,7 @@ UserProfile _profile({double? bodyWeightKg}) {
     syncStatus: 'synced',
     bodyWeightKg: bodyWeightKg,
     weightUnit: 'kg',
+    heightUnit: 'cm',
     preferredLanguage: 'en',
     subscriptionStatus: 'free',
     defaultRestSeconds: 90,

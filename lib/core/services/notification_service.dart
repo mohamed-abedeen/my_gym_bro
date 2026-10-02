@@ -102,6 +102,7 @@ class NotificationService {
   static const int weeklyRecapNotificationId = 7;
   static const int scheduledDayNotificationId = 8;
   static const int milestoneNotificationId = 9;
+  static const int trialEndingNotificationId = 10;
 
   // Rest timer channel
   static const _channelId = 'rest_timer_silent';
@@ -652,6 +653,31 @@ class NotificationService {
 
   /// Cancel a pending achievement notification by id.
   static Future<void> cancelAchievement(int id) => _localPlugin.cancel(id);
+
+  // ── Trial ending ───────────────────────────────────────────────────────────
+
+  /// The reminder the paywall's trial timeline promises ("DAY 5 · Reminder"):
+  /// fires [when] (nudged into 09:00–21:00) so the user can cancel before
+  /// the first charge. A billing notice, so plain localized copy rather than
+  /// a tone variant.
+  static Future<void> scheduleTrialEndingReminder({
+    required String title,
+    required String body,
+    required DateTime when,
+  }) async {
+    var fireAt = when;
+    if (fireAt.hour < 9) {
+      fireAt = DateTime(fireAt.year, fireAt.month, fireAt.day, 9);
+    } else if (fireAt.hour >= 21) {
+      fireAt = DateTime(fireAt.year, fireAt.month, fireAt.day, 20);
+    }
+    await scheduleAchievementAt(
+      id: trialEndingNotificationId,
+      title: title,
+      body: body,
+      when: fireAt,
+    );
+  }
 
   // ── Workout reminder ───────────────────────────────────────────────────────
 

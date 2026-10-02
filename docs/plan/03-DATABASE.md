@@ -2,24 +2,24 @@
 ## MyGymBro — Drift (local) + Supabase (cloud)
 
 Two stores kept in sync:
-- **Drift (SQLite)** — on-device working store. Schema **v12**.
+- **Drift (SQLite)** — on-device working store. Schema **v23**.
 - **Supabase (Postgres + RLS)** — durable/shared backend.
 
 **Universal sync columns** (every user-owned table, both stores): `localId/id`, `remoteId`, `syncStatus`, `createdAt`, `updatedAt`, `deletedAt` (soft delete).
 
 ---
 
-## 1. Drift (Local) — Current Tables (v17)
+## 1. Drift (Local) — Current Tables (v23)
 
 | Table | Key columns | Notes |
 |-------|-------------|-------|
-| **UserProfiles** | localId, remoteId, displayName, **username** (v17), goal, experience, gender, bodyWeightKg, heightCm, fcmToken, **subscriptionStatus**, subscriptionExpiresAt, **notificationTone**, syncStatus | One row; the user. |
+| **UserProfiles** | localId, remoteId, displayName, **username** (v17), goal, experience, gender, bodyWeightKg, heightCm, weightUnit, fcmToken, **subscriptionStatus**, subscriptionExpiresAt, **notificationTone**, activeSkinId (v20), syncStatus; **onboarding answers (v23):** heightUnit, birthDate, targetWeightKg, focusAreas, healthIssue, injuries, injuryRestDays, trainingDays, **healthConsentAt** | One row; the user. List answers are JSON text (`["back","chest"]`, `[1,3,5]`); wire values live in `onboarding_state.dart`. `goal` ∈ build_muscle/lose_weight/gain_strength/stay_fit, `experience` ∈ beginner/intermediate/advanced (the rivals matcher's buckets). `healthConsentAt` = when the user gave the Art. 9 health-data consent (null = none); the health columns (bodyWeightKg, heightCm, targetWeightKg, healthIssue, injuries, injuryRestDays) are only filled while it's set — `lib/core/services/health_consent.dart` clears them on withdrawal. |
 | **Friendships** (v17) | localId, remoteId, requesterId, addresseeId, status ('pending'\|'accepted'\|'blocked'), blockedBy, respondedAt, syncStatus | Cache of every edge the user is a side of; mirrors Supabase `friendships`. |
 | **Exercises** | localId, exerciseId (unique), name, bodyParts, targetMuscles, difficulty, isCustom, isFavorite, usageCount | Seeded from `assets/exercises.json`. |
 | **Schedules** | localId, name, isActive, syncStatus | One active at a time. |
 | **ScheduleDays** | localId, scheduleId (FK), dayIndex, label, isRestDay | |
 | **ScheduledExercises** | localId, scheduleDayId (FK), exerciseId, targetSets, targetReps, targetDurationSeconds, targetDistance | Cardio targets supported. |
-| **Sessions** | localId, scheduleId (FK), startedAt, finishedAt, durationSeconds, **totalVolume**, notes | A workout instance. |
+| **Sessions** | localId, scheduleId (FK), scheduleDayId (v22), startedAt, finishedAt, durationSeconds, **totalVolume**, notes | A workout instance. |
 | **SessionExercises** | localId, sessionId (FK), exerciseId, orderIndex | |
 | **WorkoutSets** | localId, sessionExerciseId (FK), weight, reps, isWarmup, isDropset, isFailure, isCompleted, rpe, durationSeconds, distance, speed, incline | |
 | **SyncQueue** | localId, syncTableName, rowId, operation, payload(JSON), isSynced | Offline outbox. |
@@ -27,7 +27,9 @@ Two stores kept in sync:
 
 **Migration history of note:** v7 cardio, v9 favorites, v11 completion tracking, v12
 biometrics, v13 DM drop, v15 follows cache, **v17 friendships + username (drops the
-follows cache — the one-way follow model was superseded, PRD §5.6)**.
+follows cache — the one-way follow model was superseded, PRD §5.6)**, v18 challenge
+caches, v19 leaderboard caches, v20 skins, v21 progress reports, v22 `Sessions.scheduleDayId` (the plan day a session started from),
+**v23 onboarding v3 answers on `UserProfiles` (synced via Supabase migration 021)**.
 
 ### 1.1 Drift — New Tables to Add (v13+)
 > Bump `schemaVersion` and add a migration step per change. Regenerate `.g.dart`.
@@ -53,9 +55,9 @@ From `001_initial_schema.sql` (+ 002/003/004). **RLS enabled on all user-scoped 
 
 | Table | Key columns | RLS / notes |
 |-------|-------------|-------------|
-| **user_profiles** | id(UUID), user_id→auth.users, display_name, avatar_url, banner_url, goal, experience, gender, **trial_started_at**, **subscription_status**, fcm_token, **notification_tone** | Owner CRUD. `notification_tone` added in `004`. |
+| **user_profiles** | id(UUID), user_id→auth.users, display_name, avatar_url, banner_url, goal, experience, **trial_started_at**, **subscription_status**, fcm_token, **notification_tone**; **021:** gender, body_weight_kg, height_cm, height_unit, birth_date, target_weight_kg, focus_areas text[], health_issue, injuries text[] (`{}` = "None"), injury_rest_days, training_days smallint[], **health_consent_at** timestamptz | Owner CRUD. `notification_tone` added in `004`. 021 columns are CHECK-constrained and column-granted (the 009 lockdown pattern); `public_profiles` lists its columns explicitly, so the health answers never reach other users. **`user_profiles_health_needs_consent`** CHECK: body_weight_kg, height_cm, target_weight_kg, health_issue, injuries and injury_rest_days must all be NULL unless `health_consent_at` is set (GDPR Art. 9 — no health data without a recorded consent). The client writes them once at sign-up (one queued `update`) and pulls them on first sign-in on a new device; Settings → Health data sends a withdrawal (all six + the timestamp → NULL in one update) or a new grant. |
 | **schedules / schedule_days / scheduled_exercises** | user_id on each, FK tree | Owner CRUD. |
-| **sessions / session_exercises / sets** | user_id, workout data, completed_at | Owner CRUD. |
+| **sessions / session_exercises / sets** | user_id, workout data, completed_at | Owner CRUD. Accepted Bros read only the `friend_sessions` view (022): user_id, started_at, finished_at, duration_seconds, total_volume_kg of non-deleted sessions. Never notes, sets or exercises. |
 | **subscriptions** | user_id(unique), status, product_id, expiration_date, is_sandbox | Written by webhook (service role). |
 | ~~**posts / post_likes / post_comments**~~ | — | ✅ **Dropped in `013_drop_community_feed.sql`** (feed cancelled 2026-08-15; `community-images` bucket removed; `delete_account_data` rewritten for the new schema). |
 | **notification_templates** | id, category, tone columns, locale | Global read-only seed (18 templates). |
@@ -80,6 +82,16 @@ From `001_initial_schema.sql` (+ 002/003/004). **RLS enabled on all user-scoped 
 > `sessions_select_friends` policy (groundwork for the bros activity strip).
 > `public_profiles` now exposes `username` + `friend_count` and dropped the
 > follower/following counts.
+>
+> 🔒 **`022_privacy_boundaries.sql` (2026-09-30, privacy §7 alignment):** the
+> cloud's classic default grants had given anon + authenticated ALL on both
+> views, so the anon key could read every profile and friendship and even write
+> `user_profiles` rows through the auto-updatable `public_profiles`. 022 revokes
+> everything from anon and leaves authenticated SELECT-only. `public_profiles` stays
+> a definer view (user_profiles RLS is own-row only; the view is the column
+> boundary). `friend_count` now counts `friendships` directly. `friends` is
+> `security_invoker` (clients see only their own edges). `sessions_select_friends`
+> is replaced by the column-restricted `friend_sessions` view.
 ```
 friendships (
   id uuid pk default gen_random_uuid(),
@@ -95,7 +107,7 @@ friendships (
 ```
 - **RLS:** insert where `requester_id = auth.uid()` (and no existing blocked row between the pair); update/delete where `auth.uid()` is requester or addressee (addressee accepts/declines, either side blocks); select where `auth.uid()` is either side.
 - **Username:** add unique `username text` (lowercase, 3–20 chars) to `user_profiles`; exact-match lookup only — no name search.
-- **Friends = accepted rows.** Expose a `friends` view (both directions of accepted, excluding blocked) — used by the Friends leaderboard scope, the bros activity strip, and `friend_count`.
+- **Friends = accepted rows.** Expose a `friends` view (both directions of accepted, excluding blocked). It's used by the Friends leaderboard scope (definer RPCs) and `notify-social-challenge` (service role). Since 022 it is `security_invoker`, so a client only sees its own edges. `friend_count` and the bros strip's `friend_sessions` read `friendships` directly.
 - **Reports:** `user_reports(reporter_id, reported_id, reason, created_at)`, insert-only via RLS, reviewed manually.
 - The old `follows` table design is superseded; if it was ever created in an environment, the Phase B migration drops it.
 
@@ -346,6 +358,7 @@ When adding/altering a table:
 - [ ] Drift: add table/column, **bump `schemaVersion`**, add migration step, regenerate `.g.dart`.
 - [ ] Supabase: new numbered migration in `supabase/migrations/`.
 - [ ] **RLS policies** for every new table (default owner-only; premium reads via `has_active_subscription`).
+- [ ] **Explicit grants, both ways.** GRANT `authenticated` exactly what its policies allow, and `REVOKE ALL … FROM anon` on every new table, view and function (functions: `FROM PUBLIC` too). The cloud project still has the pre-2026-05-30 default privileges, which auto-grant ALL to anon + authenticated. Fresh/local stacks grant nothing, so a missing REVOKE only shows up in the cloud (that's how 022's findings slipped through). Views run as their owner and skip RLS, and a single-table view is auto-updatable, so clients get SELECT only.
 - [ ] Indexes on FKs + filter/sort columns.
 - [ ] Wire into `SyncService` (table name, payload shape, remote-id resolution).
 - [ ] Update this doc + `04-BACKEND.md`.

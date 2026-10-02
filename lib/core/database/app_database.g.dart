@@ -280,6 +280,107 @@ class $UserProfilesTable extends UserProfiles
     type: DriftSqlType.string,
     requiredDuringInsert: false,
   );
+  static const VerificationMeta _heightUnitMeta = const VerificationMeta(
+    'heightUnit',
+  );
+  @override
+  late final GeneratedColumn<String> heightUnit = GeneratedColumn<String>(
+    'height_unit',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant('cm'),
+  );
+  static const VerificationMeta _birthDateMeta = const VerificationMeta(
+    'birthDate',
+  );
+  @override
+  late final GeneratedColumn<DateTime> birthDate = GeneratedColumn<DateTime>(
+    'birth_date',
+    aliasedName,
+    true,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _targetWeightKgMeta = const VerificationMeta(
+    'targetWeightKg',
+  );
+  @override
+  late final GeneratedColumn<double> targetWeightKg = GeneratedColumn<double>(
+    'target_weight_kg',
+    aliasedName,
+    true,
+    type: DriftSqlType.double,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _focusAreasMeta = const VerificationMeta(
+    'focusAreas',
+  );
+  @override
+  late final GeneratedColumn<String> focusAreas = GeneratedColumn<String>(
+    'focus_areas',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _healthIssueMeta = const VerificationMeta(
+    'healthIssue',
+  );
+  @override
+  late final GeneratedColumn<String> healthIssue = GeneratedColumn<String>(
+    'health_issue',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _injuriesMeta = const VerificationMeta(
+    'injuries',
+  );
+  @override
+  late final GeneratedColumn<String> injuries = GeneratedColumn<String>(
+    'injuries',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _injuryRestDaysMeta = const VerificationMeta(
+    'injuryRestDays',
+  );
+  @override
+  late final GeneratedColumn<int> injuryRestDays = GeneratedColumn<int>(
+    'injury_rest_days',
+    aliasedName,
+    true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _trainingDaysMeta = const VerificationMeta(
+    'trainingDays',
+  );
+  @override
+  late final GeneratedColumn<String> trainingDays = GeneratedColumn<String>(
+    'training_days',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _healthConsentAtMeta = const VerificationMeta(
+    'healthConsentAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> healthConsentAt =
+      GeneratedColumn<DateTime>(
+        'health_consent_at',
+        aliasedName,
+        true,
+        type: DriftSqlType.dateTime,
+        requiredDuringInsert: false,
+      );
   @override
   List<GeneratedColumn> get $columns => [
     localId,
@@ -306,6 +407,15 @@ class $UserProfilesTable extends UserProfiles
     fcmToken,
     notificationTone,
     activeSkinId,
+    heightUnit,
+    birthDate,
+    targetWeightKg,
+    focusAreas,
+    healthIssue,
+    injuries,
+    injuryRestDays,
+    trainingDays,
+    healthConsentAt,
   ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -490,6 +600,75 @@ class $UserProfilesTable extends UserProfiles
         ),
       );
     }
+    if (data.containsKey('height_unit')) {
+      context.handle(
+        _heightUnitMeta,
+        heightUnit.isAcceptableOrUnknown(data['height_unit']!, _heightUnitMeta),
+      );
+    }
+    if (data.containsKey('birth_date')) {
+      context.handle(
+        _birthDateMeta,
+        birthDate.isAcceptableOrUnknown(data['birth_date']!, _birthDateMeta),
+      );
+    }
+    if (data.containsKey('target_weight_kg')) {
+      context.handle(
+        _targetWeightKgMeta,
+        targetWeightKg.isAcceptableOrUnknown(
+          data['target_weight_kg']!,
+          _targetWeightKgMeta,
+        ),
+      );
+    }
+    if (data.containsKey('focus_areas')) {
+      context.handle(
+        _focusAreasMeta,
+        focusAreas.isAcceptableOrUnknown(data['focus_areas']!, _focusAreasMeta),
+      );
+    }
+    if (data.containsKey('health_issue')) {
+      context.handle(
+        _healthIssueMeta,
+        healthIssue.isAcceptableOrUnknown(
+          data['health_issue']!,
+          _healthIssueMeta,
+        ),
+      );
+    }
+    if (data.containsKey('injuries')) {
+      context.handle(
+        _injuriesMeta,
+        injuries.isAcceptableOrUnknown(data['injuries']!, _injuriesMeta),
+      );
+    }
+    if (data.containsKey('injury_rest_days')) {
+      context.handle(
+        _injuryRestDaysMeta,
+        injuryRestDays.isAcceptableOrUnknown(
+          data['injury_rest_days']!,
+          _injuryRestDaysMeta,
+        ),
+      );
+    }
+    if (data.containsKey('training_days')) {
+      context.handle(
+        _trainingDaysMeta,
+        trainingDays.isAcceptableOrUnknown(
+          data['training_days']!,
+          _trainingDaysMeta,
+        ),
+      );
+    }
+    if (data.containsKey('health_consent_at')) {
+      context.handle(
+        _healthConsentAtMeta,
+        healthConsentAt.isAcceptableOrUnknown(
+          data['health_consent_at']!,
+          _healthConsentAtMeta,
+        ),
+      );
+    }
     return context;
   }
 
@@ -595,6 +774,42 @@ class $UserProfilesTable extends UserProfiles
         DriftSqlType.string,
         data['${effectivePrefix}active_skin_id'],
       ),
+      heightUnit: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}height_unit'],
+      )!,
+      birthDate: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}birth_date'],
+      ),
+      targetWeightKg: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}target_weight_kg'],
+      ),
+      focusAreas: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}focus_areas'],
+      ),
+      healthIssue: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}health_issue'],
+      ),
+      injuries: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}injuries'],
+      ),
+      injuryRestDays: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}injury_rest_days'],
+      ),
+      trainingDays: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}training_days'],
+      ),
+      healthConsentAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}health_consent_at'],
+      ),
     );
   }
 
@@ -644,6 +859,31 @@ class UserProfile extends DataClass implements Insertable<UserProfile> {
   /// skin_provider.dart). Null = default body. Synced like any other
   /// profile field; lock-gating happens at selection time.
   final String? activeSkinId;
+
+  /// 'cm' | 'ft' — the height picker's unit.
+  final String heightUnit;
+  final DateTime? birthDate;
+  final double? targetWeightKg;
+
+  /// JSON array of focus-area wire ids, e.g. `["back","chest"]`.
+  final String? focusAreas;
+
+  /// 'prolonged_sitting' | 'poor_sleep' | 'diet' | 'healthy'.
+  final String? healthIssue;
+
+  /// JSON array of recent-injury areas; `[]` = answered "None".
+  final String? injuries;
+
+  /// Planned rest after an injury (1–14); null without one.
+  final int? injuryRestDays;
+
+  /// JSON array of ISO weekdays (Monday = 1).
+  final String? trainingDays;
+
+  /// When the user gave explicit consent for their health data (GDPR
+  /// Art. 9); null = no consent. Weight, height, target weight, health
+  /// issue, injuries and rest days are only stored while this is set.
+  final DateTime? healthConsentAt;
   const UserProfile({
     required this.localId,
     this.remoteId,
@@ -669,6 +909,15 @@ class UserProfile extends DataClass implements Insertable<UserProfile> {
     this.fcmToken,
     required this.notificationTone,
     this.activeSkinId,
+    required this.heightUnit,
+    this.birthDate,
+    this.targetWeightKg,
+    this.focusAreas,
+    this.healthIssue,
+    this.injuries,
+    this.injuryRestDays,
+    this.trainingDays,
+    this.healthConsentAt,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -733,6 +982,31 @@ class UserProfile extends DataClass implements Insertable<UserProfile> {
     if (!nullToAbsent || activeSkinId != null) {
       map['active_skin_id'] = Variable<String>(activeSkinId);
     }
+    map['height_unit'] = Variable<String>(heightUnit);
+    if (!nullToAbsent || birthDate != null) {
+      map['birth_date'] = Variable<DateTime>(birthDate);
+    }
+    if (!nullToAbsent || targetWeightKg != null) {
+      map['target_weight_kg'] = Variable<double>(targetWeightKg);
+    }
+    if (!nullToAbsent || focusAreas != null) {
+      map['focus_areas'] = Variable<String>(focusAreas);
+    }
+    if (!nullToAbsent || healthIssue != null) {
+      map['health_issue'] = Variable<String>(healthIssue);
+    }
+    if (!nullToAbsent || injuries != null) {
+      map['injuries'] = Variable<String>(injuries);
+    }
+    if (!nullToAbsent || injuryRestDays != null) {
+      map['injury_rest_days'] = Variable<int>(injuryRestDays);
+    }
+    if (!nullToAbsent || trainingDays != null) {
+      map['training_days'] = Variable<String>(trainingDays);
+    }
+    if (!nullToAbsent || healthConsentAt != null) {
+      map['health_consent_at'] = Variable<DateTime>(healthConsentAt);
+    }
     return map;
   }
 
@@ -794,6 +1068,31 @@ class UserProfile extends DataClass implements Insertable<UserProfile> {
       activeSkinId: activeSkinId == null && nullToAbsent
           ? const Value.absent()
           : Value(activeSkinId),
+      heightUnit: Value(heightUnit),
+      birthDate: birthDate == null && nullToAbsent
+          ? const Value.absent()
+          : Value(birthDate),
+      targetWeightKg: targetWeightKg == null && nullToAbsent
+          ? const Value.absent()
+          : Value(targetWeightKg),
+      focusAreas: focusAreas == null && nullToAbsent
+          ? const Value.absent()
+          : Value(focusAreas),
+      healthIssue: healthIssue == null && nullToAbsent
+          ? const Value.absent()
+          : Value(healthIssue),
+      injuries: injuries == null && nullToAbsent
+          ? const Value.absent()
+          : Value(injuries),
+      injuryRestDays: injuryRestDays == null && nullToAbsent
+          ? const Value.absent()
+          : Value(injuryRestDays),
+      trainingDays: trainingDays == null && nullToAbsent
+          ? const Value.absent()
+          : Value(trainingDays),
+      healthConsentAt: healthConsentAt == null && nullToAbsent
+          ? const Value.absent()
+          : Value(healthConsentAt),
     );
   }
 
@@ -831,6 +1130,15 @@ class UserProfile extends DataClass implements Insertable<UserProfile> {
       fcmToken: serializer.fromJson<String?>(json['fcmToken']),
       notificationTone: serializer.fromJson<String>(json['notificationTone']),
       activeSkinId: serializer.fromJson<String?>(json['activeSkinId']),
+      heightUnit: serializer.fromJson<String>(json['heightUnit']),
+      birthDate: serializer.fromJson<DateTime?>(json['birthDate']),
+      targetWeightKg: serializer.fromJson<double?>(json['targetWeightKg']),
+      focusAreas: serializer.fromJson<String?>(json['focusAreas']),
+      healthIssue: serializer.fromJson<String?>(json['healthIssue']),
+      injuries: serializer.fromJson<String?>(json['injuries']),
+      injuryRestDays: serializer.fromJson<int?>(json['injuryRestDays']),
+      trainingDays: serializer.fromJson<String?>(json['trainingDays']),
+      healthConsentAt: serializer.fromJson<DateTime?>(json['healthConsentAt']),
     );
   }
   @override
@@ -863,6 +1171,15 @@ class UserProfile extends DataClass implements Insertable<UserProfile> {
       'fcmToken': serializer.toJson<String?>(fcmToken),
       'notificationTone': serializer.toJson<String>(notificationTone),
       'activeSkinId': serializer.toJson<String?>(activeSkinId),
+      'heightUnit': serializer.toJson<String>(heightUnit),
+      'birthDate': serializer.toJson<DateTime?>(birthDate),
+      'targetWeightKg': serializer.toJson<double?>(targetWeightKg),
+      'focusAreas': serializer.toJson<String?>(focusAreas),
+      'healthIssue': serializer.toJson<String?>(healthIssue),
+      'injuries': serializer.toJson<String?>(injuries),
+      'injuryRestDays': serializer.toJson<int?>(injuryRestDays),
+      'trainingDays': serializer.toJson<String?>(trainingDays),
+      'healthConsentAt': serializer.toJson<DateTime?>(healthConsentAt),
     };
   }
 
@@ -891,6 +1208,15 @@ class UserProfile extends DataClass implements Insertable<UserProfile> {
     Value<String?> fcmToken = const Value.absent(),
     String? notificationTone,
     Value<String?> activeSkinId = const Value.absent(),
+    String? heightUnit,
+    Value<DateTime?> birthDate = const Value.absent(),
+    Value<double?> targetWeightKg = const Value.absent(),
+    Value<String?> focusAreas = const Value.absent(),
+    Value<String?> healthIssue = const Value.absent(),
+    Value<String?> injuries = const Value.absent(),
+    Value<int?> injuryRestDays = const Value.absent(),
+    Value<String?> trainingDays = const Value.absent(),
+    Value<DateTime?> healthConsentAt = const Value.absent(),
   }) => UserProfile(
     localId: localId ?? this.localId,
     remoteId: remoteId.present ? remoteId.value : this.remoteId,
@@ -920,6 +1246,21 @@ class UserProfile extends DataClass implements Insertable<UserProfile> {
     fcmToken: fcmToken.present ? fcmToken.value : this.fcmToken,
     notificationTone: notificationTone ?? this.notificationTone,
     activeSkinId: activeSkinId.present ? activeSkinId.value : this.activeSkinId,
+    heightUnit: heightUnit ?? this.heightUnit,
+    birthDate: birthDate.present ? birthDate.value : this.birthDate,
+    targetWeightKg: targetWeightKg.present
+        ? targetWeightKg.value
+        : this.targetWeightKg,
+    focusAreas: focusAreas.present ? focusAreas.value : this.focusAreas,
+    healthIssue: healthIssue.present ? healthIssue.value : this.healthIssue,
+    injuries: injuries.present ? injuries.value : this.injuries,
+    injuryRestDays: injuryRestDays.present
+        ? injuryRestDays.value
+        : this.injuryRestDays,
+    trainingDays: trainingDays.present ? trainingDays.value : this.trainingDays,
+    healthConsentAt: healthConsentAt.present
+        ? healthConsentAt.value
+        : this.healthConsentAt,
   );
   UserProfile copyWithCompanion(UserProfilesCompanion data) {
     return UserProfile(
@@ -971,6 +1312,29 @@ class UserProfile extends DataClass implements Insertable<UserProfile> {
       activeSkinId: data.activeSkinId.present
           ? data.activeSkinId.value
           : this.activeSkinId,
+      heightUnit: data.heightUnit.present
+          ? data.heightUnit.value
+          : this.heightUnit,
+      birthDate: data.birthDate.present ? data.birthDate.value : this.birthDate,
+      targetWeightKg: data.targetWeightKg.present
+          ? data.targetWeightKg.value
+          : this.targetWeightKg,
+      focusAreas: data.focusAreas.present
+          ? data.focusAreas.value
+          : this.focusAreas,
+      healthIssue: data.healthIssue.present
+          ? data.healthIssue.value
+          : this.healthIssue,
+      injuries: data.injuries.present ? data.injuries.value : this.injuries,
+      injuryRestDays: data.injuryRestDays.present
+          ? data.injuryRestDays.value
+          : this.injuryRestDays,
+      trainingDays: data.trainingDays.present
+          ? data.trainingDays.value
+          : this.trainingDays,
+      healthConsentAt: data.healthConsentAt.present
+          ? data.healthConsentAt.value
+          : this.healthConsentAt,
     );
   }
 
@@ -1000,7 +1364,16 @@ class UserProfile extends DataClass implements Insertable<UserProfile> {
           ..write('defaultRestSeconds: $defaultRestSeconds, ')
           ..write('fcmToken: $fcmToken, ')
           ..write('notificationTone: $notificationTone, ')
-          ..write('activeSkinId: $activeSkinId')
+          ..write('activeSkinId: $activeSkinId, ')
+          ..write('heightUnit: $heightUnit, ')
+          ..write('birthDate: $birthDate, ')
+          ..write('targetWeightKg: $targetWeightKg, ')
+          ..write('focusAreas: $focusAreas, ')
+          ..write('healthIssue: $healthIssue, ')
+          ..write('injuries: $injuries, ')
+          ..write('injuryRestDays: $injuryRestDays, ')
+          ..write('trainingDays: $trainingDays, ')
+          ..write('healthConsentAt: $healthConsentAt')
           ..write(')'))
         .toString();
   }
@@ -1031,6 +1404,15 @@ class UserProfile extends DataClass implements Insertable<UserProfile> {
     fcmToken,
     notificationTone,
     activeSkinId,
+    heightUnit,
+    birthDate,
+    targetWeightKg,
+    focusAreas,
+    healthIssue,
+    injuries,
+    injuryRestDays,
+    trainingDays,
+    healthConsentAt,
   ]);
   @override
   bool operator ==(Object other) =>
@@ -1059,7 +1441,16 @@ class UserProfile extends DataClass implements Insertable<UserProfile> {
           other.defaultRestSeconds == this.defaultRestSeconds &&
           other.fcmToken == this.fcmToken &&
           other.notificationTone == this.notificationTone &&
-          other.activeSkinId == this.activeSkinId);
+          other.activeSkinId == this.activeSkinId &&
+          other.heightUnit == this.heightUnit &&
+          other.birthDate == this.birthDate &&
+          other.targetWeightKg == this.targetWeightKg &&
+          other.focusAreas == this.focusAreas &&
+          other.healthIssue == this.healthIssue &&
+          other.injuries == this.injuries &&
+          other.injuryRestDays == this.injuryRestDays &&
+          other.trainingDays == this.trainingDays &&
+          other.healthConsentAt == this.healthConsentAt);
 }
 
 class UserProfilesCompanion extends UpdateCompanion<UserProfile> {
@@ -1087,6 +1478,15 @@ class UserProfilesCompanion extends UpdateCompanion<UserProfile> {
   final Value<String?> fcmToken;
   final Value<String> notificationTone;
   final Value<String?> activeSkinId;
+  final Value<String> heightUnit;
+  final Value<DateTime?> birthDate;
+  final Value<double?> targetWeightKg;
+  final Value<String?> focusAreas;
+  final Value<String?> healthIssue;
+  final Value<String?> injuries;
+  final Value<int?> injuryRestDays;
+  final Value<String?> trainingDays;
+  final Value<DateTime?> healthConsentAt;
   const UserProfilesCompanion({
     this.localId = const Value.absent(),
     this.remoteId = const Value.absent(),
@@ -1112,6 +1512,15 @@ class UserProfilesCompanion extends UpdateCompanion<UserProfile> {
     this.fcmToken = const Value.absent(),
     this.notificationTone = const Value.absent(),
     this.activeSkinId = const Value.absent(),
+    this.heightUnit = const Value.absent(),
+    this.birthDate = const Value.absent(),
+    this.targetWeightKg = const Value.absent(),
+    this.focusAreas = const Value.absent(),
+    this.healthIssue = const Value.absent(),
+    this.injuries = const Value.absent(),
+    this.injuryRestDays = const Value.absent(),
+    this.trainingDays = const Value.absent(),
+    this.healthConsentAt = const Value.absent(),
   });
   UserProfilesCompanion.insert({
     this.localId = const Value.absent(),
@@ -1138,6 +1547,15 @@ class UserProfilesCompanion extends UpdateCompanion<UserProfile> {
     this.fcmToken = const Value.absent(),
     this.notificationTone = const Value.absent(),
     this.activeSkinId = const Value.absent(),
+    this.heightUnit = const Value.absent(),
+    this.birthDate = const Value.absent(),
+    this.targetWeightKg = const Value.absent(),
+    this.focusAreas = const Value.absent(),
+    this.healthIssue = const Value.absent(),
+    this.injuries = const Value.absent(),
+    this.injuryRestDays = const Value.absent(),
+    this.trainingDays = const Value.absent(),
+    this.healthConsentAt = const Value.absent(),
   });
   static Insertable<UserProfile> custom({
     Expression<int>? localId,
@@ -1164,6 +1582,15 @@ class UserProfilesCompanion extends UpdateCompanion<UserProfile> {
     Expression<String>? fcmToken,
     Expression<String>? notificationTone,
     Expression<String>? activeSkinId,
+    Expression<String>? heightUnit,
+    Expression<DateTime>? birthDate,
+    Expression<double>? targetWeightKg,
+    Expression<String>? focusAreas,
+    Expression<String>? healthIssue,
+    Expression<String>? injuries,
+    Expression<int>? injuryRestDays,
+    Expression<String>? trainingDays,
+    Expression<DateTime>? healthConsentAt,
   }) {
     return RawValuesInsertable({
       if (localId != null) 'local_id': localId,
@@ -1192,6 +1619,15 @@ class UserProfilesCompanion extends UpdateCompanion<UserProfile> {
       if (fcmToken != null) 'fcm_token': fcmToken,
       if (notificationTone != null) 'notification_tone': notificationTone,
       if (activeSkinId != null) 'active_skin_id': activeSkinId,
+      if (heightUnit != null) 'height_unit': heightUnit,
+      if (birthDate != null) 'birth_date': birthDate,
+      if (targetWeightKg != null) 'target_weight_kg': targetWeightKg,
+      if (focusAreas != null) 'focus_areas': focusAreas,
+      if (healthIssue != null) 'health_issue': healthIssue,
+      if (injuries != null) 'injuries': injuries,
+      if (injuryRestDays != null) 'injury_rest_days': injuryRestDays,
+      if (trainingDays != null) 'training_days': trainingDays,
+      if (healthConsentAt != null) 'health_consent_at': healthConsentAt,
     });
   }
 
@@ -1220,6 +1656,15 @@ class UserProfilesCompanion extends UpdateCompanion<UserProfile> {
     Value<String?>? fcmToken,
     Value<String>? notificationTone,
     Value<String?>? activeSkinId,
+    Value<String>? heightUnit,
+    Value<DateTime?>? birthDate,
+    Value<double?>? targetWeightKg,
+    Value<String?>? focusAreas,
+    Value<String?>? healthIssue,
+    Value<String?>? injuries,
+    Value<int?>? injuryRestDays,
+    Value<String?>? trainingDays,
+    Value<DateTime?>? healthConsentAt,
   }) {
     return UserProfilesCompanion(
       localId: localId ?? this.localId,
@@ -1247,6 +1692,15 @@ class UserProfilesCompanion extends UpdateCompanion<UserProfile> {
       fcmToken: fcmToken ?? this.fcmToken,
       notificationTone: notificationTone ?? this.notificationTone,
       activeSkinId: activeSkinId ?? this.activeSkinId,
+      heightUnit: heightUnit ?? this.heightUnit,
+      birthDate: birthDate ?? this.birthDate,
+      targetWeightKg: targetWeightKg ?? this.targetWeightKg,
+      focusAreas: focusAreas ?? this.focusAreas,
+      healthIssue: healthIssue ?? this.healthIssue,
+      injuries: injuries ?? this.injuries,
+      injuryRestDays: injuryRestDays ?? this.injuryRestDays,
+      trainingDays: trainingDays ?? this.trainingDays,
+      healthConsentAt: healthConsentAt ?? this.healthConsentAt,
     );
   }
 
@@ -1327,6 +1781,33 @@ class UserProfilesCompanion extends UpdateCompanion<UserProfile> {
     if (activeSkinId.present) {
       map['active_skin_id'] = Variable<String>(activeSkinId.value);
     }
+    if (heightUnit.present) {
+      map['height_unit'] = Variable<String>(heightUnit.value);
+    }
+    if (birthDate.present) {
+      map['birth_date'] = Variable<DateTime>(birthDate.value);
+    }
+    if (targetWeightKg.present) {
+      map['target_weight_kg'] = Variable<double>(targetWeightKg.value);
+    }
+    if (focusAreas.present) {
+      map['focus_areas'] = Variable<String>(focusAreas.value);
+    }
+    if (healthIssue.present) {
+      map['health_issue'] = Variable<String>(healthIssue.value);
+    }
+    if (injuries.present) {
+      map['injuries'] = Variable<String>(injuries.value);
+    }
+    if (injuryRestDays.present) {
+      map['injury_rest_days'] = Variable<int>(injuryRestDays.value);
+    }
+    if (trainingDays.present) {
+      map['training_days'] = Variable<String>(trainingDays.value);
+    }
+    if (healthConsentAt.present) {
+      map['health_consent_at'] = Variable<DateTime>(healthConsentAt.value);
+    }
     return map;
   }
 
@@ -1356,7 +1837,16 @@ class UserProfilesCompanion extends UpdateCompanion<UserProfile> {
           ..write('defaultRestSeconds: $defaultRestSeconds, ')
           ..write('fcmToken: $fcmToken, ')
           ..write('notificationTone: $notificationTone, ')
-          ..write('activeSkinId: $activeSkinId')
+          ..write('activeSkinId: $activeSkinId, ')
+          ..write('heightUnit: $heightUnit, ')
+          ..write('birthDate: $birthDate, ')
+          ..write('targetWeightKg: $targetWeightKg, ')
+          ..write('focusAreas: $focusAreas, ')
+          ..write('healthIssue: $healthIssue, ')
+          ..write('injuries: $injuries, ')
+          ..write('injuryRestDays: $injuryRestDays, ')
+          ..write('trainingDays: $trainingDays, ')
+          ..write('healthConsentAt: $healthConsentAt')
           ..write(')'))
         .toString();
   }
@@ -11707,6 +12197,15 @@ typedef $$UserProfilesTableCreateCompanionBuilder =
       Value<String?> fcmToken,
       Value<String> notificationTone,
       Value<String?> activeSkinId,
+      Value<String> heightUnit,
+      Value<DateTime?> birthDate,
+      Value<double?> targetWeightKg,
+      Value<String?> focusAreas,
+      Value<String?> healthIssue,
+      Value<String?> injuries,
+      Value<int?> injuryRestDays,
+      Value<String?> trainingDays,
+      Value<DateTime?> healthConsentAt,
     });
 typedef $$UserProfilesTableUpdateCompanionBuilder =
     UserProfilesCompanion Function({
@@ -11734,6 +12233,15 @@ typedef $$UserProfilesTableUpdateCompanionBuilder =
       Value<String?> fcmToken,
       Value<String> notificationTone,
       Value<String?> activeSkinId,
+      Value<String> heightUnit,
+      Value<DateTime?> birthDate,
+      Value<double?> targetWeightKg,
+      Value<String?> focusAreas,
+      Value<String?> healthIssue,
+      Value<String?> injuries,
+      Value<int?> injuryRestDays,
+      Value<String?> trainingDays,
+      Value<DateTime?> healthConsentAt,
     });
 
 class $$UserProfilesTableFilterComposer
@@ -11862,6 +12370,51 @@ class $$UserProfilesTableFilterComposer
 
   ColumnFilters<String> get activeSkinId => $composableBuilder(
     column: $table.activeSkinId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get heightUnit => $composableBuilder(
+    column: $table.heightUnit,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get birthDate => $composableBuilder(
+    column: $table.birthDate,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get targetWeightKg => $composableBuilder(
+    column: $table.targetWeightKg,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get focusAreas => $composableBuilder(
+    column: $table.focusAreas,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get healthIssue => $composableBuilder(
+    column: $table.healthIssue,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get injuries => $composableBuilder(
+    column: $table.injuries,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get injuryRestDays => $composableBuilder(
+    column: $table.injuryRestDays,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get trainingDays => $composableBuilder(
+    column: $table.trainingDays,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get healthConsentAt => $composableBuilder(
+    column: $table.healthConsentAt,
     builder: (column) => ColumnFilters(column),
   );
 }
@@ -11994,6 +12547,51 @@ class $$UserProfilesTableOrderingComposer
     column: $table.activeSkinId,
     builder: (column) => ColumnOrderings(column),
   );
+
+  ColumnOrderings<String> get heightUnit => $composableBuilder(
+    column: $table.heightUnit,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get birthDate => $composableBuilder(
+    column: $table.birthDate,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<double> get targetWeightKg => $composableBuilder(
+    column: $table.targetWeightKg,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get focusAreas => $composableBuilder(
+    column: $table.focusAreas,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get healthIssue => $composableBuilder(
+    column: $table.healthIssue,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get injuries => $composableBuilder(
+    column: $table.injuries,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get injuryRestDays => $composableBuilder(
+    column: $table.injuryRestDays,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get trainingDays => $composableBuilder(
+    column: $table.trainingDays,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get healthConsentAt => $composableBuilder(
+    column: $table.healthConsentAt,
+    builder: (column) => ColumnOrderings(column),
+  );
 }
 
 class $$UserProfilesTableAnnotationComposer
@@ -12100,6 +12698,47 @@ class $$UserProfilesTableAnnotationComposer
     column: $table.activeSkinId,
     builder: (column) => column,
   );
+
+  GeneratedColumn<String> get heightUnit => $composableBuilder(
+    column: $table.heightUnit,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<DateTime> get birthDate =>
+      $composableBuilder(column: $table.birthDate, builder: (column) => column);
+
+  GeneratedColumn<double> get targetWeightKg => $composableBuilder(
+    column: $table.targetWeightKg,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get focusAreas => $composableBuilder(
+    column: $table.focusAreas,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get healthIssue => $composableBuilder(
+    column: $table.healthIssue,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get injuries =>
+      $composableBuilder(column: $table.injuries, builder: (column) => column);
+
+  GeneratedColumn<int> get injuryRestDays => $composableBuilder(
+    column: $table.injuryRestDays,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get trainingDays => $composableBuilder(
+    column: $table.trainingDays,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<DateTime> get healthConsentAt => $composableBuilder(
+    column: $table.healthConsentAt,
+    builder: (column) => column,
+  );
 }
 
 class $$UserProfilesTableTableManager
@@ -12157,6 +12796,15 @@ class $$UserProfilesTableTableManager
                 Value<String?> fcmToken = const Value.absent(),
                 Value<String> notificationTone = const Value.absent(),
                 Value<String?> activeSkinId = const Value.absent(),
+                Value<String> heightUnit = const Value.absent(),
+                Value<DateTime?> birthDate = const Value.absent(),
+                Value<double?> targetWeightKg = const Value.absent(),
+                Value<String?> focusAreas = const Value.absent(),
+                Value<String?> healthIssue = const Value.absent(),
+                Value<String?> injuries = const Value.absent(),
+                Value<int?> injuryRestDays = const Value.absent(),
+                Value<String?> trainingDays = const Value.absent(),
+                Value<DateTime?> healthConsentAt = const Value.absent(),
               }) => UserProfilesCompanion(
                 localId: localId,
                 remoteId: remoteId,
@@ -12182,6 +12830,15 @@ class $$UserProfilesTableTableManager
                 fcmToken: fcmToken,
                 notificationTone: notificationTone,
                 activeSkinId: activeSkinId,
+                heightUnit: heightUnit,
+                birthDate: birthDate,
+                targetWeightKg: targetWeightKg,
+                focusAreas: focusAreas,
+                healthIssue: healthIssue,
+                injuries: injuries,
+                injuryRestDays: injuryRestDays,
+                trainingDays: trainingDays,
+                healthConsentAt: healthConsentAt,
               ),
           createCompanionCallback:
               ({
@@ -12209,6 +12866,15 @@ class $$UserProfilesTableTableManager
                 Value<String?> fcmToken = const Value.absent(),
                 Value<String> notificationTone = const Value.absent(),
                 Value<String?> activeSkinId = const Value.absent(),
+                Value<String> heightUnit = const Value.absent(),
+                Value<DateTime?> birthDate = const Value.absent(),
+                Value<double?> targetWeightKg = const Value.absent(),
+                Value<String?> focusAreas = const Value.absent(),
+                Value<String?> healthIssue = const Value.absent(),
+                Value<String?> injuries = const Value.absent(),
+                Value<int?> injuryRestDays = const Value.absent(),
+                Value<String?> trainingDays = const Value.absent(),
+                Value<DateTime?> healthConsentAt = const Value.absent(),
               }) => UserProfilesCompanion.insert(
                 localId: localId,
                 remoteId: remoteId,
@@ -12234,6 +12900,15 @@ class $$UserProfilesTableTableManager
                 fcmToken: fcmToken,
                 notificationTone: notificationTone,
                 activeSkinId: activeSkinId,
+                heightUnit: heightUnit,
+                birthDate: birthDate,
+                targetWeightKg: targetWeightKg,
+                focusAreas: focusAreas,
+                healthIssue: healthIssue,
+                injuries: injuries,
+                injuryRestDays: injuryRestDays,
+                trainingDays: trainingDays,
+                healthConsentAt: healthConsentAt,
               ),
           withReferenceMapper: (p0) => p0
               .map((e) => (e.readTable(table), BaseReferences(db, table, e)))

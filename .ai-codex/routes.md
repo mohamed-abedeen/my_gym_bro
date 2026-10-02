@@ -9,17 +9,8 @@
 | Constant | Path | Screen | File |
 |---|---|---|---|
 | `AppRoutes.splash` | `/splash` | `SplashScreen` | `features/onboarding/screens/splash_screen.dart` |
-| `AppRoutes.onboardingWelcome` | `/onboarding/welcome` | `WelcomeScreen` | `features/onboarding/screens/welcome_screen.dart` |
-| `AppRoutes.onboardingGender` | `/onboarding/gender` | `GenderScreen` | `features/onboarding/screens/gender_screen.dart` |
-| `AppRoutes.onboardingGoal` | `/onboarding/goal` | `GoalScreen` | `features/onboarding/screens/goal_screen.dart` |
-| `AppRoutes.onboardingExperience` | `/onboarding/experience` | `ExperienceScreen` | `features/onboarding/screens/experience_screen.dart` |
-| `AppRoutes.onboardingBirthday` | `/onboarding/birthday` | `BirthdayScreen` | `features/onboarding/screens/birthday_screen.dart` |
-| `AppRoutes.onboardingWeight` | `/onboarding/weight` | `WeightScreen` | `features/onboarding/screens/weight_screen.dart` |
-| `AppRoutes.onboardingHeight` | `/onboarding/height` | `HeightScreen` | `features/onboarding/screens/height_screen.dart` |
-| `AppRoutes.onboardingTargetZones` | `/onboarding/target-zones` | `TargetZonesScreen` | `features/onboarding/screens/target_zones_screen.dart` |
-| `AppRoutes.onboardingLanguage` | `/onboarding/language` | `LanguageScreen` | `features/onboarding/screens/language_screen.dart` |
-| `AppRoutes.onboardingSignup` | `/onboarding/signup` | `SignUpScreen` | `features/onboarding/screens/sign_up_screen.dart` |
-| `AppRoutes.onboardingTrial` | `/onboarding/trial` | `TrialScreen` | `features/onboarding/screens/trial_screen.dart` |
+| `AppRoutes.onboarding` | `/onboarding` | `OnboardingFlowScreen` — welcome, all questionnaire steps, timelines and the paywall in one screen (steps in `features/onboarding/steps/`) | `features/onboarding/onboarding_flow_screen.dart` |
+| `AppRoutes.onboardingSignup` | `/onboarding/signup` | `SignUpScreen` (after the paywall) | `features/onboarding/screens/sign_up_screen.dart` |
 
 ### Auth
 | Constant | Path | Screen | File |
@@ -34,7 +25,7 @@
 | `AppRoutes.exerciseBrowser` | `/exercises` | `ExerciseBrowserScreen` | |
 | `AppRoutes.activeSession` | `/session` | `ActiveSessionScreen` | `extra: int? scheduleDayId` |
 | `AppRoutes.scheduleBuilder` | `/schedule/build` | `ScheduleBuilderScreen` | `extra: int? scheduleId` |
-| `AppRoutes.paywall` | `/paywall` | Inline scaffold (placeholder) | |
+| `AppRoutes.paywall` | `/paywall` | `PaywallScreen` (wraps `PaywallView`, shared with the onboarding flow) | Trial-expiry gate + voluntary open |
 
 ## Navigation pattern
 ```dart

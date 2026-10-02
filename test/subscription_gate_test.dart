@@ -15,6 +15,7 @@ UserProfile _profile({
     localId: 1,
     syncStatus: 'synced',
     weightUnit: 'kg',
+    heightUnit: 'cm',
     preferredLanguage: 'en',
     subscriptionStatus: subscriptionStatus,
     subscriptionExpiresAt: subscriptionExpiresAt,

@@ -53,7 +53,7 @@ lib/
 ├── core/
 │   ├── auth/                      # auth_notifier.dart (Supabase auth + RevenueCat login)
 │   ├── database/
-│   │   ├── app_database.dart      # Drift schema (v16) + .g.dart
+│   │   ├── app_database.dart      # Drift schema (v23) + .g.dart
 │   │   └── daos/                  # One DAO per aggregate
 │   ├── providers/                 # Riverpod DI (db, supabase, sync, auth)
 │   ├── router/                    # go_router config
@@ -105,8 +105,9 @@ assets/
 ### Editing the Supabase schema
 1. Add a new numbered migration in `supabase/migrations/`.
 2. Add/keep **RLS policies** for every new table (default: `auth.uid() = user_id`).
-3. Gate premium reads with the `has_active_subscription()` helper where appropriate.
-4. Update `03-DATABASE.md` and `04-BACKEND.md`.
+3. **Grants are explicit both ways:** GRANT `authenticated` what the policies allow, and `REVOKE ALL … FROM anon` on every new table, view and function. The cloud still auto-grants ALL to anon + authenticated (pre-2026-05-30 defaults) while local stacks grant nothing, so a missing REVOKE only bites in production. Views skip RLS, so clients get SELECT only on them (03-DATABASE §4, migration 022).
+4. Gate premium reads with the `has_active_subscription()` helper where appropriate.
+5. Update `03-DATABASE.md` and `04-BACKEND.md`.
 
 ### Adding a screen/widget
 1. Reuse the glass component family (`GlassSurface`, `OcGlassBtn`) — don't invent new chrome.

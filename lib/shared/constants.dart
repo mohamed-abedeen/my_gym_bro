@@ -365,6 +365,63 @@ class AppGlass {
   static const borderLight = Color(0x80FFFFFF);
 }
 
+/// Onboarding + paywall palette and motion (design_handoff_onboarding v3).
+///
+/// Deliberately NOT theme-driven: the flow is the black, lime-accented brand
+/// experience in every theme and flavor — the same stance as the share cards'
+/// fixed palette. Values are the handoff's tokens verbatim.
+class AppOnboarding {
+  AppOnboarding._();
+
+  // ── Colors ──
+  static const background = Color(0xFF000000);
+  static const lime = Color(0xFFD2FF00);
+
+  /// Unfilled progress track and the section-interstitial rule.
+  static const limeTrack = Color(0xFF363A0D);
+
+  /// Timeline curve (dim end of its gradient) and dimmed markers.
+  static const graphLine = Color(0xFF5C6F00);
+
+  static const card = Color(0xFF1C1C1E);
+  static const card2 = Color(0xFF141414);
+
+  /// Unselected muscle-focus pill.
+  static const pill = Color(0xFF535353);
+  static const dotInactive = Color(0xFF3B3B3B);
+  static const track = Color(0xFF29292B);
+  static const divider = Color(0xFF232323);
+
+  static const textPrimary = Color(0xFFFFFFFF);
+  static const textLogo = Color(0xFFEDEDED);
+  static const textWheel = Color(0xFFF2F2F2);
+  static const textMuted = Color(0xFF8E8E93);
+  static const textSubtitle = Color(0xFF525252);
+  static const textFigure = Color(0xFF6B6B6B);
+  static const textDisabled = Color(0xFF5A5A5A);
+  static const textStruck = Color(0xFF636366);
+
+  static const fatigued = Color(0xFFFF3B30);
+  static const recovering = Color(0xFFEF9F27);
+  static const recovered = Color(0xFF34C759);
+  static const switchOn = Color(0xFF34C659);
+
+  // ── Artboard ── (every position in the flow is in this coordinate space)
+  static const artboardWidth = 440.0;
+  static const artboardHeight = 956.0;
+
+  // ── Motion ──
+  /// Horizontal push between steps (iOS-like).
+  static const push = Duration(milliseconds: 420);
+  static const pushCurve = Cubic(0.32, 0.72, 0, 1);
+
+  /// Fade-and-rise entrances, progress fills, most settles.
+  static const entranceCurve = Cubic(0.2, 0.8, 0.2, 1);
+
+  /// Chip / card / pill selection color swap.
+  static const select = Duration(milliseconds: 160);
+}
+
 /// Fixed sizes from Figma design spec.
 class AppSizes {
   AppSizes._();

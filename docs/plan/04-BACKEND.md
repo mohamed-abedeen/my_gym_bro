@@ -35,6 +35,24 @@ The app does **not** call custom CRUD endpoints — it uses the Supabase SDK aga
 > `user_profiles` updates PATCH by `user_id` (the profile's remote key), not
 > `id`. Permanent-drop codes now include `P0001` + `22xxx` casts.
 
+> **Onboarding answers** (migration 021, 2026-09-30): at sign-up the client
+> merges every onboarding answer into the local profile and enqueues ONE
+> `update` on `user_profiles` (`OnboardingPersistence`) — gender, body weight,
+> height (+ units), birth date, target weight, focus areas, health issue,
+> injuries, rest days, training days, goal, experience. The new columns are
+> CHECK-constrained server-side, so a tampered/unknown wire value is a
+> permanent `23514` drop. On the first sign-in on a new device
+> `_ensureLocalProfile` pulls them back into Drift.
+> **Health-data consent (GDPR Art. 9):** the health answers (body weight,
+> height, target weight, health issue, injuries, rest days) ride along only
+> with `health_consent_at` (ISO-8601 UTC) in the same update; a declined
+> consent sends them all as NULL instead, and an unanswered one (dev skip)
+> leaves them out. The table CHECK `user_profiles_health_needs_consent`
+> rejects health values without a consent timestamp. Settings → Health data
+> goes through `lib/core/services/health_consent.dart`: withdraw = one update
+> nulling all six + `health_consent_at` (and the local columns); grant = one
+> update with a fresh `health_consent_at` (the answers aren't re-asked).
+
 > **Routine shares** (migration 020, built 2026-08-29): NOT sync-queue items —
 > both calls are foreground RPCs (the user is waiting for the link/preview),
 > 10 s timeout, typed graceful errors, direct via `RoutineShareService`.
@@ -266,8 +284,9 @@ The feed is cut. No `SupabaseCommunityRepository` will be built. Dormant `posts`
 - **Block:** either side sets `status='blocked'` (blocker recorded); blocked pairs are invisible both ways and can't re-request. **Report** goes to a `user_reports` table for review.
 - **Lookup:** exact-match on unique `user_profiles.username` (lowercase); invite link/QR encodes the username. No name search endpoint.
 - **Counts:** `friend_count` from accepted rows (view or maintained column).
-- **Profile fetch:** `user_profiles` (public-safe columns) + friend count + achievements + streak (no posts). Profile shows relationship state (none / pending out / pending in / bros / blocked).
-- **Activity strip:** "Latest from your bros" reads friends' recent session summaries (already synced `sessions` rows) — no new content type, no free text.
+- **Profile fetch:** `user_profiles` (public-safe columns) + friend count + achievements + streak (no posts). Profile shows relationship state (none / pending out / pending in / bros / blocked). Read through the `public_profiles` view, which is signed-in only: since 022 anon has no access and authenticated is SELECT-only.
+- **Activity strip:** "Latest from your bros" reads the `friend_sessions` view (022): `user_id`, `started_at`, `finished_at`, `duration_seconds`, `total_volume_kg` of accepted Bros' non-deleted sessions (e.g. `friend_sessions?order=started_at.desc&limit=20`). No new content type, no free text. That is exactly what privacy §7 promises. Showing a workout name (the PRD's "Push Day" example), notes or exercises needs a view change and a privacy-policy update together.
+- **Graph visibility:** the `friends` view is `security_invoker` since 022, so a client sees only its own edges; nobody can list another user's Bros (§7 makes only the count public). Server readers (Friends leaderboard RPCs, `notify-social-challenge`) run as postgres / the service role and still see the full graph.
 
 ---
 

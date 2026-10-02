@@ -73,7 +73,9 @@ A paid app for people who train regularly and want a tool that's both rigorous (
 - Entitlement source of truth: `UserProfiles.subscriptionStatus` (`trial` / `active` / `grace_period` / `expired`), reconciled by `SubscriptionSyncService`; server truth via RevenueCat webhook; trial-window fallback via `verify-subscription`.
 
 ### 4.2 Trial & Gate Behavior
-- Trial begins at first sign-up (`trial_started_at`).
+- **Decision (2026-09-30, onboarding v3):** onboarding ends in a **hard paywall** — no skip. New users start the store's **7-day free trial** (the ASC/Play intro offer on both products; auto-renews on day 7) to get in, then create their account (sign-up comes *after* the paywall; RevenueCat aliases the anonymous purchase at sign-in). The trial timeline on the paywall promises a day-5 reminder, which the app schedules locally when a trial starts.
+- The in-app `trial_started_at` window (7 days from account creation) remains for accounts created outside onboarding (e.g. signing in with a new Google/Apple account from Welcome) and for the server gate fallback.
+- Trial copy is only shown to users the store reports as eligible for the intro offer; ineligible users see a plain "Subscribe".
 - During trial: full access.
 - On expiry without active subscription: app routes to the **paywall** and blocks core use until subscribed or restored.
 - **Restore Purchases** and **Delete Account** always available (store requirement).
@@ -90,11 +92,15 @@ A paid app for people who train regularly and want a tool that's both rigorous (
 
 ## 5. Feature Specifications
 
-### 5.1 Onboarding & Auth *(built)*
-- Multi-screen intake: language, gender, birthday, height, weight, goal, experience, target zones, **notification tone**, trial intro.
-- Email + password (validated) and Google/Apple OAuth.
-- Intake persists to Supabase `user_profiles` on sign-up; exercises seed on first launch.
-- **To add:** the paywall gate at trial expiry (see §4.2).
+### 5.1 Onboarding & Auth *(rebuilt 2026-09-30 — design_handoff_onboarding v3)*
+- Flow: animated splash → Welcome → **Section 1** gender, goal (+ goal detail), muscle focus → **health-data consent** → **Section 2 "Body data"** birthdate, height, weight, target weight, target timeline → **Section 3 "About you"** issues (+ detail), injuries (+ rest days, only after a real injury), muscle-recovery explainer, experience, compete explainer, training days + reminder switch → optimized timeline → **paywall** (§4.2) → Google/Apple sign-up → home.
+- **Health-data consent (GDPR Art. 9, added 2026-09-30):** weight, height, target weight, health issues and injuries are health data, so an explicit consent step comes right before Section 2 — an *unticked* box with the consent statement, a Privacy Policy link, and Continue enabled only once it's ticked. **"Continue without health data"** is always offered (consent must be freely given): it drops height, weight, target, both timelines, issues (+ detail), injuries and rest days from the flow, the paywall skips the personal-target slide, and nothing health-related is stored. The consent time is recorded (`health_consent_at`); Settings → Data & Account → **Health data** withdraws it (deletes the health answers here and on the account) or grants it later.
+- **Minimum age 16** (the Terms' age): the birth-year wheel ends at 16 years ago, and Continue stays disabled with a message until the chosen date is 16+. Birthdate is asked with or without health consent — it's not health data and it gates the flow.
+- **Terms acknowledgement:** sign-up and sign-in show "By continuing, you confirm you're at least 16 and agree to our Terms of Use. Our Privacy Policy explains how we handle your data." with both links (mygymbro.app/terms, /privacy) — Apple 1.2; sign-in counts too because a new Google/Apple account signs up there.
+- Timeline estimate: ~0.55 kg/week from current to target weight, at least 4 weeks; the "optimized" date is ~4% sooner (≥ 4 days). Illustrative, not a guarantee.
+- Every answer persists to the local profile at sign-up and syncs to Supabase `user_profiles` (Drift v23 / migration 021) — the health answers only with consent (a declined consent clears them instead). The reminder switch drives Settings → Training reminders.
+- Language follows the device and notification tone defaults to Balanced; both are changed in Settings (the language and tone pickers left onboarding with v3).
+- Auth is Google + Apple only (no email/password).
 
 ### 5.2 Workout Logging & Active Session *(built)*
 - Start a session from a schedule day or freeform.
@@ -121,7 +127,7 @@ The visual centerpiece. Per-muscle SVG overlays on a gendered base body.
 
 ### 5.5 Coaching Tone System *(partial → finish)*
 - Every notification and motivation message ships in **4 tones**: `supportive`, `balanced` (default), `bold`, `savage`.
-- Tone chosen in onboarding and editable in Settings; each option shows an example line.
+- Tone defaults to Balanced and is chosen in Settings; each option shows an example line. (Picked during onboarding until the v3 onboarding, 2026-09-30.)
 - Resolution at delivery time; null/missing → `balanced` fallback.
 - Local notifications already tone-aware; **Supabase motivation messages** must resolve tone server-side (see `04-BACKEND.md`).
 - **Compliance:** copy is **preset, human-written templates** — not AI-generated and not medical/professional advice. Never market this as an "AI coach"; avoid wording that implies clinical guidance or guaranteed results (App Store guidelines 1.4.1 / 2.3).

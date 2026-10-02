@@ -16,6 +16,17 @@ class AppConstants {
   static const trialDurationDays = 7;
   static const defaultNotificationTone = 'balanced';
 
+  // ── Legal ───────────────────────────────────────────────────────────────
+  /// Terms of Use §2 (and Germany's GDPR age of digital consent).
+  static const minUserAge = 16;
+
+  /// Published pages from `website/public/`.
+  static const termsUrl = 'https://mygymbro.app/terms';
+  static const privacyUrl = 'https://mygymbro.app/privacy';
+
+  /// Privacy Policy §4 — health data and consent.
+  static const healthDataUrl = 'https://mygymbro.app/privacy#health';
+
   // ── Session ─────────────────────────────────────────────────────────────
   static const defaultRestSeconds = 90;
 

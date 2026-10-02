@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:drift/drift.dart';
 
 import 'package:my_gym_bro/core/database/app_database.dart';
@@ -9,6 +11,37 @@ part 'user_profile_dao.g.dart';
 class UserProfileDao extends DatabaseAccessor<AppDatabase>
     with _$UserProfileDaoMixin {
   UserProfileDao(super.db);
+
+  /// The body metrics + onboarding answers of a server `user_profiles` row
+  /// (migration 021) as local columns — used when an account signs in on a
+  /// new device so its intake comes along. Arrays stay JSON text locally.
+  static UserProfilesCompanion answersFromRemote(Map<String, dynamic> row) {
+    double? decimal(String k) => (row[k] as num?)?.toDouble();
+    String? list(String k) {
+      final v = row[k];
+      return v is List ? jsonEncode(v) : null;
+    }
+
+    final birth = row['birth_date'];
+    final consent = row['health_consent_at'];
+    return UserProfilesCompanion(
+      gender: Value(row['gender'] as String?),
+      bodyWeightKg: Value(decimal('body_weight_kg')),
+      heightCm: Value(decimal('height_cm')),
+      weightUnit: Value((row['weight_unit'] as String?) ?? 'kg'),
+      heightUnit: Value((row['height_unit'] as String?) ?? 'cm'),
+      birthDate: Value(birth is String ? DateTime.tryParse(birth) : null),
+      targetWeightKg: Value(decimal('target_weight_kg')),
+      focusAreas: Value(list('focus_areas')),
+      healthIssue: Value(row['health_issue'] as String?),
+      injuries: Value(list('injuries')),
+      injuryRestDays: Value((row['injury_rest_days'] as num?)?.toInt()),
+      trainingDays: Value(list('training_days')),
+      healthConsentAt: Value(
+        consent is String ? DateTime.tryParse(consent)?.toLocal() : null,
+      ),
+    );
+  }
 
   /// Get the first (and typically only) user profile.
   Future<UserProfile?> getFirst() =>

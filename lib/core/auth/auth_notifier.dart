@@ -188,6 +188,11 @@ class AuthNotifier extends StateNotifier<AppAuthState> {
         createdAt: Value(now),
         updatedAt: Value(now),
       ));
+      // A returning account on a new device brings its body metrics and
+      // onboarding answers along (migration 021).
+      if (remote != null) {
+        await dao.mergeIntoFirst(UserProfileDao.answersFromRemote(remote));
+      }
       await SecureStorage().write('needs_exercise_seed', 'true');
     } on Exception catch (e) {
       // Never let profile bootstrap block the auth transition.

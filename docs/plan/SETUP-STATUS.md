@@ -18,7 +18,8 @@
 | TestFlight CI lane | ✅ **Green.** Builds distributed to external testers |
 | App Store Connect subscriptions | 🟡 Created, stuck at "Missing Metadata" (screenshot pending) |
 | RevenueCat | 🟡 Project + products exist; entitlement/offering/webhook/keys pending |
-| Supabase **cloud** | 🟢 **Schema current (verified 2026-09-08):** migrations 001–020 applied; `delete-account` v8 (Apple token revocation) deployed + smoke-tested. Pending: function secrets (`APPLE_*` etc.), `purchase-skin` deploy, config push, Apple provider toggle |
+| Supabase **cloud** | 🔴 **Migrations 021 + 022 not yet pushed, and 022 is a live security fix.** Until it lands, the anon key shipped in the app can read every profile and friendship, and can write or delete any `user_profiles` row through the `public_profiles` view (details in the Supabase section). 001–020 applied (re-verified 2026-09-30); `delete-account` v8 (Apple token revocation) deployed + smoke-tested. Pending: `db push` for 021 + 022, function secrets (`APPLE_*` etc.), `purchase-skin` deploy, config push, Apple provider toggle |
+| Onboarding paywall | ⚠️ **Hard paywall since onboarding v3 (2026-09-30)** — a store build without a working RevenueCat offering leaves new users stuck at "Free Trial" (dev/beta builds show a Skip). Finish the RevenueCat checklist below before any store submission |
 | Apple sign-in (Supabase side) | 🔴 Provider not enabled in dashboard — errors until then |
 | Firebase (Crashlytics + FCM) | 🟡 **Wired (2026-09-08)** — CI derives options from base64 config secrets; owner still has to create the project + set the secrets |
 | Exercise data license | 🔴 **Store-release blocker** — OSS default; the licensed source is a config switch (`EXERCISEDB_BASE_URL` / `EXERCISEDB_API_KEY`), see below |
@@ -144,17 +145,42 @@ migration 016 and `skin_provider.dart`). Owner steps, after the subscription flo
 ⚠️ The whole server-verification path is **deployable but untested** until this setup
 finishes — test a sandbox skin purchase + restore end-to-end then.
 
-## Supabase cloud (schema current as of 2026-09-08 — secrets/config pending)
+## Supabase cloud (001–020 applied — 021/022, secrets and config pending)
 
 Project `mygym-bro-prod` (ref `konzjrklgyuodzrrhwwv`, eu-west-1). Verified through the
-Supabase connector on 2026-09-08: **migrations 001–020 are all applied** and
+Supabase connector on 2026-09-08 and again on 2026-09-30: **migrations 001–020 are all applied** and
 `delete_account_data` is the 017 version. Re-verify with `supabase migration list` (or the
 connector's `list_migrations`) before assuming anything newer is applied. Still pending:
 
-- `supabase db push` — nothing pending (001–020 applied). When a new migration lands, push
-  it and re-run the checks its header documents (012's RLS matrix, the 013/014
-  `delete_account_data` contract). 012 and 013 must always land together: 012 drops
-  `follows` and only 013 stops `delete_account_data` referencing it.
+- `supabase db push` — **022 pending, and urgent** (`022_privacy_boundaries.sql`, 2026-09-30).
+  Read-only catalog checks on 2026-09-30 found that the project's pre-2026-05-30 default
+  privileges gave `anon` AND `authenticated` ALL on `public_profiles` and `friends` (ACL
+  `arwdDxtm`). Both views run as postgres (BYPASSRLS), and `public_profiles` is auto-updatable.
+  So anyone holding the anon key can read every profile and friendship and INSERT/UPDATE/DELETE
+  any `user_profiles` row through the view, past RLS and 009's column lockdown. The retained
+  API logs (~7 days) show no request to either view or to `sessions`. Anything older can't be
+  checked. 022 revokes anon, makes authenticated SELECT-only, makes `friends`
+  `security_invoker`, and replaces `sessions_select_friends` with the `friend_sessions` view.
+  No client change is needed. **The same default privileges still apply to every future
+  migration:** new tables, views and functions are auto-granted to anon + authenticated here but
+  not on fresh/local stacks, so REVOKE explicitly (03-DATABASE §4). Post-push check: the
+  `pg_class` query in 022's header (no `anon` entry, `authenticated=r`,
+  `security_invoker=true` on `friends`), then in the app: @username lookup, a Bro's profile
+  (Bro count), the Friends leaderboard.
+
+- `supabase db push` — **021 pending** (`021_onboarding_answers.sql`: onboarding answers +
+  body metrics on `user_profiles`, `health_consent_at` + the
+  `user_profiles_health_needs_consent` CHECK (no health values without a consent time), CHECKs
+  + column grants). Until it lands, the client's
+  sign-up profile update fails with PostgREST's unknown-column error — a transient code in
+  `SyncService`, so it stays queued (retried each sync pass) and goes through once 021 is
+  pushed; the answers are safe in Drift meanwhile. Post-push check: sign up through
+  onboarding, then confirm the row's `training_days` / `focus_areas` / `birth_date` and
+  `health_consent_at`; turn Settings → Health data off and confirm the six health columns and
+  `health_consent_at` are NULL.
+  When a new migration lands, push it and re-run the checks its header documents (012's RLS
+  matrix, the 013/014 `delete_account_data` contract). 012 and 013 must always land
+  together: 012 drops `follows` and only 013 stops `delete_account_data` referencing it.
 - **Challenges (014) deploy notes:** the completion-push trigger reads the same
   Vault secrets 010 documents (`project_url`, `cron_secret`) — it silently
   skips pushes until they exist. `notify-social-challenge` must be redeployed
@@ -306,10 +332,88 @@ set the variable/secret and you're done; if it's a dataset dump, host it behind 
 contract (e.g. a Supabase edge function) or bundle it, then point the URL there. The
 store lane warns loudly while the URL is unset. History in `08-WORKOUTX-MIGRATION.md` (superseded WorkoutX era).
 
+## Website & legal texts (added 2026-09-30)
+
+`website/public/` is the static site for mygymbro.app. `website/README.md` has the deploy steps
+(Cloudflare Pages, output dir `website/public`) and the owner placeholder checklist. The privacy
+policy and terms were drafted from the app's real data flows as of 2026-09-30, for a German
+registered company, users aged 16+, English only. Before publishing: fill the placeholders, have
+a lawyer or legal-text service review, restore the domain, push migration 022 (§7 is only true
+once it's live), deploy.
+
+**The privacy policy assumes these app/backend changes. Ship them with the store release:**
+1. ✅ **Done in the app (2026-09-30); the server half is 021, live once pushed.** Explicit
+   consent for health data (GDPR Art. 9): a consent step before the body-data section, with an
+   unticked box, the statement, and a link to privacy §4 (`/privacy#health`).
+   "Continue without health data" skips weight, height, target, issues, injuries and rest days,
+   and stores none of them. `health_consent_at` records the consent time, and 021's CHECK
+   refuses health values without it. Settings → Data & Account → Health data withdraws consent
+   (deletes the values locally and on the account) or grants it again. Privacy §4 and §19 only
+   name email and account deletion for withdrawing, so add the Settings switch there. §4 also says
+   health data "may cover your training data", but workout logging doesn't depend on this
+   consent. Have the legal review decide which wording is right.
+2. ✅ **Done (2026-09-30).** Minimum age 16: the birth-year wheel ends 16 years back
+   (`ObUnits.lastBirthYear`). Until the date is 16+, Continue stays disabled and the step says
+   why (`OnboardingData.isOldEnough`, `AppConstants.minUserAge`).
+3. ✅ **Done (2026-09-30).** Sign-up and sign-in now show a Terms acknowledgement:
+   "By continuing, you confirm you're at least 16 and agree to our Terms of Use. Our Privacy
+   Policy explains how we handle your data." Both are links (`LegalAgreementText`, URLs in
+   `AppConstants`). The paywall and Settings links point at the same mygymbro.app URLs.
+4. ✅ **Fixed in `022_privacy_boundaries.sql` (2026-09-30), live once pushed** (Supabase section
+   above). The anon key could list every profile and friendship without signing in: the views
+   bypass RLS, and 018 grants but never revokes. It was worse than a read. `public_profiles` is
+   an auto-updatable view, and anon + authenticated also held INSERT/UPDATE/DELETE on it, so
+   anyone could rewrite or delete any profile row. Signed-in users could also list anyone's Bros
+   through `friends`, although the policy only makes the count public. After 022, anon has no
+   access, signed-in users read profiles only (Bro count still exact), and `friends` shows each
+   user only their own edges.
+5. ✅ **Fixed in 022, live once pushed.** `sessions_select_friends` is dropped. Bros read the new
+   `friend_sessions` view instead: `user_id`, `started_at`, `finished_at`, `duration_seconds` and
+   `total_volume_kg`, for accepted Bros' non-deleted sessions only. No app code read friends'
+   sessions or notes (the bros strip isn't built yet). If it ever needs to show the workout name,
+   the view and privacy §7 have to change together.
+6. **`has_active_subscription(uuid)` answers for any user** (found 2026-09-30, open). It is
+   SECURITY DEFINER and anon + authenticated can call it with any user id, so the API tells anyone
+   whether a given user subscribes. The policy doesn't make that visible, and signed-in users can
+   still list every user id through `public_profiles`. RLS policies call it as `authenticated`, so
+   a plain REVOKE isn't enough: add a no-argument variant (or move it out of the exposed schema) and
+   rewire the policies and RPCs that call it (008/014/015).
+
+**Disclosed as-is in the policy but worth fixing (update the policy when you do):**
+- The public display name falls back to the email prefix (Apple users) and can't be edited in
+  the app.
+- Familjen Grotesk is fetched from Google Fonts at runtime. Bundle it, then delete the Google
+  Fonts paragraph in privacy §12.
+- Crashlytics is always on: there is no toggle, and fatal errors skip `SafeLogger` scrubbing.
+  German regulators may require consent under § 25 TDDDG, so ask on the new consent screen.
+  (Still open: the onboarding consent step built on 2026-09-30 covers only Art. 9 health data.
+  Consent has to be specific, so a crash-report opt-in needs its own switch, not the same box.)
+- Account deletion leaves the RevenueCat customer in place. Call RevenueCat's delete-subscriber
+  API from `delete-account`.
+- Deleted workouts stay soft-deleted on the server, and their sets still count toward
+  leaderboard volume.
+- There is no leaderboard opt-out.
+- Supabase auth audit-log retention needs checking, so privacy §18's "at most 90 days" holds.
+- Cloud leftovers to delete: the `moderate-content` function (it would send data to OpenAI),
+  the `report-content` function, and the `community-images` and `dm-media` buckets.
+- The iOS camera and microphone purpose strings mention a profile picture the app doesn't have.
+  `PrivacyInfo.xcprivacy` probably also needs "Other User Content" (challenge text, share
+  titles, report reasons).
+- @username claims look broken on the server: `friend_repository.dart:310` keys on `id`, and
+  there is no `UPDATE (username)` grant. Invite links can't resolve until this is fixed.
+- The "Rate the App" links use a placeholder App Store ID and the wrong Android package
+  (`settings_screen.dart:536,539`).
+
+**Operational promises made in the texts:**
+- act on abuse reports within 24 hours (Apple 1.2);
+- answer privacy requests within one month;
+- keep the Impressum phone line reachable.
+
 ## Security audit — known-open items (as of 2026-07-14; re-verify before fixing)
 
-- Onboarding **Skip button** has no `kDebugMode` guard (owner is keeping it during beta —
-  remove/gate before store release).
+- ~~Onboarding **Skip button** has no `kDebugMode` guard~~ — **gated 2026-09-30:** the
+  Welcome, paywall and sign-up Skips only render when `kDebugMode || kBetaFreeAccess`, so
+  they stay in TestFlight (`BETA_FREE=true`) and are absent from store builds.
 - ~~Supabase session tokens in plaintext `SharedPreferences`~~ — done earlier: the
   session is persisted through `SecureSessionStorage` (Keychain /
   EncryptedSharedPreferences, `lib/core/security/secure_storage.dart`).
