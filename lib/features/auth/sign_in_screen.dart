@@ -1,5 +1,6 @@
 import 'dart:io';
 
+import 'package:flutter/foundation.dart' show kDebugMode;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -7,6 +8,9 @@ import 'package:go_router/go_router.dart';
 import 'package:my_gym_bro/core/auth/auth_notifier.dart';
 import 'package:my_gym_bro/core/providers/providers.dart';
 import 'package:my_gym_bro/core/router/app_router.dart';
+import 'package:my_gym_bro/features/onboarding/app_entry.dart';
+import 'package:my_gym_bro/features/workout/workout_providers.dart'
+    show kBetaFreeAccess;
 import 'package:my_gym_bro/l10n/app_localizations.dart';
 import 'package:my_gym_bro/shared/constants.dart';
 import 'package:my_gym_bro/shared/responsive.dart';
@@ -26,10 +30,20 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
   // OAuth completes out-of-band (deep-link → onAuthStateChange), not via the
   // button's future — so navigation must react to the state transition.
   bool _oauthInFlight = false;
+  bool _skipping = false;
 
   void _startOAuth(Future<void> Function() flow) {
     setState(() => _oauthInFlight = true);
     flow();
+  }
+
+  /// Dev/beta (`kDebugMode || kBetaFreeAccess`, like the onboarding's Skips):
+  /// into the app without an account, for while sign-in isn't fully set up.
+  Future<void> _skipToApp() async {
+    setState(() => _skipping = true);
+    await prepareAppEntry(ref);
+    if (!mounted) return;
+    context.go(AppRoutes.home);
   }
 
   @override
@@ -38,7 +52,7 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
     final colors = AppColors.of(context);
     final l10n = AppLocalizations.of(context);
     final authState = ref.watch(authNotifierProvider);
-    final isLoading = authState.status == AuthStatus.loading;
+    final isLoading = authState.status == AuthStatus.loading || _skipping;
 
     ref.listen<AppAuthState>(authNotifierProvider, (previous, next) {
       if (!_oauthInFlight) return;
@@ -148,6 +162,26 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
                   ),
                 ),
               ),
+
+              // Dev/beta: into the app without an account.
+              if (kDebugMode || kBetaFreeAccess) ...[
+                SizedBox(height: 20.h),
+                Center(
+                  child: TextButton(
+                    onPressed: isLoading ? null : _skipToApp,
+                    child: Text(
+                      l10n.skip,
+                      style: TextStyle(
+                        fontSize: 17.sp,
+                        fontWeight: FontWeight.w600,
+                        color: colors.textPrimary,
+                        decoration: TextDecoration.underline,
+                        decorationColor: colors.textPrimary,
+                      ),
+                    ),
+                  ),
+                ),
+              ],
 
               SizedBox(height: 40.h),
             ],
