@@ -15,10 +15,10 @@
 
 | Service | State |
 |---|---|
-| TestFlight CI lane | ✅ **Green.** Builds distributed to external testers |
+| TestFlight CI lane | ✅ **Green.** Builds distributed to external testers. Last build 2026-10-02 (run 37011215218, `main` @ `6a3ad0e`: onboarding v3 + save-day-changes) |
 | App Store Connect subscriptions | 🟡 Created, stuck at "Missing Metadata" (screenshot pending) |
 | RevenueCat | 🟡 Project + products exist; entitlement/offering/webhook/keys pending |
-| Supabase **cloud** | 🔴 **Migrations 021 + 022 not yet pushed, and 022 is a live security fix.** Until it lands, the anon key shipped in the app can read every profile and friendship, and can write or delete any `user_profiles` row through the `public_profiles` view (details in the Supabase section). 001–020 applied (re-verified 2026-09-30); `delete-account` v8 (Apple token revocation) deployed + smoke-tested. Pending: `db push` for 021 + 022, function secrets (`APPLE_*` etc.), `purchase-skin` deploy, config push, Apple provider toggle |
+| Supabase **cloud** | 🟡 **001–022 in the migration history (021 + 022 since 2026-10-02), but 022's effect is not verified yet.** 022 is the security fix for the anon key reading every profile/friendship and writing any `user_profiles` row via `public_profiles`. Run the post-push checks in the Supabase section before calling it closed. Merging a PR that adds migrations to `main` appears to deploy them to production (see below). `delete-account` v8 (Apple token revocation) deployed + smoke-tested. Pending: verify 021/022, function secrets (`APPLE_*` etc.), `purchase-skin` deploy, config push, Apple provider toggle |
 | Onboarding paywall | ⚠️ **Hard paywall since onboarding v3 (2026-09-30)** — a store build without a working RevenueCat offering leaves new users stuck at "Free Trial" (dev/beta builds show a Skip). Finish the RevenueCat checklist below before any store submission |
 | Apple sign-in (Supabase side) | 🔴 Provider not enabled in dashboard — errors until then |
 | Firebase (Crashlytics + FCM) | 🟡 **Wired (2026-09-08)** — CI derives options from base64 config secrets; owner still has to create the project + set the secrets |
@@ -145,14 +145,34 @@ migration 016 and `skin_provider.dart`). Owner steps, after the subscription flo
 ⚠️ The whole server-verification path is **deployable but untested** until this setup
 finishes — test a sandbox skin purchase + restore end-to-end then.
 
-## Supabase cloud (001–020 applied — 021/022, secrets and config pending)
+## Supabase cloud (001–022 in history — 021/022 unverified; secrets and config pending)
 
 Project `mygym-bro-prod` (ref `konzjrklgyuodzrrhwwv`, eu-west-1). Verified through the
 Supabase connector on 2026-09-08 and again on 2026-09-30: **migrations 001–020 are all applied** and
 `delete_account_data` is the 017 version. Re-verify with `supabase migration list` (or the
-connector's `list_migrations`) before assuming anything newer is applied. Still pending:
+connector's `list_migrations`) before assuming anything newer is applied.
 
-- `supabase db push` — **022 pending, and urgent** (`022_privacy_boundaries.sql`, 2026-09-30).
+**2026-10-02: 021 + 022 entered the history without a manual push.** On 2026-10-02 the
+connector's `list_migrations` showed 001–020 only. After PR #38 (which adds 021 + 022) was merged
+into `main`, it showed `021 onboarding_answers` and `022 privacy_boundaries`, and
+`npx supabase db push --dry-run` reported "Remote database is up to date". No one ran a push
+or applied SQL in between. The likely cause is the Supabase GitHub integration (the dashboard's
+Integrations → GitHub; it also runs the "Supabase Preview" PR check). It appears to deploy
+migrations to production when a PR merges to `main`. This is **not confirmed**: check the
+integration's settings. If it holds, **merging a migration PR is the production deploy**. Review
+and verify migrations before merging, not after.
+
+The "Supabase Preview" PR check (a throwaway preview branch that replays every migration) has
+failed on every PR where it ran (#1, #29, #38, status `MIGRATIONS_FAILED`). #29 and #38 were
+merged anyway. The cause hasn't been read. It predates 021/022, so it's probably the
+history gap (002/003/005 never existed) or something in 001–020 that doesn't replay on a fresh
+stack. Fix it, or the check is noise.
+
+Still pending:
+
+- **022: in the history since 2026-10-02, effect not verified** (`022_privacy_boundaries.sql`).
+  The last read-only catalog check (2026-10-02, *before* the merge) still showed `anon=arwdDxtm`
+  on `public_profiles` and `friends`. Run the post-push check below to confirm it's closed.
   Read-only catalog checks on 2026-09-30 found that the project's pre-2026-05-30 default
   privileges gave `anon` AND `authenticated` ALL on `public_profiles` and `friends` (ACL
   `arwdDxtm`). Both views run as postgres (BYPASSRLS), and `public_profiles` is auto-updatable.
@@ -168,10 +188,11 @@ connector's `list_migrations`) before assuming anything newer is applied. Still 
   `security_invoker=true` on `friends`), then in the app: @username lookup, a Bro's profile
   (Bro count), the Friends leaderboard.
 
-- `supabase db push` — **021 pending** (`021_onboarding_answers.sql`: onboarding answers +
+- **021: in the history since 2026-10-02, effect not verified** (`021_onboarding_answers.sql`: onboarding answers +
   body metrics on `user_profiles`, `health_consent_at` + the
   `user_profiles_health_needs_consent` CHECK (no health values without a consent time), CHECKs
-  + column grants). Until it lands, the client's
+  + column grants). The pre-merge check on 2026-10-02 found none of its columns and 0
+  profiles, so the CHECK could not fail. Until it lands, the client's
   sign-up profile update fails with PostgREST's unknown-column error — a transient code in
   `SyncService`, so it stays queued (retried each sync pass) and goes through once 021 is
   pushed; the answers are safe in Drift meanwhile. Post-push check: sign up through
@@ -338,11 +359,11 @@ store lane warns loudly while the URL is unset. History in `08-WORKOUTX-MIGRATIO
 (Cloudflare Pages, output dir `website/public`) and the owner placeholder checklist. The privacy
 policy and terms were drafted from the app's real data flows as of 2026-09-30, for a German
 registered company, users aged 16+, English only. Before publishing: fill the placeholders, have
-a lawyer or legal-text service review, restore the domain, push migration 022 (§7 is only true
+a lawyer or legal-text service review, restore the domain, verify migration 022 in the cloud (§7 is only true
 once it's live), deploy.
 
 **The privacy policy assumes these app/backend changes. Ship them with the store release:**
-1. ✅ **Done in the app (2026-09-30); the server half is 021, live once pushed.** Explicit
+1. ✅ **Done in the app (2026-09-30); the server half is 021, in the cloud history since 2026-10-02 (unverified).** Explicit
    consent for health data (GDPR Art. 9): a consent step before the body-data section, with an
    unticked box, the statement, and a link to privacy §4 (`/privacy#health`).
    "Continue without health data" skips weight, height, target, issues, injuries and rest days,
@@ -359,7 +380,7 @@ once it's live), deploy.
    "By continuing, you confirm you're at least 16 and agree to our Terms of Use. Our Privacy
    Policy explains how we handle your data." Both are links (`LegalAgreementText`, URLs in
    `AppConstants`). The paywall and Settings links point at the same mygymbro.app URLs.
-4. ✅ **Fixed in `022_privacy_boundaries.sql` (2026-09-30), live once pushed** (Supabase section
+4. ✅ **Fixed in `022_privacy_boundaries.sql` (2026-09-30), in the cloud history since 2026-10-02 (unverified)** (Supabase section
    above). The anon key could list every profile and friendship without signing in: the views
    bypass RLS, and 018 grants but never revokes. It was worse than a read. `public_profiles` is
    an auto-updatable view, and anon + authenticated also held INSERT/UPDATE/DELETE on it, so
@@ -367,7 +388,7 @@ once it's live), deploy.
    through `friends`, although the policy only makes the count public. After 022, anon has no
    access, signed-in users read profiles only (Bro count still exact), and `friends` shows each
    user only their own edges.
-5. ✅ **Fixed in 022, live once pushed.** `sessions_select_friends` is dropped. Bros read the new
+5. ✅ **Fixed in 022, in the cloud history since 2026-10-02 (unverified).** `sessions_select_friends` is dropped. Bros read the new
    `friend_sessions` view instead: `user_id`, `started_at`, `finished_at`, `duration_seconds` and
    `total_volume_kg`, for accepted Bros' non-deleted sessions only. No app code read friends'
    sessions or notes (the bros strip isn't built yet). If it ever needs to show the workout name,
