@@ -425,8 +425,9 @@ a lawyer or legal-text service review, restore the domain, deploy. (Migration 02
 **Disclosed as-is in the policy but worth fixing (update the policy when you do):**
 - The public display name falls back to the email prefix (Apple users) and can't be edited in
   the app.
-- Familjen Grotesk is fetched from Google Fonts at runtime. Bundle it, then delete the Google
-  Fonts paragraph in privacy §12.
+- ✅ **Fixed 2026-10-02:** Familjen Grotesk is bundled (`assets/fonts/FamiljenGrotesk-Variable.ttf`,
+  OFL) and the `google_fonts` package is gone, so the app makes no Google Fonts requests. Delete
+  the Google Fonts paragraph in privacy §12.
 - Crashlytics is always on: there is no toggle, and fatal errors skip `SafeLogger` scrubbing.
   German regulators may require consent under § 25 TDDDG, so ask on the new consent screen.
   (Still open: the onboarding consent step built on 2026-09-30 covers only Art. 9 health data.
