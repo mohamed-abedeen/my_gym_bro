@@ -1550,7 +1550,7 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get signOutConfirm =>
-      'Von deinem Konto abmelden? Deine lokalen Daten bleiben auf diesem Gerät.';
+      'Von deinem Konto abmelden? Deine lokalen Daten bleiben auf diesem Gerät, außer hier meldet sich ein anderes Konto an.';
 
   @override
   String get cacheCleared => 'Cache geleert';
@@ -2792,6 +2792,10 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get obInjuryNone => 'Keine';
+
+  @override
+  String get obInjuryDisclaimer =>
+      'Keine medizinische Beratung. Wenn eine Verletzung schmerzt oder nicht heilt, lass sie ärztlich abklären.';
 
   @override
   String get obRestTitle => 'Wie viele Tage pausierst du?';

@@ -100,6 +100,14 @@ final authNotifierProvider = StateNotifierProvider<AuthNotifier, AppAuthState>((
   return AuthNotifier(db, supabase, syncService);
 });
 
+/// The signed-in account's auth uid (null when signed out). It only changes
+/// once [AuthNotifier] has finished setting the device up for that account —
+/// including wiping a previous account's local data — so providers that hold
+/// per-account values in memory watch it to re-read them after a switch.
+final signedInUserIdProvider = Provider<String?>(
+  (ref) => ref.watch(authNotifierProvider.select((s) => s.user?.id)),
+);
+
 /// Whether Supabase is available (initialized).
 final isSupabaseAvailableProvider = Provider<bool>((ref) {
   return ref.watch(supabaseProvider) != null;

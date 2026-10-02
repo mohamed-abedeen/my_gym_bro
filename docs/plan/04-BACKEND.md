@@ -53,6 +53,15 @@ The app does **not** call custom CRUD endpoints — it uses the Supabase SDK aga
 > nulling all six + `health_consent_at` (and the local columns); grant = one
 > update with a fresh `health_consent_at` (the answers aren't re-asked).
 
+> **One account's local data per device** (2026-10-02): the local Drift data
+> (profile, workouts, outbox) belongs to the account in `UserProfiles.remoteId`.
+> When a *different* account signs in, the sign-in listener
+> (`_ensureLocalProfile`) wipes the account data first, exactly as after
+> deletion (`wipeAccountData` + the per-account SecureStorage keys), so the
+> workout backfill and the outbox drain that follow can never push the previous
+> account's history or queued actions into the new one. A profile with no
+> `remoteId` yet (used before any sign-in) is adopted by whoever signs in.
+
 > **Routine shares** (migration 020, built 2026-08-29): NOT sync-queue items —
 > both calls are foreground RPCs (the user is waiting for the link/preview),
 > 10 s timeout, typed graceful errors, direct via `RoutineShareService`.
@@ -81,7 +90,7 @@ The app does **not** call custom CRUD endpoints — it uses the Supabase SDK aga
 | **verify-subscription** | Returns `{ status, expires_at }` from `subscriptions`; falls back to `trial_started_at` window if no row. |
 | **revenuecat-webhook** | HMAC-SHA256-verified; maps RC events (INITIAL_PURCHASE→active, CANCELLATION→expired, BILLING_ISSUE→grace_period) → upserts `subscriptions`. |
 | **schedule-notifications** | Cron (pg_cron): sends morning/evening/streak FCM pushes to users with active schedules + valid tokens; filters by weekday + session completion; batches ≤500. |
-| **delete-account** | Revokes Sign in with Apple tokens first (Apple REST API, App Store guideline 5.1.1(v); needs the `APPLE_*` secrets plus the fresh authorization code the client sends), then hard-deletes every user row via `delete_account_data` and the auth user. A failed revocation is logged, never blocks deletion. |
+| **delete-account** | Revokes Sign in with Apple tokens first (Apple REST API, App Store guideline 5.1.1(v); needs the `APPLE_*` secrets plus the fresh authorization code the client sends), then deletes the RevenueCat customer (`DELETE /v1/subscribers/{uid}` with `REVENUECAT_SECRET_KEY`; an unknown customer counts as deleted), then hard-deletes every user row via `delete_account_data` and the auth user. A failed revocation or RevenueCat call is logged, never blocks deletion; both run before the purge so a client retry repeats them. Response: `apple_revoked`, `revenuecat_deleted`. |
 | **notify-social-challenge** | Sends "new PR / challenge" FCM to active subscribers (except record holder); randomizes template. |
 | **send-push-notification** | Generic FCM send (by user-id array or topic). |
 
@@ -272,7 +281,9 @@ The feed is cut. No `SupabaseCommunityRepository` will be built. Dormant `posts`
 > rows where I'm a side). Server migration `012_friendships.sql` authored, **not
 > deployed** (SETUP-STATUS). Implementation notes on top of the contract below:
 > the @username **claim is deliberately online-only** (global uniqueness — a queued
-> offline claim could silently lose the race; lookup/search are online too);
+> offline claim could silently lose the race; lookup/search are online too). It
+> PATCHes `user_profiles` by `user_id` (needs 023's column grant) and only counts
+> when the row comes back — a PATCH matching nothing is 200 + `[]`;
 > decline/cancel/unfriend/unblock are hard DELETEs of the edge (per this contract)
 > while all other writes are offline-first; a block with no existing row INSERTs a
 > born-'blocked' row; "blocked by them" is reported to the UI as `none` (discreet

@@ -6,7 +6,9 @@
 	     in App Store Connect: Supabase auth (email / name / user id), workout
 	     and body data (fitness / health — incl. the onboarding answers: body
 	     metrics, injuries, health issues, training days), birth date + gender
-	     (other data types), RevenueCat (purchase history), Firebase
+	     (other data types), text people write for others (other user
+	     content: community challenge titles / descriptions, routine-share
+	     titles, report reasons), RevenueCat (purchase history), Firebase
 	     Crashlytics (crash / performance data, installation id).
 	     No tracking. -->
 	<key>NSPrivacyTracking</key>
@@ -78,6 +80,18 @@
 		<dict>
 			<key>NSPrivacyCollectedDataType</key>
 			<string>NSPrivacyCollectedDataTypeOtherDataTypes</string>
+			<key>NSPrivacyCollectedDataTypeLinked</key>
+			<true/>
+			<key>NSPrivacyCollectedDataTypeTracking</key>
+			<false/>
+			<key>NSPrivacyCollectedDataTypePurposes</key>
+			<array>
+				<string>NSPrivacyCollectedDataTypePurposeAppFunctionality</string>
+			</array>
+		</dict>
+		<dict>
+			<key>NSPrivacyCollectedDataType</key>
+			<string>NSPrivacyCollectedDataTypeOtherUserContent</string>
 			<key>NSPrivacyCollectedDataTypeLinked</key>
 			<true/>
 			<key>NSPrivacyCollectedDataTypeTracking</key>

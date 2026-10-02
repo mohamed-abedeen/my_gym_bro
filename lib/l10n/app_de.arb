@@ -483,7 +483,7 @@
   "female": "Weiblich",
   "restTimerVibration": "Pausen-Timer-Vibration",
   "signOut": "Abmelden",
-  "signOutConfirm": "Von deinem Konto abmelden? Deine lokalen Daten bleiben auf diesem Gerät.",
+  "signOutConfirm": "Von deinem Konto abmelden? Deine lokalen Daten bleiben auf diesem Gerät, außer hier meldet sich ein anderes Konto an.",
   "cacheCleared": "Cache geleert",
   "cacheClearFailed": "Cache konnte nicht geleert werden",
   "couldNotOpenLink": "Link konnte nicht geöffnet werden",
@@ -969,6 +969,7 @@
   "obInjuryWrist": "Handgelenk",
   "obInjuryKnee": "Knie",
   "obInjuryNone": "Keine",
+  "obInjuryDisclaimer": "Keine medizinische Beratung. Wenn eine Verletzung schmerzt oder nicht heilt, lass sie ärztlich abklären.",
   "obRestTitle": "Wie viele Tage pausierst du?",
   "obRestDays": "{count, plural, =1{1 Tag} other{{count} Tage}}",
   "@obRestDays": {

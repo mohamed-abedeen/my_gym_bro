@@ -1,4 +1,5 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:my_gym_bro/core/providers/providers.dart';
 import 'package:my_gym_bro/core/security/secure_storage.dart';
 
 /// Settings not backed by the UserProfile table — stored locally via
@@ -57,25 +58,32 @@ class _DoublePrefNotifier extends StateNotifier<double?> {
 // ponytail: calorie goal + body fat live in SecureStorage for now; move to
 // UserProfile (DB + sync + onboarding) when onboarding collects them.
 
+// These three are per-account: an account switch wipes them
+// (AuthNotifier._wipeLocalAccountData), so each re-reads its key whenever
+// the signed-in account changes instead of showing the previous one's value.
+
 /// Weekly calorie-burn goal (kcal). Null = not set.
 final weeklyCalorieGoalProvider =
-    StateNotifierProvider<_DoublePrefNotifier, double?>(
-  (ref) => _DoublePrefNotifier(key: 'setting_weekly_calorie_goal'),
-);
+    StateNotifierProvider<_DoublePrefNotifier, double?>((ref) {
+  ref.watch(signedInUserIdProvider);
+  return _DoublePrefNotifier(key: 'setting_weekly_calorie_goal');
+});
 
 /// Current body fat percentage. Null = not set.
 final bodyFatPctProvider =
-    StateNotifierProvider<_DoublePrefNotifier, double?>(
-  (ref) => _DoublePrefNotifier(key: 'setting_body_fat_pct'),
-);
+    StateNotifierProvider<_DoublePrefNotifier, double?>((ref) {
+  ref.watch(signedInUserIdProvider);
+  return _DoublePrefNotifier(key: 'setting_body_fat_pct');
+});
 
 /// Body fat percentage the first time the user ever entered it — the
 /// baseline for the "dropped X% body fat" stat. Written once by the
 /// body-fat settings sheet, never edited from the UI.
 final bodyFatStartPctProvider =
-    StateNotifierProvider<_DoublePrefNotifier, double?>(
-  (ref) => _DoublePrefNotifier(key: 'setting_body_fat_start_pct'),
-);
+    StateNotifierProvider<_DoublePrefNotifier, double?>((ref) {
+  ref.watch(signedInUserIdProvider);
+  return _DoublePrefNotifier(key: 'setting_body_fat_start_pct');
+});
 
 /// Whether to fire the daily training-reminder local notification.
 final trainingRemindersEnabledProvider =

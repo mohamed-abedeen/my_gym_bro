@@ -302,5 +302,10 @@ class RankStateNotifier extends StateNotifier<RankState?> {
 }
 
 final rankStateProvider = StateNotifierProvider<RankStateNotifier, RankState?>(
-  (ref) => RankStateNotifier(),
+  (ref) {
+    // Per-account; an account switch wipes the stored state, so start over
+    // for the new account instead of carrying the previous one's badge.
+    ref.watch(signedInUserIdProvider);
+    return RankStateNotifier();
+  },
 );

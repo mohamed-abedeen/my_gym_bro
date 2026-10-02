@@ -483,7 +483,7 @@
   "female": "Femme",
   "restTimerVibration": "Vibration du minuteur de repos",
   "signOut": "Se déconnecter",
-  "signOutConfirm": "Se déconnecter de votre compte ? Vos données locales restent sur cet appareil.",
+  "signOutConfirm": "Se déconnecter de votre compte ? Vos données locales restent sur cet appareil, sauf si un autre compte s'y connecte.",
   "cacheCleared": "Cache vidé",
   "cacheClearFailed": "Impossible de vider le cache",
   "couldNotOpenLink": "Impossible d'ouvrir le lien",
@@ -969,6 +969,7 @@
   "obInjuryWrist": "Poignet",
   "obInjuryKnee": "Genou",
   "obInjuryNone": "Aucune",
+  "obInjuryDisclaimer": "Ceci n'est pas un avis médical. Si une blessure fait mal ou ne guérit pas, consultez un médecin.",
   "obRestTitle": "Combien de jours allez-vous vous reposer ?",
   "obRestDays": "{count, plural, =1{1 jour} other{{count} jours}}",
   "@obRestDays": {

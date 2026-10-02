@@ -80,15 +80,17 @@
 		     AASA isn't hosted; see SETUP-STATUS.md owner steps. -->
 		<key>FlutterDeepLinkingEnabled</key>
 		<false/>
+		<!-- Camera and microphone are never requested: the only picker is the
+		     profile banner, which opens the photo library. The image-picker
+		     library still references camera / video-capture APIs, so App Store
+		     processing requires both purpose strings (ITMS-90683); they say
+		     plainly that neither is used (guideline 5.1.1(ii)). -->
 		<key>NSCameraUsageDescription</key>
-		<string>Take a photo for your profile picture.</string>
-		<!-- Never actually triggered (photos only), but the image-picker
-		     library references video-capture APIs, so App Store processing
-		     requires the mic purpose string (ITMS-90683). -->
+		<string>My Gym Bro doesn't use the camera. Profile banners come from your photo library.</string>
 		<key>NSMicrophoneUsageDescription</key>
-		<string>The microphone is only used if you record a video with the camera.</string>
+		<string>My Gym Bro doesn't use the microphone.</string>
 		<key>NSPhotoLibraryUsageDescription</key>
-		<string>Choose a photo for your profile picture.</string>
+		<string>Choose a photo from your library for your profile banner.</string>
 		<key>NSPhotoLibraryAddUsageDescription</key>
 		<string>Save your workout share cards to your photo library.</string>
 		<key>UILaunchStoryboardName</key>

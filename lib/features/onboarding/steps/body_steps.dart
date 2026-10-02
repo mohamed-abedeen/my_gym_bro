@@ -396,6 +396,27 @@ class _InjuriesStepState extends ConsumerState<InjuriesStep>
             ],
           ),
         ),
+        // Not in the handoff: the app plans around injuries (rest days,
+        // keeping the area out of heavy work), so say plainly that it isn't
+        // medical advice — same line as the Terms' health section.
+        ob.at(
+          left: 56,
+          right: 56,
+          top: 782,
+          child: ObEntrance(
+            delay: _s(.5),
+            child: Text(
+              l10n.obInjuryDisclaimer,
+              textAlign: TextAlign.center,
+              style: ob.text(
+                12,
+                weight: FontWeight.w500,
+                color: AppOnboarding.textMuted,
+                lineHeight: 16,
+              ),
+            ),
+          ),
+        ),
       ],
     );
   }

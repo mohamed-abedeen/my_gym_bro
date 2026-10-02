@@ -1545,7 +1545,7 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get signOutConfirm =>
-      '¿Cerrar sesión en tu cuenta? Tus datos locales permanecen en este dispositivo.';
+      '¿Cerrar sesión en tu cuenta? Tus datos locales permanecen en este dispositivo, salvo que otra cuenta inicie sesión aquí.';
 
   @override
   String get cacheCleared => 'Caché borrada';
@@ -2782,6 +2782,10 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get obInjuryNone => 'Ninguna';
+
+  @override
+  String get obInjuryDisclaimer =>
+      'Esto no es consejo médico. Si una lesión duele o no se cura, consulta a un médico.';
 
   @override
   String get obRestTitle => '¿Cuántos días vas a descansar?';

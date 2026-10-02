@@ -143,9 +143,19 @@ class AuthNotifier extends StateNotifier<AppAuthState> {
   /// row (created server-side by the `on_auth_user_created` trigger). Prefer
   /// pulling that row so the server's trial window is authoritative; fall
   /// back to local trial defaults when offline.
+  ///
+  /// When a different account signs in on this device (someone signed out,
+  /// someone else signed in), everything local belongs to the previous
+  /// account: its profile and onboarding answers, workouts, the outbox and
+  /// its per-account keys. That is wiped first — before the workout backfill
+  /// and outbox drain that follow in the listener would push it into the new
+  /// account, and before the new account could see any of it.
   Future<void> _ensureLocalProfile(User user) async {
     try {
       final dao = UserProfileDao(_db);
+      if (await dao.heldByOtherAccount(user.id)) {
+        await _wipeLocalAccountData();
+      }
       if (await dao.getFirst() != null) return;
 
       Map<String, dynamic>? remote;
@@ -413,8 +423,9 @@ class AuthNotifier extends StateNotifier<AppAuthState> {
   ///     authorization code -- the sheet is the only source of one.
   ///     Dismissing it returns [DeleteAccountResult.cancelled]; nothing
   ///     changes.
-  ///  2. The `delete-account` edge function revokes those tokens, purges every
-  ///     server row (`delete_account_data`) and removes the auth.users record.
+  ///  2. The `delete-account` edge function revokes those tokens, deletes the
+  ///     RevenueCat customer, purges every server row (`delete_account_data`)
+  ///     and removes the auth.users record.
   ///  3. Every local row that belongs to the account is wiped, RevenueCat is
   ///     logged out and the session cleared, so the next sign-up on this
   ///     device starts clean instead of inheriting (or backfill-pushing) the
@@ -492,7 +503,8 @@ class AuthNotifier extends StateNotifier<AppAuthState> {
     return providers is List && providers.contains('apple');
   }
 
-  /// Wipes every local row and per-account key that belongs to the account.
+  /// Wipes every local row and per-account key that belongs to the account,
+  /// after account deletion and when a different account signs in.
   /// The exercise catalogue is a device-level cache and stays.
   Future<void> _wipeLocalAccountData() async {
     try {
@@ -501,11 +513,18 @@ class AuthNotifier extends StateNotifier<AppAuthState> {
       CrashReporter.recordError(e, reason: 'Local account wipe failed');
     }
     // SecureStorage keys that are per-account rather than per-device
-    // (cosmetics, last-opened routine); theme/nav prefs stay.
+    // (cosmetics, last-opened routine, body fat + calorie goal, the rank
+    // badge's state); theme/nav/sound/reminder prefs stay. The providers
+    // holding the body-fat, calorie and rank values rebuild when the
+    // signed-in account changes, so nothing stale lingers in memory.
     for (final key in const [
       'setting_owned_skins',
       'setting_selected_skin',
       'last_selected_schedule_id',
+      'setting_body_fat_pct',
+      'setting_body_fat_start_pct',
+      'setting_weekly_calorie_goal',
+      'rank_state',
     ]) {
       try {
         await SecureStorage().delete(key);
