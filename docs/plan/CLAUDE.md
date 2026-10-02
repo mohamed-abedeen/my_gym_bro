@@ -108,6 +108,7 @@ assets/
 3. **Grants are explicit both ways:** GRANT `authenticated` what the policies allow, and `REVOKE ALL … FROM anon` on every new table, view and function. The cloud still auto-grants ALL to anon + authenticated (pre-2026-05-30 defaults) while local stacks grant nothing, so a missing REVOKE only bites in production. Views skip RLS, so clients get SELECT only on them (03-DATABASE §4, migration 022).
 4. Gate premium reads with the `has_active_subscription()` helper where appropriate.
 5. Update `03-DATABASE.md` and `04-BACKEND.md`.
+6. **Merging to `main` deploys the migration to production** (Supabase GitHub integration, no `db push` step). Make it safe against live data and idempotent, and treat the PR review as the production deploy gate (SETUP-STATUS → Supabase cloud).
 
 ### Adding a screen/widget
 1. Reuse the glass component family (`GlassSurface`, `OcGlassBtn`) — don't invent new chrome.

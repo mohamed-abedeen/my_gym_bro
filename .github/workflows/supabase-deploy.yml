@@ -6,8 +6,9 @@ name: Supabase deploy
 # set gets pushed to the project's function secrets under the same name, so
 # secret values never leave GitHub/Supabase.
 #
-# Manual only. Migrations are NOT run here — `supabase db push` is a
-# deliberate owner step (docs/plan/SETUP-STATUS.md → Supabase cloud).
+# Manual only. Migrations are NOT run here: the Supabase GitHub integration
+# applies them to production when a PR merges to `main`
+# (docs/plan/SETUP-STATUS.md → Supabase cloud).
 #
 # Needs: SUPABASE_URL (the project ref is derived from it) and
 # SUPABASE_ACCESS_TOKEN (Supabase dashboard → Account → Access Tokens).
