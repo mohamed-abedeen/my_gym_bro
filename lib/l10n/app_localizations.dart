@@ -150,12 +150,6 @@ abstract class AppLocalizations {
   /// **'Compete with your Gym Bros'**
   String get competeFriends;
 
-  /// No description provided for @startTrial.
-  ///
-  /// In en, this message translates to:
-  /// **'Start 7-day free trial'**
-  String get startTrial;
-
   /// No description provided for @createSchedule.
   ///
   /// In en, this message translates to:
@@ -732,18 +726,6 @@ abstract class AppLocalizations {
   /// **'Don\'t have an account?'**
   String get noAccount;
 
-  /// No description provided for @alreadyAccount.
-  ///
-  /// In en, this message translates to:
-  /// **'I already have an account'**
-  String get alreadyAccount;
-
-  /// No description provided for @chooseLanguage.
-  ///
-  /// In en, this message translates to:
-  /// **'Choose your language'**
-  String get chooseLanguage;
-
   /// No description provided for @chooseGoal.
   ///
   /// In en, this message translates to:
@@ -791,12 +773,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Advanced'**
   String get advanced;
-
-  /// No description provided for @letsGo.
-  ///
-  /// In en, this message translates to:
-  /// **'Let\'s Go'**
-  String get letsGo;
 
   /// No description provided for @trialStarted.
   ///
@@ -1176,18 +1152,6 @@ abstract class AppLocalizations {
   /// **'All caps, no-excuses reminders.'**
   String get toneSavageDescription;
 
-  /// No description provided for @notificationToneOnboardingTitle.
-  ///
-  /// In en, this message translates to:
-  /// **'Pick your voice'**
-  String get notificationToneOnboardingTitle;
-
-  /// No description provided for @notificationToneOnboardingSubtitle.
-  ///
-  /// In en, this message translates to:
-  /// **'How should we talk to you during workouts?'**
-  String get notificationToneOnboardingSubtitle;
-
   /// No description provided for @notificationToneExampleLabel.
   ///
   /// In en, this message translates to:
@@ -1380,30 +1344,6 @@ abstract class AppLocalizations {
   /// **'Min 8 chars, 1 uppercase, 1 number, 1 special'**
   String get passwordRequirements;
 
-  /// No description provided for @trialFeature1.
-  ///
-  /// In en, this message translates to:
-  /// **'Unlimited workout tracking'**
-  String get trialFeature1;
-
-  /// No description provided for @trialFeature2.
-  ///
-  /// In en, this message translates to:
-  /// **'1300+ exercise library'**
-  String get trialFeature2;
-
-  /// No description provided for @trialFeature3.
-  ///
-  /// In en, this message translates to:
-  /// **'Custom training schedules'**
-  String get trialFeature3;
-
-  /// No description provided for @trialFeature4.
-  ///
-  /// In en, this message translates to:
-  /// **'Progress analytics & records'**
-  String get trialFeature4;
-
   /// No description provided for @resetPasswordSent.
   ///
   /// In en, this message translates to:
@@ -1428,71 +1368,11 @@ abstract class AppLocalizations {
   /// **'Invalid email or password.'**
   String get signInError;
 
-  /// No description provided for @goalTitle.
-  ///
-  /// In en, this message translates to:
-  /// **'What\'s your main goal\nfor training ?'**
-  String get goalTitle;
-
-  /// No description provided for @bulking.
-  ///
-  /// In en, this message translates to:
-  /// **'Bulking'**
-  String get bulking;
-
-  /// No description provided for @bulkingDesc.
-  ///
-  /// In en, this message translates to:
-  /// **'Focus on building muscle mass and size.'**
-  String get bulkingDesc;
-
   /// No description provided for @strength.
   ///
   /// In en, this message translates to:
   /// **'Strength'**
   String get strength;
-
-  /// No description provided for @strengthDesc.
-  ///
-  /// In en, this message translates to:
-  /// **'To lift heavier load and get stronger.'**
-  String get strengthDesc;
-
-  /// No description provided for @cutting.
-  ///
-  /// In en, this message translates to:
-  /// **'Cutting'**
-  String get cutting;
-
-  /// No description provided for @cuttingDesc.
-  ///
-  /// In en, this message translates to:
-  /// **'Reduce body fat while keeping muscle.'**
-  String get cuttingDesc;
-
-  /// No description provided for @maintaining.
-  ///
-  /// In en, this message translates to:
-  /// **'Maintaining'**
-  String get maintaining;
-
-  /// No description provided for @maintainingDesc.
-  ///
-  /// In en, this message translates to:
-  /// **'Keep your current muscle and fitness.'**
-  String get maintainingDesc;
-
-  /// No description provided for @dataPrivate.
-  ///
-  /// In en, this message translates to:
-  /// **'Your data is private and secure.'**
-  String get dataPrivate;
-
-  /// No description provided for @experienceTitle.
-  ///
-  /// In en, this message translates to:
-  /// **'How much training\nexperience do you have ?'**
-  String get experienceTitle;
 
   /// No description provided for @base.
   ///
@@ -1536,36 +1416,6 @@ abstract class AppLocalizations {
   /// **'Select Your Gender'**
   String get selectGender;
 
-  /// No description provided for @genderSubtitle.
-  ///
-  /// In en, this message translates to:
-  /// **'This helps us personalize your\ntraining plan.'**
-  String get genderSubtitle;
-
-  /// No description provided for @birthdayTitle.
-  ///
-  /// In en, this message translates to:
-  /// **'What\'s your birthday?'**
-  String get birthdayTitle;
-
-  /// No description provided for @weightTitle.
-  ///
-  /// In en, this message translates to:
-  /// **'What is your weight?'**
-  String get weightTitle;
-
-  /// No description provided for @heightTitle.
-  ///
-  /// In en, this message translates to:
-  /// **'What is your height?'**
-  String get heightTitle;
-
-  /// No description provided for @targetZonesTitle.
-  ///
-  /// In en, this message translates to:
-  /// **'What are your target\nzones?'**
-  String get targetZonesTitle;
-
   /// No description provided for @arms.
   ///
   /// In en, this message translates to:
@@ -1577,12 +1427,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Abs'**
   String get abs;
-
-  /// No description provided for @pecs.
-  ///
-  /// In en, this message translates to:
-  /// **'Pecs'**
-  String get pecs;
 
   /// No description provided for @targetBack.
   ///
@@ -1601,12 +1445,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'All'**
   String get all;
-
-  /// No description provided for @kgs.
-  ///
-  /// In en, this message translates to:
-  /// **'kgs'**
-  String get kgs;
 
   /// No description provided for @lbs.
   ///
@@ -2099,6 +1937,90 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'All Time'**
   String get allTime;
+
+  /// No description provided for @personalBests.
+  ///
+  /// In en, this message translates to:
+  /// **'Personal bests'**
+  String get personalBests;
+
+  /// No description provided for @oneRepMaxEstimated.
+  ///
+  /// In en, this message translates to:
+  /// **'One rep max · est.'**
+  String get oneRepMaxEstimated;
+
+  /// No description provided for @vsLastMonth.
+  ///
+  /// In en, this message translates to:
+  /// **'vs last month'**
+  String get vsLastMonth;
+
+  /// No description provided for @pbHeaviest.
+  ///
+  /// In en, this message translates to:
+  /// **'Heaviest'**
+  String get pbHeaviest;
+
+  /// No description provided for @pbBestSet.
+  ///
+  /// In en, this message translates to:
+  /// **'Best set'**
+  String get pbBestSet;
+
+  /// No description provided for @pbBestSession.
+  ///
+  /// In en, this message translates to:
+  /// **'Best session'**
+  String get pbBestSession;
+
+  /// No description provided for @volumePerSession.
+  ///
+  /// In en, this message translates to:
+  /// **'Volume per session'**
+  String get volumePerSession;
+
+  /// No description provided for @periodShort3M.
+  ///
+  /// In en, this message translates to:
+  /// **'3M'**
+  String get periodShort3M;
+
+  /// No description provided for @periodShort6M.
+  ///
+  /// In en, this message translates to:
+  /// **'6M'**
+  String get periodShort6M;
+
+  /// No description provided for @periodShortAll.
+  ///
+  /// In en, this message translates to:
+  /// **'All'**
+  String get periodShortAll;
+
+  /// No description provided for @legendLatestPr.
+  ///
+  /// In en, this message translates to:
+  /// **'latest / PR'**
+  String get legendLatestPr;
+
+  /// No description provided for @legendEarlierSessions.
+  ///
+  /// In en, this message translates to:
+  /// **'earlier sessions'**
+  String get legendEarlierSessions;
+
+  /// No description provided for @prTag.
+  ///
+  /// In en, this message translates to:
+  /// **'PR'**
+  String get prTag;
+
+  /// No description provided for @rankProgressToNext.
+  ///
+  /// In en, this message translates to:
+  /// **'{percent}% → {rank}'**
+  String rankProgressToNext(int percent, String rank);
 
   /// No description provided for @noHistoryYet.
   ///
@@ -3353,12 +3275,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Get Started'**
   String get getStarted;
-
-  /// No description provided for @welcomeTagline.
-  ///
-  /// In en, this message translates to:
-  /// **'Built by Gym Bros, For Gym Bros'**
-  String get welcomeTagline;
 
   /// No description provided for @noData.
   ///
@@ -4704,89 +4620,899 @@ abstract class AppLocalizations {
   /// **'Add rest day'**
   String get splitAddRestDay;
 
-  /// No description provided for @personalBests.
+  /// No description provided for @obHaveAccount.
   ///
   /// In en, this message translates to:
-  /// **'Personal bests'**
-  String get personalBests;
+  /// **'Already have an account?'**
+  String get obHaveAccount;
 
-  /// No description provided for @oneRepMaxEstimated.
+  /// No description provided for @obSignInLink.
   ///
   /// In en, this message translates to:
-  /// **'One rep max · est.'**
-  String get oneRepMaxEstimated;
+  /// **'Sign in'**
+  String get obSignInLink;
 
-  /// No description provided for @vsLastMonth.
+  /// No description provided for @obPrivacyNote.
   ///
   /// In en, this message translates to:
-  /// **'vs last month'**
-  String get vsLastMonth;
+  /// **'Your data is private and secure'**
+  String get obPrivacyNote;
 
-  /// No description provided for @pbHeaviest.
+  /// No description provided for @obSection.
   ///
   /// In en, this message translates to:
-  /// **'Heaviest'**
-  String get pbHeaviest;
+  /// **'SECTION'**
+  String get obSection;
 
-  /// No description provided for @pbBestSet.
+  /// No description provided for @obSectionBodyData.
   ///
   /// In en, this message translates to:
-  /// **'Best set'**
-  String get pbBestSet;
+  /// **'BODY DATA'**
+  String get obSectionBodyData;
 
-  /// No description provided for @pbBestSession.
+  /// No description provided for @obSectionAboutYou.
   ///
   /// In en, this message translates to:
-  /// **'Best session'**
-  String get pbBestSession;
+  /// **'ABOUT YOU'**
+  String get obSectionAboutYou;
 
-  /// No description provided for @volumePerSession.
+  /// No description provided for @obGenderSubtitle.
   ///
   /// In en, this message translates to:
-  /// **'Volume per session'**
-  String get volumePerSession;
+  /// **'We use this information to create a personalized training plan for you'**
+  String get obGenderSubtitle;
 
-  /// No description provided for @periodShort3M.
+  /// No description provided for @obGoalsTitle.
   ///
   /// In en, this message translates to:
-  /// **'3M'**
-  String get periodShort3M;
+  /// **'What are your goals?'**
+  String get obGoalsTitle;
 
-  /// No description provided for @periodShort6M.
+  /// No description provided for @obGoalsSubtitle.
   ///
   /// In en, this message translates to:
-  /// **'6M'**
-  String get periodShort6M;
+  /// **'Your goal is our Target, let\'s achieve this together!'**
+  String get obGoalsSubtitle;
 
-  /// No description provided for @periodShortAll.
+  /// No description provided for @obGoalBuildMuscle.
   ///
   /// In en, this message translates to:
-  /// **'All'**
-  String get periodShortAll;
+  /// **'Build Muscle'**
+  String get obGoalBuildMuscle;
 
-  /// No description provided for @legendLatestPr.
+  /// No description provided for @obGoalLoseWeight.
   ///
   /// In en, this message translates to:
-  /// **'latest / PR'**
-  String get legendLatestPr;
+  /// **'Lose Weight'**
+  String get obGoalLoseWeight;
 
-  /// No description provided for @legendEarlierSessions.
+  /// No description provided for @obGoalGainStrength.
   ///
   /// In en, this message translates to:
-  /// **'earlier sessions'**
-  String get legendEarlierSessions;
+  /// **'Gain Strength'**
+  String get obGoalGainStrength;
 
-  /// No description provided for @prTag.
+  /// No description provided for @obGoalStayFit.
   ///
   /// In en, this message translates to:
-  /// **'PR'**
-  String get prTag;
+  /// **'Stay Fit'**
+  String get obGoalStayFit;
 
-  /// No description provided for @rankProgressToNext.
+  /// No description provided for @obGoalBuildMuscleHead.
   ///
   /// In en, this message translates to:
-  /// **'{percent}% → {rank}'**
-  String rankProgressToNext(int percent, String rank);
+  /// **'Level up your Gains'**
+  String get obGoalBuildMuscleHead;
+
+  /// No description provided for @obGoalLoseWeightHead.
+  ///
+  /// In en, this message translates to:
+  /// **'Sculpt, Unveil and dominate'**
+  String get obGoalLoseWeightHead;
+
+  /// No description provided for @obGoalGainStrengthHead.
+  ///
+  /// In en, this message translates to:
+  /// **'Crush Limits and ascend'**
+  String get obGoalGainStrengthHead;
+
+  /// No description provided for @obGoalStayFitHead.
+  ///
+  /// In en, this message translates to:
+  /// **'Maintain, Excel and sustain'**
+  String get obGoalStayFitHead;
+
+  /// No description provided for @obGoalBuildMuscleBody.
+  ///
+  /// In en, this message translates to:
+  /// **'At My Gym Bro, we help you crush your goals and boost your confidence by turning every workout into a visual masterpiece of strength.'**
+  String get obGoalBuildMuscleBody;
+
+  /// No description provided for @obGoalLoseWeightBody.
+  ///
+  /// In en, this message translates to:
+  /// **'At My Gym Bro, we help you strip away the excess to reveal the physique you’ve earned, turning every training session into a precise step towards absolute definition.'**
+  String get obGoalLoseWeightBody;
+
+  /// No description provided for @obGoalGainStrengthBody.
+  ///
+  /// In en, this message translates to:
+  /// **'At My Gym Bro, we help you master every lift to push past your limits, turning every personal record into a milestone of your strength.'**
+  String get obGoalGainStrengthBody;
+
+  /// No description provided for @obGoalStayFitBody.
+  ///
+  /// In en, this message translates to:
+  /// **'At My Gym Bro, we help you master the art of consistency, providing the tools to sustain your physique and keep your health at its absolute peak.'**
+  String get obGoalStayFitBody;
+
+  /// No description provided for @obFocusTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Which muscles do you want to focus on?'**
+  String get obFocusTitle;
+
+  /// No description provided for @obFocusBack.
+  ///
+  /// In en, this message translates to:
+  /// **'Back'**
+  String get obFocusBack;
+
+  /// No description provided for @obFocusChest.
+  ///
+  /// In en, this message translates to:
+  /// **'Chest'**
+  String get obFocusChest;
+
+  /// No description provided for @obFocusArms.
+  ///
+  /// In en, this message translates to:
+  /// **'Arms'**
+  String get obFocusArms;
+
+  /// No description provided for @obFocusAbs.
+  ///
+  /// In en, this message translates to:
+  /// **'Abs'**
+  String get obFocusAbs;
+
+  /// No description provided for @obFocusGlutes.
+  ///
+  /// In en, this message translates to:
+  /// **'Glutes'**
+  String get obFocusGlutes;
+
+  /// No description provided for @obFocusLegs.
+  ///
+  /// In en, this message translates to:
+  /// **'Legs'**
+  String get obFocusLegs;
+
+  /// No description provided for @obFocusFullBody.
+  ///
+  /// In en, this message translates to:
+  /// **'All Body'**
+  String get obFocusFullBody;
+
+  /// No description provided for @obBirthdateTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'When is Your Birthdate?'**
+  String get obBirthdateTitle;
+
+  /// No description provided for @obHeightTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'What is Your Height?'**
+  String get obHeightTitle;
+
+  /// No description provided for @obWeightTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'What is Your Weight?'**
+  String get obWeightTitle;
+
+  /// No description provided for @obTargetTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'What is Your Target Weight?'**
+  String get obTargetTitle;
+
+  /// No description provided for @obWheelDay.
+  ///
+  /// In en, this message translates to:
+  /// **'Day'**
+  String get obWheelDay;
+
+  /// No description provided for @obWheelMonth.
+  ///
+  /// In en, this message translates to:
+  /// **'Month'**
+  String get obWheelMonth;
+
+  /// No description provided for @obWheelYear.
+  ///
+  /// In en, this message translates to:
+  /// **'Year'**
+  String get obWheelYear;
+
+  /// No description provided for @obWheelHeight.
+  ///
+  /// In en, this message translates to:
+  /// **'Height'**
+  String get obWheelHeight;
+
+  /// No description provided for @obWheelWeight.
+  ///
+  /// In en, this message translates to:
+  /// **'Weight'**
+  String get obWheelWeight;
+
+  /// No description provided for @obWheelDecimal.
+  ///
+  /// In en, this message translates to:
+  /// **'Decimal'**
+  String get obWheelDecimal;
+
+  /// No description provided for @obWheelRest.
+  ///
+  /// In en, this message translates to:
+  /// **'Rest days'**
+  String get obWheelRest;
+
+  /// No description provided for @obUnitFt.
+  ///
+  /// In en, this message translates to:
+  /// **'FT'**
+  String get obUnitFt;
+
+  /// No description provided for @obUnitCm.
+  ///
+  /// In en, this message translates to:
+  /// **'CM'**
+  String get obUnitCm;
+
+  /// No description provided for @obUnitLb.
+  ///
+  /// In en, this message translates to:
+  /// **'LB'**
+  String get obUnitLb;
+
+  /// No description provided for @obUnitKg.
+  ///
+  /// In en, this message translates to:
+  /// **'KG'**
+  String get obUnitKg;
+
+  /// No description provided for @obLoseAmount.
+  ///
+  /// In en, this message translates to:
+  /// **'Lose {amount}'**
+  String obLoseAmount(String amount);
+
+  /// No description provided for @obGainAmount.
+  ///
+  /// In en, this message translates to:
+  /// **'Gain {amount}'**
+  String obGainAmount(String amount);
+
+  /// No description provided for @obTimelineTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Target Timeline'**
+  String get obTimelineTitle;
+
+  /// No description provided for @obWePredict.
+  ///
+  /// In en, this message translates to:
+  /// **'We predict that you’ll be'**
+  String get obWePredict;
+
+  /// No description provided for @obTimelineOnDate.
+  ///
+  /// In en, this message translates to:
+  /// **'on {date}'**
+  String obTimelineOnDate(String date);
+
+  /// No description provided for @obTimelineFooter.
+  ///
+  /// In en, this message translates to:
+  /// **'The work starts now. Stay consistent and watch the data become your reality'**
+  String get obTimelineFooter;
+
+  /// No description provided for @obDaysSooner.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 day sooner} other{{count} days sooner}}'**
+  String obDaysSooner(int count);
+
+  /// No description provided for @obCloserTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Your target is closer than you think.'**
+  String get obCloserTitle;
+
+  /// No description provided for @obCloserBody.
+  ///
+  /// In en, this message translates to:
+  /// **'My Gym Bro optimizes your daily training to bridge the gap between \'today\' and your ideal weight faster.'**
+  String get obCloserBody;
+
+  /// No description provided for @obIssuesTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Do you experience any of the following issues?'**
+  String get obIssuesTitle;
+
+  /// No description provided for @obIssueSitting.
+  ///
+  /// In en, this message translates to:
+  /// **'Prolonged sitting'**
+  String get obIssueSitting;
+
+  /// No description provided for @obIssueSleep.
+  ///
+  /// In en, this message translates to:
+  /// **'Poor sleep quality'**
+  String get obIssueSleep;
+
+  /// No description provided for @obIssueDiet.
+  ///
+  /// In en, this message translates to:
+  /// **'Dietary issues'**
+  String get obIssueDiet;
+
+  /// No description provided for @obIssueHealthy.
+  ///
+  /// In en, this message translates to:
+  /// **'I’m healthy!'**
+  String get obIssueHealthy;
+
+  /// No description provided for @obIssueSittingHead.
+  ///
+  /// In en, this message translates to:
+  /// **'Break the Cycle'**
+  String get obIssueSittingHead;
+
+  /// No description provided for @obIssueSleepHead.
+  ///
+  /// In en, this message translates to:
+  /// **'Recover, Reset and Rebuild'**
+  String get obIssueSleepHead;
+
+  /// No description provided for @obIssueDietHead.
+  ///
+  /// In en, this message translates to:
+  /// **'Eat, Perform and transform'**
+  String get obIssueDietHead;
+
+  /// No description provided for @obIssueHealthyHead.
+  ///
+  /// In en, this message translates to:
+  /// **'Optimize, Sustain and lead'**
+  String get obIssueHealthyHead;
+
+  /// No description provided for @obIssueSittingBody.
+  ///
+  /// In en, this message translates to:
+  /// **'At My Gym Bro, we help you break the sedentary cycle by integrating movement into your routine to boost energy and reclaim your health.'**
+  String get obIssueSittingBody;
+
+  /// No description provided for @obIssueSleepBody.
+  ///
+  /// In en, this message translates to:
+  /// **'At My Gym Bro, we optimize your recovery by aligning your training with quality rest, ensuring your body rebuilds stronger and your mind stays sharp for every challenge.'**
+  String get obIssueSleepBody;
+
+  /// No description provided for @obIssueDietBody.
+  ///
+  /// In en, this message translates to:
+  /// **'At My Gym Bro, we provide elite workout programs tailored to your goals, maximizing fat loss and building muscle with every session.'**
+  String get obIssueDietBody;
+
+  /// No description provided for @obIssueHealthyBody.
+  ///
+  /// In en, this message translates to:
+  /// **'At My Gym Bro, we help you break the sedentary cycle by integrating movement into your routine to boost energy and reclaim your health.'**
+  String get obIssueHealthyBody;
+
+  /// No description provided for @obInjuriesTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Have you suffered any injuries recently?'**
+  String get obInjuriesTitle;
+
+  /// No description provided for @obInjuryShoulder.
+  ///
+  /// In en, this message translates to:
+  /// **'Shoulder'**
+  String get obInjuryShoulder;
+
+  /// No description provided for @obInjuryBack.
+  ///
+  /// In en, this message translates to:
+  /// **'Back'**
+  String get obInjuryBack;
+
+  /// No description provided for @obInjuryWaist.
+  ///
+  /// In en, this message translates to:
+  /// **'Waist'**
+  String get obInjuryWaist;
+
+  /// No description provided for @obInjuryWrist.
+  ///
+  /// In en, this message translates to:
+  /// **'Wrist'**
+  String get obInjuryWrist;
+
+  /// No description provided for @obInjuryKnee.
+  ///
+  /// In en, this message translates to:
+  /// **'Knee'**
+  String get obInjuryKnee;
+
+  /// No description provided for @obInjuryNone.
+  ///
+  /// In en, this message translates to:
+  /// **'None'**
+  String get obInjuryNone;
+
+  /// No description provided for @obRestTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'How many days will you rest?'**
+  String get obRestTitle;
+
+  /// No description provided for @obRestDays.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 day} other{{count} days}}'**
+  String obRestDays(int count);
+
+  /// No description provided for @obRestNote.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{We’ll keep your {areas} out of heavy work while it heals.} other{We’ll keep your {areas} out of heavy work while they heal.}}'**
+  String obRestNote(String areas, int count);
+
+  /// No description provided for @obRecoveryTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Muscle Recovery'**
+  String get obRecoveryTitle;
+
+  /// No description provided for @obRecoveryBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Our visual muscle map tracks your recovery in real-time.'**
+  String get obRecoveryBody;
+
+  /// No description provided for @obFatigued.
+  ///
+  /// In en, this message translates to:
+  /// **'Fatigued'**
+  String get obFatigued;
+
+  /// No description provided for @obFatiguedDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Rest is mandatory'**
+  String get obFatiguedDesc;
+
+  /// No description provided for @obRecoveringDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Nearing full recovery'**
+  String get obRecoveringDesc;
+
+  /// No description provided for @obRecoveredDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Ready for high intensity'**
+  String get obRecoveredDesc;
+
+  /// No description provided for @obExperienceTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'How much training experience do you have?'**
+  String get obExperienceTitle;
+
+  /// No description provided for @obExpRookie.
+  ///
+  /// In en, this message translates to:
+  /// **'Rookie'**
+  String get obExpRookie;
+
+  /// No description provided for @obExpRookieSub.
+  ///
+  /// In en, this message translates to:
+  /// **'Just Started'**
+  String get obExpRookieSub;
+
+  /// No description provided for @obExpActive.
+  ///
+  /// In en, this message translates to:
+  /// **'Active'**
+  String get obExpActive;
+
+  /// No description provided for @obExpActiveSub.
+  ///
+  /// In en, this message translates to:
+  /// **'6 - 8 months'**
+  String get obExpActiveSub;
+
+  /// No description provided for @obExpExpert.
+  ///
+  /// In en, this message translates to:
+  /// **'Expert'**
+  String get obExpExpert;
+
+  /// No description provided for @obExpExpertSub.
+  ///
+  /// In en, this message translates to:
+  /// **'1 - 2 Years'**
+  String get obExpExpertSub;
+
+  /// No description provided for @obCompeteTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Compete with others'**
+  String get obCompeteTitle;
+
+  /// No description provided for @obTierLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'{tier, select, bronze{Bronze III} silver{Silver III} gold{Gold III} platinum{Platinum III} other{Elite III}}'**
+  String obTierLabel(String tier);
+
+  /// No description provided for @obLeaderboardWeek.
+  ///
+  /// In en, this message translates to:
+  /// **'Leaderboard · this week'**
+  String get obLeaderboardWeek;
+
+  /// No description provided for @obPoints.
+  ///
+  /// In en, this message translates to:
+  /// **'Points'**
+  String get obPoints;
+
+  /// No description provided for @obYou.
+  ///
+  /// In en, this message translates to:
+  /// **'You'**
+  String get obYou;
+
+  /// No description provided for @obDaysTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Which days of the week would you like to pick as training days?'**
+  String get obDaysTitle;
+
+  /// No description provided for @obReminderTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Training reminder'**
+  String get obReminderTitle;
+
+  /// No description provided for @obReminderBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Never miss your training session!'**
+  String get obReminderBody;
+
+  /// No description provided for @obYourTarget.
+  ///
+  /// In en, this message translates to:
+  /// **'Your target'**
+  String get obYourTarget;
+
+  /// No description provided for @obTargetBy.
+  ///
+  /// In en, this message translates to:
+  /// **'by {date}'**
+  String obTargetBy(String date);
+
+  /// No description provided for @obBuiltAround.
+  ///
+  /// In en, this message translates to:
+  /// **'Built around your answers'**
+  String get obBuiltAround;
+
+  /// No description provided for @obPlanSummaryDays.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 training day a week} other{{count} training days a week}}'**
+  String obPlanSummaryDays(int count);
+
+  /// No description provided for @obPlanSummaryFocus.
+  ///
+  /// In en, this message translates to:
+  /// **'focus on {areas}'**
+  String obPlanSummaryFocus(String areas);
+
+  /// No description provided for @obTrainReady.
+  ///
+  /// In en, this message translates to:
+  /// **'Train what’s ready'**
+  String get obTrainReady;
+
+  /// No description provided for @obTrainReadyBody.
+  ///
+  /// In en, this message translates to:
+  /// **'The muscle map shows what’s recovered and what needs rest, every day.'**
+  String get obTrainReadyBody;
+
+  /// No description provided for @obRankRange.
+  ///
+  /// In en, this message translates to:
+  /// **'{from} to {to}'**
+  String obRankRange(String from, String to);
+
+  /// No description provided for @obClimbRanks.
+  ///
+  /// In en, this message translates to:
+  /// **'Climb the ranks'**
+  String get obClimbRanks;
+
+  /// No description provided for @obClimbRanksBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Every session earns points. Compete with your bros on the weekly leaderboard.'**
+  String get obClimbRanksBody;
+
+  /// No description provided for @obTrialDaysBig.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 day} other{{count} days}}'**
+  String obTrialDaysBig(int count);
+
+  /// No description provided for @obFree.
+  ///
+  /// In en, this message translates to:
+  /// **'Free'**
+  String get obFree;
+
+  /// No description provided for @obTrialToday.
+  ///
+  /// In en, this message translates to:
+  /// **'TODAY'**
+  String get obTrialToday;
+
+  /// No description provided for @obTrialFullAccess.
+  ///
+  /// In en, this message translates to:
+  /// **'Full access'**
+  String get obTrialFullAccess;
+
+  /// No description provided for @obTrialDay.
+  ///
+  /// In en, this message translates to:
+  /// **'DAY {day}'**
+  String obTrialDay(int day);
+
+  /// No description provided for @obTrialReminder.
+  ///
+  /// In en, this message translates to:
+  /// **'Reminder'**
+  String get obTrialReminder;
+
+  /// No description provided for @obTrialThenYearly.
+  ///
+  /// In en, this message translates to:
+  /// **'{price} yearly'**
+  String obTrialThenYearly(String price);
+
+  /// No description provided for @obTrialThenMonthly.
+  ///
+  /// In en, this message translates to:
+  /// **'{price} monthly'**
+  String obTrialThenMonthly(String price);
+
+  /// No description provided for @obCancelBeforeDay.
+  ///
+  /// In en, this message translates to:
+  /// **'Cancel anytime before day {day}'**
+  String obCancelBeforeDay(int day);
+
+  /// No description provided for @obNotChargedUntil.
+  ///
+  /// In en, this message translates to:
+  /// **'You won’t be charged until your trial ends.'**
+  String get obNotChargedUntil;
+
+  /// No description provided for @obDiscount.
+  ///
+  /// In en, this message translates to:
+  /// **'−{percent}%'**
+  String obDiscount(int percent);
+
+  /// No description provided for @obSubscribe.
+  ///
+  /// In en, this message translates to:
+  /// **'Subscribe'**
+  String get obSubscribe;
+
+  /// No description provided for @obSave.
+  ///
+  /// In en, this message translates to:
+  /// **'Save'**
+  String get obSave;
+
+  /// No description provided for @obSaveYearlyRest.
+  ///
+  /// In en, this message translates to:
+  /// **'{percent}% with the yearly plan'**
+  String obSaveYearlyRest(int percent);
+
+  /// No description provided for @obMonthlyTrialNote.
+  ///
+  /// In en, this message translates to:
+  /// **'{days, plural, =1{1 day free, then {price}/month. Cancel anytime.} other{{days} days free, then {price}/month. Cancel anytime.}}'**
+  String obMonthlyTrialNote(int days, String price);
+
+  /// No description provided for @obMonthlyNote.
+  ///
+  /// In en, this message translates to:
+  /// **'{price}/month. Cancel anytime.'**
+  String obMonthlyNote(String price);
+
+  /// No description provided for @obLetsGo.
+  ///
+  /// In en, this message translates to:
+  /// **'Let’s go'**
+  String get obLetsGo;
+
+  /// No description provided for @obTrialStartedLine.
+  ///
+  /// In en, this message translates to:
+  /// **'Your free trial has started. {target} by {date}. First session is ready.'**
+  String obTrialStartedLine(String target, String date);
+
+  /// No description provided for @obSubscribedLine.
+  ///
+  /// In en, this message translates to:
+  /// **'You’re all set. {target} by {date}. First session is ready.'**
+  String obSubscribedLine(String target, String date);
+
+  /// No description provided for @obStartTraining.
+  ///
+  /// In en, this message translates to:
+  /// **'Start training'**
+  String get obStartTraining;
+
+  /// No description provided for @obTrialReminderTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Your free trial ends in 2 days'**
+  String get obTrialReminderTitle;
+
+  /// No description provided for @obTrialReminderBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Keep your plan going — or cancel before it ends in your App Store or Google Play subscriptions.'**
+  String get obTrialReminderBody;
+
+  /// No description provided for @obSignUpTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Create your account'**
+  String get obSignUpTitle;
+
+  /// No description provided for @obSignUpSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Save your plan and progress. Sign in to start training.'**
+  String get obSignUpSubtitle;
+
+  /// No description provided for @obConsentTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Your health data'**
+  String get obConsentTitle;
+
+  /// No description provided for @obConsentBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Next we\'ll ask about your weight, height, target weight, health issues and injuries. That\'s health data, so we only use it with your explicit consent.'**
+  String get obConsentBody;
+
+  /// No description provided for @obConsentPointUse.
+  ///
+  /// In en, this message translates to:
+  /// **'Used only to personalise your plan and predictions'**
+  String get obConsentPointUse;
+
+  /// No description provided for @obConsentPointPrivate.
+  ///
+  /// In en, this message translates to:
+  /// **'Never shown to other users or used for ads'**
+  String get obConsentPointPrivate;
+
+  /// No description provided for @obConsentPointWithdraw.
+  ///
+  /// In en, this message translates to:
+  /// **'Withdraw any time in Settings and we\'ll delete it'**
+  String get obConsentPointWithdraw;
+
+  /// No description provided for @obConsentAgree.
+  ///
+  /// In en, this message translates to:
+  /// **'I consent to My Gym Bro processing my health data (weight, height, target weight, health issues and injuries) to personalise my training. I can withdraw this consent at any time in Settings.'**
+  String get obConsentAgree;
+
+  /// No description provided for @obConsentDecline.
+  ///
+  /// In en, this message translates to:
+  /// **'Continue without health data'**
+  String get obConsentDecline;
+
+  /// No description provided for @obAgeTooYoung.
+  ///
+  /// In en, this message translates to:
+  /// **'You need to be at least {age} to use My Gym Bro.'**
+  String obAgeTooYoung(int age);
+
+  /// No description provided for @obTrialStartedPlain.
+  ///
+  /// In en, this message translates to:
+  /// **'Your free trial has started. Your first session is ready.'**
+  String get obTrialStartedPlain;
+
+  /// No description provided for @obSubscribedPlain.
+  ///
+  /// In en, this message translates to:
+  /// **'You’re all set. Your first session is ready.'**
+  String get obSubscribedPlain;
+
+  /// No description provided for @legalAgreement.
+  ///
+  /// In en, this message translates to:
+  /// **'By continuing, you confirm you\'re at least {age} and agree to our {terms}. Our {privacy} explains how we handle your data.'**
+  String legalAgreement(int age, String terms, String privacy);
+
+  /// No description provided for @healthDataConsent.
+  ///
+  /// In en, this message translates to:
+  /// **'Health data consent'**
+  String get healthDataConsent;
+
+  /// No description provided for @healthConsentGrantTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Allow health data?'**
+  String get healthConsentGrantTitle;
+
+  /// No description provided for @healthConsentGrantConfirm.
+  ///
+  /// In en, this message translates to:
+  /// **'I agree'**
+  String get healthConsentGrantConfirm;
+
+  /// No description provided for @healthConsentWithdrawTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Withdraw consent?'**
+  String get healthConsentWithdrawTitle;
+
+  /// No description provided for @healthConsentWithdrawBody.
+  ///
+  /// In en, this message translates to:
+  /// **'We\'ll delete your weight, height, target weight, health issues and injuries from this phone and your account. Some personalisation won\'t work without them.'**
+  String get healthConsentWithdrawBody;
+
+  /// No description provided for @healthConsentWithdrawConfirm.
+  ///
+  /// In en, this message translates to:
+  /// **'Withdraw and delete'**
+  String get healthConsentWithdrawConfirm;
+
+  /// No description provided for @healthConsentWithdrawn.
+  ///
+  /// In en, this message translates to:
+  /// **'Consent withdrawn. Your health data was deleted.'**
+  String get healthConsentWithdrawn;
 }
 
 class _AppLocalizationsDelegate

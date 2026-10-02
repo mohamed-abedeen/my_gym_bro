@@ -6,13 +6,15 @@ import 'package:go_router/go_router.dart';
 
 import 'package:my_gym_bro/core/auth/auth_notifier.dart';
 import 'package:my_gym_bro/core/providers/providers.dart';
+import 'package:my_gym_bro/core/router/app_router.dart';
 import 'package:my_gym_bro/l10n/app_localizations.dart';
 import 'package:my_gym_bro/shared/constants.dart';
 import 'package:my_gym_bro/shared/responsive.dart';
+import 'package:my_gym_bro/shared/widgets/legal_agreement_text.dart';
 
 /// Sign In (/auth/signin)
 /// OAuth-only: Google (all platforms) + Apple (iOS). No email/password.
-/// l10n.noAccount → /onboarding/signup.
+/// l10n.noAccount → back into the onboarding flow.
 class SignInScreen extends ConsumerStatefulWidget {
   const SignInScreen({super.key});
 
@@ -103,12 +105,31 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
                   colors: colors,
                 ),
 
-              SizedBox(height: 32.h),
+              SizedBox(height: 20.h),
 
-              // No account link
+              // Signing in with a new Google/Apple account creates one, so
+              // the Terms acceptance + 16+ confirmation apply here too.
+              LegalAgreementText(
+                style: TextStyle(
+                  fontSize: 12.sp,
+                  height: 1.4,
+                  color: colors.textSecondary,
+                ),
+                linkStyle: TextStyle(
+                  color: colors.accent,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+
+              SizedBox(height: 28.h),
+
+              // No account → the onboarding flow (it ends in sign-up).
+              // Pushed from its Welcome step → just pop back there.
               Center(
                 child: GestureDetector(
-                  onTap: () => context.go('/onboarding/signup'),
+                  onTap: () => context.canPop()
+                      ? context.pop()
+                      : context.go(AppRoutes.onboarding),
                   child: RichText(
                     text: TextSpan(
                       style: TextStyle(

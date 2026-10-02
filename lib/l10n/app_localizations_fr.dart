@@ -33,9 +33,6 @@ class AppLocalizationsFr extends AppLocalizations {
   String get competeFriends => 'Défiez vos amis';
 
   @override
-  String get startTrial => 'Essai gratuit de 7 jours';
-
-  @override
   String get createSchedule => 'Créer un programme';
 
   @override
@@ -351,12 +348,6 @@ class AppLocalizationsFr extends AppLocalizations {
   String get noAccount => 'Pas encore de compte ?';
 
   @override
-  String get alreadyAccount => 'J\'ai déjà un compte';
-
-  @override
-  String get chooseLanguage => 'Choisissez votre langue';
-
-  @override
   String get chooseGoal => 'Quel est votre objectif ?';
 
   @override
@@ -379,9 +370,6 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String get advanced => 'Avancé';
-
-  @override
-  String get letsGo => 'C\'est parti';
 
   @override
   String get trialStarted =>
@@ -586,13 +574,6 @@ class AppLocalizationsFr extends AppLocalizations {
   String get toneSavageDescription => 'Rappels en majuscules, sans excuses.';
 
   @override
-  String get notificationToneOnboardingTitle => 'Choisis ta voix';
-
-  @override
-  String get notificationToneOnboardingSubtitle =>
-      'Comment devons-nous te parler pendant tes entraînements ?';
-
-  @override
   String get notificationToneExampleLabel => 'Exemple';
 
   @override
@@ -711,18 +692,6 @@ class AppLocalizationsFr extends AppLocalizations {
       'Min 8 caractères, 1 majuscule, 1 chiffre, 1 spécial';
 
   @override
-  String get trialFeature1 => 'Suivi d\'entraînement illimité';
-
-  @override
-  String get trialFeature2 => 'Bibliothèque de 1300+ exercices';
-
-  @override
-  String get trialFeature3 => 'Programmes d\'entraînement personnalisés';
-
-  @override
-  String get trialFeature4 => 'Analyses de progression & records';
-
-  @override
   String get resetPasswordSent => 'E-mail de réinitialisation envoyé';
 
   @override
@@ -736,41 +705,7 @@ class AppLocalizationsFr extends AppLocalizations {
   String get signInError => 'E-mail ou mot de passe invalide.';
 
   @override
-  String get goalTitle =>
-      'Quel est votre objectif principal\nd\'entraînement ?';
-
-  @override
-  String get bulking => 'Prise de masse';
-
-  @override
-  String get bulkingDesc => 'Priorité à la masse musculaire et au volume.';
-
-  @override
   String get strength => 'Force';
-
-  @override
-  String get strengthDesc => 'Soulever plus lourd et devenir plus fort.';
-
-  @override
-  String get cutting => 'Sèche';
-
-  @override
-  String get cuttingDesc =>
-      'Réduire la graisse corporelle en gardant le muscle.';
-
-  @override
-  String get maintaining => 'Maintien';
-
-  @override
-  String get maintainingDesc =>
-      'Conserver votre muscle et votre forme actuels.';
-
-  @override
-  String get dataPrivate => 'Vos données sont privées et sécurisées.';
-
-  @override
-  String get experienceTitle =>
-      'Quelle est votre expérience\nen entraînement ?';
 
   @override
   String get base => 'Base';
@@ -794,29 +729,10 @@ class AppLocalizationsFr extends AppLocalizations {
   String get selectGender => 'Sélectionnez votre genre';
 
   @override
-  String get genderSubtitle =>
-      'Cela nous aide à personnaliser\nvotre plan d\'entraînement.';
-
-  @override
-  String get birthdayTitle => 'Quelle est votre date de naissance ?';
-
-  @override
-  String get weightTitle => 'Quel est votre poids ?';
-
-  @override
-  String get heightTitle => 'Quelle est votre taille ?';
-
-  @override
-  String get targetZonesTitle => 'Quelles sont vos zones\ncibles ?';
-
-  @override
   String get arms => 'Bras';
 
   @override
   String get abs => 'Abdos';
-
-  @override
-  String get pecs => 'Pectoraux';
 
   @override
   String get targetBack => 'Dos';
@@ -826,9 +742,6 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String get all => 'Tout';
-
-  @override
-  String get kgs => 'kg';
 
   @override
   String get lbs => 'lbs';
@@ -1109,6 +1022,50 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String get allTime => 'Depuis le début';
+
+  @override
+  String get personalBests => 'Records personnels';
+
+  @override
+  String get oneRepMaxEstimated => '1RM · estimé';
+
+  @override
+  String get vsLastMonth => 'vs mois dernier';
+
+  @override
+  String get pbHeaviest => 'Le plus lourd';
+
+  @override
+  String get pbBestSet => 'Meilleure série';
+
+  @override
+  String get pbBestSession => 'Meilleure séance';
+
+  @override
+  String get volumePerSession => 'Volume par séance';
+
+  @override
+  String get periodShort3M => '3M';
+
+  @override
+  String get periodShort6M => '6M';
+
+  @override
+  String get periodShortAll => 'Tout';
+
+  @override
+  String get legendLatestPr => 'dernière / PR';
+
+  @override
+  String get legendEarlierSessions => 'séances précédentes';
+
+  @override
+  String get prTag => 'PR';
+
+  @override
+  String rankProgressToNext(int percent, String rank) {
+    return '$percent% → $rank';
+  }
 
   @override
   String get noHistoryYet => 'Aucun historique pour l\'instant';
@@ -1795,9 +1752,6 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String get getStarted => 'Commencer';
-
-  @override
-  String get welcomeTagline => 'Créé par des Gym Bros, pour des Gym Bros';
 
   @override
   String get noData => 'Aucune donnée';
@@ -2591,46 +2545,573 @@ class AppLocalizationsFr extends AppLocalizations {
   String get splitAddRestDay => 'Ajouter un jour de repos';
 
   @override
-  String get personalBests => 'Records personnels';
+  String get obHaveAccount => 'Vous avez déjà un compte ?';
 
   @override
-  String get oneRepMaxEstimated => '1RM · estimé';
+  String get obSignInLink => 'Se connecter';
 
   @override
-  String get vsLastMonth => 'vs mois dernier';
+  String get obPrivacyNote => 'Vos données sont privées et sécurisées';
 
   @override
-  String get pbHeaviest => 'Le plus lourd';
+  String get obSection => 'SECTION';
 
   @override
-  String get pbBestSet => 'Meilleure série';
+  String get obSectionBodyData => 'DONNÉES CORPORELLES';
 
   @override
-  String get pbBestSession => 'Meilleure séance';
+  String get obSectionAboutYou => 'À PROPOS DE VOUS';
 
   @override
-  String get volumePerSession => 'Volume par séance';
+  String get obGenderSubtitle =>
+      'Nous utilisons ces informations pour créer un programme d\'entraînement personnalisé pour vous';
 
   @override
-  String get periodShort3M => '3M';
+  String get obGoalsTitle => 'Quels sont vos objectifs ?';
 
   @override
-  String get periodShort6M => '6M';
+  String get obGoalsSubtitle =>
+      'Votre objectif est notre cible, atteignons-le ensemble !';
 
   @override
-  String get periodShortAll => 'Tout';
+  String get obGoalBuildMuscle => 'Prendre du muscle';
 
   @override
-  String get legendLatestPr => 'dernière / PR';
+  String get obGoalLoseWeight => 'Perdre du poids';
 
   @override
-  String get legendEarlierSessions => 'séances précédentes';
+  String get obGoalGainStrength => 'Gagner en force';
 
   @override
-  String get prTag => 'PR';
+  String get obGoalStayFit => 'Rester en forme';
 
   @override
-  String rankProgressToNext(int percent, String rank) {
-    return '$percent% → $rank';
+  String get obGoalBuildMuscleHead => 'Passez vos gains au niveau supérieur';
+
+  @override
+  String get obGoalLoseWeightHead => 'Sculptez, révélez et dominez';
+
+  @override
+  String get obGoalGainStrengthHead => 'Brisez vos limites et progressez';
+
+  @override
+  String get obGoalStayFitHead => 'Maintenez, excellez et durez';
+
+  @override
+  String get obGoalBuildMuscleBody =>
+      'Chez My Gym Bro, nous vous aidons à pulvériser vos objectifs et à gagner en confiance en faisant de chaque séance un chef-d\'œuvre visuel de force.';
+
+  @override
+  String get obGoalLoseWeightBody =>
+      'Chez My Gym Bro, nous vous aidons à éliminer le superflu pour révéler le physique que vous avez mérité, en faisant de chaque séance un pas précis vers une définition absolue.';
+
+  @override
+  String get obGoalGainStrengthBody =>
+      'Chez My Gym Bro, nous vous aidons à maîtriser chaque mouvement pour dépasser vos limites, en faisant de chaque record personnel une étape de votre force.';
+
+  @override
+  String get obGoalStayFitBody =>
+      'Chez My Gym Bro, nous vous aidons à maîtriser l\'art de la régularité, avec les outils pour entretenir votre physique et garder votre santé au sommet.';
+
+  @override
+  String get obFocusTitle => 'Sur quels muscles voulez-vous vous concentrer ?';
+
+  @override
+  String get obFocusBack => 'Dos';
+
+  @override
+  String get obFocusChest => 'Pectoraux';
+
+  @override
+  String get obFocusArms => 'Bras';
+
+  @override
+  String get obFocusAbs => 'Abdos';
+
+  @override
+  String get obFocusGlutes => 'Fessiers';
+
+  @override
+  String get obFocusLegs => 'Jambes';
+
+  @override
+  String get obFocusFullBody => 'Tout le corps';
+
+  @override
+  String get obBirthdateTitle => 'Quelle est votre date de naissance ?';
+
+  @override
+  String get obHeightTitle => 'Quelle est votre taille ?';
+
+  @override
+  String get obWeightTitle => 'Quel est votre poids ?';
+
+  @override
+  String get obTargetTitle => 'Quel est votre poids cible ?';
+
+  @override
+  String get obWheelDay => 'Jour';
+
+  @override
+  String get obWheelMonth => 'Mois';
+
+  @override
+  String get obWheelYear => 'Année';
+
+  @override
+  String get obWheelHeight => 'Taille';
+
+  @override
+  String get obWheelWeight => 'Poids';
+
+  @override
+  String get obWheelDecimal => 'Décimale';
+
+  @override
+  String get obWheelRest => 'Jours de repos';
+
+  @override
+  String get obUnitFt => 'FT';
+
+  @override
+  String get obUnitCm => 'CM';
+
+  @override
+  String get obUnitLb => 'LB';
+
+  @override
+  String get obUnitKg => 'KG';
+
+  @override
+  String obLoseAmount(String amount) {
+    return 'Perdre $amount';
   }
+
+  @override
+  String obGainAmount(String amount) {
+    return 'Prendre $amount';
+  }
+
+  @override
+  String get obTimelineTitle => 'Calendrier de l\'objectif';
+
+  @override
+  String get obWePredict => 'Selon nos prévisions, vous ferez';
+
+  @override
+  String obTimelineOnDate(String date) {
+    return 'le $date';
+  }
+
+  @override
+  String get obTimelineFooter =>
+      'Le travail commence maintenant. Restez régulier et regardez les données devenir réalité';
+
+  @override
+  String obDaysSooner(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count jours plus tôt',
+      one: '1 jour plus tôt',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get obCloserTitle =>
+      'Votre objectif est plus proche que vous ne le pensez.';
+
+  @override
+  String get obCloserBody =>
+      'My Gym Bro optimise votre entraînement quotidien pour combler plus vite l\'écart entre « aujourd\'hui » et votre poids idéal.';
+
+  @override
+  String get obIssuesTitle => 'Rencontrez-vous l\'un de ces problèmes ?';
+
+  @override
+  String get obIssueSitting => 'Position assise prolongée';
+
+  @override
+  String get obIssueSleep => 'Mauvais sommeil';
+
+  @override
+  String get obIssueDiet => 'Problèmes alimentaires';
+
+  @override
+  String get obIssueHealthy => 'Je suis en forme !';
+
+  @override
+  String get obIssueSittingHead => 'Brisez le cercle';
+
+  @override
+  String get obIssueSleepHead => 'Récupérez, rechargez, reconstruisez';
+
+  @override
+  String get obIssueDietHead => 'Mangez, performez, transformez-vous';
+
+  @override
+  String get obIssueHealthyHead => 'Optimisez, maintenez et montrez la voie';
+
+  @override
+  String get obIssueSittingBody =>
+      'Chez My Gym Bro, nous vous aidons à briser la sédentarité en intégrant le mouvement à votre routine pour gagner en énergie et reprendre votre santé en main.';
+
+  @override
+  String get obIssueSleepBody =>
+      'Chez My Gym Bro, nous optimisons votre récupération en accordant votre entraînement à un repos de qualité, pour que votre corps se reconstruise plus fort et que votre esprit reste vif face à chaque défi.';
+
+  @override
+  String get obIssueDietBody =>
+      'Chez My Gym Bro, nous proposons des programmes d\'entraînement d\'élite adaptés à vos objectifs, pour maximiser la perte de gras et développer vos muscles à chaque séance.';
+
+  @override
+  String get obIssueHealthyBody =>
+      'Chez My Gym Bro, nous vous aidons à briser la sédentarité en intégrant le mouvement à votre routine pour gagner en énergie et reprendre votre santé en main.';
+
+  @override
+  String get obInjuriesTitle => 'Avez-vous été blessé récemment ?';
+
+  @override
+  String get obInjuryShoulder => 'Épaule';
+
+  @override
+  String get obInjuryBack => 'Dos';
+
+  @override
+  String get obInjuryWaist => 'Taille';
+
+  @override
+  String get obInjuryWrist => 'Poignet';
+
+  @override
+  String get obInjuryKnee => 'Genou';
+
+  @override
+  String get obInjuryNone => 'Aucune';
+
+  @override
+  String get obRestTitle => 'Combien de jours allez-vous vous reposer ?';
+
+  @override
+  String obRestDays(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count jours',
+      one: '1 jour',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String obRestNote(String areas, int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other:
+          'Nous tiendrons vos $areas à l\'écart des efforts intenses le temps de guérir.',
+      one:
+          'Nous tiendrons votre $areas à l\'écart des efforts intenses le temps de guérir.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get obRecoveryTitle => 'Récupération musculaire';
+
+  @override
+  String get obRecoveryBody =>
+      'Notre carte musculaire visuelle suit votre récupération en temps réel.';
+
+  @override
+  String get obFatigued => 'Fatigué';
+
+  @override
+  String get obFatiguedDesc => 'Repos obligatoire';
+
+  @override
+  String get obRecoveringDesc => 'Presque récupéré';
+
+  @override
+  String get obRecoveredDesc => 'Prêt pour la haute intensité';
+
+  @override
+  String get obExperienceTitle =>
+      'Quelle est votre expérience d\'entraînement ?';
+
+  @override
+  String get obExpRookie => 'Débutant';
+
+  @override
+  String get obExpRookieSub => 'Je commence';
+
+  @override
+  String get obExpActive => 'Actif';
+
+  @override
+  String get obExpActiveSub => '6 à 8 mois';
+
+  @override
+  String get obExpExpert => 'Expert';
+
+  @override
+  String get obExpExpertSub => '1 à 2 ans';
+
+  @override
+  String get obCompeteTitle => 'Affrontez les autres';
+
+  @override
+  String obTierLabel(String tier) {
+    String _temp0 = intl.Intl.selectLogic(tier, {
+      'bronze': 'Bronze III',
+      'silver': 'Argent III',
+      'gold': 'Or III',
+      'platinum': 'Platine III',
+      'other': 'Élite III',
+    });
+    return '$_temp0';
+  }
+
+  @override
+  String get obLeaderboardWeek => 'Classement · cette semaine';
+
+  @override
+  String get obPoints => 'Points';
+
+  @override
+  String get obYou => 'Vous';
+
+  @override
+  String get obDaysTitle =>
+      'Quels jours de la semaine voulez-vous choisir pour vous entraîner ?';
+
+  @override
+  String get obReminderTitle => 'Rappel d\'entraînement';
+
+  @override
+  String get obReminderBody => 'Ne manquez plus aucune séance !';
+
+  @override
+  String get obYourTarget => 'Votre objectif';
+
+  @override
+  String obTargetBy(String date) {
+    return 'd\'ici le $date';
+  }
+
+  @override
+  String get obBuiltAround => 'Conçu selon vos réponses';
+
+  @override
+  String obPlanSummaryDays(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count jours d\'entraînement par semaine',
+      one: '1 jour d\'entraînement par semaine',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String obPlanSummaryFocus(String areas) {
+    return 'focus sur $areas';
+  }
+
+  @override
+  String get obTrainReady => 'Entraînez ce qui est prêt';
+
+  @override
+  String get obTrainReadyBody =>
+      'La carte musculaire vous montre chaque jour ce qui est récupéré et ce qui a besoin de repos.';
+
+  @override
+  String obRankRange(String from, String to) {
+    return 'De $from à $to';
+  }
+
+  @override
+  String get obClimbRanks => 'Grimpez les rangs';
+
+  @override
+  String get obClimbRanksBody =>
+      'Chaque séance rapporte des points. Affrontez vos bros au classement hebdomadaire.';
+
+  @override
+  String obTrialDaysBig(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count jours',
+      one: '1 jour',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get obFree => 'Gratuits';
+
+  @override
+  String get obTrialToday => 'AUJOURD\'HUI';
+
+  @override
+  String get obTrialFullAccess => 'Accès complet';
+
+  @override
+  String obTrialDay(int day) {
+    return 'JOUR $day';
+  }
+
+  @override
+  String get obTrialReminder => 'Rappel';
+
+  @override
+  String obTrialThenYearly(String price) {
+    return '$price par an';
+  }
+
+  @override
+  String obTrialThenMonthly(String price) {
+    return '$price par mois';
+  }
+
+  @override
+  String obCancelBeforeDay(int day) {
+    return 'Annulez à tout moment avant le jour $day';
+  }
+
+  @override
+  String get obNotChargedUntil =>
+      'Vous ne serez pas débité avant la fin de votre essai.';
+
+  @override
+  String obDiscount(int percent) {
+    return '−$percent %';
+  }
+
+  @override
+  String get obSubscribe => 'S\'abonner';
+
+  @override
+  String get obSave => 'Économisez';
+
+  @override
+  String obSaveYearlyRest(int percent) {
+    return '$percent % avec l\'abonnement annuel';
+  }
+
+  @override
+  String obMonthlyTrialNote(int days, String price) {
+    String _temp0 = intl.Intl.pluralLogic(
+      days,
+      locale: localeName,
+      other: '$days jours gratuits, puis $price/mois. Annulez à tout moment.',
+      one: '1 jour gratuit, puis $price/mois. Annulez à tout moment.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String obMonthlyNote(String price) {
+    return '$price/mois. Annulez à tout moment.';
+  }
+
+  @override
+  String get obLetsGo => 'C’est parti';
+
+  @override
+  String obTrialStartedLine(String target, String date) {
+    return 'Votre essai gratuit a commencé. $target d\'ici le $date. Votre première séance est prête.';
+  }
+
+  @override
+  String obSubscribedLine(String target, String date) {
+    return 'Tout est prêt. $target d\'ici le $date. Votre première séance est prête.';
+  }
+
+  @override
+  String get obStartTraining => 'Commencer l\'entraînement';
+
+  @override
+  String get obTrialReminderTitle =>
+      'Votre essai gratuit se termine dans 2 jours';
+
+  @override
+  String get obTrialReminderBody =>
+      'Continuez sur votre lancée, ou annulez avant la fin dans vos abonnements App Store ou Google Play.';
+
+  @override
+  String get obSignUpTitle => 'Créez votre compte';
+
+  @override
+  String get obSignUpSubtitle =>
+      'Enregistrez votre programme et vos progrès. Connectez-vous pour commencer.';
+
+  @override
+  String get obConsentTitle => 'Vos données de santé';
+
+  @override
+  String get obConsentBody =>
+      'Nous allons ensuite vous demander votre poids, votre taille, votre poids cible, vos problèmes de santé et vos blessures. Ce sont des données de santé : nous ne les utilisons qu\'avec votre consentement explicite.';
+
+  @override
+  String get obConsentPointUse =>
+      'Utilisées uniquement pour personnaliser votre programme et vos prévisions';
+
+  @override
+  String get obConsentPointPrivate =>
+      'Jamais visibles par les autres ni utilisées pour la publicité';
+
+  @override
+  String get obConsentPointWithdraw =>
+      'Retirez-le à tout moment dans les Réglages et nous les supprimerons';
+
+  @override
+  String get obConsentAgree =>
+      'J\'accepte que My Gym Bro traite mes données de santé (poids, taille, poids cible, problèmes de santé et blessures) pour personnaliser mon entraînement. Je peux retirer ce consentement à tout moment dans les Réglages.';
+
+  @override
+  String get obConsentDecline => 'Continuer sans données de santé';
+
+  @override
+  String obAgeTooYoung(int age) {
+    return 'Vous devez avoir au moins $age ans pour utiliser My Gym Bro.';
+  }
+
+  @override
+  String get obTrialStartedPlain =>
+      'Votre essai gratuit a commencé. Votre première séance est prête.';
+
+  @override
+  String get obSubscribedPlain =>
+      'Tout est prêt. Votre première séance est prête.';
+
+  @override
+  String legalAgreement(int age, String terms, String privacy) {
+    return 'En continuant, vous confirmez avoir au moins $age ans et acceptez nos $terms. Notre $privacy explique comment nous traitons vos données.';
+  }
+
+  @override
+  String get healthDataConsent => 'Consentement données de santé';
+
+  @override
+  String get healthConsentGrantTitle => 'Autoriser les données de santé ?';
+
+  @override
+  String get healthConsentGrantConfirm => 'J\'accepte';
+
+  @override
+  String get healthConsentWithdrawTitle => 'Retirer le consentement ?';
+
+  @override
+  String get healthConsentWithdrawBody =>
+      'Nous supprimerons votre poids, votre taille, votre poids cible, vos problèmes de santé et vos blessures de ce téléphone et de votre compte. Sans eux, certaines personnalisations ne fonctionneront pas.';
+
+  @override
+  String get healthConsentWithdrawConfirm => 'Retirer et supprimer';
+
+  @override
+  String get healthConsentWithdrawn =>
+      'Consentement retiré. Vos données de santé ont été supprimées.';
 }

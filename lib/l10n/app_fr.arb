@@ -8,7 +8,6 @@
   "status": "Statut",
   "dailyChallenge": "Défi du jour",
   "competeFriends": "Défiez vos amis",
-  "startTrial": "Essai gratuit de 7 jours",
   "createSchedule": "Créer un programme",
   "buildYourFlow": "Créez votre programme ou trouvez un plan pro",
   "scheduleRemaining": "{hours}h restantes",
@@ -115,8 +114,6 @@
   "nameLabel": "Votre prénom",
   "forgotPassword": "Mot de passe oublié ?",
   "noAccount": "Pas encore de compte ?",
-  "alreadyAccount": "J'ai déjà un compte",
-  "chooseLanguage": "Choisissez votre langue",
   "chooseGoal": "Quel est votre objectif ?",
   "buildMuscle": "Prise de masse",
   "loseWeight": "Perte de poids",
@@ -125,7 +122,6 @@
   "beginner": "Débutant",
   "intermediate": "Intermédiaire",
   "advanced": "Avancé",
-  "letsGo": "C'est parti",
   "trialStarted": "Votre essai gratuit de 7 jours commence maintenant",
   "securityWarningTitle": "Avertissement de sécurité",
   "securityWarningBody": "Cet appareil semble compromis. My Gym Bro ne peut pas fonctionner en sécurité.",
@@ -190,8 +186,6 @@
   "toneBoldDescription": "Rappels directs et affirmés.",
   "toneSavage": "Impitoyable",
   "toneSavageDescription": "Rappels en majuscules, sans excuses.",
-  "notificationToneOnboardingTitle": "Choisis ta voix",
-  "notificationToneOnboardingSubtitle": "Comment devons-nous te parler pendant tes entraînements ?",
   "notificationToneExampleLabel": "Exemple",
   "restTimer": "Minuteur de repos",
   "off": "Non",
@@ -234,10 +228,6 @@
   "emailInvalid": "Veuillez entrer un e-mail valide",
   "nameRequired": "Le nom est requis",
   "passwordRequirements": "Min 8 caractères, 1 majuscule, 1 chiffre, 1 spécial",
-  "trialFeature1": "Suivi d'entraînement illimité",
-  "trialFeature2": "Bibliothèque de 1300+ exercices",
-  "trialFeature3": "Programmes d'entraînement personnalisés",
-  "trialFeature4": "Analyses de progression & records",
   "resetPasswordSent": "E-mail de réinitialisation envoyé",
   "orDivider": "ou",
   "signUpError": "Impossible de créer le compte. Veuillez réessayer.",
@@ -566,7 +556,6 @@
     }
   },
   "getStarted": "Commencer",
-  "welcomeTagline": "Créé par des Gym Bros, pour des Gym Bros",
   "noData": "Aucune donnée",
   "progressLabel": "PROGRESSION",
   "weightsKg": "poids kg",
@@ -606,17 +595,7 @@
       "count": { "type": "int" }
     }
   },
-  "goalTitle": "Quel est votre objectif principal\nd'entraînement ?",
-  "bulking": "Prise de masse",
-  "bulkingDesc": "Priorité à la masse musculaire et au volume.",
   "strength": "Force",
-  "strengthDesc": "Soulever plus lourd et devenir plus fort.",
-  "cutting": "Sèche",
-  "cuttingDesc": "Réduire la graisse corporelle en gardant le muscle.",
-  "maintaining": "Maintien",
-  "maintainingDesc": "Conserver votre muscle et votre forme actuels.",
-  "dataPrivate": "Vos données sont privées et sécurisées.",
-  "experienceTitle": "Quelle est votre expérience\nen entraînement ?",
   "base": "Base",
   "baseYears": "0-1 an",
   "mid": "Moyen",
@@ -624,18 +603,11 @@
   "pro": "Pro",
   "proYears": "3+ ans",
   "selectGender": "Sélectionnez votre genre",
-  "genderSubtitle": "Cela nous aide à personnaliser\nvotre plan d'entraînement.",
-  "birthdayTitle": "Quelle est votre date de naissance ?",
-  "weightTitle": "Quel est votre poids ?",
-  "heightTitle": "Quelle est votre taille ?",
-  "targetZonesTitle": "Quelles sont vos zones\ncibles ?",
   "arms": "Bras",
   "abs": "Abdos",
-  "pecs": "Pectoraux",
   "targetBack": "Dos",
   "legs": "Jambes",
   "all": "Tout",
-  "kgs": "kg",
   "lbs": "lbs",
   "cm": "cm",
   "ft": "ft",
@@ -903,5 +875,281 @@
     }
   },
   "splitReorderHint": "Maintiens pour réorganiser",
-  "splitAddRestDay": "Ajouter un jour de repos"
+  "splitAddRestDay": "Ajouter un jour de repos",
+  "obHaveAccount": "Vous avez déjà un compte ?",
+  "obSignInLink": "Se connecter",
+  "obPrivacyNote": "Vos données sont privées et sécurisées",
+  "obSection": "SECTION",
+  "obSectionBodyData": "DONNÉES CORPORELLES",
+  "obSectionAboutYou": "À PROPOS DE VOUS",
+  "obGenderSubtitle": "Nous utilisons ces informations pour créer un programme d'entraînement personnalisé pour vous",
+  "obGoalsTitle": "Quels sont vos objectifs ?",
+  "obGoalsSubtitle": "Votre objectif est notre cible, atteignons-le ensemble !",
+  "obGoalBuildMuscle": "Prendre du muscle",
+  "obGoalLoseWeight": "Perdre du poids",
+  "obGoalGainStrength": "Gagner en force",
+  "obGoalStayFit": "Rester en forme",
+  "obGoalBuildMuscleHead": "Passez vos gains au niveau supérieur",
+  "obGoalLoseWeightHead": "Sculptez, révélez et dominez",
+  "obGoalGainStrengthHead": "Brisez vos limites et progressez",
+  "obGoalStayFitHead": "Maintenez, excellez et durez",
+  "obGoalBuildMuscleBody": "Chez My Gym Bro, nous vous aidons à pulvériser vos objectifs et à gagner en confiance en faisant de chaque séance un chef-d'œuvre visuel de force.",
+  "obGoalLoseWeightBody": "Chez My Gym Bro, nous vous aidons à éliminer le superflu pour révéler le physique que vous avez mérité, en faisant de chaque séance un pas précis vers une définition absolue.",
+  "obGoalGainStrengthBody": "Chez My Gym Bro, nous vous aidons à maîtriser chaque mouvement pour dépasser vos limites, en faisant de chaque record personnel une étape de votre force.",
+  "obGoalStayFitBody": "Chez My Gym Bro, nous vous aidons à maîtriser l'art de la régularité, avec les outils pour entretenir votre physique et garder votre santé au sommet.",
+  "obFocusTitle": "Sur quels muscles voulez-vous vous concentrer ?",
+  "obFocusBack": "Dos",
+  "obFocusChest": "Pectoraux",
+  "obFocusArms": "Bras",
+  "obFocusAbs": "Abdos",
+  "obFocusGlutes": "Fessiers",
+  "obFocusLegs": "Jambes",
+  "obFocusFullBody": "Tout le corps",
+  "obBirthdateTitle": "Quelle est votre date de naissance ?",
+  "obHeightTitle": "Quelle est votre taille ?",
+  "obWeightTitle": "Quel est votre poids ?",
+  "obTargetTitle": "Quel est votre poids cible ?",
+  "obWheelDay": "Jour",
+  "obWheelMonth": "Mois",
+  "obWheelYear": "Année",
+  "obWheelHeight": "Taille",
+  "obWheelWeight": "Poids",
+  "obWheelDecimal": "Décimale",
+  "obWheelRest": "Jours de repos",
+  "obUnitFt": "FT",
+  "obUnitCm": "CM",
+  "obUnitLb": "LB",
+  "obUnitKg": "KG",
+  "obLoseAmount": "Perdre {amount}",
+  "@obLoseAmount": {
+    "placeholders": {
+      "amount": { "type": "String" }
+    }
+  },
+  "obGainAmount": "Prendre {amount}",
+  "@obGainAmount": {
+    "placeholders": {
+      "amount": { "type": "String" }
+    }
+  },
+  "obTimelineTitle": "Calendrier de l'objectif",
+  "obWePredict": "Selon nos prévisions, vous ferez",
+  "obTimelineOnDate": "le {date}",
+  "@obTimelineOnDate": {
+    "placeholders": {
+      "date": { "type": "String" }
+    }
+  },
+  "obTimelineFooter": "Le travail commence maintenant. Restez régulier et regardez les données devenir réalité",
+  "obDaysSooner": "{count, plural, =1{1 jour plus tôt} other{{count} jours plus tôt}}",
+  "@obDaysSooner": {
+    "placeholders": {
+      "count": { "type": "int" }
+    }
+  },
+  "obCloserTitle": "Votre objectif est plus proche que vous ne le pensez.",
+  "obCloserBody": "My Gym Bro optimise votre entraînement quotidien pour combler plus vite l'écart entre « aujourd'hui » et votre poids idéal.",
+  "obIssuesTitle": "Rencontrez-vous l'un de ces problèmes ?",
+  "obIssueSitting": "Position assise prolongée",
+  "obIssueSleep": "Mauvais sommeil",
+  "obIssueDiet": "Problèmes alimentaires",
+  "obIssueHealthy": "Je suis en forme !",
+  "obIssueSittingHead": "Brisez le cercle",
+  "obIssueSleepHead": "Récupérez, rechargez, reconstruisez",
+  "obIssueDietHead": "Mangez, performez, transformez-vous",
+  "obIssueHealthyHead": "Optimisez, maintenez et montrez la voie",
+  "obIssueSittingBody": "Chez My Gym Bro, nous vous aidons à briser la sédentarité en intégrant le mouvement à votre routine pour gagner en énergie et reprendre votre santé en main.",
+  "obIssueSleepBody": "Chez My Gym Bro, nous optimisons votre récupération en accordant votre entraînement à un repos de qualité, pour que votre corps se reconstruise plus fort et que votre esprit reste vif face à chaque défi.",
+  "obIssueDietBody": "Chez My Gym Bro, nous proposons des programmes d'entraînement d'élite adaptés à vos objectifs, pour maximiser la perte de gras et développer vos muscles à chaque séance.",
+  "obIssueHealthyBody": "Chez My Gym Bro, nous vous aidons à briser la sédentarité en intégrant le mouvement à votre routine pour gagner en énergie et reprendre votre santé en main.",
+  "obInjuriesTitle": "Avez-vous été blessé récemment ?",
+  "obInjuryShoulder": "Épaule",
+  "obInjuryBack": "Dos",
+  "obInjuryWaist": "Taille",
+  "obInjuryWrist": "Poignet",
+  "obInjuryKnee": "Genou",
+  "obInjuryNone": "Aucune",
+  "obRestTitle": "Combien de jours allez-vous vous reposer ?",
+  "obRestDays": "{count, plural, =1{1 jour} other{{count} jours}}",
+  "@obRestDays": {
+    "placeholders": {
+      "count": { "type": "int" }
+    }
+  },
+  "obRestNote": "{count, plural, =1{Nous tiendrons votre {areas} à l'écart des efforts intenses le temps de guérir.} other{Nous tiendrons vos {areas} à l'écart des efforts intenses le temps de guérir.}}",
+  "@obRestNote": {
+    "placeholders": {
+      "areas": { "type": "String" },
+      "count": { "type": "int" }
+    }
+  },
+  "obRecoveryTitle": "Récupération musculaire",
+  "obRecoveryBody": "Notre carte musculaire visuelle suit votre récupération en temps réel.",
+  "obFatigued": "Fatigué",
+  "obFatiguedDesc": "Repos obligatoire",
+  "obRecoveringDesc": "Presque récupéré",
+  "obRecoveredDesc": "Prêt pour la haute intensité",
+  "obExperienceTitle": "Quelle est votre expérience d'entraînement ?",
+  "obExpRookie": "Débutant",
+  "obExpRookieSub": "Je commence",
+  "obExpActive": "Actif",
+  "obExpActiveSub": "6 à 8 mois",
+  "obExpExpert": "Expert",
+  "obExpExpertSub": "1 à 2 ans",
+  "obCompeteTitle": "Affrontez les autres",
+  "obTierLabel": "{tier, select, bronze{Bronze III} silver{Argent III} gold{Or III} platinum{Platine III} other{Élite III}}",
+  "@obTierLabel": {
+    "placeholders": {
+      "tier": { "type": "String" }
+    }
+  },
+  "obLeaderboardWeek": "Classement · cette semaine",
+  "obPoints": "Points",
+  "obYou": "Vous",
+  "obDaysTitle": "Quels jours de la semaine voulez-vous choisir pour vous entraîner ?",
+  "obReminderTitle": "Rappel d'entraînement",
+  "obReminderBody": "Ne manquez plus aucune séance !",
+  "obYourTarget": "Votre objectif",
+  "obTargetBy": "d'ici le {date}",
+  "@obTargetBy": {
+    "placeholders": {
+      "date": { "type": "String" }
+    }
+  },
+  "obBuiltAround": "Conçu selon vos réponses",
+  "obPlanSummaryDays": "{count, plural, =1{1 jour d'entraînement par semaine} other{{count} jours d'entraînement par semaine}}",
+  "@obPlanSummaryDays": {
+    "placeholders": {
+      "count": { "type": "int" }
+    }
+  },
+  "obPlanSummaryFocus": "focus sur {areas}",
+  "@obPlanSummaryFocus": {
+    "placeholders": {
+      "areas": { "type": "String" }
+    }
+  },
+  "obTrainReady": "Entraînez ce qui est prêt",
+  "obTrainReadyBody": "La carte musculaire vous montre chaque jour ce qui est récupéré et ce qui a besoin de repos.",
+  "obRankRange": "De {from} à {to}",
+  "@obRankRange": {
+    "placeholders": {
+      "from": { "type": "String" },
+      "to": { "type": "String" }
+    }
+  },
+  "obClimbRanks": "Grimpez les rangs",
+  "obClimbRanksBody": "Chaque séance rapporte des points. Affrontez vos bros au classement hebdomadaire.",
+  "obTrialDaysBig": "{count, plural, =1{1 jour} other{{count} jours}}",
+  "@obTrialDaysBig": {
+    "placeholders": {
+      "count": { "type": "int" }
+    }
+  },
+  "obFree": "Gratuits",
+  "obTrialToday": "AUJOURD'HUI",
+  "obTrialFullAccess": "Accès complet",
+  "obTrialDay": "JOUR {day}",
+  "@obTrialDay": {
+    "placeholders": {
+      "day": { "type": "int" }
+    }
+  },
+  "obTrialReminder": "Rappel",
+  "obTrialThenYearly": "{price} par an",
+  "@obTrialThenYearly": {
+    "placeholders": {
+      "price": { "type": "String" }
+    }
+  },
+  "obTrialThenMonthly": "{price} par mois",
+  "@obTrialThenMonthly": {
+    "placeholders": {
+      "price": { "type": "String" }
+    }
+  },
+  "obCancelBeforeDay": "Annulez à tout moment avant le jour {day}",
+  "@obCancelBeforeDay": {
+    "placeholders": {
+      "day": { "type": "int" }
+    }
+  },
+  "obNotChargedUntil": "Vous ne serez pas débité avant la fin de votre essai.",
+  "obDiscount": "−{percent} %",
+  "@obDiscount": {
+    "placeholders": {
+      "percent": { "type": "int" }
+    }
+  },
+  "obSubscribe": "S'abonner",
+  "obSave": "Économisez",
+  "obSaveYearlyRest": "{percent} % avec l'abonnement annuel",
+  "@obSaveYearlyRest": {
+    "placeholders": {
+      "percent": { "type": "int" }
+    }
+  },
+  "obMonthlyTrialNote": "{days, plural, =1{1 jour gratuit, puis {price}/mois. Annulez à tout moment.} other{{days} jours gratuits, puis {price}/mois. Annulez à tout moment.}}",
+  "@obMonthlyTrialNote": {
+    "placeholders": {
+      "days": { "type": "int" },
+      "price": { "type": "String" }
+    }
+  },
+  "obMonthlyNote": "{price}/mois. Annulez à tout moment.",
+  "@obMonthlyNote": {
+    "placeholders": {
+      "price": { "type": "String" }
+    }
+  },
+  "obLetsGo": "C’est parti",
+  "obTrialStartedLine": "Votre essai gratuit a commencé. {target} d'ici le {date}. Votre première séance est prête.",
+  "@obTrialStartedLine": {
+    "placeholders": {
+      "target": { "type": "String" },
+      "date": { "type": "String" }
+    }
+  },
+  "obSubscribedLine": "Tout est prêt. {target} d'ici le {date}. Votre première séance est prête.",
+  "@obSubscribedLine": {
+    "placeholders": {
+      "target": { "type": "String" },
+      "date": { "type": "String" }
+    }
+  },
+  "obStartTraining": "Commencer l'entraînement",
+  "obTrialReminderTitle": "Votre essai gratuit se termine dans 2 jours",
+  "obTrialReminderBody": "Continuez sur votre lancée, ou annulez avant la fin dans vos abonnements App Store ou Google Play.",
+  "obSignUpTitle": "Créez votre compte",
+  "obSignUpSubtitle": "Enregistrez votre programme et vos progrès. Connectez-vous pour commencer.",
+  "obConsentTitle": "Vos données de santé",
+  "obConsentBody": "Nous allons ensuite vous demander votre poids, votre taille, votre poids cible, vos problèmes de santé et vos blessures. Ce sont des données de santé : nous ne les utilisons qu'avec votre consentement explicite.",
+  "obConsentPointUse": "Utilisées uniquement pour personnaliser votre programme et vos prévisions",
+  "obConsentPointPrivate": "Jamais visibles par les autres ni utilisées pour la publicité",
+  "obConsentPointWithdraw": "Retirez-le à tout moment dans les Réglages et nous les supprimerons",
+  "obConsentAgree": "J'accepte que My Gym Bro traite mes données de santé (poids, taille, poids cible, problèmes de santé et blessures) pour personnaliser mon entraînement. Je peux retirer ce consentement à tout moment dans les Réglages.",
+  "obConsentDecline": "Continuer sans données de santé",
+  "obAgeTooYoung": "Vous devez avoir au moins {age} ans pour utiliser My Gym Bro.",
+  "@obAgeTooYoung": {
+    "placeholders": {
+      "age": { "type": "int" }
+    }
+  },
+  "obTrialStartedPlain": "Votre essai gratuit a commencé. Votre première séance est prête.",
+  "obSubscribedPlain": "Tout est prêt. Votre première séance est prête.",
+  "legalAgreement": "En continuant, vous confirmez avoir au moins {age} ans et acceptez nos {terms}. Notre {privacy} explique comment nous traitons vos données.",
+  "@legalAgreement": {
+    "placeholders": {
+      "age": { "type": "int" },
+      "terms": { "type": "String" },
+      "privacy": { "type": "String" }
+    }
+  },
+  "healthDataConsent": "Consentement données de santé",
+  "healthConsentGrantTitle": "Autoriser les données de santé ?",
+  "healthConsentGrantConfirm": "J'accepte",
+  "healthConsentWithdrawTitle": "Retirer le consentement ?",
+  "healthConsentWithdrawBody": "Nous supprimerons votre poids, votre taille, votre poids cible, vos problèmes de santé et vos blessures de ce téléphone et de votre compte. Sans eux, certaines personnalisations ne fonctionneront pas.",
+  "healthConsentWithdrawConfirm": "Retirer et supprimer",
+  "healthConsentWithdrawn": "Consentement retiré. Vos données de santé ont été supprimées."
 }

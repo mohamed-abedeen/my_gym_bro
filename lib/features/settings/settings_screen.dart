@@ -13,6 +13,7 @@ import 'package:my_gym_bro/core/router/app_router.dart';
 import 'package:my_gym_bro/core/security/secure_storage.dart';
 import 'package:my_gym_bro/core/services/crash_reporter.dart';
 import 'package:my_gym_bro/core/services/exercise_gif_cache.dart';
+import 'package:my_gym_bro/core/services/health_consent.dart';
 import 'package:my_gym_bro/core/services/notification_service.dart';
 import 'package:my_gym_bro/core/services/notification_tone.dart';
 import 'package:my_gym_bro/core/services/subscription_sync_service.dart';
@@ -25,6 +26,7 @@ import 'package:my_gym_bro/features/settings/widgets/settings_sheets.dart';
 import 'package:my_gym_bro/features/settings/workout_export.dart';
 import 'package:my_gym_bro/features/workout/workout_providers.dart';
 import 'package:my_gym_bro/l10n/app_localizations.dart';
+import 'package:my_gym_bro/shared/app_constants.dart';
 import 'package:my_gym_bro/shared/constants.dart';
 import 'package:my_gym_bro/shared/responsive.dart';
 import 'package:my_gym_bro/shared/widgets/anatomy_body.dart';
@@ -356,7 +358,7 @@ class SettingsScreen extends ConsumerWidget {
                     label: l10n.privacyPolicy,
                     onTap: () => _openExternal(
                       context,
-                      Uri.parse('https://mygymbro.app/privacy'),
+                      Uri.parse(AppConstants.privacyUrl),
                     ),
                   ),
                   SettingsNavRow(
@@ -365,7 +367,7 @@ class SettingsScreen extends ConsumerWidget {
                     label: l10n.termsOfService,
                     onTap: () => _openExternal(
                       context,
-                      Uri.parse('https://mygymbro.app/terms'),
+                      Uri.parse(AppConstants.termsUrl),
                     ),
                   ),
                 ],
@@ -377,6 +379,17 @@ class SettingsScreen extends ConsumerWidget {
               SettingsSection(
                 header: l10n.settingsSectionData,
                 children: [
+                  // GDPR Art. 7(3): withdrawing must be as easy as consenting.
+                  if (profile.valueOrNull != null)
+                    SettingsSwitchRow(
+                      icon: Icons.health_and_safety_rounded,
+                      iconColor: SettingsBadgeColors.pink,
+                      label: l10n.healthDataConsent,
+                      value: profile.valueOrNull?.healthConsentAt != null,
+                      onChanged: (on) => on
+                          ? _grantHealthConsent(context, ref, l10n)
+                          : _withdrawHealthConsent(context, ref, l10n),
+                    ),
                   SettingsNavRow(
                     icon: Icons.ios_share_rounded,
                     iconColor: SettingsBadgeColors.blue,
@@ -641,6 +654,50 @@ class SettingsScreen extends ConsumerWidget {
     if (!confirmed) return;
     await ref.read(authNotifierProvider.notifier).signOut();
     if (context.mounted) context.go(AppRoutes.signIn);
+  }
+
+  // ── Health data consent (GDPR Art. 9) ──
+
+  static Future<void> _grantHealthConsent(
+    BuildContext context,
+    WidgetRef ref,
+    AppLocalizations l10n,
+  ) async {
+    final confirmed = await showConfirmSheet(
+      context,
+      tier: ConfirmTier.reversible,
+      title: l10n.healthConsentGrantTitle,
+      body: l10n.obConsentAgree,
+      confirmLabel: l10n.healthConsentGrantConfirm,
+      icon: Icons.health_and_safety_rounded,
+    );
+    if (!confirmed) return;
+    await grantHealthConsent(
+      db: ref.read(databaseProvider),
+      sync: ref.read(syncServiceProvider),
+    );
+  }
+
+  /// Deletes the health answers here and (queued) on the account.
+  static Future<void> _withdrawHealthConsent(
+    BuildContext context,
+    WidgetRef ref,
+    AppLocalizations l10n,
+  ) async {
+    final confirmed = await showConfirmSheet(
+      context,
+      tier: ConfirmTier.destructive,
+      title: l10n.healthConsentWithdrawTitle,
+      body: l10n.healthConsentWithdrawBody,
+      confirmLabel: l10n.healthConsentWithdrawConfirm,
+      icon: Icons.health_and_safety_rounded,
+    );
+    if (!confirmed) return;
+    await withdrawHealthConsent(
+      db: ref.read(databaseProvider),
+      sync: ref.read(syncServiceProvider),
+    );
+    if (context.mounted) _showSnack(context, l10n.healthConsentWithdrawn);
   }
 
   // ── Restore purchases (store requirement) ──

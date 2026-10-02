@@ -97,11 +97,11 @@ Honest assessment of what exists today.
 - [x] Drift cache (v17) + sync wiring (outbox) for friendships; account deletion cleans the graph via `ON DELETE CASCADE`.
 - [ ] Public profile fetch: profile + friend count done (`public_profiles` + `PublicProfile`); achievements + streak on it still pending.
 - [ ] Profile screen: relationship states exist on the minimal add-bro card; the full §5.7 public profile (gendered anatomy, achievements, streak tabs) still pending.
-- [x] Privacy: no global real-name search (exact @username only); public_profiles exposes only safe columns.
+- [x] Privacy: no global real-name search (exact @username only); public_profiles exposes only safe columns, and since 022 only to signed-in users, read-only. Clients see only their own `friends` edges.
 
 ### Phase 2 Checklist
 - [x] Request → accept flow works offline-queued and syncs (unit-tested in `test/friend_repository_test.dart`; live sync against cloud pending deploy).
-- [ ] Friends power the Friends leaderboard scope + "Latest from your bros" strip (scope: view rebuilt server-side, verify after deploy; strip: `sessions_select_friends` RLS ready, strip UI not built).
+- [ ] Friends power the Friends leaderboard scope + "Latest from your bros" strip (scope: view rebuilt server-side, verify after deploy; strip: the `friend_sessions` view (022, replaced `sessions_select_friends`) is ready, strip UI not built).
 - [x] Block/report works from every surface a stranger can reach (request row, search result, add-bro card).
 - [ ] No private data leaks on public profiles — re-verify on the finished §5.7 profile screen.
 

@@ -146,7 +146,7 @@ void main() {
 
     // Migration completed and stamped the current version.
     final version = await query('PRAGMA user_version');
-    expect(version.single.read<int>('user_version'), 22);
+    expect(version.single.read<int>('user_version'), 23);
 
     // v22: sessions remember the plan day they were started from.
     final sessionCols = (await query('PRAGMA table_info(sessions)'))
@@ -162,6 +162,21 @@ void main() {
         profileCols,
         containsAll(
             ['body_weight_kg', 'height_cm', 'username', 'active_skin_id']));
+    // v23: the onboarding answers.
+    expect(
+      profileCols,
+      containsAll([
+        'height_unit',
+        'birth_date',
+        'target_weight_kg',
+        'focus_areas',
+        'health_issue',
+        'injuries',
+        'injury_rest_days',
+        'training_days',
+        'health_consent_at',
+      ]),
+    );
 
     // v17 created the friendships cache; the superseded follows table is
     // gone (never created on this path — v15's create step was retired).
@@ -190,11 +205,16 @@ void main() {
     expect(rows.where((e) => !e.isCustom), isEmpty,
         reason: 'kept legacy rows must not count as catalogue');
 
-    // The pre-existing profile row survived and the new columns read null.
+    // The pre-existing profile row survived and the new columns read null
+    // (or their default).
     final profile = await (db.select(db.userProfiles)..limit(1)).getSingle();
     expect(profile.displayName, 'bro');
     expect(profile.bodyWeightKg, isNull);
     expect(profile.heightCm, isNull);
+    expect(profile.heightUnit, 'cm');
+    expect(profile.targetWeightKg, isNull);
+    expect(profile.trainingDays, isNull);
+    expect(profile.healthConsentAt, isNull);
   });
 
   test('upgrade from a v15-era DB drops the follows table and creates '
@@ -231,7 +251,7 @@ void main() {
     Future<List<QueryRow>> query(String sql) => db.customSelect(sql).get();
 
     final version = await query('PRAGMA user_version');
-    expect(version.single.read<int>('user_version'), 22);
+    expect(version.single.read<int>('user_version'), 23);
 
     final tables = (await query(
       "SELECT name FROM sqlite_master WHERE type = 'table'",
@@ -261,12 +281,14 @@ void main() {
     // even though user_version says 11 — _addColumnIfMissing must not crash.
     await old.runCustom('ALTER TABLE user_profiles ADD COLUMN body_weight_kg REAL');
     await old.runCustom('ALTER TABLE user_profiles ADD COLUMN height_cm REAL');
+    // Same for a v23 column.
+    await old.runCustom('ALTER TABLE user_profiles ADD COLUMN training_days TEXT');
     await old.close();
 
     final db = AppDatabase(NativeDatabase(file));
     addTearDown(db.close);
     final version = await db.customSelect('PRAGMA user_version').get();
-    expect(version.single.read<int>('user_version'), 22);
+    expect(version.single.read<int>('user_version'), 23);
   });
 
   test('fresh createAll builds every table', () async {

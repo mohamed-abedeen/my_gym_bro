@@ -4,19 +4,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:my_gym_bro/features/auth/sign_in_screen.dart';
 import 'package:my_gym_bro/features/exercises/exercise_browser_screen.dart';
-import 'package:my_gym_bro/features/onboarding/screens/birthday_screen.dart';
-import 'package:my_gym_bro/features/onboarding/screens/experience_screen.dart';
-import 'package:my_gym_bro/features/onboarding/screens/gender_screen.dart';
-import 'package:my_gym_bro/features/onboarding/screens/goal_screen.dart';
-import 'package:my_gym_bro/features/onboarding/screens/height_screen.dart';
-import 'package:my_gym_bro/features/onboarding/screens/language_screen.dart';
-import 'package:my_gym_bro/features/onboarding/screens/notification_tone_screen.dart';
+import 'package:my_gym_bro/features/onboarding/onboarding_flow_screen.dart';
 import 'package:my_gym_bro/features/onboarding/screens/sign_up_screen.dart';
 import 'package:my_gym_bro/features/onboarding/screens/splash_screen.dart';
-import 'package:my_gym_bro/features/onboarding/screens/target_zones_screen.dart';
-import 'package:my_gym_bro/features/onboarding/screens/trial_screen.dart';
-import 'package:my_gym_bro/features/onboarding/screens/weight_screen.dart';
-import 'package:my_gym_bro/features/onboarding/screens/welcome_screen.dart';
 import 'package:my_gym_bro/features/paywall/paywall_screen.dart';
 import 'package:my_gym_bro/features/profile/profile_screen.dart';
 import 'package:my_gym_bro/features/scaffold/my_gym_bro_scaffold.dart';
@@ -34,6 +24,7 @@ import 'package:my_gym_bro/features/workout/share/exercise_share_screen.dart';
 import 'package:my_gym_bro/features/workout/share/share_card_data.dart';
 import 'package:my_gym_bro/features/workout/share/share_card_screen.dart';
 import 'package:my_gym_bro/features/workout/workout_providers.dart';
+import 'package:my_gym_bro/shared/constants.dart';
 import 'package:my_gym_bro/shared/widgets/app_error_screen.dart';
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -44,22 +35,11 @@ import 'package:my_gym_bro/shared/widgets/app_error_screen.dart';
 class AppRoutes {
   AppRoutes._();
 
-  // Onboarding flow:
-  // splash → welcome → gender → goal → experience → birthday →
-  // weight → height → target-zones → signup → trial → home
+  // Onboarding: splash → the flow (welcome · questionnaire · timeline ·
+  // paywall, one screen — see OnboardingFlowScreen) → signup → home.
   static const splash = '/splash';
-  static const onboardingWelcome = '/onboarding/welcome';
-  static const onboardingGender = '/onboarding/gender';
-  static const onboardingGoal = '/onboarding/goal';
-  static const onboardingExperience = '/onboarding/experience';
-  static const onboardingBirthday = '/onboarding/birthday';
-  static const onboardingWeight = '/onboarding/weight';
-  static const onboardingHeight = '/onboarding/height';
-  static const onboardingTargetZones = '/onboarding/target-zones';
-  static const onboardingNotificationTone = '/onboarding/notification-tone';
-  static const onboardingLanguage = '/onboarding/language';
+  static const onboarding = '/onboarding';
   static const onboardingSignup = '/onboarding/signup';
-  static const onboardingTrial = '/onboarding/trial';
 
   // Auth
   static const signIn = '/auth/signin';
@@ -113,6 +93,32 @@ CustomTransitionPage<T> _fadePage<T>({
   reverseTransitionDuration: duration,
   transitionsBuilder: (context, animation, secondaryAnimation, child) {
     return FadeTransition(opacity: animation, child: child);
+  },
+);
+
+/// The onboarding handoff's horizontal push (in from the right over .42s,
+/// iOS-like curve). Pop reverses it. Plain fade under reduced motion.
+CustomTransitionPage<T> _pushPage<T>({
+  required Widget child,
+  required GoRouterState state,
+}) => CustomTransitionPage<T>(
+  key: state.pageKey,
+  child: child,
+  transitionDuration: AppOnboarding.push,
+  reverseTransitionDuration: AppOnboarding.push,
+  transitionsBuilder: (context, animation, secondaryAnimation, child) {
+    if (MediaQuery.disableAnimationsOf(context)) {
+      return FadeTransition(opacity: animation, child: child);
+    }
+    return SlideTransition(
+      position: Tween<Offset>(
+        begin: const Offset(1, 0),
+        end: Offset.zero,
+      ).animate(
+        CurvedAnimation(parent: animation, curve: AppOnboarding.pushCurve),
+      ),
+      child: child,
+    );
   },
 );
 
@@ -191,7 +197,8 @@ final routerProvider = Provider<GoRouter>((ref) {
         AppErrorScreen(onGoHome: () => context.go(AppRoutes.splash)),
     routes: [
       // ────────────────────────────────────────────────────────────────────
-      // ONBOARDING — fade transitions (they're a linear wizard, not a stack)
+      // ONBOARDING — the flow screen runs its own step-to-step motion; the
+      // splash hands over with the same push it uses between steps.
       // ────────────────────────────────────────────────────────────────────
       GoRoute(
         path: AppRoutes.splash,
@@ -199,64 +206,14 @@ final routerProvider = Provider<GoRouter>((ref) {
             _fadePage(child: const SplashScreen(), state: state),
       ),
       GoRoute(
-        path: AppRoutes.onboardingWelcome,
+        path: AppRoutes.onboarding,
         pageBuilder: (context, state) =>
-            _fadePage(child: const WelcomeScreen(), state: state),
-      ),
-      GoRoute(
-        path: AppRoutes.onboardingGender,
-        pageBuilder: (context, state) =>
-            _platformPage(child: const GenderScreen(), state: state),
-      ),
-      GoRoute(
-        path: AppRoutes.onboardingGoal,
-        pageBuilder: (context, state) =>
-            _platformPage(child: const GoalScreen(), state: state),
-      ),
-      GoRoute(
-        path: AppRoutes.onboardingExperience,
-        pageBuilder: (context, state) =>
-            _platformPage(child: const ExperienceScreen(), state: state),
-      ),
-      GoRoute(
-        path: AppRoutes.onboardingBirthday,
-        pageBuilder: (context, state) =>
-            _platformPage(child: const BirthdayScreen(), state: state),
-      ),
-      GoRoute(
-        path: AppRoutes.onboardingWeight,
-        pageBuilder: (context, state) =>
-            _platformPage(child: const WeightScreen(), state: state),
-      ),
-      GoRoute(
-        path: AppRoutes.onboardingHeight,
-        pageBuilder: (context, state) =>
-            _platformPage(child: const HeightScreen(), state: state),
-      ),
-      GoRoute(
-        path: AppRoutes.onboardingTargetZones,
-        pageBuilder: (context, state) =>
-            _platformPage(child: const TargetZonesScreen(), state: state),
-      ),
-      GoRoute(
-        path: AppRoutes.onboardingNotificationTone,
-        pageBuilder: (context, state) =>
-            _platformPage(child: const NotificationToneScreen(), state: state),
-      ),
-      GoRoute(
-        path: AppRoutes.onboardingLanguage,
-        pageBuilder: (context, state) =>
-            _platformPage(child: const LanguageScreen(), state: state),
+            _pushPage(child: const OnboardingFlowScreen(), state: state),
       ),
       GoRoute(
         path: AppRoutes.onboardingSignup,
         pageBuilder: (context, state) =>
-            _platformPage(child: const SignUpScreen(), state: state),
-      ),
-      GoRoute(
-        path: AppRoutes.onboardingTrial,
-        pageBuilder: (context, state) =>
-            _platformPage(child: const TrialScreen(), state: state),
+            _pushPage(child: const SignUpScreen(), state: state),
       ),
 
       // ────────────────────────────────────────────────────────────────────

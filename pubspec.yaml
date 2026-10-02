@@ -108,6 +108,7 @@ flutter:
     - assets/images/
     - assets/icons/
     - assets/fonts/
+    - assets/onboarding/
 
   # Share-card typography (bundled so cards render offline; google_fonts
   # stays for the rest of the app). Archivo is the variable font — the share

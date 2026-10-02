@@ -229,6 +229,59 @@ check "day share allocates a code" "8" "$(printf %s "$RSDAYCODE" | wc -c | tr -d
 q "INSERT INTO routine_shares (code, owner_id, kind, title, payload) SELECT 'rl' || lpad(i::text, 6, '0'), '$U2', 'day', 'T', '{}'::jsonb FROM generate_series(1, 30) i" >/dev/null
 check "rate limit blocks the 31st share in an hour" "400" "$(RSCODE_HTTP create_routine_share "$T2" "$RSDAY")"
 
+echo "== privacy boundaries (022) =="
+# The cloud predates the 2026-05-30 default flip: postgres-created relations
+# there carry ALL for anon + authenticated. Recreate that on the three views,
+# re-apply 022 over it (also proves it re-runs), then assert through the API.
+q "GRANT ALL ON public.public_profiles, public.friends, public.friend_sessions TO anon, authenticated" >/dev/null
+docker exec -i "$DB" psql -U postgres -d postgres -q -v ON_ERROR_STOP=1 \
+  < "$(dirname "$0")/../migrations/022_privacy_boundaries.sql" >/dev/null 2>&1
+check "022 re-applies cleanly over classic grants" "0" "$?"
+check "no anon grant, no client write grant on the views" "f" \
+  "$(q "SELECT bool_or(has_table_privilege('anon', v, 'SELECT,INSERT,UPDATE,DELETE') OR has_table_privilege('authenticated', v, 'INSERT,UPDATE,DELETE')) FROM unnest(ARRAY['public.public_profiles','public.friends','public.friend_sessions']::regclass[]) v")"
+check "anon cannot read public_profiles" "401" "$(curl -s -o /dev/null -w "%{http_code}" "$API/rest/v1/public_profiles?select=user_id" -H "apikey: $ANON")"
+check "anon cannot read friends" "401" "$(curl -s -o /dev/null -w "%{http_code}" "$API/rest/v1/friends?select=user_id" -H "apikey: $ANON")"
+check "anon cannot write through public_profiles" "401" "$(curl -s -o /dev/null -w "%{http_code}" -X PATCH "$API/rest/v1/public_profiles?user_id=eq.$U1" \
+  -H "apikey: $ANON" -H "Content-Type: application/json" -d '{"display_name":"pwned"}')"
+check "signed-in user cannot write through public_profiles" "403" "$(curl -s -o /dev/null -w "%{http_code}" -X PATCH "$API/rest/v1/public_profiles?user_id=eq.$U1" \
+  -H "apikey: $ANON" -H "Authorization: Bearer $T3" -H "Content-Type: application/json" -d '{"display_name":"pwned"}')"
+check "signed-in user cannot delete through public_profiles" "403" "$(curl -s -o /dev/null -w "%{http_code}" -X DELETE "$API/rest/v1/public_profiles?user_id=eq.$U1" \
+  -H "apikey: $ANON" -H "Authorization: Bearer $T3")"
+U1NAME=$(q "SELECT username FROM user_profiles WHERE user_id='$U1'")
+PP=$(curl -s "$API/rest/v1/public_profiles?username=eq.$U1NAME&select=user_id,friend_count" -H "apikey: $ANON" -H "Authorization: Bearer $T3")
+check "@username lookup still works for a signed-in stranger" "$U1" "$(echo "$PP" | jget "[0].user_id")"
+check "friend_count is the real count, not the viewer's slice" "1" "$(echo "$PP" | jget "[0].friend_count")"
+check "friends view: a stranger can't list u1's Bros" "0" \
+  "$(curl -s "$API/rest/v1/friends?user_id=eq.$U1" -H "apikey: $ANON" -H "Authorization: Bearer $T3" | jget ".length")"
+check "friends view: u2 still sees own Bro" "$U1" \
+  "$(curl -s "$API/rest/v1/friends?user_id=eq.$U2" -H "apikey: $ANON" -H "Authorization: Bearer $T2" | jget "[0].friend_id")"
+check "friends board unaffected (definer RPC)" "2" "$(curl -s "$API/rest/v1/rpc/leaderboard_friends" \
+  -H "apikey: $ANON" -H "Authorization: Bearer $T2" -H "Content-Type: application/json" -d '{"p_board":"all_time"}' | jget ".length")"
+# Bros' session reads: friend_sessions only, four columns, live rows.
+q "UPDATE sessions SET notes='private note' WHERE user_id='$U1'" >/dev/null
+check "a Bro reads u1's sessions via friend_sessions" "12" \
+  "$(curl -s "$API/rest/v1/friend_sessions?user_id=eq.$U1&select=started_at,finished_at,duration_seconds,total_volume_kg" -H "apikey: $ANON" -H "Authorization: Bearer $T2" | jget ".length")"
+check "friend_sessions has no notes column" "400" \
+  "$(curl -s -o /dev/null -w "%{http_code}" "$API/rest/v1/friend_sessions?select=notes" -H "apikey: $ANON" -H "Authorization: Bearer $T2")"
+check "Bros no longer read the sessions table" "0" \
+  "$(curl -s "$API/rest/v1/sessions?user_id=eq.$U1&select=id" -H "apikey: $ANON" -H "Authorization: Bearer $T2" | jget ".length")"
+check "owner still reads own notes" "private note" \
+  "$(curl -s "$API/rest/v1/sessions?select=notes&limit=1" -H "apikey: $ANON" -H "Authorization: Bearer $T1" | jget "[0].notes")"
+q "UPDATE sessions SET deleted_at=now() WHERE id=(SELECT id FROM sessions WHERE user_id='$U1' ORDER BY started_at LIMIT 1)" >/dev/null
+check "soft-deleted sessions drop out of friend_sessions" "11" \
+  "$(curl -s "$API/rest/v1/friend_sessions?user_id=eq.$U1&select=started_at" -H "apikey: $ANON" -H "Authorization: Bearer $T2" | jget ".length")"
+check "a stranger gets no friend_sessions" "0" \
+  "$(curl -s "$API/rest/v1/friend_sessions?select=user_id" -H "apikey: $ANON" -H "Authorization: Bearer $T3" | jget ".length")"
+check "anon cannot read friend_sessions" "401" \
+  "$(curl -s -o /dev/null -w "%{http_code}" "$API/rest/v1/friend_sessions?select=user_id" -H "apikey: $ANON")"
+check "a Bro cannot write through friend_sessions" "403" "$(curl -s -o /dev/null -w "%{http_code}" -X PATCH "$API/rest/v1/friend_sessions?user_id=eq.$U1" \
+  -H "apikey: $ANON" -H "Authorization: Bearer $T2" -H "Content-Type: application/json" -d '{"total_volume_kg":1}')"
+curl -s -o /dev/null -X PATCH "$API/rest/v1/friendships?requester_id=eq.$U2&addressee_id=eq.$U1" \
+  -H "apikey: $ANON" -H "Authorization: Bearer $T1" -H "Content-Type: application/json" \
+  -d "{\"status\":\"blocked\",\"blocked_by\":\"$U1\"}"
+check "a block cuts the Bro's session read" "0" \
+  "$(curl -s "$API/rest/v1/friend_sessions?user_id=eq.$U1&select=started_at" -H "apikey: $ANON" -H "Authorization: Bearer $T2" | jget ".length")"
+
 echo "== account deletion =="
 q "SELECT delete_account_data('$U3')" >/dev/null
 check "delete_account_data wipes every u3 row" "0" \
