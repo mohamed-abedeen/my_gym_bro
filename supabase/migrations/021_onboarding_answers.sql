@@ -2,7 +2,7 @@
 -- 021 — Onboarding v3 answers on the profile
 --
 -- The redesigned onboarding (design_handoff_onboarding v3) persists every
--- answer; Drift schema v22 mirrors these columns. The body metrics that were
+-- answer; Drift schema v23 mirrors these columns. The body metrics that were
 -- local-only until now (gender, body weight, height) join them, so the whole
 -- intake follows the account to a new device (auth_notifier pulls these on
 -- the first sign-in).
