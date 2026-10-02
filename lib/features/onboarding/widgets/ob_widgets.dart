@@ -1,9 +1,11 @@
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import 'package:my_gym_bro/features/onboarding/widgets/ob_frame.dart';
 import 'package:my_gym_bro/shared/constants.dart';
-import 'package:my_gym_bro/shared/widgets/glass_surface.dart';
+import 'package:my_gym_bro/shared/widgets/refractive_glass.dart';
 
 /// Animates a text style like [AnimatedDefaultTextStyle] but merges into the
 /// ambient style, so the platform font family (SF Pro / Roboto) carries
@@ -344,9 +346,103 @@ class _ObPressableState extends State<ObPressable> {
   }
 }
 
-/// The frosted "Continue" button (374×79, radius 40) — a [GlassSurface]
-/// with the handoff's top-lit gradient and inset rim. Label is white when
-/// [enabled], #5A5A5A otherwise.
+/// The onboarding's button surface in the iOS 26 "Liquid Glass" style: the
+/// refractive [RefractiveGlass] with [RefractiveGlass.buttonSettings]
+/// (specular arcs, a soft inner glow along the rim, slight frost, lensing at
+/// the edges) over the button's own [tint] and the handoff's top-lit sheen,
+/// at its 40-unit pill radius, sized by its parent.
+///
+/// Where the shader can't run — inside the paywall's scroll view, or on a
+/// renderer without shader filters — [RefractiveGlass] falls back to frosted
+/// glass with the same tint, and this paints the same specular arcs so the
+/// button still reads as glass.
+class ObLiquidGlass extends StatelessWidget {
+  const ObLiquidGlass({required this.tint, required this.child, super.key});
+
+  /// The dark glass of the Continue / Get Started / Start training buttons:
+  /// the top of the handoff's #2C2C2E→#161618 Continue fill, at its 72%
+  /// alpha (the bottom shade below supplies the darker half).
+  static const dark = Color(0xB82C2C2E);
+
+  final Color tint;
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    final ob = ObFrame.of(context);
+    final radius = ob(40);
+    // The handoff's `radial-gradient(120% 140% at 30% -20%, white 16%, 0 55%)`
+    // — an ellipse ~4× wider than tall, so the circle is stretched on x.
+    final sheen = DecoratedBox(
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(radius),
+        gradient: RadialGradient(
+          center: const Alignment(-0.4, -1.4),
+          radius: 1.4,
+          colors: [
+            Colors.white.withValues(alpha: 0.16),
+            Colors.white.withValues(alpha: 0),
+          ],
+          stops: const [0, 0.55],
+          transform: const ObEllipse(
+            center: Alignment(-0.4, -1.4),
+            sx: 374 * 1.2 / (79 * 1.4),
+          ),
+        ),
+      ),
+      // …and a little shade toward the bottom, so the pill reads convex.
+      child: DecoratedBox(
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(radius),
+          gradient: LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: [
+              Colors.black.withValues(alpha: 0),
+              Colors.black.withValues(alpha: 0.14),
+            ],
+            stops: const [0.5, 1],
+          ),
+        ),
+        child: child,
+      ),
+    );
+    // The drop shadow sits BEHIND the glass. Handed to the shader package
+    // instead, it is painted inside the shape, on top of the glass (Impeller
+    // ignores its outer-only blur), and its 55% black buries the tint.
+    return LayoutBuilder(
+      builder: (context, box) => DecoratedBox(
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(radius),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.55),
+              blurRadius: ob(22),
+              offset: Offset(0, ob(8)),
+            ),
+          ],
+        ),
+        child: RefractiveGlass(
+          width: box.maxWidth,
+          height: box.maxHeight,
+          radius: radius,
+          tint: tint,
+          settings: RefractiveGlass.buttonSettings,
+          child: RefractiveGlass.refractsAt(context)
+              ? sheen
+              : CustomPaint(
+                  foregroundPainter:
+                      _SpecularArcsPainter(radius: radius, width: ob(1.6)),
+                  child: SizedBox.expand(child: sheen),
+                ),
+        ),
+      ),
+    );
+  }
+}
+
+/// The "Continue" button (374×79, radius 40) — [ObLiquidGlass]. Label is
+/// white when [enabled], #5A5A5A otherwise.
 class ObGlassButton extends StatelessWidget {
   const ObGlassButton({
     required this.label,
@@ -362,64 +458,22 @@ class ObGlassButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final ob = ObFrame.of(context);
-    final radius = ob(40);
     return ObPressable(
       onTap: enabled ? onTap : null,
-      child: GlassSurface(
-        radius: radius,
-        blurSigma: 20,
-        tint: Colors.transparent,
-        border: false,
-        shadow: BoxShadow(
-          color: Colors.black.withValues(alpha: 0.55),
-          blurRadius: ob(22),
-          offset: Offset(0, ob(8)),
-        ),
-        child: CustomPaint(
-          foregroundPainter: _GlassRimPainter(radius: radius, width: ob(1.2)),
-          child: DecoratedBox(
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(radius),
-              gradient: const LinearGradient(
-                begin: Alignment.topCenter,
-                end: Alignment.bottomCenter,
-                colors: [Color(0xB82C2C2E), Color(0xB8161618)],
-              ),
+      child: ObLiquidGlass(
+        tint: ObLiquidGlass.dark,
+        child: Center(
+          child: ObAnimatedTextStyle(
+            duration: const Duration(milliseconds: 200),
+            style: ob.text(
+              30,
+              color: enabled
+                  ? AppOnboarding.textPrimary
+                  : AppOnboarding.textDisabled,
             ),
-            // `radial-gradient(120% 140% at 30% -20%, white 16%, 0 55%)` —
-            // an ellipse ~4× wider than tall, so the circle is stretched on x.
-            child: DecoratedBox(
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(radius),
-                gradient: RadialGradient(
-                  center: const Alignment(-0.4, -1.4),
-                  radius: 1.4,
-                  colors: [
-                    Colors.white.withValues(alpha: 0.16),
-                    Colors.white.withValues(alpha: 0),
-                  ],
-                  stops: const [0, 0.55],
-                  transform: const ObEllipse(
-                    center: Alignment(-0.4, -1.4),
-                    sx: 374 * 1.2 / (79 * 1.4),
-                  ),
-                ),
-              ),
-              child: Center(
-                child: ObAnimatedTextStyle(
-                  duration: const Duration(milliseconds: 200),
-                  style: ob.text(
-                    30,
-                    color: enabled
-                        ? AppOnboarding.textPrimary
-                        : AppOnboarding.textDisabled,
-                  ),
-                  child: FittedBox(
-                    fit: BoxFit.scaleDown,
-                    child: Text(label, maxLines: 1),
-                  ),
-                ),
-              ),
+            child: FittedBox(
+              fit: BoxFit.scaleDown,
+              child: Text(label, maxLines: 1),
             ),
           ),
         ),
@@ -447,46 +501,67 @@ class ObEllipse extends GradientTransform {
   }
 }
 
-/// The glass rim: a bright top highlight fading to a faint base ring — the
-/// handoff's three inset box-shadows as one gradient stroke.
-class _GlassRimPainter extends CustomPainter {
-  _GlassRimPainter({required this.radius, required this.width});
+/// The fallback's stand-in for the shader's rim: a thin light line all round
+/// plus soft arcs on the pill's top-left cap (bright) and bottom-right cap
+/// (dimmer), where the light of [RefractiveGlass.buttonSettings] and its
+/// mirror hit the edge.
+class _SpecularArcsPainter extends CustomPainter {
+  const _SpecularArcsPainter({required this.radius, required this.width});
 
   final double radius;
   final double width;
 
   @override
   void paint(Canvas canvas, Size size) {
-    final rect = Offset.zero & size;
-    final rrect = RRect.fromRectAndRadius(
-      rect.deflate(width / 2),
-      Radius.circular(radius),
-    );
+    final r = math.min(radius, size.shortestSide / 2) - width / 2;
+    void arc(Offset center, double mid, double alpha) {
+      final bounds = Rect.fromCircle(center: center, radius: r);
+      canvas.drawArc(
+        bounds,
+        mid - math.pi / 4,
+        math.pi / 2,
+        false,
+        Paint()
+          ..style = PaintingStyle.stroke
+          ..strokeWidth = width
+          ..strokeCap = StrokeCap.round
+          ..maskFilter = MaskFilter.blur(BlurStyle.normal, width * 0.35)
+          ..shader = SweepGradient(
+            startAngle: mid - math.pi / 4,
+            endAngle: mid + math.pi / 4,
+            colors: [
+              Colors.white.withValues(alpha: 0),
+              Colors.white.withValues(alpha: alpha),
+              Colors.white.withValues(alpha: 0),
+            ],
+          ).createShader(bounds),
+      );
+    }
+
     canvas.drawRRect(
-      rrect,
+      RRect.fromRectAndRadius(
+        (Offset.zero & size).deflate(width / 2),
+        Radius.circular(r),
+      ),
       Paint()
         ..style = PaintingStyle.stroke
-        ..strokeWidth = width
-        ..shader = LinearGradient(
-          begin: Alignment.topCenter,
-          end: Alignment.bottomCenter,
-          colors: [
-            Colors.white.withValues(alpha: 0.30),
-            Colors.white.withValues(alpha: 0.10),
-            Colors.white.withValues(alpha: 0.06),
-          ],
-          stops: const [0, 0.35, 1],
-        ).createShader(rect),
+        ..strokeWidth = width * 0.6
+        ..color = Colors.white.withValues(alpha: 0.22),
     );
+    final cy = size.height / 2;
+    arc(Offset(r + width / 2, cy), 5 * math.pi / 4, 0.85);
+    arc(Offset(size.width - r - width / 2, cy), math.pi / 4, 0.4);
   }
 
   @override
-  bool shouldRepaint(_GlassRimPainter oldDelegate) =>
+  bool shouldRepaint(_SpecularArcsPainter oldDelegate) =>
       oldDelegate.radius != radius || oldDelegate.width != width;
 }
 
-/// The solid dark pill button (Welcome "Get Started", "Start training",
-/// sign-up providers): #232323→#161616 with a 1px white-14% border.
+/// The dark pill button (Welcome "Get Started", "Start training", the Google
+/// sign-up provider) — [ObLiquidGlass] in the same dark glass as Continue.
+/// (It was the handoff's solid #232323→#161616 pill until the buttons went
+/// liquid glass.)
 class ObDarkButton extends StatelessWidget {
   const ObDarkButton({
     required this.child,
@@ -499,21 +574,10 @@ class ObDarkButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final ob = ObFrame.of(context);
     return ObPressable(
       onTap: onTap,
-      child: DecoratedBox(
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(ob(40)),
-          gradient: const LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: [Color(0xFF232323), Color(0xFF161616)],
-          ),
-          border: Border.all(
-            color: Colors.white.withValues(alpha: 0.14),
-          ),
-        ),
+      child: ObLiquidGlass(
+        tint: ObLiquidGlass.dark,
         child: Center(child: child),
       ),
     );

@@ -615,11 +615,10 @@ class _PaywallViewState extends ConsumerState<PaywallView> {
                 height: 79,
                 child: ObPressable(
                   onTap: _loading ? null : _purchase,
-                  child: DecoratedBox(
-                    decoration: BoxDecoration(
-                      color: AppOnboarding.lime,
-                      borderRadius: BorderRadius.circular(ob(40)),
-                    ),
+                  // Lime liquid glass. Inside this scroll view the shader
+                  // can't run, so it's the frosted fallback with a lit rim.
+                  child: ObLiquidGlass(
+                    tint: AppOnboarding.lime.withValues(alpha: 0.94),
                     child: Center(
                       child: _loading
                           ? SizedBox.square(
