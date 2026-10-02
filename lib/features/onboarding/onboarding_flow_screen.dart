@@ -185,7 +185,7 @@ class _OnboardingFlowScreenState extends ConsumerState<OnboardingFlowScreen>
     OnboardingStep step,
     AppLocalizations l10n, {
     required double dx,
-    required double opacity,
+    required double dim,
   }) =>
       KeyedSubtree(
         key: ValueKey(step),
@@ -193,12 +193,23 @@ class _OnboardingFlowScreenState extends ConsumerState<OnboardingFlowScreen>
           ignoring: step != _step,
           child: Transform.translate(
             offset: Offset(dx, 0),
-            child: Opacity(
-              opacity: opacity,
-              child: ObPageScope(
-                animateIn: _animateIn[step] ?? true,
-                child: _buildStep(step, l10n),
-              ),
+            // Dimmed by a black overlay rather than Opacity: identical over
+            // the black artboard, and the native Liquid Glass buttons
+            // (obNativeGlass) render broken under a partial opacity.
+            child: Stack(
+              children: [
+                ObPageScope(
+                  animateIn: _animateIn[step] ?? true,
+                  child: _buildStep(step, l10n),
+                ),
+                Positioned.fill(
+                  child: IgnorePointer(
+                    child: ColoredBox(
+                      color: AppOnboarding.background.withValues(alpha: dim),
+                    ),
+                  ),
+                ),
+              ],
             ),
           ),
         ),
@@ -238,7 +249,7 @@ class _OnboardingFlowScreenState extends ConsumerState<OnboardingFlowScreen>
                         if (leaving == null) {
                           return Stack(
                             children: [
-                              _page(_step, l10n, dx: 0, opacity: 1),
+                              _page(_step, l10n, dx: 0, dim: 0),
                             ],
                           );
                         }
@@ -254,13 +265,13 @@ class _OnboardingFlowScreenState extends ConsumerState<OnboardingFlowScreen>
                               under,
                               l10n,
                               dx: -0.28 * width * underT,
-                              opacity: 1 - 0.65 * underT,
+                              dim: 0.65 * underT,
                             ),
                             _page(
                               over,
                               l10n,
                               dx: width * (_forward ? 1 - t : t),
-                              opacity: 1,
+                              dim: 0,
                             ),
                           ],
                         );
@@ -288,9 +299,11 @@ class _OnboardingFlowScreenState extends ConsumerState<OnboardingFlowScreen>
                     Positioned.fill(
                       child: IgnorePointer(
                         ignoring: !showContinue,
-                        child: AnimatedOpacity(
-                          opacity: showContinue ? 1 : 0,
-                          duration: const Duration(milliseconds: 250),
+                        // Native Liquid Glass can't fade (see ObEntrance),
+                        // so on iOS 26 Continue shows and hides at once.
+                        child: _FadeOrSwitch(
+                          visible: showContinue,
+                          fade: !obNativeGlass,
                           child: _ArtboardOverlay(
                             child: Stack(
                               clipBehavior: Clip.none,
@@ -400,4 +413,27 @@ class _ArtboardOverlay extends StatelessWidget {
       ],
     );
   }
+}
+
+/// Shows/hides [child]: a 250ms fade when [fade], otherwise at once (the
+/// native Liquid Glass Continue can't be faded; see `ObEntrance.fade`).
+class _FadeOrSwitch extends StatelessWidget {
+  const _FadeOrSwitch({
+    required this.visible,
+    required this.fade,
+    required this.child,
+  });
+
+  final bool visible;
+  final bool fade;
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) => fade
+      ? AnimatedOpacity(
+          opacity: visible ? 1 : 0,
+          duration: const Duration(milliseconds: 250),
+          child: child,
+        )
+      : Visibility(visible: visible, maintainState: true, child: child);
 }

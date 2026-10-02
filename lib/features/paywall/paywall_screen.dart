@@ -613,34 +613,19 @@ class _PaywallViewState extends ConsumerState<PaywallView> {
                 top: _ctaY,
                 width: 374,
                 height: 79,
-                child: ObPressable(
-                  onTap: _loading ? null : _purchase,
-                  // Lime liquid glass. Inside this scroll view the shader
-                  // can't run, so it's the frosted fallback with a lit rim.
-                  child: ObLiquidGlass(
-                    tint: AppOnboarding.lime.withValues(alpha: 0.94),
-                    child: Center(
-                      child: _loading
-                          ? SizedBox.square(
-                              dimension: ob(28),
-                              child: const CircularProgressIndicator(
-                                strokeWidth: 2.5,
-                                color: Colors.black,
-                              ),
-                            )
-                          : FittedBox(
-                              fit: BoxFit.scaleDown,
-                              child: Text(
-                                widget.locked
-                                    ? l10n.subscribeToContinue
-                                    : _trialOffered
-                                        ? l10n.freeTrial
-                                        : l10n.obSubscribe,
-                                style: ob.text(30, color: Colors.black),
-                              ),
-                            ),
-                    ),
-                  ),
+                // Lime glass: natively `.prominentGlass()` on iOS 26. Off
+                // iOS, inside this scroll view the Flutter shader can't run,
+                // so it's the frosted fallback with a lit rim.
+                child: ObLiquidGlassButton(
+                  label: widget.locked
+                      ? l10n.subscribeToContinue
+                      : _trialOffered
+                          ? l10n.freeTrial
+                          : l10n.obSubscribe,
+                  labelColor: Colors.black,
+                  tint: AppOnboarding.lime,
+                  loading: _loading,
+                  onTap: _purchase,
                 ),
               ),
 
@@ -1198,10 +1183,12 @@ class PaywallSuccess extends StatelessWidget {
           width: 374,
           height: 79,
           child: ObEntrance(
-            delay: const Duration(milliseconds: 400),
+            // Native glass shows only once the overlay's 400ms fade is done.
+            delay: Duration(milliseconds: obNativeGlass ? 450 : 400),
+            fade: !obNativeGlass,
             child: ObDarkButton(
+              label: l10n.obStartTraining,
               onTap: onStart,
-              child: Text(l10n.obStartTraining, style: ob.text(26)),
             ),
           ),
         ),
