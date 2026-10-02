@@ -106,7 +106,7 @@ friendships (
 )
 ```
 - **RLS:** insert where `requester_id = auth.uid()` (and no existing blocked row between the pair); update/delete where `auth.uid()` is requester or addressee (addressee accepts/declines, either side blocks); select where `auth.uid()` is either side.
-- **Username:** add unique `username text` (lowercase, 3–20 chars) to `user_profiles`; exact-match lookup only — no name search.
+- **Username:** add unique `username text` (lowercase, 3–20 chars) to `user_profiles`; exact-match lookup only — no name search. Clients set it directly (own row, by `user_id`); the column grant only arrived in `023_username_claim.sql` (2026-10-02) — before it every claim was refused.
 - **Friends = accepted rows.** Expose a `friends` view (both directions of accepted, excluding blocked). It's used by the Friends leaderboard scope (definer RPCs) and `notify-social-challenge` (service role). Since 022 it is `security_invoker`, so a client only sees its own edges. `friend_count` and the bros strip's `friend_sessions` read `friendships` directly.
 - **Reports:** `user_reports(reporter_id, reported_id, reason, created_at)`, insert-only via RLS, reviewed manually.
 - The old `follows` table design is superseded; if it was ever created in an environment, the Phase B migration drops it.

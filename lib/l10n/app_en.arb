@@ -703,7 +703,7 @@
   "female": "Female",
   "restTimerVibration": "Rest timer vibration",
   "signOut": "Sign Out",
-  "signOutConfirm": "Sign out of your account? Your local data stays on this device.",
+  "signOutConfirm": "Sign out of your account? Your local data stays on this device, unless a different account signs in here.",
   "cacheCleared": "Cache cleared",
   "cacheClearFailed": "Failed to clear cache",
   "couldNotOpenLink": "Could not open link",
@@ -1201,6 +1201,7 @@
   "obInjuryWrist": "Wrist",
   "obInjuryKnee": "Knee",
   "obInjuryNone": "None",
+  "obInjuryDisclaimer": "Not medical advice. If an injury hurts or isn't healing, check with a doctor.",
   "obRestTitle": "How many days will you rest?",
   "obRestDays": "{count, plural, =1{1 day} other{{count} days}}",
   "@obRestDays": {

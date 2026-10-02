@@ -1539,7 +1539,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get signOutConfirm =>
-      'Sign out of your account? Your local data stays on this device.';
+      'Sign out of your account? Your local data stays on this device, unless a different account signs in here.';
 
   @override
   String get cacheCleared => 'Cache cleared';
@@ -2767,6 +2767,10 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get obInjuryNone => 'None';
+
+  @override
+  String get obInjuryDisclaimer =>
+      'Not medical advice. If an injury hurts or isn\'t healing, check with a doctor.';
 
   @override
   String get obRestTitle => 'How many days will you rest?';

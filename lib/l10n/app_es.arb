@@ -483,7 +483,7 @@
   "female": "Mujer",
   "restTimerVibration": "Vibración del temporizador",
   "signOut": "Cerrar sesión",
-  "signOutConfirm": "¿Cerrar sesión en tu cuenta? Tus datos locales permanecen en este dispositivo.",
+  "signOutConfirm": "¿Cerrar sesión en tu cuenta? Tus datos locales permanecen en este dispositivo, salvo que otra cuenta inicie sesión aquí.",
   "cacheCleared": "Caché borrada",
   "cacheClearFailed": "No se pudo borrar la caché",
   "couldNotOpenLink": "No se pudo abrir el enlace",
@@ -969,6 +969,7 @@
   "obInjuryWrist": "Muñeca",
   "obInjuryKnee": "Rodilla",
   "obInjuryNone": "Ninguna",
+  "obInjuryDisclaimer": "Esto no es consejo médico. Si una lesión duele o no se cura, consulta a un médico.",
   "obRestTitle": "¿Cuántos días vas a descansar?",
   "obRestDays": "{count, plural, =1{1 día} other{{count} días}}",
   "@obRestDays": {

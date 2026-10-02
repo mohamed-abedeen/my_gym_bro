@@ -294,20 +294,28 @@ class FriendRepository {
   /// unique index on `user_profiles.username` is the arbiter, and a queued
   /// offline claim could silently lose the race hours later. On success the
   /// local profile row is updated too.
+  ///
+  /// The row is addressed by `user_id` (the auth uid; `id` is the table's own
+  /// key), and the update has to hand that row back: PostgREST answers a
+  /// PATCH that matched nothing with 200 and an empty list, which would
+  /// otherwise pass for a claim the server never stored.
   Future<ClaimUsernameResult> claimUsername(String raw) async {
     final username = _normalise(raw);
     if (!usernameRx.hasMatch(username)) return ClaimUsernameResult.invalid;
 
     final sb = _supabase;
+    final uid = currentUserId;
     final profile = await _profiles.getFirst();
-    final remoteId = profile?.remoteId;
-    if (sb == null || currentUserId == null || remoteId == null) {
+    if (sb == null || uid == null || profile?.remoteId != uid) {
       return ClaimUsernameResult.offline;
     }
     try {
-      await sb
+      final rows = await sb
           .from('user_profiles')
-          .update({'username': username}).eq('id', remoteId);
+          .update({'username': username})
+          .eq('user_id', uid)
+          .select('username');
+      if (rows.isEmpty) return ClaimUsernameResult.offline;
     } on PostgrestException catch (e) {
       if (e.code == '23505') return ClaimUsernameResult.taken; // unique index
       if (e.code == '23514') return ClaimUsernameResult.invalid; // format CHECK

@@ -353,7 +353,10 @@ class _ProviderButton extends StatelessWidget {
               child: Center(child: content),
             ),
           )
-        : ObDarkButton(onTap: onTap, child: content);
+        : ObDarkButton(label: label, fontSize: 22, icon: icon, onTap: onTap);
+    // Native Liquid Glass can't sit under a partial opacity; it shows its
+    // own disabled state while a sign-in runs.
+    if (!light && obNativeGlass) return button;
     return AnimatedOpacity(
       opacity: onTap == null ? 0.5 : 1,
       duration: const Duration(milliseconds: 200),

@@ -2901,7 +2901,7 @@ abstract class AppLocalizations {
   /// No description provided for @signOutConfirm.
   ///
   /// In en, this message translates to:
-  /// **'Sign out of your account? Your local data stays on this device.'**
+  /// **'Sign out of your account? Your local data stays on this device, unless a different account signs in here.'**
   String get signOutConfirm;
 
   /// No description provided for @cacheCleared.
@@ -5057,6 +5057,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'None'**
   String get obInjuryNone;
+
+  /// No description provided for @obInjuryDisclaimer.
+  ///
+  /// In en, this message translates to:
+  /// **'Not medical advice. If an injury hurts or isn\'t healing, check with a doctor.'**
+  String get obInjuryDisclaimer;
 
   /// No description provided for @obRestTitle.
   ///

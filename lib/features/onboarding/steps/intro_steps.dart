@@ -131,9 +131,10 @@ class _WelcomeStepState extends State<WelcomeStep>
           child: ObEntrance(
             delay: const Duration(milliseconds: 700),
             duration: const Duration(milliseconds: 700),
+            fade: !obNativeGlass,
             child: ObDarkButton(
+              label: l10n.getStarted,
               onTap: widget.onGetStarted,
-              child: Text(l10n.getStarted, style: ob.text(26)),
             ),
           ),
         ),

@@ -282,6 +282,15 @@ curl -s -o /dev/null -X PATCH "$API/rest/v1/friendships?requester_id=eq.$U2&addr
 check "a block cuts the Bro's session read" "0" \
   "$(curl -s "$API/rest/v1/friend_sessions?user_id=eq.$U1&select=started_at" -H "apikey: $ANON" -H "Authorization: Bearer $T2" | jget ".length")"
 
+echo "== @username claim (023) =="
+claim() { # claim <token> <user_id> <username> → the PATCH response body
+  curl -s -X PATCH "$API/rest/v1/user_profiles?user_id=eq.$2&select=username" \
+    -H "apikey: $ANON" -H "Authorization: Bearer $1" -H "Content-Type: application/json" \
+    -H "Prefer: return=representation" -d "{\"username\":\"$3\"}"; }
+check "a user claims their own @username" "claimed_u5" "$(claim "$T5" "$U5" claimed_u5 | jget "[0].username")"
+check "nobody can set another user's @username" "0" "$(claim "$T5" "$U1" stolen_u1 | jget ".length")"
+check "a taken @username is refused (unique index)" "23505" "$(claim "$T2" "$U2" claimed_u5 | jget ".code")"
+
 echo "== account deletion =="
 q "SELECT delete_account_data('$U3')" >/dev/null
 check "delete_account_data wipes every u3 row" "0" \

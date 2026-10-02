@@ -244,6 +244,10 @@ class _BannerSectionState extends ConsumerState<_BannerSection> {
     final picked = await picker.pickImage(
       source: ImageSource.gallery,
       imageQuality: 85,
+      // The banner only needs pixels. Full metadata makes iOS ask for
+      // photo-library access (PHPicker alone needs none) and brings EXIF,
+      // GPS location included, along with the photo.
+      requestFullMetadata: false,
     );
     if (picked == null || !mounted) return;
 

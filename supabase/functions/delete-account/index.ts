@@ -1,6 +1,7 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { revokeAppleTokens } from "../_shared/apple.ts";
+import { deleteRevenueCatCustomer } from "../_shared/revenuecat.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -98,6 +99,19 @@ serve(async (req: Request) => {
       }
     }
 
+    // RevenueCat keeps a customer record per account (purchase history,
+    // aliases). Delete it before the purge for the same reason Apple goes
+    // first: if a later step fails, the client's retry repeats this too,
+    // and a repeat is harmless (an unknown customer counts as deleted).
+    // Best effort -- logged, never blocks deletion.
+    const revenueCat = await deleteRevenueCatCustomer(userId);
+    if (!revenueCat.ok) {
+      console.error(
+        `RevenueCat customer deletion failed (${revenueCat.reason}):`,
+        revenueCat.detail ?? "",
+      );
+    }
+
     // Use service_role to bypass RLS for the delete.
     const supabaseAdmin = createClient(
       Deno.env.get("SUPABASE_URL")!,
@@ -129,6 +143,7 @@ serve(async (req: Request) => {
     return jsonResponse({
       message: "Account deleted successfully",
       apple_revoked: appleRevoked,
+      revenuecat_deleted: revenueCat.ok,
     });
   } catch (err) {
     console.error("delete-account error:", err);

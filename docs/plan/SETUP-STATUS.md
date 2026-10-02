@@ -18,7 +18,7 @@
 | TestFlight CI lane | ✅ **Green.** Builds distributed to external testers. Last build 2026-10-02 (run 37011215218, `main` @ `6a3ad0e`: onboarding v3 + save-day-changes) |
 | App Store Connect subscriptions | 🟡 Created, stuck at "Missing Metadata" (screenshot pending) |
 | RevenueCat | 🟡 Project + products exist; entitlement/offering/webhook/keys pending |
-| Supabase **cloud** | 🟡 **001–022 applied; 021 + 022 verified live 2026-10-02.** The anon-key hole on `public_profiles`/`friends` is closed. **Merging a PR that adds migrations to `main` deploys them to production** (GitHub integration, confirmed 2026-10-02; see below). `delete-account` v8 (Apple token revocation) deployed + smoke-tested. Pending: in-app checks for 021/022, function secrets (`APPLE_*` etc.), `purchase-skin` deploy, config push, Apple provider toggle |
+| Supabase **cloud** | 🟡 **001–022 applied; 021 + 022 verified live 2026-10-02.** The anon-key hole on `public_profiles`/`friends` is closed. **Merging a PR that adds migrations to `main` deploys them to production** (GitHub integration, confirmed 2026-10-02; see below), so **023 (the @username grant) goes live when PR #39 merges.** `delete-account` v8 (Apple token revocation) deployed + smoke-tested; PR #39 changes it (RevenueCat customer deletion), so redeploy it after that merge unless functions turn out to ride along. Pending: in-app checks for 021/022, function secrets (`APPLE_*` etc.), `purchase-skin` deploy, config push, Apple provider toggle |
 | Onboarding paywall | ⚠️ **Hard paywall since onboarding v3 (2026-09-30)** — a store build without a working RevenueCat offering leaves new users stuck at "Free Trial" (dev/beta builds show a Skip). Finish the RevenueCat checklist below before any store submission |
 | Apple sign-in (Supabase side) | 🔴 Provider not enabled in dashboard — errors until then |
 | Firebase (Crashlytics + FCM) | 🟡 **Wired (2026-09-08)** — CI derives options from base64 config secrets; owner still has to create the project + set the secrets |
@@ -213,6 +213,13 @@ Still pending:
   When a new migration merges to `main` (which deploys it, see above), re-run the checks its header documents (012's RLS
   matrix, the 013/014 `delete_account_data` contract). 012 and 013 must always land
   together: 012 drops `follows` and only 013 stops `delete_account_data` referencing it.
+- **023 deploys when PR #39 merges** (`023_username_claim.sql`, 2026-10-02): grants clients
+  `username` on `user_profiles`. 012 added the column but never granted it, so every @username
+  claim is refused (`42501`) and invite links / @search can't resolve. The app is fixed alongside
+  (the claim filtered on `id` instead of `user_id`, and counted an update that matched nothing
+  as a success). It's a plain `GRANT`: safe on live data and idempotent. Post-merge check:
+  claim a username in the Bros sheet, confirm it in `user_profiles.username`, then find it by
+  @search from a second account.
 - **Challenges (014) deploy notes:** the completion-push trigger reads the same
   Vault secrets 010 documents (`project_url`, `cron_secret`) — it silently
   skips pushes until they exist. `notify-social-challenge` must be redeployed
@@ -312,6 +319,11 @@ Still pending:
   every function secret that exists as a GitHub secret of the same name. `verify_jwt` per
   function comes from `config.toml` (`revenuecat-webhook` and the cron-invoked functions are
   off there); the lane passes no flags, so keep those blocks intact.
+  **`delete-account` changed 2026-10-02 (redeploy it):** it now also deletes the RevenueCat
+  customer (`_shared/revenuecat.ts`, `DELETE /v1/subscribers/{uid}`, best effort, before the
+  data purge so a client retry repeats it). It needs `REVENUECAT_SECRET_KEY`; without it,
+  deletion still completes and logs `RevenueCat customer deletion failed (not_configured)`.
+  The response gains `revenuecat_deleted`.
 - **Function secrets** (`supabase secrets set …`): `FCM_SERVICE_ACCOUNT` (service-account
   JSON), `REVENUECAT_SECRET_KEY`, `REVENUECAT_WEBHOOK_SECRET`, `CRON_SECRET`, and — for
   Sign in with Apple token revocation on account deletion (`delete-account`, App Store
@@ -413,27 +425,38 @@ a lawyer or legal-text service review, restore the domain, deploy. (Migration 02
 **Disclosed as-is in the policy but worth fixing (update the policy when you do):**
 - The public display name falls back to the email prefix (Apple users) and can't be edited in
   the app.
-- Familjen Grotesk is fetched from Google Fonts at runtime. Bundle it, then delete the Google
-  Fonts paragraph in privacy §12.
+- ✅ **Fixed 2026-10-02:** Familjen Grotesk is bundled (`assets/fonts/FamiljenGrotesk-Variable.ttf`,
+  OFL) and the `google_fonts` package is gone, so the app makes no Google Fonts requests. Delete
+  the Google Fonts paragraph in privacy §12.
 - Crashlytics is always on: there is no toggle, and fatal errors skip `SafeLogger` scrubbing.
   German regulators may require consent under § 25 TDDDG, so ask on the new consent screen.
   (Still open: the onboarding consent step built on 2026-09-30 covers only Art. 9 health data.
   Consent has to be specific, so a crash-report opt-in needs its own switch, not the same box.)
-- Account deletion leaves the RevenueCat customer in place. Call RevenueCat's delete-subscriber
-  API from `delete-account`.
+- ✅ **Fixed 2026-10-02, live once `delete-account` is redeployed:** account deletion now
+  deletes the RevenueCat customer too (best effort, logged if RevenueCat fails). Update the
+  policy's deletion text, which says the RevenueCat record stays.
 - Deleted workouts stay soft-deleted on the server, and their sets still count toward
   leaderboard volume.
 - There is no leaderboard opt-out.
 - Supabase auth audit-log retention needs checking, so privacy §18's "at most 90 days" holds.
 - Cloud leftovers to delete: the `moderate-content` function (it would send data to OpenAI),
   the `report-content` function, and the `community-images` and `dm-media` buckets.
-- The iOS camera and microphone purpose strings mention a profile picture the app doesn't have.
-  `PrivacyInfo.xcprivacy` probably also needs "Other User Content" (challenge text, share
-  titles, report reasons).
-- @username claims look broken on the server: `friend_repository.dart:310` keys on `id`, and
-  there is no `UPDATE (username)` grant. Invite links can't resolve until this is fixed.
+- ✅ **Fixed 2026-10-02:** the camera and microphone purpose strings now say neither is used,
+  the photo-library string names the profile banner, and the banner picker no longer asks for
+  full metadata (so iOS shows no photo-library prompt and no EXIF/GPS comes along).
+  `PrivacyInfo.xcprivacy` declares Other User Content (challenge text, share titles, report
+  reasons). Mirror that in the App Store Connect privacy labels.
+- ✅ **Fixed 2026-10-02, live once 023 deploys (PR #39 merge):** @username claims address the row by
+  `user_id`, only count when the server hands the row back, and 023 grants the column.
 - The "Rate the App" links use a placeholder App Store ID and the wrong Android package
   (`settings_screen.dart:536,539`).
+
+**Also fixed 2026-10-02 (from the client data inventory):** a second account signing in on the
+same phone used to inherit the first account's local data: profile, health answers, workouts and
+outbox. The sign-in backfill then uploaded the first account's workouts into the second. Now the
+sign-in listener wipes the device's account data first when the local profile belongs to another
+account (`UserProfileDao.heldByOtherAccount`), including body fat %, the calorie goal and the
+rank state. The sign-out confirmation says so.
 
 **Operational promises made in the texts:**
 - act on abuse reports within 24 hours (Apple 1.2);

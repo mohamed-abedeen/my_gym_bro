@@ -1548,7 +1548,7 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String get signOutConfirm =>
-      'Se déconnecter de votre compte ? Vos données locales restent sur cet appareil.';
+      'Se déconnecter de votre compte ? Vos données locales restent sur cet appareil, sauf si un autre compte s\'y connecte.';
 
   @override
   String get cacheCleared => 'Cache vidé';
@@ -2789,6 +2789,10 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String get obInjuryNone => 'Aucune';
+
+  @override
+  String get obInjuryDisclaimer =>
+      'Ceci n\'est pas un avis médical. Si une blessure fait mal ou ne guérit pas, consultez un médecin.';
 
   @override
   String get obRestTitle => 'Combien de jours allez-vous vous reposer ?';

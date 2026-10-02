@@ -51,6 +51,14 @@ class UserProfileDao extends DatabaseAccessor<AppDatabase>
   Stream<UserProfile?> watchProfile() =>
       (select(userProfiles)..limit(1)).watchSingleOrNull();
 
+  /// Whether this device's local data belongs to an account other than
+  /// [userId]: the profile is linked to a different auth user. A profile with
+  /// no remote id yet (made before any sign-in) belongs to whoever signs in.
+  Future<bool> heldByOtherAccount(String userId) async {
+    final owner = (await getFirst())?.remoteId;
+    return owner != null && owner != userId;
+  }
+
   /// Insert or update the user profile.
   Future<int> upsert(UserProfilesCompanion companion) =>
       into(userProfiles).insertOnConflictUpdate(companion);

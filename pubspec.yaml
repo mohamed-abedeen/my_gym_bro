@@ -37,7 +37,6 @@ dependencies:
   flutter_svg: ^2.0.10
   gal: ^2.3.2
   go_router: ^13.2.0
-  google_fonts: ^6.2.1
   home_widget: ^0.7.0
   http: ^1.2.0
   image_picker: ^1.1.2
@@ -110,13 +109,18 @@ flutter:
     - assets/fonts/
     - assets/onboarding/
 
-  # Share-card typography (bundled so cards render offline; google_fonts
-  # stays for the rest of the app). Archivo is the variable font — the share
-  # cards drive its wght/wdth axes via TextStyle.fontVariations.
+  # Every font is bundled: nothing is fetched at runtime (no Google Fonts
+  # requests, which would send the user's IP to Google). Archivo is the
+  # variable font — the share cards drive its wght/wdth axes via
+  # TextStyle.fontVariations. Familjen Grotesk (variable, wght 400–700,
+  # default 400) is only used for the workout screen's trend numbers.
   fonts:
     - family: Archivo
       fonts:
         - asset: assets/fonts/Archivo-Variable.ttf
+    - family: FamiljenGrotesk
+      fonts:
+        - asset: assets/fonts/FamiljenGrotesk-Variable.ttf
     - family: IBMPlexMono
       fonts:
         - asset: assets/fonts/IBMPlexMono-Regular.ttf
