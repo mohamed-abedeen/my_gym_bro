@@ -96,6 +96,10 @@ gh secret set EXERCISEDB_API_KEY
 gh secret set SUPABASE_ACCESS_TOKEN
 gh secret set APPLE_TEAM_ID; gh secret set APPLE_KEY_ID
 gh secret set APPLE_PRIVATE_KEY < AuthKey_XXXXXXXXXX.p8
+# RevenueCat server keys. These MUST be GitHub secrets: that's how they reach Supabase
+# (the deploy lane copies them into the function secrets on every run).
+gh secret set REVENUECAT_SECRET_KEY       # sk_… SECRET API key: delete-account + purchase-skin
+gh secret set REVENUECAT_WEBHOOK_SECRET   # the webhook Authorization value (RevenueCat step 5)
 # Play release signing (build-aab job), when ready:
 gh secret set ANDROID_KEYSTORE_BASE64    --body "$(base64 -w0 upload-keystore.jks)"
 gh secret set ANDROID_KEYSTORE_PASSWORD; gh secret set ANDROID_KEY_ALIAS; gh secret set ANDROID_KEY_PASSWORD
@@ -126,9 +130,22 @@ packages if IDs mismatch.
    with a long random Authorization header value (save the string — it becomes
    `REVENUECAT_WEBHOOK_SECRET`).
 
-**Then — repo/CLI side:** set the `REVENUECAT_IOS_KEY` GitHub secret (`appl_…` public SDK
-key), set `REVENUECAT_WEBHOOK_SECRET` on Supabase, deploy (next section), then an end-to-end
-sandbox purchase test.
+**Then — repo side. ⚠️ The RevenueCat keys go in GitHub as repository secrets** (Settings →
+Secrets and variables → Actions, or `gh secret set`). Don't set them only in Supabase: the
+deploy lane copies GitHub secrets into the function secrets, so GitHub is where they live.
+1. `gh secret set REVENUECAT_IOS_KEY`: the `appl_…` public SDK key (the CI lanes build it into
+   the app).
+2. `gh secret set REVENUECAT_SECRET_KEY`: a RevenueCat **secret** API key (`sk_…`; RevenueCat →
+   API keys → new secret key, separate from the webhook value). Account deletion uses it to
+   delete the RevenueCat customer, and `purchase-skin` uses it to verify skin purchases.
+   Without it, deletion still works but leaves the RevenueCat record behind (the function logs
+   `RevenueCat customer deletion failed (not_configured)`), and `purchase-skin` returns 503.
+3. `gh secret set REVENUECAT_WEBHOOK_SECRET`: the Authorization value from step 5.
+4. Run the deploy lane: `gh workflow run supabase-deploy.yml -f functions=all`. It copies the
+   GitHub secrets into the Supabase function secrets (`sync_secrets` is on by default) and
+   deploys the functions. Check that `delete-account` is now version 9 or newer (it was 8
+   before the RevenueCat deletion shipped) and that the run log lists the synced secrets.
+5. An end-to-end sandbox purchase test.
 
 **Skin one-time products (Phase 6.2, added 2026-08-17):** the client + `purchase-skin`
 edge function are wired for three **non-consumable** IAPs — `mgb_skin_gold`,
@@ -138,10 +155,10 @@ migration 016 and `skin_provider.dart`). Owner steps, after the subscription flo
    localizations + review screenshot each.
 2. RevenueCat: add the three products to the project (no entitlement needed — ownership is
    granted via `purchase-skin`, not an entitlement).
-3. Supabase: `supabase secrets set REVENUECAT_SECRET_KEY=sk_…` (a RevenueCat **secret** API
-   key — new secret, separate from the webhook one). `purchase-skin` returns 503 until set;
-   the app degrades to a local, receipt-derived unlock and heals server-side on the next
-   restore once the secret exists.
+3. `REVENUECAT_SECRET_KEY`: the same GitHub secret as repo-side step 2 above (a RevenueCat
+   **secret** API key, separate from the webhook one), synced to Supabase by the deploy lane.
+   `purchase-skin` returns 503 until it's set; the app degrades to a local, receipt-derived
+   unlock and heals server-side on the next restore once the secret exists.
 ⚠️ The whole server-verification path is **deployable but untested** until this setup
 finishes — test a sandbox skin purchase + restore end-to-end then.
 
@@ -506,7 +523,9 @@ that's the safe default for UI work.
 
 ## Only-the-owner-can-do list (short form)
 
-ASC/RevenueCat dashboard steps above · Paid Apps agreement · Firebase project + config
+ASC/RevenueCat dashboard steps above · RevenueCat keys as **GitHub secrets**
+(`REVENUECAT_IOS_KEY`, `REVENUECAT_SECRET_KEY`, `REVENUECAT_WEBHOOK_SECRET`), then the deploy
+lane · Paid Apps agreement · Firebase project + config
 files · Supabase dashboard toggles (Apple provider, SMTP, rate limits) · ExerciseDB $299
 license · store listings/policy pages/data-safety forms · anything needing a physical Mac
 (iOS widget-extension target, VoiceOver labels on the native tab bar).
