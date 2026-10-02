@@ -65,9 +65,13 @@ flutter gen-l10n                                            # localizations (or 
 
 ```bash
 supabase link --project-ref konzjrklgyuodzrrhwwv
-supabase db push                 # apply migrations
+supabase migration list          # what's applied in the cloud
 supabase functions deploy <name> # deploy edge functions
 ```
+
+- **Migrations deploy automatically when a PR merges to `main`** (Supabase GitHub integration,
+  "Deploy to production" on). `supabase db push` is only needed if that integration is off. See
+  `SETUP-STATUS.md` → Supabase cloud.
 
 - Migrations live in `supabase/migrations/` (001–004 + new ones per `03-DATABASE.md`).
 - Edge functions in `supabase/functions/`.

@@ -18,7 +18,7 @@
 | TestFlight CI lane | ✅ **Green.** Builds distributed to external testers. Last build 2026-10-02 (run 37011215218, `main` @ `6a3ad0e`: onboarding v3 + save-day-changes) |
 | App Store Connect subscriptions | 🟡 Created, stuck at "Missing Metadata" (screenshot pending) |
 | RevenueCat | 🟡 Project + products exist; entitlement/offering/webhook/keys pending |
-| Supabase **cloud** | 🟡 **001–022 applied; 021 + 022 verified live 2026-10-02.** The anon-key hole on `public_profiles`/`friends` is closed. Merging a PR that adds migrations to `main` appears to deploy them to production (see below). `delete-account` v8 (Apple token revocation) deployed + smoke-tested. Pending: in-app checks for 021/022, function secrets (`APPLE_*` etc.), `purchase-skin` deploy, config push, Apple provider toggle |
+| Supabase **cloud** | 🟡 **001–022 applied; 021 + 022 verified live 2026-10-02.** The anon-key hole on `public_profiles`/`friends` is closed. **Merging a PR that adds migrations to `main` deploys them to production** (GitHub integration, confirmed 2026-10-02; see below). `delete-account` v8 (Apple token revocation) deployed + smoke-tested. Pending: in-app checks for 021/022, function secrets (`APPLE_*` etc.), `purchase-skin` deploy, config push, Apple provider toggle |
 | Onboarding paywall | ⚠️ **Hard paywall since onboarding v3 (2026-09-30)** — a store build without a working RevenueCat offering leaves new users stuck at "Free Trial" (dev/beta builds show a Skip). Finish the RevenueCat checklist below before any store submission |
 | Apple sign-in (Supabase side) | 🔴 Provider not enabled in dashboard — errors until then |
 | Firebase (Crashlytics + FCM) | 🟡 **Wired (2026-09-08)** — CI derives options from base64 config secrets; owner still has to create the project + set the secrets |
@@ -152,21 +152,29 @@ Supabase connector on 2026-09-08 and again on 2026-09-30: **migrations 001–020
 `delete_account_data` is the 017 version. Re-verify with `supabase migration list` (or the
 connector's `list_migrations`) before assuming anything newer is applied.
 
-**2026-10-02: 021 + 022 entered the history without a manual push.** On 2026-10-02 the
-connector's `list_migrations` showed 001–020 only. After PR #38 (which adds 021 + 022) was merged
-into `main`, it showed `021 onboarding_answers` and `022 privacy_boundaries`, and
-`npx supabase db push --dry-run` reported "Remote database is up to date". No one ran a push
-or applied SQL in between. The likely cause is the Supabase GitHub integration (the dashboard's
-Integrations → GitHub; it also runs the "Supabase Preview" PR check). It appears to deploy
-migrations to production when a PR merges to `main`. This is **not confirmed**: check the
-integration's settings. If it holds, **merging a migration PR is the production deploy**. Review
-and verify migrations before merging, not after.
+**⚠️ Merging to `main` IS the production deploy (confirmed 2026-10-02).** The Supabase
+GitHub integration (Project Settings → Integrations → GitHub) is connected to
+`mohamed-abedeen/my_gym_bro` with working directory `.`, and **Deploy to production** is on with
+production branch `main`. Every PR merged to `main` that adds a migration applies it to the
+production database, with no `db push` or approval step. The connector also lists the `main`
+branch as `FUNCTIONS_DEPLOYED`, so edge functions probably ride along too (not checked).
+Consequences:
+- **The PR review is the deploy gate.** Read every migration as production SQL before merging,
+  and make it safe against live data (021 was: 0 profiles, `IF NOT EXISTS`, idempotent).
+- **Don't merge a migration PR you aren't ready to run in production**, even if the app code
+  isn't released yet. Migrations go live on merge, while app builds only ship on TestFlight/App
+  Store runs.
+- After a merge, verify with the connector's `list_migrations` (or `supabase migration list`)
+  and run the post-push checks the migration's header documents.
+- First seen with PR #38: 021 + 022 entered the history on merge with no manual push, and
+  `npx supabase db push --dry-run` then reported "Remote database is up to date".
 
-The "Supabase Preview" PR check (a throwaway preview branch that replays every migration) has
-failed on every PR where it ran (#1, #29, #38, status `MIGRATIONS_FAILED`). #29 and #38 were
-merged anyway. The cause hasn't been read. It predates 021/022, so it's probably the
-history gap (002/003/005 never existed) or something in 001–020 that doesn't replay on a fresh
-stack. Fix it, or the check is noise.
+The "Supabase Preview" PR check has failed on every PR where it ran (#1, #29, #38; the preview
+branch for #38 was `MIGRATIONS_FAILED`). #29 and #38 were merged anyway. The cause hasn't been
+read. The same settings panel says per-PR preview branches ("Branching") need the **Pro plan**,
+and the org is on Free, so that may be related. Otherwise it's something in 001–020 that
+doesn't replay on a fresh stack (the history skips 002/003/005). Until it's fixed, treat the
+check as noise and review migrations by hand.
 
 Still pending:
 
@@ -202,7 +210,7 @@ Still pending:
   build of 2026-10-02): sign up through onboarding, then confirm the row's `training_days` /
   `focus_areas` / `birth_date` and `health_consent_at`. Turn Settings → Health data off and
   confirm the six health columns and `health_consent_at` are NULL.
-  When a new migration lands, push it and re-run the checks its header documents (012's RLS
+  When a new migration merges to `main` (which deploys it, see above), re-run the checks its header documents (012's RLS
   matrix, the 013/014 `delete_account_data` contract). 012 and 013 must always land
   together: 012 drops `follows` and only 013 stops `delete_account_data` referencing it.
 - **Challenges (014) deploy notes:** the completion-push trigger reads the same
