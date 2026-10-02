@@ -62,9 +62,9 @@ The 6 edge functions are **deployed** to project `konzjrklgyuodzrrhwwv`, but the
 
 Exact names the code reads (from `Deno.env.get(...)`):
 - `SUPABASE_URL`, `SUPABASE_ANON_KEY` — **auto-injected** by Supabase, no action.
-- **Service-role key** — auto-injected into every function as `SUPABASE_SERVICE_ROLE_KEY`; nothing to set. Secrets that DO need setting: `FCM_SERVICE_ACCOUNT`, `REVENUECAT_SECRET_KEY`, `REVENUECAT_WEBHOOK_SECRET`, `CRON_SECRET`, and `APPLE_TEAM_ID` / `APPLE_KEY_ID` / `APPLE_PRIVATE_KEY` for delete-account's Sign in with Apple token revocation (see SETUP-STATUS → Supabase cloud).
+- **Service-role key** — auto-injected into every function as `SUPABASE_SERVICE_ROLE_KEY`; nothing to set. Secrets that DO need setting: `FCM_SERVICE_ACCOUNT`, `REVENUECAT_SECRET_KEY`, `REVENUECAT_WEBHOOK_SECRET`, `CRON_SECRET`, and `APPLE_TEAM_ID` / `APPLE_KEY_ID` / `APPLE_PRIVATE_KEY` for delete-account's Sign in with Apple token revocation (see SETUP-STATUS → Supabase cloud). Set them as **GitHub secrets**; the deploy lane (`supabase-deploy.yml`) copies them into the function secrets (SETUP-STATUS → RevenueCat, repo side).
 - **`FCM_SERVER_KEY`** — set manually. Needed by send-push-notification, schedule-notifications, notify-social-challenge. Value = Firebase Console → Project Settings → Cloud Messaging server key. (Note: Google deprecated legacy FCM server keys; if it's gone, the functions may need updating to FCM HTTP v1.)
-- **`REVENUECAT_WEBHOOK_SECRET`** — set manually. Needed by revenuecat-webhook. Value = the Authorization secret you configure on the RevenueCat webhook.
+- **`REVENUECAT_WEBHOOK_SECRET`** — a GitHub secret, synced by the deploy lane. Needed by revenuecat-webhook. Value = the Authorization secret you configure on the RevenueCat webhook.
 
 Set them in one go (single quotes to avoid PowerShell `$` expansion):
 ```powershell
