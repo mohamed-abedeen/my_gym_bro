@@ -70,3 +70,7 @@ assets/skins_split/
 # (FIREBASE_IOS_PLIST_B64 / FIREBASE_ANDROID_JSON_B64), never committed.
 android/app/google-services.json
 ios/Runner/GoogleService-Info.plist
+
+# Signing keys (e.g. a debug.keystore generated for the CI secret). Never commit.
+*.keystore
+*.jks

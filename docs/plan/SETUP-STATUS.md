@@ -101,6 +101,13 @@ gh secret set APPLE_PRIVATE_KEY < AuthKey_XXXXXXXXXX.p8
 # (the deploy lane copies them into the function secrets on every run).
 gh secret set REVENUECAT_SECRET_KEY       # sk_… SECRET API key: delete-account + purchase-skin
 gh secret set REVENUECAT_WEBHOOK_SECRET   # the webhook Authorization value (RevenueCat step 5)
+# Stable debug key for the CI debug APK (build-android job). Without it every CI APK
+# has a new signature and won't install over the previous one. Generate it OUTSIDE the
+# repo, back it up somewhere safe (losing it = testers must uninstall once), never commit:
+keytool -genkeypair -v -keystore debug.keystore -alias androiddebugkey \
+  -storepass android -keypass android -keyalg RSA -keysize 2048 -validity 10000 \
+  -dname "CN=Android Debug,O=Android,C=US"
+gh secret set ANDROID_DEBUG_KEYSTORE_B64 --body "$(base64 -w0 debug.keystore)"
 # Play release signing (build-aab job), when ready:
 gh secret set ANDROID_KEYSTORE_BASE64    --body "$(base64 -w0 upload-keystore.jks)"
 gh secret set ANDROID_KEYSTORE_PASSWORD; gh secret set ANDROID_KEY_ALIAS; gh secret set ANDROID_KEY_PASSWORD
