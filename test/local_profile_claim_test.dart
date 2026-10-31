@@ -3,6 +3,7 @@ import 'dart:convert';
 
 import 'package:drift/drift.dart' show Value;
 import 'package:drift/native.dart';
+import 'package:flutter/services.dart' show MethodChannel;
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
@@ -25,6 +26,15 @@ const _uid = 'auth-uid-1';
 /// account (without losing local answers or inventing a second identity) so
 /// the backfill can run.
 void main() {
+  // The AuthNotifier sign-in listener asks `Purchases.isConfigured` over the
+  // purchases_flutter channel; answer "not configured" so RevenueCat stays out.
+  TestWidgetsFlutterBinding.ensureInitialized();
+  TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+      .setMockMethodCallHandler(
+    const MethodChannel('purchases_flutter'),
+    (call) async => call.method == 'isConfigured' ? false : null,
+  );
+
   late AppDatabase db;
   late UserProfileDao dao;
   late SyncService sync;

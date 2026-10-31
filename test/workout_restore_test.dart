@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:drift/drift.dart' show OrderingTerm, Value;
 import 'package:drift/native.dart';
+import 'package:flutter/services.dart' show MethodChannel;
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
@@ -24,6 +25,15 @@ const _uid = 'auth-uid-1';
 /// in must pull it back, once, safely, and without ever touching a device
 /// that already has workouts.
 void main() {
+  // The AuthNotifier sign-in listener asks `Purchases.isConfigured` over the
+  // purchases_flutter channel; answer "not configured" so RevenueCat stays out.
+  TestWidgetsFlutterBinding.ensureInitialized();
+  TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+      .setMockMethodCallHandler(
+    const MethodChannel('purchases_flutter'),
+    (call) async => call.method == 'isConfigured' ? false : null,
+  );
+
   late AppDatabase db;
   late _MockHistorySource source;
   late WorkoutRestoreService service;
