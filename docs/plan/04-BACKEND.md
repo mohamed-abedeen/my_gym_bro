@@ -62,6 +62,55 @@ The app does **not** call custom CRUD endpoints — it uses the Supabase SDK aga
 > account's history or queued actions into the new one. A profile with no
 > `remoteId` yet (used before any sign-in) is adopted by whoever signs in.
 
+> **Account data continuity** (2026-10-31): two gaps closed so a signed-out
+> (dev/beta Skip) user can sign in, delete the app, reinstall and get everything
+> back.
+>
+> *Adoption* — `_ensureLocalProfile` used to return early when any local profile
+> existed, so a Skip user's profile kept `remoteId = null` and both
+> `WorkoutPushService` entry points (which key on it) never uploaded their
+> history. It now calls `LocalProfileClaim.claim` (`lib/core/auth/
+> local_profile_claim.dart`): an atomic `UPDATE … WHERE remote_id IS NULL`
+> links the profile to the auth uid, merges the server row (**trial and
+> subscription: server wins**; **onboarding answers: the device wins, the server
+> fills gaps**; units: server wins) and queues ONE `user_profiles` update with
+> the merged answers. Health values upload only while a consent timestamp is on
+> file (the 021 CHECK). A profile owned by a different account still wipes first
+> (`heldByOtherAccount`). Offline sign-in claims with local trial defaults and
+> never re-merges the server window later (same as the fresh-profile path).
+>
+> *Restore* — `WorkoutRestoreService` (`lib/core/services/
+> workout_restore_service.dart`) pulls history back after the sign-in
+> backfill + outbox drain (`AuthNotifier._syncAndRestore`). **No migration
+> needed:** 001's own-row SELECT policies + 018's `GRANT SELECT … TO
+> authenticated` already allow it, and anon has no grant. One paginated query
+> (100 sessions/page, ≤100 pages, `started_at desc, id`) embeds
+> `session_exercises(sets(...))` and filters `deleted_at IS NULL` and
+> `finished_at IS NOT NULL`; deleted children are dropped client-side.
+> Rules: runs only when the device has **zero local sessions** and the local
+> profile belongs to the signing-in uid; all pages are fetched into memory and
+> written in ONE transaction (all-or-nothing, so "table is empty" is the only
+> retry marker — a keychain flag would be wrong, iOS keeps the Keychain across
+> a reinstall and the auto-restored session fires `initialSession` on an empty
+> DB); idempotent by `remoteId`; rows get `syncStatus = 'synced'` and the
+> server uuids, so the backfill (`remote_id IS NULL`) never re-uploads them.
+> The new-device profile pull also brings back `username`, `notification_tone`
+> and `active_skin_id`.
+>
+> **Not restored (by design / no server copy):** routines (`schedules`,
+> `schedule_days`, `scheduled_exercises` — the 001 cloud tables are dead, no
+> sync path exists; share-by-link, §3.6 of `03-DATABASE.md`, is the backup);
+> custom exercises and favourites / usage counts (local-only); per-set
+> failure flag, duration/distance/speed/incline (cardio fields are not in the
+> `sets` table or `push_workout`); `Sessions.scheduleId/scheduleDayId` (no
+> schedules to point at); unticked or unperformed sets and exercises (never
+> uploaded); in-progress sessions; device preferences kept in SecureStorage
+> (rest/sound/theme etc.); body-fat %, calorie goal. Streaks, PRs and
+> volume are derived from sessions, so they come back with the history.
+> A Skip user who already has local sessions on a device is not restored into
+> (zero-local-sessions rule) — server-only history from another device is
+> not merged in.
+
 > **Routine shares** (migration 020, built 2026-08-29): NOT sync-queue items —
 > both calls are foreground RPCs (the user is waiting for the link/preview),
 > 10 s timeout, typed graceful errors, direct via `RoutineShareService`.
