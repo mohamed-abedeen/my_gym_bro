@@ -246,44 +246,6 @@ void main() {
       expect(window!.recoveryHours, closeTo(60, 0.01));
     });
 
-    test('secondary-only bout gets a halved window', () {
-      // Upper back touched only as a synergist (e.g. overhead press on a
-      // push day): 60h base × secondaryOnlyWindowScale → 30h, not a full
-      // back-day window.
-      final window =
-          MuscleRecoveryService.resolveRecoveryWindow('Upper Back', [
-        MuscleDoseEvent(
-          trainedAt: DateTime(2026, 6, 1, 18),
-          dose: 1.5,
-          hasPrimary: false,
-        ),
-      ]);
-      expect(
-        window!.recoveryHours,
-        closeTo(60 * MuscleRecoveryService.secondaryOnlyWindowScale, 0.01),
-      );
-    });
-
-    test('secondary-only doses do not feed the reference dose', () {
-      // Two synergist-only bouts (dose 1.5) must not drag the reference
-      // down and make a later real back day (dose 12) look like a blowout.
-      final window =
-          MuscleRecoveryService.resolveRecoveryWindow('Upper Back', [
-        MuscleDoseEvent(
-          trainedAt: DateTime(2026, 6),
-          dose: 1.5,
-          hasPrimary: false,
-        ),
-        MuscleDoseEvent(
-          trainedAt: DateTime(2026, 6, 8),
-          dose: 1.5,
-          hasPrimary: false,
-        ),
-        MuscleDoseEvent(trainedAt: DateTime(2026, 6, 15), dose: 12),
-      ]);
-      // First primary bout → reference is still empty → factor 1 → base 60h.
-      expect(window!.recoveryHours, closeTo(60, 0.01));
-    });
   });
 
   // ── MuscleStateInfo ─────────────────────────────────────────────────────────

@@ -123,24 +123,19 @@ class MuscleStateInfo {
 // ─────────────────────────────────────────────────────────────────────────────
 
 /// A single training bout for one muscle group: when it happened and how
-/// hard it hit the muscle (in weighted working sets).
+/// hard it hit the muscle (in weighted working sets). Only sessions that
+/// trained the muscle directly (as an exercise's primary mover) produce one.
 @visibleForTesting
 class MuscleDoseEvent {
   const MuscleDoseEvent({
     required this.trainedAt,
     required this.dose,
-    this.hasPrimary = true,
   });
   final DateTime trainedAt;
 
   /// Weighted working-set count: primary-muscle sets count 1.0 each,
   /// secondary-muscle sets count [MuscleRecoveryService.secondaryMuscleCredit].
   final double dose;
-
-  /// Whether any exercise in this bout hit the muscle as its *primary*
-  /// mover. Secondary-only bouts (e.g. upper back after an overhead press)
-  /// get a much shorter recovery window — assist work isn't a back day.
-  final bool hasPrimary;
 }
 
 /// The dose-adjusted recovery outcome for a muscle's latest bout.
@@ -233,8 +228,11 @@ class MuscleRecoveryService {
   // ── Dose model constants ─────────────────────────────────────────────────
 
   /// Fatigue credit a secondary (synergist) muscle receives per working set,
-  /// relative to the primary mover. Bench press fatigues the triceps and
-  /// front delts too — roughly half as much per set as direct work.
+  /// relative to the primary mover — but only in a session that also trained
+  /// that muscle directly. Rows on a back day add to the lats' dose; an
+  /// overhead press on a chest day never makes the upper back "trained"
+  /// (the dataset lists `upper back` / `traps` as press and raise
+  /// secondaries, which painted the back red and blocked Pull Day).
   static const double secondaryMuscleCredit = 0.5;
 
   /// How far session dose can shrink/stretch the base recovery window.
@@ -253,11 +251,6 @@ class MuscleRecoveryService {
   /// Hard ceiling on a bout's total window, as a multiple of base hours —
   /// keeps back-to-back sessions from compounding into a week of "sore".
   static const double maxStackedFactor = 2;
-
-  /// Window multiplier for bouts where the muscle was only hit as a
-  /// synergist (no primary work that session). Overhead press touching the
-  /// upper back must not book the same 60 h window as an actual back day.
-  static const double secondaryOnlyWindowScale = 0.5;
 
   // ── Public API ──────────────────────────────────────────────────────────
 
@@ -320,10 +313,6 @@ class MuscleRecoveryService {
 
       var hours = base * doseFactor(event.dose, reference);
 
-      // Synergist-only bouts get a fraction of the window on top of their
-      // already-halved dose credit — assist work is not a full training day.
-      if (!event.hasPrimary) hours *= secondaryOnlyWindowScale;
-
       if (fatigueEndsAt != null && fatigueEndsAt.isAfter(event.trainedAt)) {
         final remaining =
             fatigueEndsAt.difference(event.trainedAt).inMinutes / 60.0;
@@ -336,10 +325,7 @@ class MuscleRecoveryService {
       windowHours = hours;
       fatigueEndsAt =
           event.trainedAt.add(Duration(minutes: (hours * 60).round()));
-      // Only primary bouts feed the rolling reference — small synergist
-      // doses would otherwise dilute the mean and make every real training
-      // day look like an "unusually big" session (inflated windows).
-      if (event.hasPrimary) previousDoses.add(event.dose);
+      previousDoses.add(event.dose);
     }
 
     return MuscleRecoveryWindow(
@@ -396,7 +382,8 @@ class MuscleRecoveryService {
   /// Builds the chronological dose history per muscle group from completed
   /// sessions: each session contributes its completed working sets to the
   /// primary muscle group (×1.0) and to every secondary muscle group
-  /// (×[secondaryMuscleCredit]).
+  /// (×[secondaryMuscleCredit]) that the same session also trained directly.
+  /// A muscle hit only as a synergist gets no bout at all.
   Future<Map<String, List<MuscleDoseEvent>>> _getMuscleDoseHistory() async {
     final sessions = await _sessionDao.getAll();
     final finished = sessions.where((s) => s.finishedAt != null).toList();
@@ -432,9 +419,10 @@ class MuscleRecoveryService {
           (workingSetsBySeId[set.sessionExerciseId] ?? 0) + 1;
     }
 
-    // Dose per (sessionId, muscleGroup), plus which muscles got primary work.
-    final dosePerSessionMuscle = <int, Map<String, double>>{};
-    final primaryPerSession = <int, Set<String>>{};
+    // Direct (primary) and synergist (secondary) dose per
+    // (sessionId, muscleGroup), kept apart until the session is complete.
+    final primaryDoses = <int, Map<String, double>>{};
+    final secondaryDoses = <int, Map<String, double>>{};
     for (final se in allSessionExercises) {
       final exercise = exerciseMap[se.exerciseId];
       if (exercise == null) continue;
@@ -444,15 +432,14 @@ class MuscleRecoveryService {
       final primary = exercise.muscleGroup;
       if (primary == null || primary.isEmpty) continue;
 
-      final doses =
-          dosePerSessionMuscle.putIfAbsent(se.sessionId, () => {});
-      doses[primary] = (doses[primary] ?? 0) + sets.toDouble();
-      primaryPerSession.putIfAbsent(se.sessionId, () => {}).add(primary);
+      final direct = primaryDoses.putIfAbsent(se.sessionId, () => {});
+      direct[primary] = (direct[primary] ?? 0) + sets.toDouble();
 
       // Secondary muscles get partial credit. Their raw names use the
       // dataset's anatomical vocabulary ("latissimus dorsi", "rhomboids"),
       // which needs its own mapping — the targetMuscles table drops most
       // of them as 'Other'.
+      final assist = secondaryDoses.putIfAbsent(se.sessionId, () => {});
       for (final raw
           in ExerciseMapping.decodeJsonList(exercise.secondaryMuscles)) {
         final group = ExerciseMapping.resolveSecondaryMuscleGroup(
@@ -460,22 +447,23 @@ class MuscleRecoveryService {
           exerciseName: exercise.name,
         );
         if (group == primary || group == 'Other') continue;
-        doses[group] = (doses[group] ?? 0) + sets * secondaryMuscleCredit;
+        assist[group] = (assist[group] ?? 0) + sets * secondaryMuscleCredit;
       }
     }
 
-    // Flatten to per-muscle chronological event lists.
+    // Flatten to per-muscle chronological event lists. Only directly
+    // trained muscles get a bout; synergist credit tops those up and is
+    // dropped everywhere else.
     final history = <String, List<MuscleDoseEvent>>{};
-    dosePerSessionMuscle.forEach((sessionId, doses) {
+    primaryDoses.forEach((sessionId, direct) {
       final trainedAt = sessionFinishedAt[sessionId];
       if (trainedAt == null) return;
-      doses.forEach((group, dose) {
+      final assist = secondaryDoses[sessionId] ?? const <String, double>{};
+      direct.forEach((group, dose) {
         history.putIfAbsent(group, () => []).add(
               MuscleDoseEvent(
                 trainedAt: trainedAt,
-                dose: dose,
-                hasPrimary:
-                    primaryPerSession[sessionId]?.contains(group) ?? false,
+                dose: dose + (assist[group] ?? 0),
               ),
             );
       });
@@ -488,8 +476,9 @@ class MuscleRecoveryService {
 
   /// Weighted working-set totals per muscle group for sessions finished in
   /// `[from, to)` — the same primary (×1.0) / secondary
-  /// (×[secondaryMuscleCredit]) credit as the recovery dose model. Groups
-  /// with no work in the window are absent.
+  /// (×[secondaryMuscleCredit]) credit as the recovery dose model, so
+  /// synergist-only work never shows up here either. Groups with no work in
+  /// the window are absent.
   Future<Map<String, double>> getMuscleDoseTotals({
     required DateTime from,
     required DateTime to,
