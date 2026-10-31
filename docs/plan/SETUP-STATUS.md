@@ -18,9 +18,10 @@
 | TestFlight CI lane | ✅ **Green.** Builds distributed to external testers. Last build 2026-10-02 (run 37011215218, `main` @ `6a3ad0e`: onboarding v3 + save-day-changes) |
 | App Store Connect subscriptions | 🟡 Created, stuck at "Missing Metadata" (screenshot pending) |
 | RevenueCat | 🟡 Project + products exist; entitlement/offering/webhook/keys pending |
-| Supabase **cloud** | 🟡 **001–022 applied; 021 + 022 verified live 2026-10-02.** The anon-key hole on `public_profiles`/`friends` is closed. **Merging a PR that adds migrations to `main` deploys them to production** (GitHub integration, confirmed 2026-10-02; see below), so **023 (the @username grant) goes live when PR #39 merges.** `delete-account` v8 (Apple token revocation) deployed + smoke-tested; PR #39 changes it (RevenueCat customer deletion), so redeploy it after that merge unless functions turn out to ride along. Pending: in-app checks for 021/022, function secrets (`APPLE_*` etc.), `purchase-skin` deploy, config push, Apple provider toggle |
+| Supabase **cloud** | 🟡 **001–023 applied (connector `list_migrations`, 2026-10-31); `delete-account` is v9; `purchase-skin` still not deployed.** 021 + 022 verified live 2026-10-02. The anon-key hole on `public_profiles`/`friends` is closed. **Merging a PR that adds migrations to `main` deploys them to production** (GitHub integration, confirmed 2026-10-02; see below), so **023 (the @username grant) goes live when PR #39 merges.** `delete-account` v8 (Apple token revocation) deployed + smoke-tested; PR #39 changes it (RevenueCat customer deletion), so redeploy it after that merge unless functions turn out to ride along. Pending: in-app checks for 021/022, function secrets (`APPLE_*` etc.), `purchase-skin` deploy, config push, Apple provider toggle |
 | Onboarding paywall | ⚠️ **Hard paywall since onboarding v3 (2026-09-30)** — a store build without a working RevenueCat offering leaves new users stuck at "Free Trial" (dev/beta builds show a Skip). Finish the RevenueCat checklist below before any store submission |
-| Apple sign-in (Supabase side) | 🔴 Provider not enabled in dashboard — errors until then |
+| Apple sign-in (Supabase side) | ✅ **Enabled 2026-10-31** (client ID `com.mygymbro.myGymBro`, native id-token flow, no OAuth secret). Not yet tested on a device |
+| Auth URLs (Supabase) | ✅ **Set 2026-10-31:** Site URL `https://mygymbro.app`, redirect allow-list `io.supabase.mygymbro://login-callback/` (was `localhost:3000` + empty list, which broke the Google OAuth return). Google provider now uses a new web client (`543267043112-…`, named "Supabase") in Google Cloud project `my-gym-bro` (`my-gym-bro-513314`), replacing an older client from a project the owner can't access. Its consent screen is External + **Testing** (only listed test users can sign in; publish before release). 0 users in `auth.users` as of that day |
 | Firebase (Crashlytics + FCM) | 🟡 **Wired (2026-09-08)** — CI derives options from base64 config secrets; owner still has to create the project + set the secrets |
 | Exercise data license | 🔴 **Store-release blocker** — OSS default; the licensed source is a config switch (`EXERCISEDB_BASE_URL` / `EXERCISEDB_API_KEY`), see below |
 | Paywall in beta builds | ⚠️ `BETA_FREE=true` stays in the TestFlight lane only |
@@ -354,10 +355,16 @@ Still pending:
 - `supabase config push` — `config.toml` carries SMTP (Resend) settings; owner must also
   create the Resend account, verify the sending domain, mirror SMTP in dashboard Auth
   settings, and raise Auth email rate limits. Also outstanding from the security audit:
-  `otp_expiry` (reset links 60 min, want ≤30) and `site_url`/redirects still `127.0.0.1`.
-- **Auth → Providers → Apple: enable + authorized client ID `com.mygymbro.myGymBro`.** The
-  app is OAuth-only (Google all platforms + native Apple on iOS; email/password removed from
-  the UI) — **Apple sign-in fails until this is flipped.**
+  `otp_expiry` (reset links 60 min, want ≤30). (`site_url`/redirects fixed 2026-10-31, below.)
+- ✅ **Auth → Providers → Apple enabled 2026-10-31** with client ID `com.mygymbro.myGymBro`, and
+  URL Configuration fixed the same day (Site URL `https://mygymbro.app`, redirect
+  `io.supabase.mygymbro://login-callback/`). The app is OAuth-only (Google all platforms +
+  native Apple on iOS; email/password removed from the UI). The Google web client lives in
+  Google Cloud project `my-gym-bro-513314` with redirect URI
+  `https://konzjrklgyuodzrrhwwv.supabase.co/auth/v1/callback`; its consent screen is in
+  **Testing**, so only listed test users can sign in. Before store release: complete branding
+  (logo, privacy/terms links, authorized domain `mygymbro.app`) and **Publish app**. Still to
+  check: a real Google + Apple sign-in on a TestFlight build.
 
 ## Firebase — wired, waiting for the project (2026-09-08)
 
