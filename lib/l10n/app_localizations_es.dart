@@ -1693,6 +1693,27 @@ class AppLocalizationsEs extends AppLocalizations {
   String get shareVolumeElephant => 'un elefante adulto';
 
   @override
+  String get shareVolumeSuv => 'un todoterreno';
+
+  @override
+  String get shareVolumeTRex => 'un T. rex';
+
+  @override
+  String get shareVolumeTwoElephants => 'dos elefantes adultos';
+
+  @override
+  String get shareVolumeExcavator => 'una excavadora';
+
+  @override
+  String get shareVolumeHumpbackWhale => 'una ballena jorobada';
+
+  @override
+  String get shareVolumeSpaceShuttle => 'un transbordador espacial';
+
+  @override
+  String get shareVolumeBlueWhale => 'una ballena azul';
+
+  @override
   String get shareObjectDog => 'Perro';
 
   @override
@@ -1709,6 +1730,27 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get shareObjectElephant => 'Elefante';
+
+  @override
+  String get shareObjectSuv => 'Todoterreno';
+
+  @override
+  String get shareObjectTRex => 'T. rex';
+
+  @override
+  String get shareObjectTwoElephants => '2 Elefantes';
+
+  @override
+  String get shareObjectExcavator => 'Excavadora';
+
+  @override
+  String get shareObjectHumpbackWhale => 'Yubarta';
+
+  @override
+  String get shareObjectSpaceShuttle => 'Transbordador';
+
+  @override
+  String get shareObjectBlueWhale => 'Ballena azul';
 
   @override
   String get close => 'Cerrar';

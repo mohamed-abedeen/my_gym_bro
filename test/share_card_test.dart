@@ -87,9 +87,10 @@ void main() {
     expect(find.text('Nice work.'), findsOneWidget);
     expect(find.text('CHEST DAY · WORKOUT #58'), findsOneWidget);
 
-    // Carousel showing the first template.
+    // Carousel opens on the Anatomy template.
     expect(find.byType(PageView), findsOneWidget);
-    expect(find.byType(EditorialShareCard), findsOneWidget);
+    expect(find.byType(AnatomyShareCard), findsOneWidget);
+    expect(find.byType(EditorialShareCard), findsNothing);
 
     // Named template chips replace the page dots.
     expect(find.text('Editorial'), findsOneWidget);
@@ -221,10 +222,10 @@ void main() {
     expect(tester.takeException(), isNull);
     expect(find.text('TOTAL VOLUME LIFTED'), findsOneWidget);
     expect(find.text('8,310'), findsOneWidget);
-    // 8,310 kg out-lifts the 6,000 kg elephant tier.
-    expect(find.text('Heavier than a full-grown elephant.'), findsOneWidget);
+    // 8,310 kg out-lifts the 8,000 kg T. rex tier.
+    expect(find.text('Heavier than a T. rex.'), findsOneWidget);
     expect(find.text('YOU · 8,310 KG'), findsOneWidget);
-    expect(find.text('ELEPHANT · 6,000 KG'), findsOneWidget);
+    expect(find.text('T. REX · 8,000 KG'), findsOneWidget);
     // Mini stats line.
     expect(
       find.text('12 SETS · 58M · 12-DAY STREAK · CHEST DAY'),

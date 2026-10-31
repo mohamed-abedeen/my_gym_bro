@@ -1097,8 +1097,8 @@ final muscleRecoveryProvider = FutureProvider<List<MuscleStateInfo>>((ref) {
 });
 
 /// Weighted working sets per muscle group this week (Monday-anchored) —
-/// primary movers count 1.0 per set, secondary muscles 0.5, mirroring the
-/// recovery dose model. Powers the per-muscle weekly volume line in the
+/// primary movers count 1.0 per set, secondary muscles 0.5 (only on a day
+/// that also trained them directly), mirroring the recovery dose model. Powers the per-muscle weekly volume line in the
 /// muscle detail sheet (evidence-based hypertrophy guideline: ~10–20
 /// weekly sets per muscle).
 final weeklySetsPerMuscleProvider = FutureProvider<Map<String, double>>((ref) {
