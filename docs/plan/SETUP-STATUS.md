@@ -528,6 +528,17 @@ purchases, purchase-skin's happy path against live RevenueCat, push delivery via
 `flutter run` with no `--dart-define`s runs fully offline (Supabase/RevenueCat inert) —
 that's the safe default for UI work.
 
+**2026-10-31 account data continuity (Skip → sign in → reinstall):** unit-tested
+against in-memory Drift + mocked Supabase (`test/local_profile_claim_test.dart`,
+`test/workout_restore_test.dart`). NEEDS A DEVICE CHECK with real cloud auth: (1) on a
+build with local workouts made via Skip, sign in with Google/Apple → Supabase
+`sessions`/`sets` rows appear for the account and `user_profiles` gets the answers;
+(2) delete the app, reinstall, sign in (or let the Keychain session auto-restore) →
+the history, streak and PRs are back; (3) airplane-mode the first launch after
+reinstall, then reconnect and relaunch → still restores. The restore reads with a plain
+`select` + embedded `session_exercises(sets)` — verify it returns rows under RLS on the
+cloud project (a missing embed relationship would show as an empty restore).
+
 ## Only-the-owner-can-do list (short form)
 
 ASC/RevenueCat dashboard steps above · RevenueCat keys as **GitHub secrets**

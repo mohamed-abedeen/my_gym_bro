@@ -6,6 +6,7 @@ import 'package:crypto/crypto.dart';
 import 'package:drift/drift.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:my_gym_bro/core/auth/local_profile_claim.dart';
 import 'package:my_gym_bro/core/database/app_database.dart';
 import 'package:my_gym_bro/core/database/daos/user_profile_dao.dart';
 import 'package:my_gym_bro/core/security/input_sanitiser.dart';
@@ -14,6 +15,7 @@ import 'package:my_gym_bro/core/services/crash_reporter.dart';
 import 'package:my_gym_bro/core/services/subscription_sync_service.dart';
 import 'package:my_gym_bro/core/services/sync_service.dart';
 import 'package:my_gym_bro/core/services/workout_push_service.dart';
+import 'package:my_gym_bro/core/services/workout_restore_service.dart';
 import 'package:my_gym_bro/shared/app_constants.dart';
 import 'package:purchases_flutter/purchases_flutter.dart';
 import 'package:sign_in_with_apple/sign_in_with_apple.dart';
@@ -57,8 +59,15 @@ class AppAuthState {
 /// Auth notifier — handles sign-up, sign-in, sign-out, and social auth.
 class AuthNotifier extends StateNotifier<AppAuthState> {
 
-  AuthNotifier(this._db, this._supabase, this._syncService)
-      : super(const AppAuthState()) {
+  /// [historySource] overrides where signed-in history is restored from
+  /// (tests); by default it is the account's own Supabase rows.
+  AuthNotifier(
+    this._db,
+    this._supabase,
+    this._syncService, {
+    WorkoutHistorySource? historySource,
+  })  : _historySource = historySource,
+        super(const AppAuthState()) {
     // OAuth (Google/Apple) returns from signInWithOAuth before the session
     // exists — the real login arrives via the deep-link callback. Subscribe
     // here so the state transitions to authenticated whenever Supabase
@@ -82,18 +91,10 @@ class AuthNotifier extends StateNotifier<AppAuthState> {
               // RevenueCat login — fire-and-forget; don't block auth state.
               unawaited(_revenueCatLogin(user.id));
               // Backfill any never-pushed finished workouts (pre-019 history,
-              // signed-out stretches), then drain the outbox.
-              unawaited(
-                WorkoutPushService(_db, _syncService)
-                    .pushPending()
-                    .catchError((Object e) {
-                      CrashReporter.recordError(
-                        e,
-                        reason: 'Workout push backfill failed',
-                      );
-                    })
-                    .whenComplete(_syncService.syncAll),
-              );
+              // signed-out stretches), drain the outbox, then restore the
+              // account's history if this device has none (reinstall / new
+              // phone).
+              unawaited(_syncAndRestore(user.id));
               if (!mounted) return;
               state = state.copyWith(
                 status: AuthStatus.authenticated,
@@ -115,6 +116,12 @@ class AuthNotifier extends StateNotifier<AppAuthState> {
   final SupabaseClient? _supabase;
   final SyncService _syncService;
   StreamSubscription<AuthState>? _authSub;
+  final WorkoutHistorySource? _historySource;
+  late final WorkoutRestoreService _restoreService = WorkoutRestoreService(
+    _db,
+    _historySource ??
+        (_supabase == null ? null : SupabaseWorkoutHistorySource(_supabase)),
+  );
 
   @override
   void dispose() {
@@ -136,6 +143,29 @@ class AuthNotifier extends StateNotifier<AppAuthState> {
     }
   }
 
+  /// Post-sign-in data continuity, in order: upload never-pushed local
+  /// workouts, drain the outbox, then pull the account's history back when
+  /// the device has none. The drain comes first so a delete queued offline
+  /// reaches the server before the restore could resurrect it. Each step is
+  /// isolated — one failing never blocks the next.
+  Future<void> _syncAndRestore(String userId) async {
+    try {
+      await WorkoutPushService(_db, _syncService).pushPending();
+    } on Object catch (e) {
+      CrashReporter.recordError(e, reason: 'Workout push backfill failed');
+    }
+    try {
+      await _syncService.syncAll();
+    } on Object catch (e) {
+      CrashReporter.recordError(e, reason: 'Post-sign-in sync failed');
+    }
+    try {
+      await _restoreService.restoreIfEmpty(userId);
+    } on Object catch (e) {
+      CrashReporter.recordError(e, reason: 'Workout history restore failed');
+    }
+  }
+
   /// Guarantee a local Drift profile row exists for [user].
   ///
   /// Email sign-up creates it explicitly, but OAuth (Google/Apple) sessions
@@ -143,6 +173,11 @@ class AuthNotifier extends StateNotifier<AppAuthState> {
   /// row (created server-side by the `on_auth_user_created` trigger). Prefer
   /// pulling that row so the server's trial window is authoritative; fall
   /// back to local trial defaults when offline.
+  ///
+  /// A profile made before any sign-in (the dev/beta Skip, Settings writes)
+  /// has no `remoteId`. It is claimed for the signing-in user
+  /// ([LocalProfileClaim]) so the workout backfill and outbox — which both
+  /// key on `remoteId` — carry that local history to the account.
   ///
   /// When a different account signs in on this device (someone signed out,
   /// someone else signed in), everything local belongs to the previous
@@ -156,7 +191,10 @@ class AuthNotifier extends StateNotifier<AppAuthState> {
       if (await dao.heldByOtherAccount(user.id)) {
         await _wipeLocalAccountData();
       }
-      if (await dao.getFirst() != null) return;
+      final existing = await dao.getFirst();
+      // Already this account's (a profile held by another one was wiped
+      // above): nothing to bootstrap.
+      if (existing != null && existing.remoteId != null) return;
 
       Map<String, dynamic>? remote;
       try {
@@ -178,6 +216,18 @@ class AuthNotifier extends StateNotifier<AppAuthState> {
               meta['full_name'] ??
               meta['name'] ??
               user.email?.split('@').first) as String?;
+      if (existing != null) {
+        // Signed-out device data (Skip): adopt it instead of creating a
+        // second identity, then let the listener's backfill upload it.
+        await LocalProfileClaim.claim(
+          db: _db,
+          sync: _syncService,
+          userId: user.id,
+          remote: remote,
+          fallbackDisplayName: displayName,
+        );
+        return;
+      }
       final now = DateTime.now();
       final trialStart =
           _parseDate(remote?['trial_started_at'] as String?) ?? now;
@@ -191,6 +241,14 @@ class AuthNotifier extends StateNotifier<AppAuthState> {
             : InputSanitiser.sanitise(displayName, maxLength: 100)),
         goal: Value(remote?['goal'] as String?),
         experience: Value(remote?['experience'] as String?),
+        // Account-level choices the server holds: the claimed @handle, the
+        // notification tone and the equipped skin come back with the account.
+        username: Value(remote?['username'] as String?),
+        notificationTone: Value(
+          (remote?['notification_tone'] as String?) ??
+              AppConstants.defaultNotificationTone,
+        ),
+        activeSkinId: Value(remote?['active_skin_id'] as String?),
         trialStartedAt: Value(trialStart),
         subscriptionStatus:
             Value((remote?['subscription_status'] as String?) ?? 'trial'),

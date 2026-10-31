@@ -352,6 +352,15 @@ create table routine_shares (
 - Account deletion is covered by the `on delete cascade` — `delete_account_data`
   needed no change.
 
+### 3.7 Restore from the cloud *(2026-10-31, no schema change)*
+
+`sessions` / `session_exercises` / `sets` (001, written by `push_workout`, 019)
+are read back on sign-in by `WorkoutRestoreService` when the device has no
+local sessions — own-row SELECT RLS + 018's grant, nothing new on the server.
+Local `remoteId` = the server uuid; `syncStatus = 'synced'`. Routines,
+custom exercises and cardio-only fields have no cloud copy and are not
+restored (full list in `04-BACKEND.md`, "Account data continuity").
+
 ## 4. Schema Change Checklist
 
 When adding/altering a table:
