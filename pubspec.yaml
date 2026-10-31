@@ -70,6 +70,9 @@ dev_dependencies:
   riverpod_generator: ^2.4.0
   very_good_analysis: ^7.0.0
 
+# MGB wordmark on black (the same paths as MgbLogo). The committed platform
+# icons were rendered from these sources; `dart run flutter_launcher_icons`
+# regenerates them.
 flutter_launcher_icons:
   image_path: assets/icons/app_icon_square.png
   ios: true
@@ -84,16 +87,20 @@ flutter_launcher_icons:
 
 # Regenerates the committed splash (Android drawables/styles, iOS
 # LaunchScreen assets, web/splash) via `dart run flutter_native_splash:create`.
-# The android_12 image is the source recovered from the committed
-# drawable-xxxhdpi/android12splash.png (the original file was never in the
-# repo); assets/splash/ is intentionally NOT in the bundled assets list.
+# Black background + the MGB wordmark in every theme, matching the animated
+# Flutter splash (MgbLogo). The PNGs are the wordmark paths from MgbLogo
+# rendered on transparent; assets/splash/ is intentionally NOT in the bundled
+# assets list.
 flutter_native_splash:
-  color: "#F2F2F7"
+  color: "#000000"
   color_dark: "#000000"
   image: assets/images/splash_light.png
   image_dark: assets/images/splash_dark.png
   android_12:
+    color: "#000000"
+    color_dark: "#000000"
     image: assets/splash/android12.png
+    image_dark: assets/splash/android12.png
 
 flutter:
   uses-material-design: true

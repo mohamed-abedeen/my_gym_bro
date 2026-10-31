@@ -546,6 +546,10 @@ reinstall, then reconnect and relaunch → still restores. The restore reads wit
 `select` + embedded `session_exercises(sets)` — verify it returns rows under RLS on the
 cloud project (a missing embed relationship would show as an empty restore).
 
+## Dev account comp grant (2026-11-01)
+
+The owner's Google account (`750f3294-3cf0-4ab2-a159-871b550a4829`) has a manual row in `public.subscriptions` (`status=active`, `product_id=mgb_premium_annual`, `is_sandbox=true`, `store_transaction_id=manual-grant-2026-11-01`, expires 2027-10-31) so `verify-subscription` returns `active` and the trial banner is hidden; its `user_profiles` row was set to `subscription_status=active` with the same expiry so a reinstall restores `active` too. Not a real purchase: RevenueCat has no entitlement for it, so a device-side `syncNow` can briefly show `expired` until the next server verify. Delete the row (and reset the profile columns) to return to normal trial behaviour.
+
 ## Only-the-owner-can-do list (short form)
 
 ASC/RevenueCat dashboard steps above · RevenueCat keys as **GitHub secrets**

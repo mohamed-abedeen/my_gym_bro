@@ -2012,23 +2012,23 @@ class AppLocalizationsDe extends AppLocalizations {
   String get addBros => 'Bros hinzufügen';
 
   @override
-  String get myUsernameTitle => 'Mein Handle';
+  String get myUsernameTitle => 'Mein Benutzername';
 
   @override
-  String get claimUsernameTitle => 'Sichere dir dein Handle';
+  String get claimUsernameTitle => 'Sichere dir deinen Benutzernamen';
 
   @override
   String get claimUsernameExplainer =>
-      'Bros finden dich über dein @Handle. 3–20 Zeichen: Kleinbuchstaben, Zahlen, Unterstrich.';
+      'Über deinen Benutzernamen finden dich deine Bros und fügen dich hinzu. 3–20 Zeichen: Kleinbuchstaben, Zahlen, Unterstrich.';
 
   @override
-  String get claimUsernameHint => 'handle';
+  String get claimUsernameHint => 'benutzername';
 
   @override
   String get claimAction => 'Sichern';
 
   @override
-  String get usernameTaken => 'Dieses Handle ist schon vergeben.';
+  String get usernameTaken => 'Dieser Benutzername ist schon vergeben.';
 
   @override
   String get usernameInvalid =>
@@ -2036,16 +2036,16 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get usernameNeedsOnline =>
-      'Zum Sichern eines Handles brauchst du eine Verbindung.';
+      'Zum Sichern eines Benutzernamens brauchst du eine Verbindung.';
 
   @override
-  String get searchByUsername => 'Per @Handle hinzufügen';
+  String get searchByUsername => 'Per Benutzername hinzufügen';
 
   @override
-  String get searchByUsernameHint => '@handle';
+  String get searchByUsernameHint => '@benutzername';
 
   @override
-  String get searchNoMatch => 'Niemand hat dieses Handle.';
+  String get searchNoMatch => 'Niemand hat diesen Benutzernamen.';
 
   @override
   String get searchNeedsOnline => 'Die Suche braucht eine Verbindung.';
@@ -2070,7 +2070,7 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get noBrosYet =>
-      'Noch keine Bros. Lade deine Crew ein oder füge sie per @Handle hinzu.';
+      'Noch keine Bros. Lade deine Crew ein oder füge sie per Benutzername hinzu.';
 
   @override
   String get inviteAction => 'Einladen';
@@ -2091,7 +2091,7 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get inviteNeedsUsername =>
-      'Sichere dir zuerst ein Handle — deine Einladung enthält es.';
+      'Sichere dir zuerst einen Benutzernamen — deine Einladung enthält ihn.';
 
   @override
   String get removeBroAction => 'Bro entfernen';
