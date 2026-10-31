@@ -25,7 +25,7 @@ const _chipBorder = Color(0x24FFFFFF); // white 14%
 const _chipActiveBg = Color(0xFFF4F4F0);
 
 /// Post-workout share sheet: header, a swipeable carousel of the three
-/// v2 templates (Editorial / Anatomy / Hype) selected by named chips, the
+/// v2 templates (Anatomy / Editorial / Hype) selected by named chips, the
 /// Dark/Sticker background toggle, and the Share / Save / Done action bar.
 /// Share captures the currently visible card's [RepaintBoundary] to a PNG
 /// and opens the system share sheet; Done (and the top-left X) pop back.
@@ -57,9 +57,11 @@ class _ShareCardScreenState extends ConsumerState<ShareCardScreen> {
   void initState() {
     super.initState();
     final data = widget.data;
+    // Anatomy leads: it's the first card the user sees after a workout
+    // (user decision 2026-11-01). Keep [templateNames] in the same order.
     _cards = [
-      EditorialShareCard(data: data),
       AnatomyShareCard(data: data),
+      EditorialShareCard(data: data),
       HypeShareCard(data: data),
       // The Ranks template only exists when a classic lift was trained.
       if (data.liftRanks.isNotEmpty) LiftRankShareCard(data: data),
@@ -179,8 +181,8 @@ class _ShareCardScreenState extends ConsumerState<ShareCardScreen> {
     final data = widget.data;
     final transparent = ref.watch(shareCardTransparentProvider);
     final templateNames = [
-      l10n.shareTemplateEditorial,
       l10n.shareTemplateAnatomy,
+      l10n.shareTemplateEditorial,
       l10n.shareTemplateHype,
       if (data.liftRanks.isNotEmpty) l10n.shareRanksChip,
     ];

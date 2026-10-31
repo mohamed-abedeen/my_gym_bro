@@ -3168,6 +3168,48 @@ abstract class AppLocalizations {
   /// **'a full-grown elephant'**
   String get shareVolumeElephant;
 
+  /// No description provided for @shareVolumeSuv.
+  ///
+  /// In en, this message translates to:
+  /// **'an SUV'**
+  String get shareVolumeSuv;
+
+  /// No description provided for @shareVolumeTRex.
+  ///
+  /// In en, this message translates to:
+  /// **'a T. rex'**
+  String get shareVolumeTRex;
+
+  /// No description provided for @shareVolumeTwoElephants.
+  ///
+  /// In en, this message translates to:
+  /// **'two full-grown elephants'**
+  String get shareVolumeTwoElephants;
+
+  /// No description provided for @shareVolumeExcavator.
+  ///
+  /// In en, this message translates to:
+  /// **'an excavator'**
+  String get shareVolumeExcavator;
+
+  /// No description provided for @shareVolumeHumpbackWhale.
+  ///
+  /// In en, this message translates to:
+  /// **'a humpback whale'**
+  String get shareVolumeHumpbackWhale;
+
+  /// No description provided for @shareVolumeSpaceShuttle.
+  ///
+  /// In en, this message translates to:
+  /// **'a space shuttle'**
+  String get shareVolumeSpaceShuttle;
+
+  /// No description provided for @shareVolumeBlueWhale.
+  ///
+  /// In en, this message translates to:
+  /// **'a blue whale'**
+  String get shareVolumeBlueWhale;
+
   /// No description provided for @shareObjectDog.
   ///
   /// In en, this message translates to:
@@ -3203,6 +3245,48 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Elephant'**
   String get shareObjectElephant;
+
+  /// No description provided for @shareObjectSuv.
+  ///
+  /// In en, this message translates to:
+  /// **'SUV'**
+  String get shareObjectSuv;
+
+  /// No description provided for @shareObjectTRex.
+  ///
+  /// In en, this message translates to:
+  /// **'T. rex'**
+  String get shareObjectTRex;
+
+  /// No description provided for @shareObjectTwoElephants.
+  ///
+  /// In en, this message translates to:
+  /// **'2 Elephants'**
+  String get shareObjectTwoElephants;
+
+  /// No description provided for @shareObjectExcavator.
+  ///
+  /// In en, this message translates to:
+  /// **'Excavator'**
+  String get shareObjectExcavator;
+
+  /// No description provided for @shareObjectHumpbackWhale.
+  ///
+  /// In en, this message translates to:
+  /// **'Humpback'**
+  String get shareObjectHumpbackWhale;
+
+  /// No description provided for @shareObjectSpaceShuttle.
+  ///
+  /// In en, this message translates to:
+  /// **'Shuttle'**
+  String get shareObjectSpaceShuttle;
+
+  /// No description provided for @shareObjectBlueWhale.
+  ///
+  /// In en, this message translates to:
+  /// **'Blue whale'**
+  String get shareObjectBlueWhale;
 
   /// No description provided for @close.
   ///
