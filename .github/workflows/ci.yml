@@ -83,6 +83,26 @@ jobs:
       - run: flutter pub get
       - run: dart run build_runner build --delete-conflicting-outputs
       - run: flutter gen-l10n
+      # A fresh runner generates a new debug.keystore every run, so each APK
+      # had a different signature and Android refused to update an installed
+      # one ("package conflicts"). A stable key from a secret lets every CI
+      # APK install over the last and keep local data. Missing: warn and fall
+      # back to the throwaway key.
+      - name: Stable debug keystore from secret (optional)
+        env:
+          ANDROID_DEBUG_KEYSTORE_B64: ${{ secrets.ANDROID_DEBUG_KEYSTORE_B64 }}
+        run: |
+          if [ -z "$ANDROID_DEBUG_KEYSTORE_B64" ]; then
+            echo "::warning::ANDROID_DEBUG_KEYSTORE_B64 not set: this APK is signed with a throwaway key and won't install over earlier CI builds."
+            exit 0
+          fi
+          KEYSTORE_DIR="${ANDROID_USER_HOME:-$HOME/.android}"
+          mkdir -p "$KEYSTORE_DIR"
+          echo "$ANDROID_DEBUG_KEYSTORE_B64" | base64 -d > "$KEYSTORE_DIR/debug.keystore"
+          # Fail here, not mid-build, if the secret isn't a debug keystore with
+          # the standard alias/passwords (androiddebugkey / android).
+          keytool -list -keystore "$KEYSTORE_DIR/debug.keystore" -storepass android \
+            -alias androiddebugkey | grep -i "SHA-256"
       - name: Firebase options from secret (optional)
         uses: ./.github/actions/firebase-defines
         with:
