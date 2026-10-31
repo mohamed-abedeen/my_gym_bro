@@ -1996,39 +1996,39 @@ class AppLocalizationsEn extends AppLocalizations {
   String get addBros => 'Add bros';
 
   @override
-  String get myUsernameTitle => 'My handle';
+  String get myUsernameTitle => 'My username';
 
   @override
-  String get claimUsernameTitle => 'Claim your handle';
+  String get claimUsernameTitle => 'Claim your username';
 
   @override
   String get claimUsernameExplainer =>
-      'Bros find you by your @handle. 3–20 characters: lowercase letters, numbers, underscore.';
+      'Your username is how bros find and add you. 3–20 characters: lowercase letters, numbers, underscore.';
 
   @override
-  String get claimUsernameHint => 'handle';
+  String get claimUsernameHint => 'username';
 
   @override
   String get claimAction => 'Claim';
 
   @override
-  String get usernameTaken => 'That handle is already taken.';
+  String get usernameTaken => 'That username is already taken.';
 
   @override
   String get usernameInvalid =>
       '3–20 characters: lowercase letters, numbers, underscore.';
 
   @override
-  String get usernameNeedsOnline => 'Claiming a handle needs a connection.';
+  String get usernameNeedsOnline => 'Claiming a username needs a connection.';
 
   @override
-  String get searchByUsername => 'Add by @handle';
+  String get searchByUsername => 'Add by username';
 
   @override
-  String get searchByUsernameHint => '@handle';
+  String get searchByUsernameHint => '@username';
 
   @override
-  String get searchNoMatch => 'Nobody has that handle.';
+  String get searchNoMatch => 'Nobody has that username.';
 
   @override
   String get searchNeedsOnline => 'Search needs a connection.';
@@ -2053,7 +2053,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get noBrosYet =>
-      'No bros yet. Invite your crew or add them by @handle.';
+      'No bros yet. Invite your crew or add them by username.';
 
   @override
   String get inviteAction => 'Invite';
@@ -2074,7 +2074,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get inviteNeedsUsername =>
-      'Claim a handle first — your invite carries it.';
+      'Claim a username first — your invite carries it.';
 
   @override
   String get removeBroAction => 'Remove bro';

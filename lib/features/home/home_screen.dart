@@ -837,63 +837,74 @@ class _WeeklyProgressCard extends ConsumerWidget {
       ),
       padding: EdgeInsets.fromLTRB(16.w, 12.h, 16.w, 12.h),
       child: stats.when(
-        data: (s) => Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            // "Weekly Progress"
-            Text(
-              l10n.weeklyProgress,
-              style: TextStyle(
-                color: colors.textPrimary,
-                fontSize: 15.sp,
-                fontWeight: FontWeight.w500,
-              ),
-            ),
-            SizedBox(height: 2.h),
-            // Volume
-            _StatRow(
-              label: l10n.volume,
-              value: formatWeight(
-                s.totalVolume,
-                unit,
-                decimals: 0,
-                withUnit: true,
-              ),
-              trend: s.volumeTrend,
-            ),
-            SizedBox(height: 2.h),
-            // Total Duration
-            _StatRow(
-              label: l10n.totalDuration,
-              value: s.formattedDuration,
-              trend: s.durationTrend,
-              trendSuffix: '%',
-            ),
-            SizedBox(height: 2.h),
-            // Avg Strength
-            _StatRow(
-              label: l10n.avgStrength,
-              value: '${s.avgStrength.toInt()}',
-              trend: s.strengthTrend,
-              trendPrefix: s.strengthTrend != null && s.strengthTrend! > 0
-                  ? ''
-                  : '',
-              isPositiveTrend: s.strengthTrend == null || s.strengthTrend! >= 0,
-            ),
-            SizedBox(height: 2.h),
-            // Records
-            _StatRow(
-              label: l10n.records,
-              value: ref
-                  .watch(recordsProvider)
-                  .when(
-                    data: (r) => '${r.count}',
-                    loading: () => '--',
-                    error: (_, __) => '0',
+        // Scale down (never up) when the card is shorter than its content, so
+        // small / large-text devices never show an overflow stripe.
+        data: (s) => LayoutBuilder(
+          builder: (context, box) => FittedBox(
+            fit: BoxFit.scaleDown,
+            alignment: Alignment.topLeft,
+            child: SizedBox(
+              width: box.maxWidth,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  // "Weekly Progress"
+                  Text(
+                    l10n.weeklyProgress,
+                    style: TextStyle(
+                      color: colors.textPrimary,
+                      fontSize: 15.sp,
+                      fontWeight: FontWeight.w500,
+                    ),
                   ),
+                  SizedBox(height: 2.h),
+                  // Volume
+                  _StatRow(
+                    label: l10n.volume,
+                    value: formatWeight(
+                      s.totalVolume,
+                      unit,
+                      decimals: 0,
+                      withUnit: true,
+                    ),
+                    trend: s.volumeTrend,
+                  ),
+                  SizedBox(height: 2.h),
+                  // Total Duration
+                  _StatRow(
+                    label: l10n.totalDuration,
+                    value: s.formattedDuration,
+                    trend: s.durationTrend,
+                    trendSuffix: '%',
+                  ),
+                  SizedBox(height: 2.h),
+                  // Avg Strength
+                  _StatRow(
+                    label: l10n.avgStrength,
+                    value: '${s.avgStrength.toInt()}',
+                    trend: s.strengthTrend,
+                    trendPrefix: s.strengthTrend != null && s.strengthTrend! > 0
+                        ? ''
+                        : '',
+                    isPositiveTrend: s.strengthTrend == null || s.strengthTrend! >= 0,
+                  ),
+                  SizedBox(height: 2.h),
+                  // Records
+                  _StatRow(
+                    label: l10n.records,
+                    value: ref
+                        .watch(recordsProvider)
+                        .when(
+                          data: (r) => '${r.count}',
+                          loading: () => '--',
+                          error: (_, __) => '0',
+                        ),
+                  ),
+                ],
+              ),
             ),
-          ],
+          ),
         ),
         loading: () => Center(
           child: CircularProgressIndicator(

@@ -3693,25 +3693,25 @@ abstract class AppLocalizations {
   /// No description provided for @myUsernameTitle.
   ///
   /// In en, this message translates to:
-  /// **'My handle'**
+  /// **'My username'**
   String get myUsernameTitle;
 
   /// No description provided for @claimUsernameTitle.
   ///
   /// In en, this message translates to:
-  /// **'Claim your handle'**
+  /// **'Claim your username'**
   String get claimUsernameTitle;
 
   /// No description provided for @claimUsernameExplainer.
   ///
   /// In en, this message translates to:
-  /// **'Bros find you by your @handle. 3–20 characters: lowercase letters, numbers, underscore.'**
+  /// **'Your username is how bros find and add you. 3–20 characters: lowercase letters, numbers, underscore.'**
   String get claimUsernameExplainer;
 
   /// No description provided for @claimUsernameHint.
   ///
   /// In en, this message translates to:
-  /// **'handle'**
+  /// **'username'**
   String get claimUsernameHint;
 
   /// No description provided for @claimAction.
@@ -3723,7 +3723,7 @@ abstract class AppLocalizations {
   /// No description provided for @usernameTaken.
   ///
   /// In en, this message translates to:
-  /// **'That handle is already taken.'**
+  /// **'That username is already taken.'**
   String get usernameTaken;
 
   /// No description provided for @usernameInvalid.
@@ -3735,25 +3735,25 @@ abstract class AppLocalizations {
   /// No description provided for @usernameNeedsOnline.
   ///
   /// In en, this message translates to:
-  /// **'Claiming a handle needs a connection.'**
+  /// **'Claiming a username needs a connection.'**
   String get usernameNeedsOnline;
 
   /// No description provided for @searchByUsername.
   ///
   /// In en, this message translates to:
-  /// **'Add by @handle'**
+  /// **'Add by username'**
   String get searchByUsername;
 
   /// No description provided for @searchByUsernameHint.
   ///
   /// In en, this message translates to:
-  /// **'@handle'**
+  /// **'@username'**
   String get searchByUsernameHint;
 
   /// No description provided for @searchNoMatch.
   ///
   /// In en, this message translates to:
-  /// **'Nobody has that handle.'**
+  /// **'Nobody has that username.'**
   String get searchNoMatch;
 
   /// No description provided for @searchNeedsOnline.
@@ -3801,7 +3801,7 @@ abstract class AppLocalizations {
   /// No description provided for @noBrosYet.
   ///
   /// In en, this message translates to:
-  /// **'No bros yet. Invite your crew or add them by @handle.'**
+  /// **'No bros yet. Invite your crew or add them by username.'**
   String get noBrosYet;
 
   /// No description provided for @inviteAction.
@@ -3837,7 +3837,7 @@ abstract class AppLocalizations {
   /// No description provided for @inviteNeedsUsername.
   ///
   /// In en, this message translates to:
-  /// **'Claim a handle first — your invite carries it.'**
+  /// **'Claim a username first — your invite carries it.'**
   String get inviteNeedsUsername;
 
   /// No description provided for @removeBroAction.

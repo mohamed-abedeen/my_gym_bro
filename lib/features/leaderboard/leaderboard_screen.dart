@@ -168,74 +168,80 @@ class _TopBar extends ConsumerWidget {
 
     return Padding(
       padding: EdgeInsets.symmetric(horizontal: 10.w),
-      child: Stack(
-        alignment: Alignment.center,
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              // Leaderboard pill
-              _TopPill(
-                label: l10n.leaderboardTab,
-                active: tab == _Tab.leaderboard,
-                onTap: () => onChange(_Tab.leaderboard),
-              ),
-              SizedBox(width: 4.w),
-              // Challenges pill
-              _TopPill(
-                label: l10n.challengesTab,
-                active: tab == _Tab.challenges,
-                onTap: () => onChange(_Tab.challenges),
-              ),
-            ],
-          ),
-
-          // Add-bros entry (Phase B) — 48pt header spec, frosted per the
-          // glass rules; the badge is the incoming-requests inbox count.
-          Positioned(
-            right: 2.w,
-            child: Stack(
-              clipBehavior: Clip.none,
+      // The add-bros circle is taller than the pills, so the Stack must be at
+      // least that tall or its hard clip shaves the circle's top and bottom.
+      child: SizedBox(
+        height: AppSizes.headerActionBtn.w,
+        child: Stack(
+          alignment: Alignment.center,
+          clipBehavior: Clip.none,
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                LiquidGlassButton(
-                  width: AppSizes.headerActionBtn.w,
-                  height: AppSizes.headerActionBtn.w,
-                  opacity: 0.15,
-                  radius: (AppSizes.headerActionBtn / 2).r,
-                  onTap: () => showBrosSheet(context),
-                  child: Icon(
-                    Icons.person_add_alt_1_rounded,
-                    color: colors.textPrimary,
-                    size: AppSizes.headerActionIcon.sp,
-                  ),
+                // Leaderboard pill
+                _TopPill(
+                  label: l10n.leaderboardTab,
+                  active: tab == _Tab.leaderboard,
+                  onTap: () => onChange(_Tab.leaderboard),
                 ),
-                if (pendingCount > 0)
-                  Positioned(
-                    right: -2.w,
-                    top: -2.h,
-                    child: Container(
-                      padding: EdgeInsets.symmetric(
-                          horizontal: 5.w, vertical: 2.h),
-                      decoration: BoxDecoration(
-                        color: colors.accent,
-                        borderRadius: BorderRadius.circular(10.r),
-                      ),
-                      constraints: BoxConstraints(minWidth: 16.w),
-                      child: Text(
-                        '$pendingCount',
-                        textAlign: TextAlign.center,
-                        style: TextStyle(
-                          color: colors.todayPillText,
-                          fontSize: 10.sp,
-                          fontWeight: FontWeight.w800,
+                SizedBox(width: 4.w),
+                // Challenges pill
+                _TopPill(
+                  label: l10n.challengesTab,
+                  active: tab == _Tab.challenges,
+                  onTap: () => onChange(_Tab.challenges),
+                ),
+              ],
+            ),
+
+            // Add-bros entry (Phase B) — 48pt header spec, frosted per the
+            // glass rules; the badge is the incoming-requests inbox count.
+            Positioned(
+              right: 2.w,
+              child: Stack(
+                clipBehavior: Clip.none,
+                children: [
+                  LiquidGlassButton(
+                    width: AppSizes.headerActionBtn.w,
+                    height: AppSizes.headerActionBtn.w,
+                    opacity: 0.15,
+                    radius: (AppSizes.headerActionBtn / 2).r,
+                    onTap: () => showBrosSheet(context),
+                    child: Icon(
+                      Icons.person_add_alt_1_rounded,
+                      color: colors.textPrimary,
+                      size: AppSizes.headerActionIcon.sp,
+                    ),
+                  ),
+                  if (pendingCount > 0)
+                    Positioned(
+                      right: -2.w,
+                      top: -2.h,
+                      child: Container(
+                        padding: EdgeInsets.symmetric(
+                            horizontal: 5.w, vertical: 2.h),
+                        decoration: BoxDecoration(
+                          color: colors.accent,
+                          borderRadius: BorderRadius.circular(10.r),
+                        ),
+                        constraints: BoxConstraints(minWidth: 16.w),
+                        child: Text(
+                          '$pendingCount',
+                          textAlign: TextAlign.center,
+                          style: TextStyle(
+                            color: colors.todayPillText,
+                            fontSize: 10.sp,
+                            fontWeight: FontWeight.w800,
+                          ),
                         ),
                       ),
                     ),
-                  ),
-              ],
+                ],
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
