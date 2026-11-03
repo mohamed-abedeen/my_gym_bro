@@ -154,6 +154,8 @@
   "restoreSuccess": "Purchases restored.",
   "noOfferingsAvailable": "No offerings available. Try again later.",
   "signIn": "Sign In",
+  "signInTitle": "Welcome back",
+  "signInSubtitle": "Sign in to pick up your plan and progress where you left off.",
   "signUp": "Create Account",
   "continueWithApple": "Continue with Apple",
   "continueWithGoogle": "Continue with Google",

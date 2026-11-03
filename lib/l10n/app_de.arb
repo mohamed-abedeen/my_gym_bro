@@ -106,6 +106,8 @@
   "restoreSuccess": "Käufe wiederhergestellt.",
   "noOfferingsAvailable": "Keine Angebote verfügbar. Versuche es später erneut.",
   "signIn": "Anmelden",
+  "signInTitle": "Willkommen zurück",
+  "signInSubtitle": "Melde dich an und mach mit deinem Plan und Fortschritt weiter.",
   "signUp": "Konto erstellen",
   "continueWithApple": "Mit Apple fortfahren",
   "continueWithGoogle": "Mit Google fortfahren",

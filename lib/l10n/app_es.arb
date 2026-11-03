@@ -106,6 +106,8 @@
   "restoreSuccess": "Compras restauradas.",
   "noOfferingsAvailable": "No hay ofertas disponibles. Inténtalo más tarde.",
   "signIn": "Iniciar sesión",
+  "signInTitle": "Hola de nuevo",
+  "signInSubtitle": "Inicia sesión para retomar tu plan y tu progreso.",
   "signUp": "Crear cuenta",
   "continueWithApple": "Continuar con Apple",
   "continueWithGoogle": "Continuar con Google",

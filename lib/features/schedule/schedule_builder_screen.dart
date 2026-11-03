@@ -11,6 +11,7 @@ import 'package:my_gym_bro/core/database/daos/exercise_dao.dart';
 import 'package:my_gym_bro/core/database/daos/schedule_dao.dart';
 import 'package:my_gym_bro/core/providers/providers.dart';
 import 'package:my_gym_bro/core/services/exercise_gif_cache.dart';
+import 'package:my_gym_bro/core/services/schedule_sync_service.dart';
 import 'package:my_gym_bro/features/exercises/exercise_browser_screen.dart';
 import 'package:my_gym_bro/features/exercises/exercise_detail_screen.dart';
 import 'package:my_gym_bro/features/workout/workout_providers.dart';
@@ -1224,6 +1225,12 @@ class _ScheduleBuilderScreenState extends ConsumerState<ScheduleBuilderScreen> {
     if (!confirm || !mounted) return;
 
     final dao = ref.read(scheduleDaoProvider);
+    // Queue the cloud delete first: the local hard delete destroys the uuid.
+    await ScheduleSyncService.enqueueDelete(
+      ref.read(databaseProvider),
+      ref.read(syncServiceProvider),
+      widget.scheduleId!,
+    );
     await dao.deleteSchedule(widget.scheduleId!);
     if (mounted) Navigator.of(context).pop();
   }

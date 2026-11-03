@@ -324,6 +324,13 @@ class AppLocalizationsDe extends AppLocalizations {
   String get signIn => 'Anmelden';
 
   @override
+  String get signInTitle => 'Willkommen zurück';
+
+  @override
+  String get signInSubtitle =>
+      'Melde dich an und mach mit deinem Plan und Fortschritt weiter.';
+
+  @override
   String get signUp => 'Konto erstellen';
 
   @override

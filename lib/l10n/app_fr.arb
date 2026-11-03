@@ -106,6 +106,8 @@
   "restoreSuccess": "Achats restaurés.",
   "noOfferingsAvailable": "Aucune offre disponible. Réessayez plus tard.",
   "signIn": "Se connecter",
+  "signInTitle": "Bon retour",
+  "signInSubtitle": "Connectez-vous pour retrouver votre programme et vos progrès.",
   "signUp": "Créer un compte",
   "continueWithApple": "Continuer avec Apple",
   "continueWithGoogle": "Continuer avec Google",

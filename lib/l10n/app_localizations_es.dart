@@ -323,6 +323,13 @@ class AppLocalizationsEs extends AppLocalizations {
   String get signIn => 'Iniciar sesión';
 
   @override
+  String get signInTitle => 'Hola de nuevo';
+
+  @override
+  String get signInSubtitle =>
+      'Inicia sesión para retomar tu plan y tu progreso.';
+
+  @override
   String get signUp => 'Crear cuenta';
 
   @override

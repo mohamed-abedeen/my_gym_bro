@@ -358,6 +358,57 @@ class _ObPressableState extends State<ObPressable> {
   }
 }
 
+/// "Already have an account? Sign in": a muted [lead] plus a lime [link]
+/// (the flow's accent, so it reads as tappable). The whole row is one tap
+/// target, at least 52 units tall to clear the 44pt minimum.
+class ObTextLink extends StatelessWidget {
+  const ObTextLink({
+    required this.lead,
+    required this.link,
+    required this.onTap,
+    super.key,
+  });
+
+  final String lead;
+  final String link;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final ob = ObFrame.of(context);
+    return ObPressable(
+      onTap: onTap,
+      child: ConstrainedBox(
+        constraints: BoxConstraints(minHeight: ob(52)),
+        child: Padding(
+          padding: EdgeInsets.symmetric(horizontal: ob(16), vertical: ob(8)),
+          child: Center(
+            widthFactor: 1,
+            heightFactor: 1,
+            child: Text.rich(
+              TextSpan(
+                style: ob.text(15,
+                    weight: FontWeight.w500, color: AppOnboarding.textMuted),
+                children: [
+                  TextSpan(text: '$lead '),
+                  TextSpan(
+                    text: link,
+                    style: const TextStyle(
+                      color: AppOnboarding.lime,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                ],
+              ),
+              textAlign: TextAlign.center,
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
 /// The onboarding's button surface in the iOS 26 "Liquid Glass" style: the
 /// refractive [RefractiveGlass] with [RefractiveGlass.buttonSettings]
 /// (specular arcs, a soft inner glow along the rim, slight frost, lensing at

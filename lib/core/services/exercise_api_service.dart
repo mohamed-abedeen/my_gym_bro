@@ -9,8 +9,19 @@ import 'package:my_gym_bro/core/services/api_exercise.dart';
 /// Any exercise-API failure (offline, rate-limited, server error). Callers
 /// catch this and fall back to the local cache.
 class ExerciseApiException implements Exception {
-  const ExerciseApiException(this.message);
+  const ExerciseApiException(
+    this.message, {
+    this.rateLimited = false,
+    this.retryAfter,
+  });
   final String message;
+
+  /// True for HTTP 429 — the API is up but wants us to slow down, so a
+  /// background sync should wait and resume rather than give up.
+  final bool rateLimited;
+
+  /// The server's `Retry-After` hint, when it sent one.
+  final Duration? retryAfter;
   @override
   String toString() => 'ExerciseApiException: $message';
 }
@@ -147,7 +158,14 @@ class ExerciseApiService {
       case 404:
         throw const _NotFound();
       case 429:
-        throw const ExerciseApiException('Rate limited — resume later.');
+        final retrySeconds = int.tryParse(res.headers['retry-after'] ?? '');
+        throw ExerciseApiException(
+          'Rate limited — resume later.',
+          rateLimited: true,
+          retryAfter: retrySeconds == null || retrySeconds <= 0
+              ? null
+              : Duration(seconds: retrySeconds),
+        );
       default:
         throw ExerciseApiException('Request failed (${res.statusCode}).');
     }

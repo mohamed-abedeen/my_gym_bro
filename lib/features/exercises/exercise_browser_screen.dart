@@ -63,6 +63,11 @@ class _CatalogueNotifier extends StateNotifier<_CatalogueState> {
   _CatalogueNotifier(this._repo)
       : super(const _CatalogueState(isLoading: true)) {
     _load(reset: true);
+    // Search is local and doesn't wait on the catalogue sync, so re-run it
+    // once the sync finishes to pick up the rows that arrived meanwhile.
+    unawaited(_repo.whenSynced.then((_) {
+      if (mounted && _query.isNotEmpty) _load(reset: true);
+    }));
   }
 
   final ExerciseRepository _repo;
