@@ -222,7 +222,7 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: AppRoutes.signIn,
         pageBuilder: (context, state) =>
-            _fadePage(child: const SignInScreen(), state: state),
+            _pushPage(child: const SignInScreen(), state: state),
       ),
 
       // ────────────────────────────────────────────────────────────────────

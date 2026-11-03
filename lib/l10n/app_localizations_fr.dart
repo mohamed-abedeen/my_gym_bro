@@ -324,6 +324,13 @@ class AppLocalizationsFr extends AppLocalizations {
   String get signIn => 'Se connecter';
 
   @override
+  String get signInTitle => 'Bon retour';
+
+  @override
+  String get signInSubtitle =>
+      'Connectez-vous pour retrouver votre programme et vos progrès.';
+
+  @override
   String get signUp => 'Créer un compte';
 
   @override

@@ -678,6 +678,18 @@ abstract class AppLocalizations {
   /// **'Sign In'**
   String get signIn;
 
+  /// No description provided for @signInTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Welcome back'**
+  String get signInTitle;
+
+  /// No description provided for @signInSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Sign in to pick up your plan and progress where you left off.'**
+  String get signInSubtitle;
+
   /// No description provided for @signUp.
   ///
   /// In en, this message translates to:

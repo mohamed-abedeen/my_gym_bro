@@ -1,5 +1,4 @@
 import 'package:flutter/foundation.dart';
-import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 
 import 'package:my_gym_bro/features/onboarding/widgets/ob_frame.dart';
@@ -35,8 +34,6 @@ class _WelcomeStepState extends State<WelcomeStep>
     vsync: this,
     duration: const Duration(seconds: 3),
   );
-  late final TapGestureRecognizer _signIn = TapGestureRecognizer()
-    ..onTap = widget.onSignIn;
 
   @override
   void didChangeDependencies() {
@@ -54,7 +51,6 @@ class _WelcomeStepState extends State<WelcomeStep>
   @override
   void dispose() {
     _hero.dispose();
-    _signIn.dispose();
     super.dispose();
   }
 
@@ -138,22 +134,19 @@ class _WelcomeStepState extends State<WelcomeStep>
             ),
           ),
         ),
-        ob.centered(
-          top: 914,
-          child: ObEntrance(
-            delay: const Duration(milliseconds: 900),
-            dy: 0,
-            child: Text.rich(
-              TextSpan(
-                style: ob.text(11, weight: FontWeight.w500),
-                children: [
-                  TextSpan(text: '${l10n.obHaveAccount} '),
-                  TextSpan(
-                    text: l10n.obSignInLink,
-                    style: const TextStyle(fontWeight: FontWeight.w700),
-                    recognizer: _signIn,
-                  ),
-                ],
+        ob.at(
+          left: 0,
+          right: 0,
+          top: 898,
+          height: 52,
+          child: Center(
+            child: ObEntrance(
+              delay: const Duration(milliseconds: 900),
+              dy: 0,
+              child: ObTextLink(
+                lead: l10n.obHaveAccount,
+                link: l10n.obSignInLink,
+                onTap: widget.onSignIn,
               ),
             ),
           ),

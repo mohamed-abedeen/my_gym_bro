@@ -321,6 +321,13 @@ class AppLocalizationsEn extends AppLocalizations {
   String get signIn => 'Sign In';
 
   @override
+  String get signInTitle => 'Welcome back';
+
+  @override
+  String get signInSubtitle =>
+      'Sign in to pick up your plan and progress where you left off.';
+
+  @override
   String get signUp => 'Create Account';
 
   @override
