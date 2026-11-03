@@ -12,6 +12,7 @@ import 'package:my_gym_bro/core/database/daos/user_profile_dao.dart';
 import 'package:my_gym_bro/core/security/input_sanitiser.dart';
 import 'package:my_gym_bro/core/security/secure_storage.dart';
 import 'package:my_gym_bro/core/services/crash_reporter.dart';
+import 'package:my_gym_bro/core/services/schedule_sync_service.dart';
 import 'package:my_gym_bro/core/services/subscription_sync_service.dart';
 import 'package:my_gym_bro/core/services/sync_service.dart';
 import 'package:my_gym_bro/core/services/workout_push_service.dart';
@@ -66,7 +67,9 @@ class AuthNotifier extends StateNotifier<AppAuthState> {
     this._supabase,
     this._syncService, {
     WorkoutHistorySource? historySource,
+    ScheduleCloud? scheduleCloud,
   })  : _historySource = historySource,
+        _scheduleCloud = scheduleCloud,
         super(const AppAuthState()) {
     // OAuth (Google/Apple) returns from signInWithOAuth before the session
     // exists — the real login arrives via the deep-link callback. Subscribe
@@ -102,6 +105,7 @@ class AuthNotifier extends StateNotifier<AppAuthState> {
               );
             }
           case AuthChangeEvent.signedOut:
+            _scheduleSync.reset();
             state = const AppAuthState(status: AuthStatus.unauthenticated);
           case AuthChangeEvent.mfaChallengeVerified:
           case AuthChangeEvent.passwordRecovery:
@@ -123,8 +127,16 @@ class AuthNotifier extends StateNotifier<AppAuthState> {
         (_supabase == null ? null : SupabaseWorkoutHistorySource(_supabase)),
   );
 
+  final ScheduleCloud? _scheduleCloud;
+  late final ScheduleSyncService _scheduleSync = ScheduleSyncService(
+    _db,
+    _scheduleCloud ??
+        (_supabase == null ? null : SupabaseScheduleCloud(_supabase)),
+  );
+
   @override
   void dispose() {
+    _scheduleSync.dispose();
     _authSub?.cancel();
     super.dispose();
   }
@@ -163,6 +175,12 @@ class AuthNotifier extends StateNotifier<AppAuthState> {
       await _restoreService.restoreIfEmpty(userId);
     } on Object catch (e) {
       CrashReporter.recordError(e, reason: 'Workout history restore failed');
+    }
+    // Routines: pull the account's back, then upload local changes.
+    try {
+      await _scheduleSync.reconcile(userId);
+    } on Object catch (e) {
+      CrashReporter.recordError(e, reason: 'Routine sync failed');
     }
   }
 
@@ -565,6 +583,7 @@ class AuthNotifier extends StateNotifier<AppAuthState> {
   /// after account deletion and when a different account signs in.
   /// The exercise catalogue is a device-level cache and stays.
   Future<void> _wipeLocalAccountData() async {
+    _scheduleSync.reset();
     try {
       await _db.wipeAccountData();
     } on Exception catch (e) {

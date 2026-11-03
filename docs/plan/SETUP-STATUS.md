@@ -18,12 +18,12 @@
 | TestFlight CI lane | ✅ **Green.** Builds distributed to external testers. Last build 2026-10-02 (run 37011215218, `main` @ `6a3ad0e`: onboarding v3 + save-day-changes) |
 | App Store Connect subscriptions | 🟡 Created, stuck at "Missing Metadata" (screenshot pending) |
 | RevenueCat | 🟡 Project + products exist; entitlement/offering/webhook/keys pending |
-| Supabase **cloud** | 🟡 **001–023 applied (connector `list_migrations`, 2026-10-31); `delete-account` is v9; `purchase-skin` still not deployed.** 021 + 022 verified live 2026-10-02. The anon-key hole on `public_profiles`/`friends` is closed. **Merging a PR that adds migrations to `main` deploys them to production** (GitHub integration, confirmed 2026-10-02; see below), so **023 (the @username grant) goes live when PR #39 merges.** `delete-account` v8 (Apple token revocation) deployed + smoke-tested; PR #39 changes it (RevenueCat customer deletion), so redeploy it after that merge unless functions turn out to ride along. Pending: in-app checks for 021/022, function secrets (`APPLE_*` etc.), `purchase-skin` deploy, config push, Apple provider toggle |
+| Supabase **cloud** | 🟡 **001–023 applied (connector `list_migrations`, 2026-10-31); 024 (`push_schedule`, routine backup) is in an open PR and goes live when it merges to `main`.** `delete-account` is v9; `purchase-skin` still not deployed.** 021 + 022 verified live 2026-10-02. The anon-key hole on `public_profiles`/`friends` is closed. **Merging a PR that adds migrations to `main` deploys them to production** (GitHub integration, confirmed 2026-10-02; see below), so **023 (the @username grant) goes live when PR #39 merges.** `delete-account` v8 (Apple token revocation) deployed + smoke-tested; PR #39 changes it (RevenueCat customer deletion), so redeploy it after that merge unless functions turn out to ride along. Pending: in-app checks for 021/022, function secrets (`APPLE_*` etc.), `purchase-skin` deploy, config push, Apple provider toggle |
 | Onboarding paywall | ⚠️ **Hard paywall since onboarding v3 (2026-09-30)** — a store build without a working RevenueCat offering leaves new users stuck at "Free Trial" (dev/beta builds show a Skip). Finish the RevenueCat checklist below before any store submission |
 | Apple sign-in (Supabase side) | ✅ **Enabled 2026-10-31** (client ID `com.mygymbro.myGymBro`, native id-token flow, no OAuth secret). Not yet tested on a device |
 | Auth URLs (Supabase) | ✅ **Set 2026-10-31:** Site URL `https://mygymbro.app`, redirect allow-list `io.supabase.mygymbro://login-callback/` (was `localhost:3000` + empty list, which broke the Google OAuth return). Google provider now uses a new web client (`543267043112-…`, named "Supabase") in Google Cloud project `my-gym-bro` (`my-gym-bro-513314`), replacing an older client from a project the owner can't access. Its consent screen is External + **Testing** (only listed test users can sign in; publish before release). 0 users in `auth.users` as of that day |
 | Firebase (Crashlytics + FCM) | 🟡 **Wired (2026-09-08)** — CI derives options from base64 config secrets; owner still has to create the project + set the secrets |
-| Exercise data license | 🔴 **Store-release blocker** — OSS default; the licensed source is a config switch (`EXERCISEDB_BASE_URL` / `EXERCISEDB_API_KEY`), see below |
+| Exercise data license | 🔴 **Store-release blocker** — OSS default; the licensed source is a config switch (`EXERCISEDB_BASE_URL` / `EXERCISEDB_API_KEY`), see below. Catalogue sync now checkpoints its cursor and waits out 429s (2026-11-03); before, it restarted at page 1 every launch and stalled around ~300 exercises |
 | Paywall in beta builds | ⚠️ `BETA_FREE=true` stays in the TestFlight lane only |
 | **App Store lane** (`app-store.yml`, 2026-09-08) | ✅ Exists — paywall ON, requires `REVENUECAT_IOS_KEY`; uploads + waits for processing, submission stays manual in ASC |
 
@@ -285,6 +285,22 @@ Still pending:
   sign-in (capped 200 sessions/scan), after which leaderboard volume,
   challenge validation, the bros strip, earned skins, and reports all have
   real data.
+- **Routine backup (024, 2026-11-03):** before this, saved routines (schedules)
+  never left the device — the 001 tables existed but nothing wrote them, so a
+  reinstall lost every routine. `push_schedule(p jsonb)` uploads one routine whole
+  (children replaced on every push, soft delete via `{"id", "deleted": true}`,
+  ownership guard raises P0001) and adds `scheduled_exercises.target_duration_seconds`
+  / `target_distance`. Client: `ScheduleSyncService` (restore on sign-in, then a
+  hash-diffed push of changed routines; deletes ride the outbox). Validated on a local
+  Postgres 16 (two users, re-push, delete, hijack, anon). Post-deploy check: edit a
+  routine on a signed-in device → `schedules` has the row; reinstall → the routine
+  comes back and the seeded starter copies aren't duplicated.
+  **Prod data finding (2026-11-03):** the one account (created 2026-10-31 15:47, Google)
+  had exactly one session in the cloud. Its first sign-in found an empty local DB (the
+  restore check ran, so no older history existed on that install to back up), one
+  workout was pushed at 19:37 that day, and the project saw no API traffic at all on
+  Nov 1–2. Workouts logged without a connection and never synced before the reinstall
+  were lost with the old install; nothing server-side can recover them.
 - **Reports (017) deploy notes (2026-08-18):** schedules `generate-reports-weekly`
   (Wed 00:15 UTC) + `generate-reports-monthly` (3rd 00:15) — 48 h after each period
   boundary (015's late-sync grace precedent) — pure SQL, same Vault secrets as 010

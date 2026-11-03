@@ -35,6 +35,11 @@ class SyncService {
     'P0001', '22P02', '22007', '22008',
   };
 
+  /// Whether a Postgres error code means "the server will reject this op
+  /// forever" (see [_permanentPgCodes]).
+  static bool isPermanentPgCode(String? code) =>
+      _permanentPgCodes.contains(code);
+
   /// A raw SQL identifier is interpolated into [_resolveRemoteId]. Every real
   /// sync table is lowercase snake_case; reject anything else so the table name
   /// can never carry SQL. (All callers pass hardcoded literals — this is
