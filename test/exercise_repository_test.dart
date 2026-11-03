@@ -9,6 +9,21 @@ import 'package:my_gym_bro/core/services/exercise_repository.dart';
 
 class MockExerciseDao extends Mock implements ExerciseDao {}
 
+/// In-memory checkpoint — survives a "relaunch" (new repo) when shared.
+class MemoryCheckpoint implements CatalogueSyncCheckpoint {
+  ({String cursor, int cachedCount})? saved;
+
+  @override
+  Future<({String cursor, int cachedCount})?> read() async => saved;
+
+  @override
+  Future<void> write(String cursor, int cachedCount) async =>
+      saved = (cursor: cursor, cachedCount: cachedCount);
+
+  @override
+  Future<void> clear() async => saved = null;
+}
+
 /// Six-exercise fake catalogue, served as three cursor-paged pages of two.
 const _catalogue = [
   ['aaa', 'arnold press'],
@@ -48,6 +63,15 @@ void main() {
   late List<Uri> requests;
   late bool rateLimited;
   late http.Client client;
+  late MemoryCheckpoint checkpoint;
+
+  ExerciseRepository repoFor(MockExerciseDao d) => ExerciseRepository(
+        ExerciseApiService(client: client),
+        d,
+        checkpoint: checkpoint,
+        rateLimitBackoff: Duration.zero,
+        pageDelay: Duration.zero,
+      );
 
   setUpAll(() => registerFallbackValue(<ExercisesCompanion>[]));
 
@@ -55,6 +79,7 @@ void main() {
     store = {};
     requests = [];
     rateLimited = false;
+    checkpoint = MemoryCheckpoint();
 
     dao = MockExerciseDao();
     List<Exercise> sorted() => (store.values.map(_row).toList()
@@ -90,7 +115,7 @@ void main() {
           : _catalogue.indexWhere((e) => e[0] == after) + 1;
       return http.Response(_pageJson(start), 200);
     });
-    return ExerciseRepository(ExerciseApiService(client: client), dao);
+    return repoFor(dao);
   }
 
   test('browse syncs only as many pages as the request needs', () async {
@@ -101,13 +126,21 @@ void main() {
     expect(page.fromCache, isFalse);
   });
 
-  test('search pulls the full catalogue then filters locally', () async {
+  test('search answers from the DB at once, complete after the sync',
+      () async {
     final repo = buildRepo();
-    final page = await repo.searchByName('cable');
-    expect(requests, hasLength(3)); // 3 pages of 2 = whole catalogue
-    expect(store, hasLength(6));
-    expect(page.items.map((e) => e.name), ['cable curl', 'cable fly']);
-    expect(page.fromCache, isFalse);
+    await repo.browse(limit: 2); // page 1 cached: arnold press, bench press
+    final before = requests.length;
+
+    // Never waits on the network: only what is cached so far.
+    final early = await repo.searchByName('cable');
+    expect(early.items, isEmpty);
+    expect(early.fromCache, isFalse); // still syncing, not offline
+
+    await repo.whenSynced; // the search kicked the background walk
+    expect(requests.length, before + 2); // the two remaining pages
+    final full = await repo.searchByName('cable');
+    expect(full.items.map((e) => e.name), ['cable curl', 'cable fly']);
   });
 
   test('rate limit degrades to cache; a later call resumes the cursor',
@@ -127,30 +160,27 @@ void main() {
     expect(requests.last.queryParameters['after'], 'bbb');
   });
 
-  test('concurrent browse + search share one sync (no duplicate pages)',
+  test('concurrent browse + warm-up share one sync (no duplicate pages)',
       () async {
     final repo = buildRepo();
     // Fire both without awaiting — pre-fix the two sync loops interleaved
     // on the shared cursor and re-fetched the same pages.
-    final results = await Future.wait([
-      repo.browse(limit: 4),
-      repo.searchByName('cable'),
-    ]);
+    await Future.wait([repo.browse(limit: 4), repo.warmUp()]);
     expect(requests, hasLength(3)); // whole catalogue fetched exactly once
     expect(requests.map((u) => u.queryParameters['after']).toSet(),
         hasLength(3)); // no cursor fetched twice
-    expect(results[1].items.map((e) => e.name), ['cable curl', 'cable fly']);
+    final search = await repo.searchByName('cable');
+    expect(search.items.map((e) => e.name), ['cable curl', 'cable fly']);
   });
 
   test('browse is served from the DB without waiting on a running warm-up',
       () async {
     final repo = buildRepo();
-    await repo.searchByName('cable'); // fills the whole catalogue (3 pages)
+    await repo.warmUp(); // fills the whole catalogue (3 pages)
     final before = requests.length;
 
     // "Next app launch": fresh repo (session sync state reset), same DB.
-    final relaunch =
-        ExerciseRepository(ExerciseApiService(client: client), dao);
+    final relaunch = repoFor(dao);
     final page = await relaunch.browse(limit: 4);
     expect(page.items, hasLength(4));
     expect(page.fromCache, isFalse);
@@ -163,5 +193,56 @@ void main() {
     final search = await relaunch.searchByName('cable');
     expect(search.fromCache, isFalse);
     expect(requests.length, before + 1);
+  });
+
+  test('warm-up waits out 429s and finishes the catalogue', () async {
+    buildRepo();
+    var throttled = 0;
+    client = MockClient((req) async {
+      requests.add(req.url);
+      // Every second request is throttled, as a quota window would.
+      if (requests.length.isEven && throttled < 5) {
+        throttled++;
+        return http.Response('', 429, headers: {'retry-after': '0'});
+      }
+      final after = req.url.queryParameters['after'];
+      final start = after == null
+          ? 0
+          : _catalogue.indexWhere((e) => e[0] == after) + 1;
+      return http.Response(_pageJson(start), 200);
+    });
+    final repo = repoFor(dao);
+
+    await repo.warmUp();
+    expect(store, hasLength(6)); // pre-fix it stopped at the first 429
+    expect(throttled, greaterThan(0));
+    final search = await repo.searchByName('cable');
+    expect(search.fromCache, isFalse);
+    expect(checkpoint.saved, isNull); // a finished walk leaves no checkpoint
+  });
+
+  test('a relaunch resumes from the checkpoint instead of page 1', () async {
+    final repo = buildRepo();
+    rateLimited = true; // every request after the first 429s
+    await repo.warmUp(); // page 1 lands, then the walk gives up
+    expect(store, hasLength(2));
+    expect(checkpoint.saved?.cursor, 'bbb');
+
+    rateLimited = false;
+    final before = requests.length;
+    final relaunch = repoFor(dao);
+    await relaunch.warmUp();
+    expect(requests[before].queryParameters['after'], 'bbb');
+    expect(requests.length, before + 2); // pages 2 and 3 only
+    expect(store, hasLength(6));
+  });
+
+  test('a checkpoint is ignored when the DB lost its rows (reinstall)',
+      () async {
+    final repo = buildRepo();
+    checkpoint.saved = (cursor: 'ddd', cachedCount: 4); // Keychain survivor
+    await repo.warmUp();
+    expect(requests.first.queryParameters['after'], isNull); // page 1
+    expect(store, hasLength(6));
   });
 }
